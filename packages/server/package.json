@@ -1,0 +1,38 @@
+{
+  "name": "@renre-kit/server",
+  "version": "0.0.1",
+  "description": "RenreKit dashboard server — Fastify REST + WebSocket",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ --ext .ts",
+    "lint:duplication": "jscpd src/ --config ../../.jscpd.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@renre-kit/cli": "workspace:*",
+    "fastify": "^5.2.0",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/static": "^8.0.0",
+    "@fastify/websocket": "^11.0.0",
+    "@fastify/cookie": "^10.0.0",
+    "cron-parser": "^4.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "@vitest/coverage-istanbul": "^2.1.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint-plugin-sonarjs": "^2.0.0"
+  }
+}

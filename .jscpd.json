@@ -1,0 +1,14 @@
+{
+  "threshold": 5,
+  "reporters": ["console"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/coverage/**",
+    "**/.turbo/**"
+  ],
+  "absolute": true,
+  "gitignore": true
+}

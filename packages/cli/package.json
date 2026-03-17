@@ -1,0 +1,51 @@
+{
+  "name": "@renre-kit/cli",
+  "version": "0.0.1",
+  "description": "RenreKit CLI — lightweight plugin-driven development CLI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/core/types/index.js",
+      "types": "./dist/core/types/index.d.ts"
+    }
+  },
+  "bin": {
+    "renre-kit": "./bin/renre-kit.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ --ext .ts --ignore-pattern '**/*.test.ts'",
+    "lint:duplication": "jscpd src/ --config ../../.jscpd.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "@clack/prompts": "^0.9.1",
+    "better-sqlite3": "^11.7.0",
+    "fs-extra": "^11.2.0",
+    "simple-git": "^3.27.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.17.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "@vitest/coverage-istanbul": "^2.1.0",
+    "tsup": "^8.3.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint-plugin-sonarjs": "^2.0.0"
+  }
+}

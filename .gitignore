@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.turbo/
+*.sqlite
+*.sqlite-journal
+coverage/
+.env
+.env.local
+*.tgz
+.DS_Store
