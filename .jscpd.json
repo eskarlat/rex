@@ -8,7 +8,8 @@
     "**/*.test.tsx",
     "**/coverage/**",
     "**/.turbo/**",
-    "**/e2e/**"
+    "**/e2e/**",
+    "**/components/ui/**"
   ],
   "absolute": true,
   "gitignore": true
