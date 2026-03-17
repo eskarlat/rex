@@ -1,0 +1,29 @@
+# RenreKit Code Owners
+# Each line is a file pattern followed by one or more owners.
+
+# Default owner for everything
+* @eskarlat
+
+# Core CLI
+packages/cli/ @eskarlat
+
+# Server (dashboard API)
+packages/server/ @eskarlat
+
+# Web UI
+packages/ui/ @eskarlat
+
+# Extension SDK
+packages/extension-sdk/ @eskarlat
+
+# Scaffolding tool
+packages/create-renre-extension/ @eskarlat
+
+# Reference extensions
+extensions/ @eskarlat
+
+# Architecture documentation
+renre-kit-architecture/ @eskarlat
+
+# CI/CD and project config
+.github/ @eskarlat
