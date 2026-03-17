@@ -7,7 +7,7 @@ import {
   setExtensionConfig,
   getExtensionConfigMappings,
 } from '../../config/config-manager.js';
-import { listKeys } from '../../vault/vault-manager.js';
+import { listKeys, getEntriesByTag } from '../../vault/vault-manager.js';
 
 interface ExtConfigOptions {
   name: string;
@@ -124,6 +124,36 @@ function buildSourceOptions(
   return options;
 }
 
+interface SortedVaultKey {
+  key: string;
+  hint?: string;
+}
+
+function sortVaultKeysByHint(
+  vaultKeys: string[],
+  vaultHint?: string,
+): SortedVaultKey[] {
+  if (!vaultHint) {
+    return vaultKeys.map((k) => ({ key: k }));
+  }
+
+  const matchedKeys = getEntriesByTag(vaultHint);
+  const matchedSet = new Set(matchedKeys.map((e) => e.key));
+
+  const matched: SortedVaultKey[] = [];
+  const rest: SortedVaultKey[] = [];
+
+  for (const k of vaultKeys) {
+    if (matchedSet.has(k)) {
+      matched.push({ key: k, hint: `matches "${vaultHint}"` });
+    } else {
+      rest.push({ key: k });
+    }
+  }
+
+  return [...matched, ...rest];
+}
+
 async function buildMapping(
   source: string,
   field: string,
@@ -131,9 +161,10 @@ async function buildMapping(
   vaultKeys: string[],
 ): Promise<ConfigMapping | undefined> {
   if (source === 'vault') {
+    const sortedKeys = sortVaultKeysByHint(vaultKeys, fieldSchema.vaultHint);
     const key = await clack.select({
       message: `Select vault variable for "${field}":`,
-      options: vaultKeys.map((k) => ({ value: k, label: k })),
+      options: sortedKeys.map((k) => ({ value: k.key, label: k.key, hint: k.hint })),
     });
 
     if (isCancel(key)) {

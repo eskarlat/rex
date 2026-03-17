@@ -26,6 +26,7 @@ vi.mock('../../config/config-manager.js', () => ({
 
 vi.mock('../../vault/vault-manager.js', () => ({
   listKeys: vi.fn(() => []),
+  getEntriesByTag: vi.fn(() => []),
 }));
 
 import * as clack from '@clack/prompts';
@@ -33,7 +34,7 @@ import { handleExtConfig } from './ext-config.command.js';
 import { getActivated } from '../manager/extension-manager.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import { setExtensionConfig } from '../../config/config-manager.js';
-import { listKeys } from '../../vault/vault-manager.js';
+import { listKeys, getEntriesByTag } from '../../vault/vault-manager.js';
 
 describe('ext-config command', () => {
   beforeEach(() => {
@@ -292,6 +293,39 @@ describe('ext-config command', () => {
     expect(clack.log.info).toHaveBeenCalledWith(
       'Extension "jira" has no configurable fields.',
     );
+  });
+
+  it('should sort vault keys by vaultHint tag matching', async () => {
+    vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
+    vi.mocked(loadManifest).mockReturnValue({
+      name: 'jira',
+      version: '1.0.0',
+      description: 'Jira integration',
+      type: 'standard',
+      commands: {},
+      config: {
+        schema: {
+          apiToken: { type: 'string', description: 'API Token', secret: true, vaultHint: 'jira' },
+        },
+      },
+    });
+
+    vi.mocked(listKeys).mockReturnValue(['github_token', 'jira_token', 'slack_token']);
+    vi.mocked(getEntriesByTag).mockReturnValue([
+      { key: 'jira_token', value: '********', secret: true, tags: ['jira'] },
+    ]);
+
+    vi.mocked(clack.select)
+      .mockResolvedValueOnce('vault')
+      .mockResolvedValueOnce('jira_token');
+
+    await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
+
+    // Verify the second select call (vault key picker) has jira_token first with hint
+    const selectCalls = vi.mocked(clack.select).mock.calls;
+    const vaultSelect = selectCalls[1]?.[0] as { options: Array<{ value: string; hint?: string }> };
+    expect(vaultSelect.options[0]?.value).toBe('jira_token');
+    expect(vaultSelect.options[0]?.hint).toContain('jira');
   });
 
   it('should abort on cancel', async () => {
