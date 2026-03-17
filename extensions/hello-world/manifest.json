@@ -18,7 +18,14 @@
     "onInit": "src/index.js",
     "onDestroy": "src/index.js"
   },
-  "skills": "SKILL.md",
+  "agent": {
+    "skills": [
+      { "name": "greet", "path": "skills/greet/SKILL.md" },
+      { "name": "info", "path": "skills/info/SKILL.md" }
+    ],
+    "prompts": ["agent/prompts/greeting-style.md"],
+    "context": ["agent/context/extension-docs.md"]
+  },
   "ui": {
     "panels": [
       {

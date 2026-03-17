@@ -4,6 +4,41 @@ import path from 'node:path';
 const SKILLS_SUBDIR = path.join('.agent', 'skills');
 const SKILL_FILE = 'SKILL.md';
 
+/**
+ * Collect all SKILL.md files from an extension's skills directory.
+ * Handles both single-skill layout (SKILL.md at root) and
+ * multi-skill layout (subdirectories each containing SKILL.md).
+ */
+function collectSkillFiles(
+  extensionDir: string,
+  extensionName: string,
+): string[] {
+  const sections: string[] = [];
+
+  // Check for single SKILL.md at the extension directory root
+  const rootSkillPath = path.join(extensionDir, SKILL_FILE);
+  if (fs.existsSync(rootSkillPath)) {
+    const content = fs.readFileSync(rootSkillPath, 'utf-8');
+    sections.push(`## ${extensionName}\n\n${content}`);
+  }
+
+  // Check for nested skill directories (multi-skill)
+  const subEntries = fs.readdirSync(extensionDir, { withFileTypes: true });
+  for (const sub of subEntries) {
+    if (!sub.isDirectory()) {
+      continue;
+    }
+    const nestedSkillPath = path.join(extensionDir, sub.name, SKILL_FILE);
+    if (!fs.existsSync(nestedSkillPath)) {
+      continue;
+    }
+    const content = fs.readFileSync(nestedSkillPath, 'utf-8');
+    sections.push(`## ${extensionName}/${sub.name}\n\n${content}`);
+  }
+
+  return sections;
+}
+
 export function aggregateSkills(projectPath: string): string {
   const skillsDir = path.join(projectPath, SKILLS_SUBDIR);
 
@@ -18,12 +53,9 @@ export function aggregateSkills(projectPath: string): string {
     if (!entry.isDirectory()) {
       continue;
     }
-    const skillPath = path.join(skillsDir, entry.name, SKILL_FILE);
-    if (!fs.existsSync(skillPath)) {
-      continue;
-    }
-    const content = fs.readFileSync(skillPath, 'utf-8');
-    sections.push(`## ${entry.name}\n\n${content}`);
+    const extSkillDir = path.join(skillsDir, entry.name);
+    const collected = collectSkillFiles(extSkillDir, entry.name);
+    sections.push(...collected);
   }
 
   if (sections.length === 0) {

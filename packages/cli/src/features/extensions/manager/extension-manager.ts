@@ -6,6 +6,11 @@ import { loadManifest } from '../manifest/manifest-loader.js';
 import type { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getExtensionConfigMappings } from '../../config/config-manager.js';
 import { hasEntry } from '../../vault/vault-manager.js';
+import type { AgentAssets, ExtensionManifest, SkillRef } from '../types/extension.types.js';
+import {
+  AGENT_DIR,
+  SKILLS_DIR,
+} from '../../../core/paths/paths.js';
 
 export interface InstalledExtension {
   name: string;
@@ -106,6 +111,117 @@ export function validateVaultKeys(extensionName: string): string[] {
   return missing;
 }
 
+const AGENT_ASSET_TYPES = ['prompts', 'agents', 'workflows', 'context'] as const;
+
+function copyFileIfExists(src: string, dest: string): void {
+  if (!fs.existsSync(src)) {
+    return;
+  }
+  const destDir = path.dirname(dest);
+  if (!fs.existsSync(destDir)) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
+  fs.copyFileSync(src, dest);
+}
+
+function resolveSkills(manifest: ExtensionManifest): string | SkillRef[] | undefined {
+  // Prefer agent.skills (unified), fall back to top-level skills (deprecated)
+  if (manifest.agent && typeof manifest.agent !== 'string' && manifest.agent.skills) {
+    return manifest.agent.skills;
+  }
+  return manifest.skills;
+}
+
+function deploySkillsFromRef(
+  skills: string | SkillRef[],
+  extensionName: string,
+  extensionDir: string,
+  projectPath: string,
+): void {
+  const extensionSkillsDir = path.join(
+    projectPath,
+    AGENT_DIR,
+    SKILLS_DIR,
+    extensionName,
+  );
+
+  if (typeof skills === 'string') {
+    // Single SKILL.md (backward compat)
+    const src = path.join(extensionDir, skills);
+    const dest = path.join(extensionSkillsDir, 'SKILL.md');
+    copyFileIfExists(src, dest);
+  } else {
+    // Array of SkillRef
+    for (const skill of skills as SkillRef[]) {
+      const src = path.join(extensionDir, skill.path);
+      const dest = path.join(extensionSkillsDir, skill.name, 'SKILL.md');
+      copyFileIfExists(src, dest);
+    }
+  }
+}
+
+function deploySkills(
+  manifest: ExtensionManifest,
+  extensionDir: string,
+  projectPath: string,
+): void {
+  const skills = resolveSkills(manifest);
+  if (!skills) {
+    return;
+  }
+  deploySkillsFromRef(skills, manifest.name, extensionDir, projectPath);
+}
+
+function deployAgentAssets(
+  manifest: ExtensionManifest,
+  extensionDir: string,
+  projectPath: string,
+): void {
+  if (!manifest.agent || typeof manifest.agent === 'string') {
+    return;
+  }
+
+  const assets = manifest.agent as AgentAssets;
+
+  for (const assetType of AGENT_ASSET_TYPES) {
+    const files = assets[assetType];
+    if (!files) {
+      continue;
+    }
+    for (const filePath of files) {
+      const src = path.join(extensionDir, filePath);
+      const fileName = path.basename(filePath);
+      const dest = path.join(
+        projectPath,
+        AGENT_DIR,
+        assetType,
+        manifest.name,
+        fileName,
+      );
+      copyFileIfExists(src, dest);
+    }
+  }
+}
+
+function cleanupDeployedAssets(
+  name: string,
+  projectPath: string,
+): void {
+  // Remove skills
+  const skillsDir = path.join(projectPath, AGENT_DIR, SKILLS_DIR, name);
+  if (fs.existsSync(skillsDir)) {
+    fs.rmSync(skillsDir, { recursive: true, force: true });
+  }
+
+  // Remove agent assets
+  for (const assetType of AGENT_ASSET_TYPES) {
+    const assetDir = path.join(projectPath, AGENT_DIR, assetType, name);
+    if (fs.existsSync(assetDir)) {
+      fs.rmSync(assetDir, { recursive: true, force: true });
+    }
+  }
+}
+
 export async function activate(
   name: string,
   version: string,
@@ -120,6 +236,10 @@ export async function activate(
   writePluginsJson(projectPath, plugins);
 
   const missingKeys = validateVaultKeys(name);
+
+  // Layer 1: Auto-deploy skills and agent assets
+  deploySkills(manifest, extensionDir, projectPath);
+  deployAgentAssets(manifest, extensionDir, projectPath);
 
   if (manifest.hooks?.onInit) {
     await runHook(extensionDir, manifest.hooks.onInit, projectPath);
@@ -148,6 +268,9 @@ export async function deactivate(
   if (manifest.hooks?.onDestroy) {
     await runHook(extensionDir, manifest.hooks.onDestroy, projectPath);
   }
+
+  // Clean up deployed skills and agent assets
+  cleanupDeployedAssets(name, projectPath);
 
   const plugins = readPluginsJson(projectPath);
   delete plugins[name];
