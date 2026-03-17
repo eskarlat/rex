@@ -36,10 +36,11 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => void shutdown());
   process.on('SIGTERM', () => void shutdown());
 
-  await server.listen({ port, host: '0.0.0.0' });
+  const host = lanMode ? '0.0.0.0' : '127.0.0.1';
+  await server.listen({ port, host });
 
   // eslint-disable-next-line no-console
-  console.log(`RenreKit Dashboard v${SERVER_VERSION} running on http://0.0.0.0:${port}`);
+  console.log(`RenreKit Dashboard v${SERVER_VERSION} running on http://${host}:${port}`);
 }
 
 void main();

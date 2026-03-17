@@ -1,7 +1,9 @@
+import { execFileSync } from 'node:child_process';
 import { getDb } from '@renre-kit/cli/lib';
 import { parseExpression } from 'cron-parser';
 
 const TICK_INTERVAL_MS = 60_000;
+const MAX_OUTPUT_LENGTH = 10_240;
 
 interface ScheduledTaskRow {
   id: number;
@@ -19,38 +21,85 @@ function computeNextRun(cronExpression: string): string {
   return interval.next().toISOString();
 }
 
+export function parseCommandString(input: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let inSingle = false;
+  let inDouble = false;
+  let escaped = false;
+
+  for (const ch of input) {
+    if (escaped) {
+      current += ch;
+      escaped = false;
+    } else if (ch === '\\' && !inSingle) {
+      escaped = true;
+    } else if (ch === "'" && !inDouble) {
+      inSingle = !inSingle;
+    } else if (ch === '"' && !inSingle) {
+      inDouble = !inDouble;
+    } else if (/\s/.test(ch) && !inSingle && !inDouble) {
+      if (current.length > 0) {
+        tokens.push(current);
+        current = '';
+      }
+    } else {
+      current += ch;
+    }
+  }
+  if (current.length > 0) {
+    tokens.push(current);
+  }
+  return tokens;
+}
+
 function executeDueTask(task: ScheduledTaskRow): void {
   const db = getDb();
-  const now = new Date().toISOString();
+  const startedAt = new Date().toISOString();
+  const start = Date.now();
   let status = 'success';
+  let output = '';
 
+  // Execute the command
   try {
-    // Record execution start
-    db.prepare(
-      'INSERT INTO task_history (task_id, started_at, status) VALUES (?, ?, ?)',
-    ).run(task.id, now, 'running');
-  } catch {
-    status = 'failed';
+    const parts = parseCommandString(task.command);
+    const cmd = parts[0] ?? '';
+    const args = parts.slice(1);
+    const result = execFileSync(cmd, args, {
+      encoding: 'utf-8',
+      timeout: 60_000,
+    });
+    output = result.slice(0, MAX_OUTPUT_LENGTH);
+  } catch (err) {
+    status = 'error';
+    output = err instanceof Error ? err.message : String(err);
+    output = output.slice(0, MAX_OUTPUT_LENGTH);
   }
 
+  const durationMs = Date.now() - start;
+  const finishedAt = new Date().toISOString();
+
   // Compute next run
-  let nextRun: string;
+  let nextRun: string | null;
   try {
     nextRun = computeNextRun(task.cron);
   } catch {
-    nextRun = '';
-    status = 'failed';
+    // Invalid cron — disable further scheduling
+    nextRun = null;
+    if (status === 'success') {
+      status = 'error';
+    }
   }
 
   // Update task record
   db.prepare(
     'UPDATE scheduled_tasks SET last_run_at = ?, last_status = ?, next_run_at = ? WHERE id = ?',
-  ).run(now, status, nextRun, task.id);
+  ).run(finishedAt, status, nextRun, task.id);
 
-  // Update history record
+  // Record history
   db.prepare(
-    'UPDATE task_history SET status = ?, finished_at = ? WHERE task_id = ? AND started_at = ?',
-  ).run(status, new Date().toISOString(), task.id, now);
+    'INSERT INTO task_history (task_id, started_at, finished_at, duration_ms, status, output) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run(task.id, startedAt, finishedAt, durationMs, status, output);
 }
 
 export class SchedulerRunner {
