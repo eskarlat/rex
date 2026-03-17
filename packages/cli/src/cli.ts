@@ -19,9 +19,43 @@ import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
 import { handleVaultList } from './features/vault/commands/vault-list.command.js';
 import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
 import { getDb } from './core/database/database.js';
+import { getExtensionDir } from './core/paths/paths.js';
+import { ConnectionManager } from './features/extensions/mcp/connection-manager.js';
+import { loadGlobalConfig } from './features/config/config-manager.js';
+import { listInstalled, getActivated } from './features/extensions/manager/extension-manager.js';
+import { ProjectManager } from './core/project/project-manager.js';
+import { EventBus } from './core/event-bus/event-bus.js';
+
+function detectProject(): string | null {
+  const bus = new EventBus();
+  const pm = new ProjectManager(bus);
+  return pm.detect();
+}
+
+function requireProject(): string {
+  const projectPath = detectProject();
+  if (!projectPath) {
+    throw new Error('No RenreKit project found. Run "renre-kit init" first.');
+  }
+  return projectPath;
+}
+
+function resolveExtensionVersion(name: string, version: string): string {
+  if (version !== 'latest') {
+    return version;
+  }
+  const db = getDb();
+  const installed = listInstalled(db);
+  const ext = installed.find((e) => e.name === name);
+  if (!ext) {
+    throw new Error(`Extension "${name}" is not installed.`);
+  }
+  return ext.version;
+}
 
 export function createProgram(): Command {
   const program = new Command();
+  const connectionManager = new ConnectionManager();
 
   program
     .name('renre-kit')
@@ -48,8 +82,9 @@ export function createProgram(): Command {
     .description('Destroy a RenreKit project')
     .action(async (_opts: Record<string, unknown>, cmd: Command) => {
       const globalOpts: Record<string, unknown> = cmd.parent?.opts() ?? {};
+      const projectPath = requireProject();
       await handleDestroy({
-        projectPath: process.cwd(),
+        projectPath,
         force: !!globalOpts['force'],
       });
     });
@@ -59,10 +94,11 @@ export function createProgram(): Command {
     .command('ext:add <name>')
     .description('Add an extension')
     .action(async (name: string) => {
+      const { registries } = loadGlobalConfig();
       await handleExtAdd({
         name,
-        registryConfigs: [],
-        projectPath: process.cwd(),
+        registryConfigs: registries,
+        projectPath: detectProject(),
       });
     });
 
@@ -73,8 +109,8 @@ export function createProgram(): Command {
     .action(async (name: string, opts: { version: string }) => {
       await handleExtRemove({
         name,
-        version: opts.version,
-        projectPath: process.cwd(),
+        version: resolveExtensionVersion(name, opts.version),
+        projectPath: detectProject(),
       });
     });
 
@@ -82,7 +118,7 @@ export function createProgram(): Command {
     .command('ext:list')
     .description('List installed extensions')
     .action(() => {
-      handleExtList({ projectPath: process.cwd() });
+      handleExtList({ projectPath: detectProject() ?? process.cwd() });
     });
 
   program
@@ -90,11 +126,13 @@ export function createProgram(): Command {
     .description('Activate an extension in the current project')
     .option('--version <version>', 'Extension version', 'latest')
     .action(async (name: string, opts: { version: string }) => {
+      const projectPath = requireProject();
+      const version = resolveExtensionVersion(name, opts.version);
       await handleExtActivate({
         name,
-        version: opts.version,
-        projectPath: process.cwd(),
-        extensionDir: '',
+        version,
+        projectPath,
+        extensionDir: getExtensionDir(name, version),
       });
     });
 
@@ -102,10 +140,16 @@ export function createProgram(): Command {
     .command('ext:deactivate <name>')
     .description('Deactivate an extension from the current project')
     .action(async (name: string) => {
+      const projectPath = requireProject();
+      const plugins = getActivated(projectPath);
+      const version = plugins[name];
+      if (!version) {
+        throw new Error(`Extension "${name}" is not activated in this project.`);
+      }
       await handleExtDeactivate({
         name,
-        projectPath: process.cwd(),
-        extensionDir: '',
+        projectPath,
+        extensionDir: getExtensionDir(name, version),
       });
     });
 
@@ -113,9 +157,10 @@ export function createProgram(): Command {
     .command('ext:config <name>')
     .description('Configure an extension interactively')
     .action(async (name: string) => {
+      const projectPath = detectProject() ?? process.cwd();
       await handleExtConfig({
         name,
-        projectPath: process.cwd(),
+        projectPath,
       });
     });
 
@@ -123,7 +168,7 @@ export function createProgram(): Command {
     .command('ext:status')
     .description('Show MCP connection status')
     .action(() => {
-      handleExtStatus(new Map());
+      handleExtStatus(connectionManager.status());
     });
 
   program
@@ -132,9 +177,7 @@ export function createProgram(): Command {
     .action(async (name: string) => {
       await handleExtRestart({
         name,
-        restartFn: () => {
-          return Promise.reject(new Error('Connection manager not available in this context'));
-        },
+        restartFn: (extName) => connectionManager.restart(extName, { transport: 'stdio' }),
       });
     });
 
@@ -143,14 +186,16 @@ export function createProgram(): Command {
     .command('registry:sync')
     .description('Sync all registries')
     .action(async () => {
-      await handleRegistrySync({ configs: [] });
+      const { registries } = loadGlobalConfig();
+      await handleRegistrySync({ configs: registries });
     });
 
   program
     .command('registry:list')
     .description('List configured registries')
     .action(() => {
-      handleRegistryList({ configs: [] });
+      const { registries } = loadGlobalConfig();
+      handleRegistryList({ configs: registries });
     });
 
   // Extension versioning commands
@@ -158,7 +203,8 @@ export function createProgram(): Command {
     .command('ext:outdated')
     .description('Check for outdated extensions')
     .action(() => {
-      handleExtOutdated({ registryConfigs: [], db: getDb() });
+      const { registries } = loadGlobalConfig();
+      handleExtOutdated({ registryConfigs: registries, db: getDb() });
     });
 
   program
@@ -166,11 +212,12 @@ export function createProgram(): Command {
     .description('Update an extension to the latest version')
     .option('--all', 'Update all extensions')
     .action(async (name: string | undefined, opts: { all?: boolean }) => {
+      const { registries } = loadGlobalConfig();
       await handleExtUpdate({
         name,
         all: !!opts.all,
-        registryConfigs: [],
-        projectPath: process.cwd(),
+        registryConfigs: registries,
+        projectPath: detectProject() ?? process.cwd(),
         db: getDb(),
       });
     });
@@ -218,7 +265,8 @@ export function createProgram(): Command {
     .command('capabilities')
     .description('Show aggregated LLM skills')
     .action(() => {
-      handleCapabilities({ projectPath: process.cwd() });
+      const projectPath = requireProject();
+      handleCapabilities({ projectPath });
     });
 
   return program;

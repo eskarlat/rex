@@ -16,6 +16,10 @@ vi.mock('../../../core/database/database.js', () => ({
   getDb: vi.fn().mockReturnValue({}),
 }));
 
+vi.mock('../../../core/paths/paths.js', () => ({
+  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}/${version}`),
+}));
+
 import * as clack from '@clack/prompts';
 import { handleExtRemove } from './ext-remove.command.js';
 import * as extensionManager from '../manager/extension-manager.js';

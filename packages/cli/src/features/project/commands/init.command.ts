@@ -4,6 +4,7 @@ import { ProjectManager } from '../../../core/project/project-manager.js';
 import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getDb } from '../../../core/database/database.js';
 import { listInstalled, activate } from '../../extensions/manager/extension-manager.js';
+import { getExtensionDir } from '../../../core/paths/paths.js';
 
 interface InitOptions {
   projectPath: string;
@@ -51,12 +52,7 @@ export async function handleInit(options: InitOptions): Promise<void> {
   for (const extName of selectedExtensions) {
     const ext = installed.find((e) => e.name === extName);
     if (ext) {
-      const extDir = path.join(
-        process.env['RENRE_KIT_HOME'] ?? path.join(process.env['HOME'] ?? '', '.renre-kit'),
-        'extensions',
-        `${ext.name}@${ext.version}`,
-      );
-      await activate(ext.name, ext.version, options.projectPath, extDir);
+      await activate(ext.name, ext.version, options.projectPath, getExtensionDir(ext.name, ext.version));
     }
   }
 

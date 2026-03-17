@@ -1,6 +1,7 @@
 import * as clack from '@clack/prompts';
 import { remove, deactivate } from '../manager/extension-manager.js';
 import { getDb } from '../../../core/database/database.js';
+import { getExtensionDir } from '../../../core/paths/paths.js';
 
 interface ExtRemoveOptions {
   name: string;
@@ -10,7 +11,7 @@ interface ExtRemoveOptions {
 
 export async function handleExtRemove(options: ExtRemoveOptions): Promise<void> {
   if (options.projectPath) {
-    const extDir = `${options.name}@${options.version}`;
+    const extDir = getExtensionDir(options.name, options.version);
     try {
       await deactivate(options.name, options.projectPath, extDir);
       clack.log.info(`Deactivated ${options.name} from project.`);

@@ -1,5 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Mock infrastructure
+const mockDetect = vi.fn().mockReturnValue('/mock/project');
+vi.mock('./core/project/project-manager.js', () => ({
+  ProjectManager: vi.fn().mockImplementation(() => ({
+    detect: mockDetect,
+  })),
+}));
+vi.mock('./core/event-bus/event-bus.js', () => ({
+  EventBus: vi.fn().mockImplementation(() => ({})),
+}));
+vi.mock('./core/paths/paths.js', () => ({
+  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}/${version}`),
+}));
+vi.mock('./features/extensions/mcp/connection-manager.js', () => ({
+  ConnectionManager: vi.fn().mockImplementation(() => ({
+    status: vi.fn().mockReturnValue(new Map()),
+    restart: vi.fn().mockResolvedValue({ extensionName: '', transport: 'stdio', state: 'running', retryCount: 0 }),
+  })),
+}));
+vi.mock('./features/config/config-manager.js', () => ({
+  loadGlobalConfig: vi.fn().mockReturnValue({ registries: [], settings: {}, extensionConfigs: {} }),
+}));
+vi.mock('./features/extensions/manager/extension-manager.js', () => ({
+  listInstalled: vi.fn().mockReturnValue([
+    { name: 'my-ext', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+  ]),
+  getActivated: vi.fn().mockReturnValue({ 'my-ext': '1.0.0' }),
+}));
+
 // Mock all command handlers
 vi.mock('./features/project/commands/init.command.js', () => ({
   handleInit: vi.fn().mockResolvedValue(undefined),
