@@ -27,6 +27,7 @@ vi.mock('../../config/config-manager.js', () => ({
 vi.mock('../../vault/vault-manager.js', () => ({
   listKeys: vi.fn(() => []),
   getEntriesByTag: vi.fn(() => []),
+  setEntry: vi.fn(),
 }));
 
 import * as clack from '@clack/prompts';
@@ -34,7 +35,7 @@ import { handleExtConfig } from './ext-config.command.js';
 import { getActivated } from '../manager/extension-manager.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import { setExtensionConfig } from '../../config/config-manager.js';
-import { listKeys, getEntriesByTag } from '../../vault/vault-manager.js';
+import { listKeys, getEntriesByTag, setEntry as setVaultEntry } from '../../vault/vault-manager.js';
 
 describe('ext-config command', () => {
   beforeEach(() => {
@@ -293,6 +294,61 @@ describe('ext-config command', () => {
     expect(clack.log.info).toHaveBeenCalledWith(
       'Extension "jira" has no configurable fields.',
     );
+  });
+
+  it('should create a new vault variable inline', async () => {
+    vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
+    vi.mocked(loadManifest).mockReturnValue({
+      name: 'jira',
+      version: '1.0.0',
+      description: 'Jira integration',
+      type: 'standard',
+      commands: {},
+      config: {
+        schema: {
+          apiToken: { type: 'string', description: 'API Token', secret: true },
+        },
+      },
+    });
+
+    vi.mocked(listKeys).mockReturnValue([]);
+    vi.mocked(clack.select).mockResolvedValue('vault-new');
+    vi.mocked(clack.text).mockResolvedValue('jira_token');
+    vi.mocked(clack.password).mockResolvedValue('my-secret-value');
+
+    await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
+
+    expect(setVaultEntry).toHaveBeenCalledWith('jira_token', 'my-secret-value', true, []);
+    expect(setExtensionConfig).toHaveBeenCalledWith('jira', 'apiToken', {
+      source: 'vault',
+      value: 'jira_token',
+    });
+    expect(clack.log.success).toHaveBeenCalledWith(expect.stringContaining('jira_token'));
+  });
+
+  it('should abort when user cancels vault name during creation', async () => {
+    vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
+    vi.mocked(loadManifest).mockReturnValue({
+      name: 'jira',
+      version: '1.0.0',
+      description: 'Jira integration',
+      type: 'standard',
+      commands: {},
+      config: {
+        schema: {
+          apiToken: { type: 'string', description: 'API Token', secret: true },
+        },
+      },
+    });
+
+    vi.mocked(listKeys).mockReturnValue([]);
+    vi.mocked(clack.select).mockResolvedValue('vault-new');
+    vi.mocked(clack.text).mockResolvedValue(Symbol('cancel'));
+
+    await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
+
+    expect(setVaultEntry).not.toHaveBeenCalled();
+    expect(clack.log.info).toHaveBeenCalledWith('Cancelled.');
   });
 
   it('should sort vault keys by vaultHint tag matching', async () => {

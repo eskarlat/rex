@@ -4,6 +4,10 @@ import type { McpConfig } from '../types/extension.types.js';
 
 vi.mock('./mcp-stdio-transport.js');
 vi.mock('./mcp-sse-transport.js');
+vi.mock('../../../shared/interpolation.js', async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return { ...actual };
+});
 
 import { spawnProcess, sendRequest as stdioSendRequest, killProcess } from './mcp-stdio-transport.js';
 import { connect, sendRequest as sseSendRequest, disconnect } from './mcp-sse-transport.js';
@@ -158,6 +162,57 @@ describe('connection-manager', () => {
       const status = manager.status();
       expect(status.get('ext-a')).toBe('running');
       expect(status.get('ext-b')).toBe('running');
+    });
+  });
+
+  describe('env resolution', () => {
+    it('should interpolate config values into MCP env vars', () => {
+      const configWithEnv: McpConfig = {
+        transport: 'stdio',
+        command: 'node',
+        args: ['server.js'],
+        env: {
+          API_TOKEN: '${config.apiToken}',
+          BASE_URL: '${config.baseUrl}',
+          STATIC: 'no-change',
+        },
+      };
+
+      const resolvedConfig = {
+        apiToken: 'my-secret-token',
+        baseUrl: 'https://api.example.com',
+      };
+
+      manager.getConnection('ext-env', configWithEnv, resolvedConfig);
+
+      expect(spawnProcess).toHaveBeenCalledWith(
+        'node',
+        ['server.js'],
+        {
+          API_TOKEN: 'my-secret-token',
+          BASE_URL: 'https://api.example.com',
+          STATIC: 'no-change',
+        },
+        expect.any(String),
+      );
+    });
+
+    it('should pass raw env when no resolvedConfig provided', () => {
+      const configWithEnv: McpConfig = {
+        transport: 'stdio',
+        command: 'node',
+        args: [],
+        env: { KEY: 'value' },
+      };
+
+      manager.getConnection('ext-raw', configWithEnv);
+
+      expect(spawnProcess).toHaveBeenCalledWith(
+        'node',
+        [],
+        { KEY: 'value' },
+        expect.any(String),
+      );
     });
   });
 

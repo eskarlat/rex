@@ -17,6 +17,7 @@ import {
   ExtensionError,
   ErrorCode,
 } from '../../../core/errors/extension-error.js';
+import { interpolate } from '../../../shared/interpolation.js';
 
 interface InternalConnection {
   metadata: McpConnection;
@@ -36,14 +37,18 @@ export class ConnectionManager {
   private readonly connections = new Map<string, InternalConnection>();
   private mode: LifecycleMode = 'cli';
 
-  getConnection(extensionName: string, mcpConfig: McpConfig): McpConnection {
+  getConnection(
+    extensionName: string,
+    mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
+  ): McpConnection {
     const existing = this.connections.get(extensionName);
     if (existing && existing.metadata.state === 'running') {
       existing.lastActivity = Date.now();
       return existing.metadata;
     }
 
-    const internal = this.startConnection(extensionName, mcpConfig);
+    const internal = this.startConnection(extensionName, mcpConfig, resolvedConfig);
     this.connections.set(extensionName, internal);
     this.resetIdleTimer(extensionName);
     return internal.metadata;
@@ -98,13 +103,14 @@ export class ConnectionManager {
   async restart(
     extensionName: string,
     mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
   ): Promise<McpConnection> {
     const existing = this.connections.get(extensionName);
     if (existing) {
       await this.stopConnection(extensionName, existing);
     }
 
-    const internal = this.startConnection(extensionName, mcpConfig);
+    const internal = this.startConnection(extensionName, mcpConfig, resolvedConfig);
     this.connections.set(extensionName, internal);
     this.resetIdleTimer(extensionName);
     return internal.metadata;
@@ -133,6 +139,7 @@ export class ConnectionManager {
   private startConnection(
     extensionName: string,
     mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
   ): InternalConnection {
     const metadata: McpConnection = {
       extensionName,
@@ -149,10 +156,11 @@ export class ConnectionManager {
     };
 
     if (mcpConfig.transport === 'stdio') {
+      const env = resolveEnv(mcpConfig.env ?? {}, resolvedConfig ?? {});
       internal.stdioProcess = spawnProcess(
         mcpConfig.command ?? '',
         mcpConfig.args ?? [],
-        mcpConfig.env ?? {},
+        env,
         process.cwd(),
       );
     } else {
@@ -204,4 +212,15 @@ export class ConnectionManager {
       });
     }, CLI_IDLE_TIMEOUT_MS);
   }
+}
+
+function resolveEnv(
+  env: Record<string, string>,
+  config: Record<string, unknown>,
+): Record<string, string> {
+  const resolved: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    resolved[key] = interpolate(value, config);
+  }
+  return resolved;
 }

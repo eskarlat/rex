@@ -12,7 +12,7 @@ vi.mock('node:fs', () => ({
 }));
 
 vi.mock('../manager/extension-manager.js', () => ({
-  listInstalled: vi.fn(),
+  getActivated: vi.fn(),
 }));
 
 vi.mock('../../../shared/fs-helpers.js', () => ({
@@ -26,53 +26,85 @@ vi.mock('../../../core/paths/paths.js', () => ({
 import * as clack from '@clack/prompts';
 import fs from 'node:fs';
 import { handleExtCleanup } from './ext-cleanup.command.js';
-import { listInstalled } from '../manager/extension-manager.js';
+import { getActivated } from '../manager/extension-manager.js';
 import { removeDirSync } from '../../../shared/fs-helpers.js';
+
+function mockDb(projects: Array<{ path: string }>): never {
+  return {
+    prepare: () => ({
+      all: () => projects.map((p, i) => ({
+        id: i + 1,
+        name: `project-${i}`,
+        path: p.path,
+        created_at: '2026-01-01',
+        last_accessed_at: '2026-01-01',
+      })),
+    }),
+  } as never;
+}
 
 describe('ext-cleanup command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should remove unused extension versions', () => {
-    vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.1.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
+  it('should remove versions not referenced by any project', () => {
+    const db = mockDb([
+      { path: '/tmp/project-a' },
+      { path: '/tmp/project-b' },
     ]);
+
+    vi.mocked(getActivated)
+      .mockReturnValueOnce({ jira: '1.1.0' })
+      .mockReturnValueOnce({ jira: '1.0.0', github: '2.0.0' });
+
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readdirSync).mockReturnValueOnce(
-      // Extension directories
-      ['jira@1.0.0', 'jira@1.1.0', 'github@2.0.0'] as unknown as ReturnType<typeof fs.readdirSync>,
+      ['jira@1.0.0', 'jira@1.1.0', 'jira@0.9.0', 'github@2.0.0'] as unknown as ReturnType<typeof fs.readdirSync>,
     );
 
-    handleExtCleanup({ db: {} as never });
+    handleExtCleanup({ db });
 
-    expect(removeDirSync).toHaveBeenCalledWith('/tmp/extensions/jira@1.0.0');
-    expect(removeDirSync).toHaveBeenCalledWith('/tmp/extensions/github@2.0.0');
+    expect(removeDirSync).toHaveBeenCalledWith('/tmp/extensions/jira@0.9.0');
+    expect(removeDirSync).toHaveBeenCalledTimes(1);
+    expect(removeDirSync).not.toHaveBeenCalledWith('/tmp/extensions/jira@1.0.0');
     expect(removeDirSync).not.toHaveBeenCalledWith('/tmp/extensions/jira@1.1.0');
-    expect(clack.log.success).toHaveBeenCalledWith(expect.stringContaining('2'));
+    expect(removeDirSync).not.toHaveBeenCalledWith('/tmp/extensions/github@2.0.0');
   });
 
   it('should show message when nothing to clean', () => {
-    vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.0.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
-    ]);
+    const db = mockDb([{ path: '/tmp/project-a' }]);
+    vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readdirSync).mockReturnValueOnce(
       ['jira@1.0.0'] as unknown as ReturnType<typeof fs.readdirSync>,
     );
 
-    handleExtCleanup({ db: {} as never });
+    handleExtCleanup({ db });
 
     expect(removeDirSync).not.toHaveBeenCalled();
     expect(clack.log.info).toHaveBeenCalledWith('No unused extension versions to clean up.');
   });
 
   it('should handle empty extensions directory', () => {
-    vi.mocked(listInstalled).mockReturnValue([]);
+    const db = mockDb([]);
     vi.mocked(fs.existsSync).mockReturnValue(false);
 
-    handleExtCleanup({ db: {} as never });
+    handleExtCleanup({ db });
 
     expect(clack.log.info).toHaveBeenCalledWith('No unused extension versions to clean up.');
+  });
+
+  it('should handle no projects in database', () => {
+    const db = mockDb([]);
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readdirSync).mockReturnValueOnce(
+      ['jira@1.0.0'] as unknown as ReturnType<typeof fs.readdirSync>,
+    );
+
+    handleExtCleanup({ db });
+
+    expect(removeDirSync).toHaveBeenCalledWith('/tmp/extensions/jira@1.0.0');
+    expect(clack.log.success).toHaveBeenCalledWith(expect.stringContaining('1'));
   });
 });

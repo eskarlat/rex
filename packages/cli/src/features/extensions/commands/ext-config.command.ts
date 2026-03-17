@@ -7,7 +7,7 @@ import {
   setExtensionConfig,
   getExtensionConfigMappings,
 } from '../../config/config-manager.js';
-import { listKeys, getEntriesByTag } from '../../vault/vault-manager.js';
+import { listKeys, getEntriesByTag, setEntry as setVaultEntry } from '../../vault/vault-manager.js';
 
 interface ExtConfigOptions {
   name: string;
@@ -111,6 +111,14 @@ function buildSourceOptions(
     });
   }
 
+  if (fieldSchema.secret) {
+    options.push({
+      value: 'vault-new',
+      label: 'Create new vault variable',
+      hint: 'Create and reference a new encrypted vault entry',
+    });
+  }
+
   options.push({
     value: 'direct',
     label: 'Enter value directly',
@@ -154,12 +162,39 @@ function sortVaultKeysByHint(
   return [...matched, ...rest];
 }
 
+async function createNewVaultVariable(field: string): Promise<ConfigMapping | undefined> {
+  const keyName = await clack.text({
+    message: `Enter vault variable name for "${field}":`,
+    defaultValue: field,
+  });
+
+  if (isCancel(keyName)) {
+    return undefined;
+  }
+
+  const secretValue = await clack.password({
+    message: `Enter secret value for "${String(keyName)}":`,
+  });
+
+  if (isCancel(secretValue)) {
+    return undefined;
+  }
+
+  setVaultEntry(String(keyName), secretValue, true, []);
+  clack.log.success(`Created vault entry "${String(keyName)}".`);
+  return { source: 'vault', value: String(keyName) };
+}
+
 async function buildMapping(
   source: string,
   field: string,
   fieldSchema: ConfigSchemaField,
   vaultKeys: string[],
 ): Promise<ConfigMapping | undefined> {
+  if (source === 'vault-new') {
+    return createNewVaultVariable(field);
+  }
+
   if (source === 'vault') {
     const sortedKeys = sortVaultKeysByHint(vaultKeys, fieldSchema.vaultHint);
     const key = await clack.select({
