@@ -7,4 +7,5 @@ coverage/
 .env
 .env.local
 *.tgz
+*.tsbuildinfo
 .DS_Store

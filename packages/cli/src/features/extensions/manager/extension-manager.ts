@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type Database from 'better-sqlite3';
 import type { PluginsJson } from '../../../core/types/index.js';
-import type { ExtensionManifest } from '../types/index.js';
+import { loadManifest } from '../manifest/manifest-loader.js';
 
 export interface InstalledExtension {
   name: string;
@@ -38,12 +38,6 @@ function writePluginsJson(projectPath: string, plugins: PluginsJson): void {
     fs.mkdirSync(dir, { recursive: true });
   }
   fs.writeFileSync(filePath, JSON.stringify(plugins, null, 2));
-}
-
-function readManifest(extensionDir: string): ExtensionManifest {
-  const manifestPath = path.join(extensionDir, 'extension.json');
-  const raw = fs.readFileSync(manifestPath, 'utf-8');
-  return JSON.parse(raw) as ExtensionManifest;
 }
 
 async function runHook(
@@ -102,7 +96,7 @@ export async function activate(
   projectPath: string,
   extensionDir: string,
 ): Promise<void> {
-  const manifest = readManifest(extensionDir);
+  const manifest = loadManifest(extensionDir);
   const plugins = readPluginsJson(projectPath);
 
   plugins[name] = version;
@@ -118,7 +112,7 @@ export async function deactivate(
   projectPath: string,
   extensionDir: string,
 ): Promise<void> {
-  const manifest = readManifest(extensionDir);
+  const manifest = loadManifest(extensionDir);
 
   if (manifest.hooks?.onDestroy) {
     await runHook(extensionDir, manifest.hooks.onDestroy, projectPath);

@@ -92,7 +92,7 @@ describe('extension-manager', () => {
       const extDir = path.join(tmpDir, 'ext-a@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
-        path.join(extDir, 'extension.json'),
+        path.join(extDir, 'manifest.json'),
         JSON.stringify({
           name: 'ext-a',
           version: '1.0.0',
@@ -117,7 +117,7 @@ describe('extension-manager', () => {
       const extDir = path.join(tmpDir, 'ext-fresh@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
-        path.join(extDir, 'extension.json'),
+        path.join(extDir, 'manifest.json'),
         JSON.stringify({
           name: 'ext-fresh',
           version: '1.0.0',
@@ -137,7 +137,7 @@ describe('extension-manager', () => {
       const extDir = path.join(tmpDir, 'ext-nohook@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
-        path.join(extDir, 'extension.json'),
+        path.join(extDir, 'manifest.json'),
         JSON.stringify({
           name: 'ext-nohook',
           version: '1.0.0',
@@ -158,7 +158,7 @@ describe('extension-manager', () => {
       const extDir = path.join(tmpDir, 'ext-hook@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
-        path.join(extDir, 'extension.json'),
+        path.join(extDir, 'manifest.json'),
         JSON.stringify({
           name: 'ext-hook',
           version: '1.0.0',
@@ -190,13 +190,14 @@ describe('extension-manager', () => {
       const extDir = path.join(tmpDir, 'new-ext@2.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
-        path.join(extDir, 'extension.json'),
+        path.join(extDir, 'manifest.json'),
         JSON.stringify({
           name: 'new-ext',
           version: '2.0.0',
           description: 'New',
           type: 'mcp',
           commands: {},
+          mcp: { transport: 'stdio', command: 'node', args: ['index.js'] },
         }),
       );
 
@@ -219,7 +220,7 @@ describe('extension-manager', () => {
       const extDir = path.join(tmpDir, 'ext-a@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
-        path.join(extDir, 'extension.json'),
+        path.join(extDir, 'manifest.json'),
         JSON.stringify({
           name: 'ext-a',
           version: '1.0.0',
@@ -240,7 +241,7 @@ describe('extension-manager', () => {
       const extDir = path.join(tmpDir, 'ext-a@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
-        path.join(extDir, 'extension.json'),
+        path.join(extDir, 'manifest.json'),
         JSON.stringify({
           name: 'ext-a',
           version: '1.0.0',
