@@ -82,7 +82,7 @@ describe('useSetActiveProject', () => {
     await waitFor(() =>
       expect(mockFetchApi).toHaveBeenCalledWith('/api/projects/active', {
         method: 'PUT',
-        body: { path: '/path/to/project' },
+        body: { projectPath: '/path/to/project' },
       }),
     );
   });

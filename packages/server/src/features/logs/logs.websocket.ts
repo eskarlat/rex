@@ -9,7 +9,6 @@ interface SocketLike {
 }
 
 const POLL_INTERVAL_MS = 2000;
-const LOG_FILE_NAME = 'renre-kit.log';
 
 interface WatcherState {
   offset: number;
@@ -44,7 +43,8 @@ export function readNewLines(filePath: string, offset: number): ReadResult {
 }
 
 export function getLogFilePath(): string {
-  return path.join(LOGS_DIR, LOG_FILE_NAME);
+  const date = new Date().toISOString().slice(0, 10);
+  return path.join(LOGS_DIR, `renre-kit-${date}.log`);
 }
 
 const logsWebsocket: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {

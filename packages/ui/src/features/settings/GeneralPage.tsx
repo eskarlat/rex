@@ -14,14 +14,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   useSettings,
   useUpdateSettings,
-  type Settings,
+  type GlobalConfig,
 } from '@/core/hooks/use-settings';
 
+interface SettingsForm {
+  port: number;
+  theme: 'light' | 'dark';
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
 export function GeneralPage() {
-  const { data: settings, isLoading } = useSettings();
+  const { data: config, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  const form = useForm<Settings>({
+  const form = useForm<SettingsForm>({
     defaultValues: {
       port: 4200,
       theme: 'light',
@@ -30,13 +36,23 @@ export function GeneralPage() {
   });
 
   useEffect(() => {
-    if (settings) {
-      form.reset(settings);
+    if (config) {
+      const s = config.settings as Partial<SettingsForm>;
+      form.reset({
+        port: s.port ?? 4200,
+        theme: s.theme ?? 'light',
+        logLevel: s.logLevel ?? 'info',
+      });
     }
-  }, [settings, form]);
+  }, [config, form]);
 
-  function onSubmit(data: Settings) {
-    updateSettings.mutate(data);
+  function onSubmit(data: SettingsForm) {
+    if (!config) return;
+    const updated: GlobalConfig = {
+      ...config,
+      settings: { ...config.settings, ...data },
+    };
+    updateSettings.mutate(updated);
   }
 
   if (isLoading) {
@@ -65,7 +81,7 @@ export function GeneralPage() {
         <Select
           value={form.watch('theme')}
           onValueChange={(value) =>
-            form.setValue('theme', value as Settings['theme'])
+            form.setValue('theme', value as SettingsForm['theme'])
           }
         >
           <SelectTrigger id="theme">
@@ -83,7 +99,7 @@ export function GeneralPage() {
         <Select
           value={form.watch('logLevel')}
           onValueChange={(value) =>
-            form.setValue('logLevel', value as Settings['logLevel'])
+            form.setValue('logLevel', value as SettingsForm['logLevel'])
           }
         >
           <SelectTrigger id="logLevel">

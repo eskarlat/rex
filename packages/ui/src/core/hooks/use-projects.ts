@@ -33,7 +33,7 @@ export function useSetActiveProject(): UseMutationResult<void, Error, string> {
     mutationFn: (projectPath: string) =>
       fetchApi<void>('/api/projects/active', {
         method: 'PUT',
-        body: { path: projectPath },
+        body: { projectPath },
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['project'] });

@@ -147,7 +147,7 @@ describe('VaultPage', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(mockSetMutate).toHaveBeenCalledWith(
-      { key: 'NEW_SECRET', value: 'secret123', tags: ['tag1', 'tag2'] },
+      { key: 'NEW_SECRET', value: 'secret123', secret: true, tags: ['tag1', 'tag2'] },
       expect.anything(),
     );
   });
@@ -159,7 +159,7 @@ describe('VaultPage', () => {
     await userEvent.type(screen.getByLabelText('Value'), 'value123');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(mockSetMutate).toHaveBeenCalledWith(
-      { key: 'NO_TAGS_KEY', value: 'value123', tags: undefined },
+      { key: 'NO_TAGS_KEY', value: 'value123', secret: true, tags: undefined },
       expect.anything(),
     );
   });

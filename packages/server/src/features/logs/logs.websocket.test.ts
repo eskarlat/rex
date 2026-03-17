@@ -65,9 +65,10 @@ describe('readNewLines', () => {
 });
 
 describe('getLogFilePath', () => {
-  it('returns log file path', () => {
+  it('returns dated log file path', () => {
     const logPath = getLogFilePath();
-    expect(logPath).toContain('renre-kit.log');
+    const date = new Date().toISOString().slice(0, 10);
+    expect(logPath).toContain(`renre-kit-${date}.log`);
   });
 });
 

@@ -7,7 +7,13 @@ import { GeneralPage } from './GeneralPage';
 
 const mockMutate = vi.fn();
 let mockSettings: {
-  data: { port: number; theme: string; logLevel: string } | undefined;
+  data:
+    | {
+        registries: unknown[];
+        settings: { port: number; theme: string; logLevel: string };
+        extensionConfigs: Record<string, unknown>;
+      }
+    | undefined;
   isLoading: boolean;
 };
 let mockIsPending = false;
@@ -33,7 +39,11 @@ describe('GeneralPage', () => {
     vi.clearAllMocks();
     mockIsPending = false;
     mockSettings = {
-      data: { port: 4200, theme: 'light', logLevel: 'info' },
+      data: {
+        registries: [],
+        settings: { port: 4200, theme: 'light', logLevel: 'info' },
+        extensionConfigs: {},
+      },
       isLoading: false,
     };
   });
@@ -73,9 +83,9 @@ describe('GeneralPage', () => {
     );
 
     expect(mockMutate).toHaveBeenCalledWith({
-      port: 4200,
-      theme: 'light',
-      logLevel: 'info',
+      registries: [],
+      settings: { port: 4200, theme: 'light', logLevel: 'info' },
+      extensionConfigs: {},
     });
   });
 

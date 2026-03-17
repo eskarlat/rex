@@ -56,6 +56,7 @@ describe('createServer', () => {
     expect(routes).toContain('marketplace');
     expect(routes).toContain('vault');
     expect(routes).toContain('logs');
+    // Fastify radix tree compresses shared prefixes: 's' -> 'cheduler' / 'ettings'
     expect(routes).toContain('cheduler');
     expect(routes).toContain('ettings');
   });

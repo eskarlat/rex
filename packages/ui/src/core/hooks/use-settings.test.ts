@@ -35,7 +35,11 @@ beforeEach(() => {
 
 describe('useSettings', () => {
   it('fetches settings', async () => {
-    const data = { port: 4200, theme: 'dark' as const, logLevel: 'info' as const };
+    const data = {
+      registries: [],
+      settings: { port: 4200, theme: 'dark', logLevel: 'info' },
+      extensionConfigs: {},
+    };
     mockFetchApi.mockResolvedValueOnce(data);
 
     const { result } = renderHook(() => useSettings(), {
@@ -60,9 +64,13 @@ describe('useSettings', () => {
 });
 
 describe('useUpdateSettings', () => {
-  it('sends PUT request with partial settings', async () => {
+  it('sends PUT request with full config', async () => {
     mockFetchApi.mockResolvedValueOnce(undefined);
-    const input = { theme: 'light' as const };
+    const input = {
+      registries: [],
+      settings: { port: 4200, theme: 'light' },
+      extensionConfigs: {},
+    };
 
     const { result } = renderHook(() => useUpdateSettings(), {
       wrapper: createWrapper(),
@@ -83,16 +91,7 @@ describe('useUpdateSettings', () => {
 
 describe('useExtensionSettings', () => {
   it('fetches extension settings for a given name', async () => {
-    const data = {
-      schema: {
-        apiKey: {
-          type: 'secret' as const,
-          label: 'API Key',
-          required: true,
-        },
-      },
-      values: { apiKey: '***' },
-    };
+    const data = { apiKey: 'resolved-value', timeout: '30' };
     mockFetchApi.mockResolvedValueOnce(data);
 
     const { result } = renderHook(() => useExtensionSettings('my-ext'), {
@@ -107,7 +106,7 @@ describe('useExtensionSettings', () => {
   });
 
   it('encodes extension name in URL', async () => {
-    mockFetchApi.mockResolvedValueOnce({ schema: {}, values: {} });
+    mockFetchApi.mockResolvedValueOnce({});
 
     const { result } = renderHook(
       () => useExtensionSettings('my ext/special'),
@@ -131,9 +130,9 @@ describe('useExtensionSettings', () => {
 });
 
 describe('useUpdateExtensionSettings', () => {
-  it('sends PUT request with extension config data', async () => {
+  it('sends PUT request with fieldName and mapping', async () => {
     mockFetchApi.mockResolvedValueOnce(undefined);
-    const input = { apiKey: 'new-key', timeout: 30 };
+    const input = { fieldName: 'apiKey', mapping: { source: 'direct' as const, value: 'new-key' } };
 
     const { result } = renderHook(
       () => useUpdateExtensionSettings('my-ext'),

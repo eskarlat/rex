@@ -24,6 +24,7 @@ export function useVaultEntries(): UseQueryResult<VaultEntry[]> {
 interface SetVaultEntryVariables {
   key: string;
   value: string;
+  secret: boolean;
   tags?: string[];
 }
 
@@ -48,6 +49,7 @@ export function useSetVaultEntry(): UseMutationResult<
 interface UpdateVaultEntryVariables {
   key: string;
   value: string;
+  secret: boolean;
   tags?: string[];
 }
 
@@ -61,7 +63,7 @@ export function useUpdateVaultEntry(): UseMutationResult<
     mutationFn: (data: UpdateVaultEntryVariables) =>
       fetchApi<void>(`/api/vault/${encodeURIComponent(data.key)}`, {
         method: 'PUT',
-        body: { value: data.value, tags: data.tags },
+        body: { value: data.value, secret: data.secret, tags: data.tags },
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['vault'] });

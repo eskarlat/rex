@@ -7,15 +7,22 @@ import {
 } from '@tanstack/react-query';
 import { fetchApi } from '@/core/api/client';
 
-export interface Settings {
-  port: number;
-  theme: 'light' | 'dark';
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
+export interface RegistryConfig {
+  name: string;
+  url: string;
+  priority: number;
+  cacheTTL: number;
 }
 
-export interface ExtensionConfig {
-  schema: Record<string, ConfigField>;
-  values: Record<string, unknown>;
+export interface ConfigMapping {
+  source: 'vault' | 'direct';
+  value: string;
+}
+
+export interface GlobalConfig {
+  registries: RegistryConfig[];
+  settings: Record<string, unknown>;
+  extensionConfigs: Record<string, Record<string, ConfigMapping>>;
 }
 
 export interface ConfigField {
@@ -26,21 +33,21 @@ export interface ConfigField {
   required?: boolean;
 }
 
-export function useSettings(): UseQueryResult<Settings> {
-  return useQuery<Settings>({
+export function useSettings(): UseQueryResult<GlobalConfig> {
+  return useQuery<GlobalConfig>({
     queryKey: ['settings'],
-    queryFn: () => fetchApi<Settings>('/api/settings'),
+    queryFn: () => fetchApi<GlobalConfig>('/api/settings'),
   });
 }
 
 export function useUpdateSettings(): UseMutationResult<
   void,
   Error,
-  Partial<Settings>
+  GlobalConfig
 > {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, Partial<Settings>>({
-    mutationFn: (data: Partial<Settings>) =>
+  return useMutation<void, Error, GlobalConfig>({
+    mutationFn: (data: GlobalConfig) =>
       fetchApi<void>('/api/settings', {
         method: 'PUT',
         body: data,
@@ -51,13 +58,18 @@ export function useUpdateSettings(): UseMutationResult<
   });
 }
 
+export interface SetExtensionConfigVariables {
+  fieldName: string;
+  mapping: ConfigMapping;
+}
+
 export function useExtensionSettings(
   name: string
-): UseQueryResult<ExtensionConfig> {
-  return useQuery<ExtensionConfig>({
+): UseQueryResult<Record<string, unknown>> {
+  return useQuery<Record<string, unknown>>({
     queryKey: ['settings', 'extensions', name],
     queryFn: () =>
-      fetchApi<ExtensionConfig>(
+      fetchApi<Record<string, unknown>>(
         `/api/settings/extensions/${encodeURIComponent(name)}`
       ),
     enabled: !!name,
@@ -66,10 +78,10 @@ export function useExtensionSettings(
 
 export function useUpdateExtensionSettings(
   name: string
-): UseMutationResult<void, Error, Record<string, unknown>> {
+): UseMutationResult<void, Error, SetExtensionConfigVariables> {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, Record<string, unknown>>({
-    mutationFn: (data: Record<string, unknown>) =>
+  return useMutation<void, Error, SetExtensionConfigVariables>({
+    mutationFn: (data: SetExtensionConfigVariables) =>
       fetchApi<void>(
         `/api/settings/extensions/${encodeURIComponent(name)}`,
         {

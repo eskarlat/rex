@@ -32,7 +32,7 @@ describe('useLogSocket', () => {
     });
 
     expect(WebSocket).toHaveBeenCalledWith(
-      `ws://${window.location.host}/ws/logs`
+      `ws://${window.location.host}/api/logs`
     );
   });
 

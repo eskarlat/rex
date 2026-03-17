@@ -23,7 +23,7 @@ export function useLogSocket(): LogSocketResult {
     if (wsRef.current) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/logs`);
+    const ws = new WebSocket(`${protocol}//${window.location.host}/api/logs`);
 
     ws.onopen = () => {
       setConnected(true);

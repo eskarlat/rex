@@ -54,7 +54,7 @@ describe('useSetVaultEntry', () => {
       wrapper: createWrapper(),
     });
 
-    const data = { key: 'NEW_KEY', value: 'secret-value', tags: ['env'] };
+    const data = { key: 'NEW_KEY', value: 'secret-value', secret: true, tags: ['env'] };
 
     act(() => {
       result.current.mutate(data);
@@ -77,7 +77,7 @@ describe('useUpdateVaultEntry', () => {
       wrapper: createWrapper(),
     });
 
-    const data = { key: 'my/special.key', value: 'new-value', tags: ['updated'] };
+    const data = { key: 'my/special.key', value: 'new-value', secret: false, tags: ['updated'] };
 
     act(() => {
       result.current.mutate(data);
@@ -88,7 +88,7 @@ describe('useUpdateVaultEntry', () => {
         `/api/vault/${encodeURIComponent('my/special.key')}`,
         {
           method: 'PUT',
-          body: { value: 'new-value', tags: ['updated'] },
+          body: { value: 'new-value', secret: false, tags: ['updated'] },
         },
       ),
     );

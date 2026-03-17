@@ -42,7 +42,7 @@ export function VaultPage(): React.ReactElement {
       .map((t) => t.trim())
       .filter(Boolean);
     setEntry.mutate(
-      { key: newKey, value: newValue, tags: tags.length > 0 ? tags : undefined },
+      { key: newKey, value: newValue, secret: true, tags: tags.length > 0 ? tags : undefined },
       {
         onSuccess: () => {
           setOpen(false);

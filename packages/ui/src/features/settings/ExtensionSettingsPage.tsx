@@ -3,8 +3,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   useExtensionSettings,
   useUpdateExtensionSettings,
+  type ConfigMapping,
 } from '@/core/hooks/use-settings';
 import { ConfigForm } from './components/ConfigForm';
+import type { ConfigField } from '@/core/hooks/use-settings';
 
 export function ExtensionSettingsPage() {
   const { name } = useParams<{ name: string }>();
@@ -41,8 +43,21 @@ function ExtensionSettingsContent({ name }: { name: string }) {
     );
   }
 
-  function handleSave(values: Record<string, unknown>) {
-    updateSettings.mutate(values);
+  const schema = (config as Record<string, unknown>).schema as
+    | Record<string, ConfigField>
+    | undefined;
+  const values = (config as Record<string, unknown>).values as
+    | Record<string, unknown>
+    | undefined;
+
+  function handleSave(formValues: Record<string, unknown>) {
+    for (const [fieldName, value] of Object.entries(formValues)) {
+      const mapping: ConfigMapping = {
+        source: 'direct',
+        value: String(value),
+      };
+      updateSettings.mutate({ fieldName, mapping });
+    }
   }
 
   return (
@@ -52,8 +67,8 @@ function ExtensionSettingsContent({ name }: { name: string }) {
         <p className="text-muted-foreground">Extension settings</p>
       </div>
       <ConfigForm
-        schema={config.schema}
-        values={config.values}
+        schema={schema ?? {}}
+        values={values ?? config as Record<string, unknown>}
         onSave={handleSave}
         isSaving={updateSettings.isPending}
       />
