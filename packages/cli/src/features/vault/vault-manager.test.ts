@@ -8,14 +8,30 @@ vi.mock('../../shared/fs-helpers.js', () => ({
   ensureDirSync: vi.fn(),
 }));
 
-vi.mock('../../shared/platform.js', () => ({
-  getHardwareUUID: vi.fn(() => 'test-hardware-uuid-1234'),
-}));
-
 vi.mock('../../core/paths/paths.js', () => ({
   VAULT_PATH: '/tmp/test-vault.json',
   GLOBAL_DIR: '/tmp/test-global',
 }));
+
+const STABLE_KEY = crypto.randomBytes(32).toString('hex');
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    default: {
+      ...(actual['default'] as Record<string, unknown>),
+      existsSync: vi.fn((p: string) => {
+        if (String(p).endsWith('.vault-key')) return true;
+        return false;
+      }),
+      readFileSync: vi.fn((p: string) => {
+        if (String(p).endsWith('.vault-key')) return STABLE_KEY;
+        throw new Error(`Unexpected read: ${p}`);
+      }),
+      writeFileSync: vi.fn(),
+    },
+  };
+});
 
 describe('vault-manager', () => {
   beforeEach(() => {

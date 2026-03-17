@@ -12,6 +12,11 @@ vi.mock('./core/event-bus/event-bus.js', () => ({
 }));
 vi.mock('./core/paths/paths.js', () => ({
   getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
+  getManifestPath: vi.fn().mockImplementation((p: string) => `${p}/.renre-kit/manifest.json`),
+}));
+vi.mock('./shared/fs-helpers.js', () => ({
+  pathExistsSync: vi.fn().mockReturnValue(true),
+  readJsonSync: vi.fn().mockReturnValue({ name: 'my-project', version: '1.0.0', created_at: '' }),
 }));
 const mockGetConnection = vi.fn();
 const mockExecuteToolCall = vi.fn().mockResolvedValue('mcp result');
@@ -236,12 +241,23 @@ describe('cli', () => {
   });
 
   it('runs ext:restart command', async () => {
+    vi.mocked(getActivated).mockReturnValue({ 'my-ext': '1.0.0' });
+    mockLoadManifest.mockReturnValue({
+      name: 'my-ext',
+      version: '1.0.0',
+      description: 'Test MCP',
+      type: 'mcp',
+      mcp: { transport: 'stdio', command: 'node', args: ['server.js'] },
+      commands: {},
+    });
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:restart', 'my-ext']);
     expect(handleExtRestart).toHaveBeenCalledWith(expect.objectContaining({
       name: 'my-ext',
     }));
+    vi.mocked(getActivated).mockReturnValue({});
+    mockLoadManifest.mockImplementation(() => { throw new Error('no manifest'); });
   });
 
   it('runs registry:sync command', async () => {
@@ -356,7 +372,7 @@ describe('cli', () => {
     expect(mockLoadCommandHandler).toHaveBeenCalled();
     expect(mockExecuteCommand).toHaveBeenCalledWith(
       handler,
-      expect.objectContaining({ projectPath: '/mock/project' }),
+      expect.objectContaining({ projectPath: '/mock/project', projectName: 'my-project' }),
     );
   });
 

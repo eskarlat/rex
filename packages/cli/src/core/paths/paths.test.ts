@@ -29,34 +29,35 @@ import {
 
 describe('paths', () => {
   const home = os.homedir();
+  const expectedGlobalDir = process.env['RENRE_KIT_HOME'] ?? path.join(home, '.renre-kit');
 
   describe('global paths', () => {
-    it('should define GLOBAL_DIR under home', () => {
-      expect(GLOBAL_DIR).toBe(path.join(home, '.renre-kit'));
+    it('should define GLOBAL_DIR under home or RENRE_KIT_HOME', () => {
+      expect(GLOBAL_DIR).toBe(expectedGlobalDir);
     });
 
     it('should define DB_PATH inside GLOBAL_DIR', () => {
-      expect(DB_PATH).toBe(path.join(home, '.renre-kit', 'db.sqlite'));
+      expect(DB_PATH).toBe(path.join(expectedGlobalDir, 'db.sqlite'));
     });
 
     it('should define EXTENSIONS_DIR inside GLOBAL_DIR', () => {
-      expect(EXTENSIONS_DIR).toBe(path.join(home, '.renre-kit', 'extensions'));
+      expect(EXTENSIONS_DIR).toBe(path.join(expectedGlobalDir, 'extensions'));
     });
 
     it('should define REGISTRIES_DIR inside GLOBAL_DIR', () => {
-      expect(REGISTRIES_DIR).toBe(path.join(home, '.renre-kit', 'registries'));
+      expect(REGISTRIES_DIR).toBe(path.join(expectedGlobalDir, 'registries'));
     });
 
     it('should define VAULT_PATH inside GLOBAL_DIR', () => {
-      expect(VAULT_PATH).toBe(path.join(home, '.renre-kit', 'vault.json'));
+      expect(VAULT_PATH).toBe(path.join(expectedGlobalDir, 'vault.json'));
     });
 
     it('should define CONFIG_PATH inside GLOBAL_DIR', () => {
-      expect(CONFIG_PATH).toBe(path.join(home, '.renre-kit', 'config.json'));
+      expect(CONFIG_PATH).toBe(path.join(expectedGlobalDir, 'config.json'));
     });
 
     it('should define LOGS_DIR inside GLOBAL_DIR', () => {
-      expect(LOGS_DIR).toBe(path.join(home, '.renre-kit', 'logs'));
+      expect(LOGS_DIR).toBe(path.join(expectedGlobalDir, 'logs'));
     });
   });
 
@@ -125,7 +126,7 @@ describe('paths', () => {
 
     it('getExtensionDir returns versioned extension path', () => {
       expect(getExtensionDir('my-ext', '1.0.0')).toBe(
-        path.join(home, '.renre-kit', 'extensions', 'my-ext@1.0.0'),
+        path.join(expectedGlobalDir, 'extensions', 'my-ext@1.0.0'),
       );
     });
 

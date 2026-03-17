@@ -384,6 +384,38 @@ describe('ext-config command', () => {
     expect(vaultSelect.options[0]?.hint).toContain('jira');
   });
 
+  it('should mask direct secret values in field label', async () => {
+    vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
+    vi.mocked(loadManifest).mockReturnValue({
+      name: 'jira',
+      version: '1.0.0',
+      description: 'Jira integration',
+      type: 'standard',
+      commands: {},
+      config: {
+        schema: {
+          apiToken: { type: 'string', description: 'API Token', secret: true },
+        },
+      },
+    });
+
+    const { getExtensionConfigMappings } = await import('../../config/config-manager.js');
+    vi.mocked(getExtensionConfigMappings).mockReturnValue({
+      apiToken: { source: 'direct', value: 'super-secret-value' },
+    });
+
+    vi.mocked(clack.select).mockResolvedValue('skip');
+
+    await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
+
+    expect(clack.select).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('********'),
+    }));
+    expect(clack.select).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.not.stringContaining('super-secret-value'),
+    }));
+  });
+
   it('should abort on cancel', async () => {
     vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
     vi.mocked(loadManifest).mockReturnValue({

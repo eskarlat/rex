@@ -10,7 +10,33 @@ vi.mock('node:child_process', () => ({
 
 import * as clack from '@clack/prompts';
 import { execFileSync } from 'node:child_process';
-import { handleSchedulerTrigger } from './scheduler-trigger.command.js';
+import { handleSchedulerTrigger, parseCommandString } from './scheduler-trigger.command.js';
+
+describe('parseCommandString', () => {
+  it('splits simple command on whitespace', () => {
+    expect(parseCommandString('echo hello')).toEqual(['echo', 'hello']);
+  });
+
+  it('handles double-quoted arguments', () => {
+    expect(parseCommandString('echo "hello world"')).toEqual(['echo', 'hello world']);
+  });
+
+  it('handles single-quoted arguments', () => {
+    expect(parseCommandString("echo 'hello world'")).toEqual(['echo', 'hello world']);
+  });
+
+  it('handles escaped spaces', () => {
+    expect(parseCommandString('echo hello\\ world')).toEqual(['echo', 'hello world']);
+  });
+
+  it('handles mixed quotes and args', () => {
+    expect(parseCommandString('cmd --msg "hello world" --flag')).toEqual(['cmd', '--msg', 'hello world', '--flag']);
+  });
+
+  it('returns empty array for empty string', () => {
+    expect(parseCommandString('')).toEqual([]);
+  });
+});
 
 describe('scheduler-trigger command', () => {
   let mockDb: {

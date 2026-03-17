@@ -5,7 +5,7 @@ import type { PluginsJson } from '../../../core/types/index.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import type { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getExtensionConfigMappings } from '../../config/config-manager.js';
-import { getEntry } from '../../vault/vault-manager.js';
+import { hasEntry } from '../../vault/vault-manager.js';
 
 export interface InstalledExtension {
   name: string;
@@ -98,7 +98,7 @@ export function validateVaultKeys(extensionName: string): string[] {
   const missing: string[] = [];
 
   for (const [field, mapping] of Object.entries(mappings)) {
-    if (mapping.source === 'vault' && !getEntry(mapping.value)) {
+    if (mapping.source === 'vault' && !hasEntry(mapping.value)) {
       missing.push(`${field} → vault:${mapping.value}`);
     }
   }

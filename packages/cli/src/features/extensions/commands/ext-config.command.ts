@@ -23,9 +23,14 @@ function formatCurrentLabel(
   fieldSchema: ConfigSchemaField,
 ): string {
   if (current) {
-    const display = current.source === 'vault'
-      ? `vault:${current.value}`
-      : current.value;
+    let display: string;
+    if (current.source === 'vault') {
+      display = `vault:${current.value}`;
+    } else if (fieldSchema.secret) {
+      display = '********';
+    } else {
+      display = current.value;
+    }
     return `(current: ${display})`;
   }
   if (fieldSchema.default !== undefined) {

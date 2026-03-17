@@ -29,6 +29,9 @@ import { ProjectManager } from './core/project/project-manager.js';
 import { EventBus } from './core/event-bus/event-bus.js';
 import { loadManifest } from './features/extensions/manifest/manifest-loader.js';
 import { loadCommandHandler, executeCommand } from './features/extensions/runtime/standard-runtime.js';
+import { getManifestPath } from './core/paths/paths.js';
+import { pathExistsSync, readJsonSync } from './shared/fs-helpers.js';
+import type { ProjectManifest } from './core/types/project.types.js';
 
 function detectProject(): string | null {
   const bus = new EventBus();
@@ -57,12 +60,22 @@ function resolveExtensionVersion(name: string, version: string): string {
   return ext.version;
 }
 
+function getProjectName(projectPath: string): string {
+  const manifestPath = getManifestPath(projectPath);
+  if (pathExistsSync(manifestPath)) {
+    const manifest = readJsonSync<ProjectManifest>(manifestPath);
+    return manifest.name;
+  }
+  return '';
+}
+
 function registerExtensionCommands(
   program: Command,
   projectPath: string,
   connectionManager: ConnectionManager,
 ): void {
   const plugins = getActivated(projectPath);
+  const projectName = getProjectName(projectPath);
 
   for (const [extName, version] of Object.entries(plugins)) {
     if (!version) continue;
@@ -82,20 +95,22 @@ function registerExtensionCommands(
       const fullName = `${extName}:${cmdName}`;
       const description = cmdDef.description ?? `Run ${fullName}`;
 
+      const capturedManifest = manifest;
       program
         .command(`${fullName} [args...]`)
         .description(description)
         .allowUnknownOption(true)
-        .action(async (args: string[], opts: Record<string, unknown>) => {
+        .action(async (args: string[], _opts: unknown, command: Command) => {
+          const parsedOpts: Record<string, unknown> = command.opts();
           const context = {
-            projectName: extName,
+            projectName,
             projectPath,
-            args: { _positional: args, ...opts },
+            args: { _positional: args, ...parsedOpts },
             config: resolvedConfig,
           };
 
-          if (manifest.type === 'mcp' && manifest.mcp) {
-            connectionManager.getConnection(extName, manifest.mcp, resolvedConfig);
+          if (capturedManifest.type === 'mcp' && capturedManifest.mcp) {
+            connectionManager.getConnection(extName, capturedManifest.mcp, resolvedConfig);
             const result = await connectionManager.executeToolCall(
               extName,
               cmdDef.handler,
@@ -241,9 +256,22 @@ export function createProgram(): Command {
     .command('ext:restart <name>')
     .description('Restart an MCP extension connection')
     .action(async (name: string) => {
+      const projectDir = detectProject();
+      const plugins = getActivated(projectDir ?? process.cwd());
+      const extVersion = plugins[name];
+      if (!extVersion) {
+        throw new Error(`Extension "${name}" is not activated in this project.`);
+      }
+      const extDir = getExtensionDir(name, extVersion);
+      const extManifest = loadManifest(extDir);
+      if (!extManifest.mcp) {
+        throw new Error(`Extension "${name}" is not an MCP extension.`);
+      }
+      const configSchema = extManifest.config?.schema ?? {};
+      const resolved = resolveExtensionConfig(name, configSchema, projectDir ?? undefined);
       await handleExtRestart({
         name,
-        restartFn: (extName) => connectionManager.restart(extName, { transport: 'stdio' }),
+        restartFn: (extName) => connectionManager.restart(extName, extManifest.mcp!, resolved),
       });
     });
 

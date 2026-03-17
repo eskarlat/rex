@@ -9,7 +9,7 @@ vi.mock('../../config/config-manager.js', () => ({
   getExtensionConfigMappings: vi.fn().mockReturnValue({}),
 }));
 vi.mock('../../vault/vault-manager.js', () => ({
-  getEntry: vi.fn().mockReturnValue(undefined),
+  hasEntry: vi.fn().mockReturnValue(false),
   getDecryptedValue: vi.fn().mockReturnValue(undefined),
 }));
 
@@ -24,7 +24,7 @@ import {
   validateVaultKeys,
 } from './extension-manager.js';
 import { getExtensionConfigMappings } from '../../config/config-manager.js';
-import { getEntry } from '../../vault/vault-manager.js';
+import { hasEntry } from '../../vault/vault-manager.js';
 
 describe('extension-manager', () => {
   let db: Database.Database;
@@ -352,7 +352,7 @@ describe('extension-manager', () => {
         apiToken: { source: 'vault', value: 'missing-key' },
         baseUrl: { source: 'direct', value: 'https://example.com' },
       });
-      vi.mocked(getEntry).mockReturnValue(undefined);
+      vi.mocked(hasEntry).mockReturnValue(false);
 
       const missing = validateVaultKeys('my-ext');
       expect(missing).toEqual(['apiToken → vault:missing-key']);
@@ -362,7 +362,7 @@ describe('extension-manager', () => {
       vi.mocked(getExtensionConfigMappings).mockReturnValue({
         apiToken: { source: 'vault', value: 'my-token' },
       });
-      vi.mocked(getEntry).mockReturnValue({ value: 'secret', secret: true, tags: [] });
+      vi.mocked(hasEntry).mockReturnValue(true);
 
       expect(validateVaultKeys('my-ext')).toEqual([]);
     });

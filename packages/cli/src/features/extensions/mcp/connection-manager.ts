@@ -137,6 +137,7 @@ export class ConnectionManager {
       try {
         const result = await this.sendRequest(extensionName, internal, toolName, args);
         internal.metadata.retryCount = 0;
+        this.resetIdleTimer(extensionName);
         return result;
       } catch (err) {
         if (!isCrashError(err)) {

@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import path from 'node:path';
+import fs from 'node:fs';
 import { VAULT_PATH, GLOBAL_DIR } from '../../core/paths/paths.js';
 import {
   pathExistsSync,
@@ -6,7 +8,6 @@ import {
   writeJsonSync,
   ensureDirSync,
 } from '../../shared/fs-helpers.js';
-import { getHardwareUUID } from '../../shared/platform.js';
 import {
   ExtensionError,
   ErrorCode,
@@ -15,6 +16,7 @@ import {
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const KEY_LENGTH = 32;
+const KEY_FILE = path.join(GLOBAL_DIR, '.vault-key');
 
 export interface VaultEntry {
   value: string;
@@ -32,12 +34,14 @@ export interface VaultListEntry {
 type VaultData = Record<string, VaultEntry>;
 
 function deriveKey(): Buffer {
-  const uuid = getHardwareUUID();
-  return crypto
-    .createHash('sha256')
-    .update(uuid)
-    .digest()
-    .subarray(0, KEY_LENGTH);
+  ensureDirSync(GLOBAL_DIR);
+  if (fs.existsSync(KEY_FILE)) {
+    const hex = fs.readFileSync(KEY_FILE, 'utf-8').trim();
+    return Buffer.from(hex, 'hex');
+  }
+  const key = crypto.randomBytes(KEY_LENGTH);
+  fs.writeFileSync(KEY_FILE, key.toString('hex'), { mode: 0o600 });
+  return key;
 }
 
 function encrypt(plaintext: string): string {
@@ -155,6 +159,11 @@ export function listEntries(): VaultListEntry[] {
 export function getDecryptedValue(key: string): string | undefined {
   const entry = getEntry(key);
   return entry?.value;
+}
+
+export function hasEntry(key: string): boolean {
+  const data = readVault();
+  return key in data;
 }
 
 export function listKeys(): string[] {

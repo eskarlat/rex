@@ -13,6 +13,46 @@ interface SchedulerTriggerOptions {
   db: Database.Database;
 }
 
+export function parseCommandString(input: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let inSingle = false;
+  let inDouble = false;
+  let escaped = false;
+
+  for (const ch of input) {
+    if (escaped) {
+      current += ch;
+      escaped = false;
+      continue;
+    }
+    if (ch === '\\' && !inSingle) {
+      escaped = true;
+      continue;
+    }
+    if (ch === "'" && !inDouble) {
+      inSingle = !inSingle;
+      continue;
+    }
+    if (ch === '"' && !inSingle) {
+      inDouble = !inDouble;
+      continue;
+    }
+    if (/\s/.test(ch) && !inSingle && !inDouble) {
+      if (current.length > 0) {
+        tokens.push(current);
+        current = '';
+      }
+      continue;
+    }
+    current += ch;
+  }
+  if (current.length > 0) {
+    tokens.push(current);
+  }
+  return tokens;
+}
+
 export function handleSchedulerTrigger(options: SchedulerTriggerOptions): void {
   const task = options.db
     .prepare('SELECT * FROM scheduled_tasks WHERE id = ?')
@@ -30,7 +70,7 @@ export function handleSchedulerTrigger(options: SchedulerTriggerOptions): void {
   let output = '';
 
   try {
-    const parts = task.command.split(/\s+/);
+    const parts = parseCommandString(task.command);
     const cmd = parts[0] ?? '';
     const args = parts.slice(1);
     const result = execFileSync(cmd, args, {
