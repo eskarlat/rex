@@ -6,6 +6,7 @@ module.exports = {
     ecmaVersion: 2022,
     sourceType: 'module',
     project: ['./packages/*/tsconfig.lint.json', './packages/*/tsconfig.json'],
+    tsconfigRootDir: __dirname,
   },
   plugins: ['@typescript-eslint', 'sonarjs'],
   extends: [
