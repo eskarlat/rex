@@ -31,7 +31,7 @@ vi.mock('../../extensions/manager/extension-manager.js', () => ({
 }));
 
 vi.mock('../../../core/paths/paths.js', () => ({
-  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}/${version}`),
+  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
 }));
 
 import * as clack from '@clack/prompts';

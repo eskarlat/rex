@@ -180,6 +180,31 @@ describe('extension-manager', () => {
       expect(plugins['ext-hook']).toBeDefined();
     });
 
+    it('emits ext:activate event when bus is provided', async () => {
+      const extDir = path.join(tmpDir, 'ext-bus@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-bus',
+          version: '1.0.0',
+          description: 'Test',
+          type: 'standard',
+          commands: {},
+        }),
+      );
+
+      const mockBus = { emit: vi.fn().mockResolvedValue(undefined) };
+      await activate('ext-bus', '1.0.0', projectDir, extDir, mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus);
+
+      expect(mockBus.emit).toHaveBeenCalledWith('ext:activate', {
+        type: 'ext:activate',
+        extensionName: 'ext-bus',
+        version: '1.0.0',
+        projectPath: projectDir,
+      });
+    });
+
     it('preserves existing plugins when activating new one', async () => {
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
       fs.writeFileSync(
@@ -235,6 +260,33 @@ describe('extension-manager', () => {
       const plugins = JSON.parse(fs.readFileSync(pluginsPath, 'utf-8'));
       expect(plugins['ext-a']).toBeUndefined();
       expect(plugins['ext-b']).toBe('2.0.0');
+    });
+
+    it('emits ext:deactivate event when bus is provided', async () => {
+      const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
+      fs.writeFileSync(pluginsPath, JSON.stringify({ 'ext-bus': '1.0.0' }));
+
+      const extDir = path.join(tmpDir, 'ext-bus@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-bus',
+          version: '1.0.0',
+          description: 'Test',
+          type: 'standard',
+          commands: {},
+        }),
+      );
+
+      const mockBus = { emit: vi.fn().mockResolvedValue(undefined) };
+      await deactivate('ext-bus', projectDir, extDir, mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus);
+
+      expect(mockBus.emit).toHaveBeenCalledWith('ext:deactivate', {
+        type: 'ext:deactivate',
+        extensionName: 'ext-bus',
+        projectPath: projectDir,
+      });
     });
 
     it('handles deactivating when plugins.json does not exist', async () => {

@@ -38,7 +38,7 @@ export function getManifestPath(projectPath: string): string {
 }
 
 export function getExtensionDir(name: string, version: string): string {
-  return path.join(EXTENSIONS_DIR, name, version);
+  return path.join(EXTENSIONS_DIR, `${name}@${version}`);
 }
 
 export function getSkillsDir(

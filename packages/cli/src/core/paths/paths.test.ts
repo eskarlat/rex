@@ -125,7 +125,7 @@ describe('paths', () => {
 
     it('getExtensionDir returns versioned extension path', () => {
       expect(getExtensionDir('my-ext', '1.0.0')).toBe(
-        path.join(home, '.renre-kit', 'extensions', 'my-ext', '1.0.0'),
+        path.join(home, '.renre-kit', 'extensions', 'my-ext@1.0.0'),
       );
     });
 

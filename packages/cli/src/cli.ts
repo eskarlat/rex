@@ -18,13 +18,17 @@ import { handleCapabilities } from './features/skills/commands/capabilities.comm
 import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
 import { handleVaultList } from './features/vault/commands/vault-list.command.js';
 import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
+import { handleSchedulerList } from './features/scheduler/commands/scheduler-list.command.js';
+import { handleSchedulerTrigger } from './features/scheduler/commands/scheduler-trigger.command.js';
 import { getDb } from './core/database/database.js';
 import { getExtensionDir } from './core/paths/paths.js';
 import { ConnectionManager } from './features/extensions/mcp/connection-manager.js';
-import { loadGlobalConfig } from './features/config/config-manager.js';
+import { loadGlobalConfig, resolveExtensionConfig } from './features/config/config-manager.js';
 import { listInstalled, getActivated } from './features/extensions/manager/extension-manager.js';
 import { ProjectManager } from './core/project/project-manager.js';
 import { EventBus } from './core/event-bus/event-bus.js';
+import { loadManifest } from './features/extensions/manifest/manifest-loader.js';
+import { loadCommandHandler, executeCommand } from './features/extensions/runtime/standard-runtime.js';
 
 function detectProject(): string | null {
   const bus = new EventBus();
@@ -51,6 +55,67 @@ function resolveExtensionVersion(name: string, version: string): string {
     throw new Error(`Extension "${name}" is not installed.`);
   }
   return ext.version;
+}
+
+function registerExtensionCommands(
+  program: Command,
+  projectPath: string,
+  connectionManager: ConnectionManager,
+): void {
+  const plugins = getActivated(projectPath);
+
+  for (const [extName, version] of Object.entries(plugins)) {
+    if (!version) continue;
+
+    const extDir = getExtensionDir(extName, version);
+    let manifest;
+    try {
+      manifest = loadManifest(extDir);
+    } catch {
+      continue; // Skip extensions with missing/invalid manifests
+    }
+
+    const configSchema = manifest.config?.schema ?? {};
+    const resolvedConfig = resolveExtensionConfig(extName, configSchema, projectPath);
+
+    for (const [cmdName, cmdDef] of Object.entries(manifest.commands)) {
+      const fullName = `${extName}:${cmdName}`;
+      const description = cmdDef.description ?? `Run ${fullName}`;
+
+      program
+        .command(`${fullName} [args...]`)
+        .description(description)
+        .allowUnknownOption(true)
+        .action(async (args: string[], opts: Record<string, unknown>) => {
+          const context = {
+            projectName: extName,
+            projectPath,
+            args: { _positional: args, ...opts },
+            config: resolvedConfig,
+          };
+
+          if (manifest.type === 'mcp' && manifest.mcp) {
+            connectionManager.getConnection(extName, manifest.mcp, resolvedConfig);
+            const result = await connectionManager.executeToolCall(
+              extName,
+              cmdDef.handler,
+              context.args,
+            );
+            if (result !== undefined) {
+              process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
+              process.stdout.write('\n');
+            }
+          } else {
+            const handler = await loadCommandHandler(extDir, cmdDef.handler);
+            const result = await executeCommand(handler, context);
+            if (result !== undefined) {
+              process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
+              process.stdout.write('\n');
+            }
+          }
+        });
+    }
+  }
 }
 
 export function createProgram(): Command {
@@ -260,6 +325,21 @@ export function createProgram(): Command {
       handleVaultRemove({ key });
     });
 
+  // Scheduler commands
+  program
+    .command('scheduler:list')
+    .description('List all scheduled tasks for the current project')
+    .action(() => {
+      handleSchedulerList({ projectPath: detectProject(), db: getDb() });
+    });
+
+  program
+    .command('scheduler:trigger <id>')
+    .description('Manually trigger a scheduled task')
+    .action((taskId: string) => {
+      handleSchedulerTrigger({ taskId, db: getDb() });
+    });
+
   // Skills command
   program
     .command('capabilities')
@@ -268,6 +348,12 @@ export function createProgram(): Command {
       const projectPath = requireProject();
       handleCapabilities({ projectPath });
     });
+
+  // Dynamic extension commands: load from activated extensions' manifests
+  const projectPath = detectProject();
+  if (projectPath) {
+    registerExtensionCommands(program, projectPath, connectionManager);
+  }
 
   return program;
 }
