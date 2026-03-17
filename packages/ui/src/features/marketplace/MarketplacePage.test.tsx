@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -62,5 +62,38 @@ describe('MarketplacePage', () => {
   it('shows active extensions by default', () => {
     renderWithProviders(<MarketplacePage />);
     expect(screen.getByText('active-ext')).toBeInTheDocument();
+  });
+});
+
+describe('MarketplacePage loading', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('shows loading skeleton when isLoading', async () => {
+    vi.doMock('@/core/hooks/use-extensions', () => ({
+      useMarketplace: () => ({ data: undefined, isLoading: true }),
+      useInstallExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useActivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useDeactivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useRemoveExtension: () => ({ mutate: vi.fn(), isPending: false }),
+    }));
+
+    const { MarketplacePage: LoadingPage } = await import('./MarketplacePage');
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <LoadingPage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText('Marketplace')).toBeInTheDocument();
+    // When loading, skeletons are rendered instead of tabs
+    expect(screen.queryByText('Active (0)')).not.toBeInTheDocument();
   });
 });

@@ -22,6 +22,8 @@ export default defineConfig({
         'src/**/*.test.tsx',
         'src/test-setup.ts',
         'src/main.tsx',
+        'src/App.tsx',
+        'src/components/ui/**',
       ],
       thresholds: {
         statements: 86,

@@ -79,4 +79,28 @@ describe('PinPrompt', () => {
     await userEvent.type(input, 'abcd1234extra');
     expect(input).toHaveValue('1234');
   });
+
+  it('shows error when PIN is too short on form submit', async () => {
+    render(<PinPrompt onSuccess={vi.fn()} />);
+    const input = screen.getByLabelText('PIN');
+    await userEvent.type(input, '12');
+    // Dispatch submit event directly on the form
+    const form = input.closest('form');
+    expect(form).not.toBeNull();
+    form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(
+      await screen.findByText('PIN must be 4 digits')
+    ).toBeInTheDocument();
+  });
+
+  it('shows generic error for non-ApiError failures', async () => {
+    mockFetchApi.mockRejectedValueOnce(new Error('Network failure'));
+    render(<PinPrompt onSuccess={vi.fn()} />);
+    const input = screen.getByLabelText('PIN');
+    await userEvent.type(input, '1234');
+    await userEvent.click(screen.getByText('Submit'));
+    expect(
+      await screen.findByText('An error occurred. Please try again.')
+    ).toBeInTheDocument();
+  });
 });
