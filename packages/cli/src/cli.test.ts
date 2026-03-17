@@ -421,4 +421,22 @@ describe('cli', () => {
     expect(cmd).toBeDefined();
     expect(cmd?.description()).toBe('Run my-tool:run');
   });
+
+  it('shows suggestions for unknown commands', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    let errorMessage = '';
+    program.configureOutput({
+      writeErr: (str: string) => { errorMessage += str; },
+      writeOut: () => {},
+    });
+
+    try {
+      await program.parseAsync(['node', 'renre-kit', 'inti']);
+    } catch {
+      // Commander throws on unknown command with exitOverride
+    }
+
+    expect(errorMessage).toContain('Did you mean');
+  });
 });

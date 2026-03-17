@@ -128,7 +128,8 @@ export function createProgram(): Command {
     .description('RenreKit CLI — lightweight plugin-driven development CLI')
     .option('--verbose', 'Enable verbose output')
     .option('--quiet', 'Suppress non-essential output')
-    .option('--force', 'Skip confirmation prompts');
+    .option('--force', 'Skip confirmation prompts')
+    .showSuggestionAfterError(true);
 
   // Project commands
   program
