@@ -22,6 +22,7 @@ import { interpolate } from '../../../shared/interpolation.js';
 interface InternalConnection {
   metadata: McpConnection;
   config: McpConfig;
+  resolvedConfig: Record<string, unknown>;
   stdioProcess?: McpStdioProcess;
   sseConnection?: McpSseConnection;
   lastActivity: number;
@@ -32,10 +33,13 @@ interface InternalConnection {
 type LifecycleMode = 'cli' | 'dashboard';
 
 const CLI_IDLE_TIMEOUT_MS = 30_000;
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 1000;
 
 export class ConnectionManager {
   private readonly connections = new Map<string, InternalConnection>();
   private mode: LifecycleMode = 'cli';
+  private backoffBaseMs = BASE_BACKOFF_MS;
 
   getConnection(
     extensionName: string,
@@ -71,6 +75,22 @@ export class ConnectionManager {
     internal.lastActivity = Date.now();
     this.resetIdleTimer(extensionName);
 
+    try {
+      return await this.sendRequest(extensionName, internal, toolName, args);
+    } catch (err) {
+      if (isCrashError(err)) {
+        return this.retryWithBackoff(extensionName, internal, toolName, args);
+      }
+      throw err;
+    }
+  }
+
+  private async sendRequest(
+    extensionName: string,
+    internal: InternalConnection,
+    toolName: string,
+    args: Record<string, unknown>,
+  ): Promise<unknown> {
     const requestId = ++internal.requestId;
     const request = buildToolCallRequest(toolName, args, requestId);
 
@@ -88,6 +108,49 @@ export class ConnectionManager {
       extensionName,
       ErrorCode.MCP_CONNECTION_FAILED,
       `Connection for ${extensionName} is not properly initialized`,
+    );
+  }
+
+  private async retryWithBackoff(
+    extensionName: string,
+    internal: InternalConnection,
+    toolName: string,
+    args: Record<string, unknown>,
+  ): Promise<unknown> {
+    let retries = 0;
+    while (retries < MAX_RETRIES) {
+      retries++;
+      internal.metadata.retryCount = retries;
+      const delay = this.backoffBaseMs * Math.pow(2, retries - 1);
+      await sleep(delay);
+
+      await this.stopConnection(extensionName, internal);
+      const restarted = this.startConnection(
+        extensionName,
+        internal.config,
+        internal.resolvedConfig,
+      );
+      internal.stdioProcess = restarted.stdioProcess;
+      internal.sseConnection = restarted.sseConnection;
+      internal.metadata.state = 'running';
+
+      try {
+        const result = await this.sendRequest(extensionName, internal, toolName, args);
+        internal.metadata.retryCount = 0;
+        return result;
+      } catch (err) {
+        if (!isCrashError(err)) {
+          throw err;
+        }
+      }
+    }
+
+    internal.metadata.state = 'errored';
+    internal.metadata.lastError = `Failed after ${MAX_RETRIES} restart attempts`;
+    throw new ExtensionError(
+      extensionName,
+      ErrorCode.MCP_PROCESS_CRASHED,
+      `MCP process for ${extensionName} crashed and failed to restart after ${MAX_RETRIES} attempts`,
     );
   }
 
@@ -151,6 +214,7 @@ export class ConnectionManager {
     const internal: InternalConnection = {
       metadata,
       config: mcpConfig,
+      resolvedConfig: resolvedConfig ?? {},
       lastActivity: Date.now(),
       requestId: 0,
     };
@@ -212,6 +276,14 @@ export class ConnectionManager {
       });
     }, CLI_IDLE_TIMEOUT_MS);
   }
+}
+
+function isCrashError(err: unknown): boolean {
+  return err instanceof ExtensionError && err.code === ErrorCode.MCP_PROCESS_CRASHED;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
 
 function resolveEnv(
