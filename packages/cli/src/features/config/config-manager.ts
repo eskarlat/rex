@@ -1,5 +1,6 @@
 import path from 'node:path';
 import type { GlobalConfig, ConfigMapping, ConfigSchemaField } from '../../core/types/index.js';
+import type { ProjectManifest } from '../../core/types/project.types.js';
 import { CONFIG_PATH, GLOBAL_DIR, PROJECT_DIR, MANIFEST_JSON } from '../../core/paths/paths.js';
 import {
   pathExistsSync,
@@ -50,10 +51,6 @@ export function getExtensionConfigMappings(
   return config.extensionConfigs[extensionName] ?? {};
 }
 
-interface ProjectManifestWithConfig {
-  extensionConfigs?: Record<string, Record<string, ConfigMapping>>;
-}
-
 function loadProjectConfig(
   projectPath: string,
   extensionName: string,
@@ -62,7 +59,7 @@ function loadProjectConfig(
   if (!pathExistsSync(manifestPath)) {
     return undefined;
   }
-  const manifest = readJsonSync<ProjectManifestWithConfig>(manifestPath);
+  const manifest = readJsonSync<ProjectManifest>(manifestPath);
   return manifest.extensionConfigs?.[extensionName];
 }
 

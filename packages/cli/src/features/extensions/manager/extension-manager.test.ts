@@ -4,6 +4,15 @@ import path from 'node:path';
 import os from 'node:os';
 import BetterSqlite3 from 'better-sqlite3';
 import type Database from 'better-sqlite3';
+
+vi.mock('../../config/config-manager.js', () => ({
+  getExtensionConfigMappings: vi.fn().mockReturnValue({}),
+}));
+vi.mock('../../vault/vault-manager.js', () => ({
+  getEntry: vi.fn().mockReturnValue(undefined),
+  getDecryptedValue: vi.fn().mockReturnValue(undefined),
+}));
+
 import {
   install,
   remove,
@@ -12,7 +21,10 @@ import {
   deactivate,
   getActivated,
   status,
+  validateVaultKeys,
 } from './extension-manager.js';
+import { getExtensionConfigMappings } from '../../config/config-manager.js';
+import { getEntry } from '../../vault/vault-manager.js';
 
 describe('extension-manager', () => {
   let db: Database.Database;
@@ -151,7 +163,7 @@ describe('extension-manager', () => {
       // Should not throw even with missing hook
       await expect(
         activate('ext-nohook', '1.0.0', projectDir, extDir),
-      ).resolves.toBeUndefined();
+      ).resolves.toBeDefined();
     });
 
     it('runs onInit hook when defined', async () => {
@@ -326,6 +338,33 @@ describe('extension-manager', () => {
 
       const result = getActivated(projectDir);
       expect(result['my-ext']).toBe('1.0.0');
+    });
+  });
+
+  describe('validateVaultKeys', () => {
+    it('returns empty array when no vault mappings exist', () => {
+      vi.mocked(getExtensionConfigMappings).mockReturnValue({});
+      expect(validateVaultKeys('my-ext')).toEqual([]);
+    });
+
+    it('returns missing vault keys', () => {
+      vi.mocked(getExtensionConfigMappings).mockReturnValue({
+        apiToken: { source: 'vault', value: 'missing-key' },
+        baseUrl: { source: 'direct', value: 'https://example.com' },
+      });
+      vi.mocked(getEntry).mockReturnValue(undefined);
+
+      const missing = validateVaultKeys('my-ext');
+      expect(missing).toEqual(['apiToken → vault:missing-key']);
+    });
+
+    it('returns empty when all vault keys exist', () => {
+      vi.mocked(getExtensionConfigMappings).mockReturnValue({
+        apiToken: { source: 'vault', value: 'my-token' },
+      });
+      vi.mocked(getEntry).mockReturnValue({ value: 'secret', secret: true, tags: [] });
+
+      expect(validateVaultKeys('my-ext')).toEqual([]);
     });
   });
 

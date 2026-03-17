@@ -4,6 +4,8 @@ import type Database from 'better-sqlite3';
 import type { PluginsJson } from '../../../core/types/index.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import type { EventBus } from '../../../core/event-bus/event-bus.js';
+import { getExtensionConfigMappings } from '../../config/config-manager.js';
+import { getEntry } from '../../vault/vault-manager.js';
 
 export interface InstalledExtension {
   name: string;
@@ -91,18 +93,33 @@ export function listInstalled(db: Database.Database): InstalledExtension[] {
   return stmt.all() as InstalledExtension[];
 }
 
+export function validateVaultKeys(extensionName: string): string[] {
+  const mappings = getExtensionConfigMappings(extensionName);
+  const missing: string[] = [];
+
+  for (const [field, mapping] of Object.entries(mappings)) {
+    if (mapping.source === 'vault' && !getEntry(mapping.value)) {
+      missing.push(`${field} → vault:${mapping.value}`);
+    }
+  }
+
+  return missing;
+}
+
 export async function activate(
   name: string,
   version: string,
   projectPath: string,
   extensionDir: string,
   bus?: EventBus,
-): Promise<void> {
+): Promise<string[]> {
   const manifest = loadManifest(extensionDir);
   const plugins = readPluginsJson(projectPath);
 
   plugins[name] = version;
   writePluginsJson(projectPath, plugins);
+
+  const missingKeys = validateVaultKeys(name);
 
   if (manifest.hooks?.onInit) {
     await runHook(extensionDir, manifest.hooks.onInit, projectPath);
@@ -116,6 +133,8 @@ export async function activate(
       projectPath,
     });
   }
+
+  return missingKeys;
 }
 
 export async function deactivate(
