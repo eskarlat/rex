@@ -23,13 +23,22 @@ vi.mock('./features/extensions/commands/ext-deactivate.command.js', () => ({
   handleExtDeactivate: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./features/extensions/commands/ext-config.command.js', () => ({
-  handleExtConfig: vi.fn(),
+  handleExtConfig: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./features/extensions/commands/ext-status.command.js', () => ({
   handleExtStatus: vi.fn(),
 }));
 vi.mock('./features/extensions/commands/ext-restart.command.js', () => ({
   handleExtRestart: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./features/extensions/commands/ext-outdated.command.js', () => ({
+  handleExtOutdated: vi.fn(),
+}));
+vi.mock('./features/extensions/commands/ext-update.command.js', () => ({
+  handleExtUpdate: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./features/extensions/commands/ext-cleanup.command.js', () => ({
+  handleExtCleanup: vi.fn(),
 }));
 vi.mock('./features/registry/commands/registry-sync.command.js', () => ({
   handleRegistrySync: vi.fn().mockResolvedValue(undefined),
@@ -39,6 +48,18 @@ vi.mock('./features/registry/commands/registry-list.command.js', () => ({
 }));
 vi.mock('./features/skills/commands/capabilities.command.js', () => ({
   handleCapabilities: vi.fn(),
+}));
+vi.mock('./features/vault/commands/vault-set.command.js', () => ({
+  handleVaultSet: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./features/vault/commands/vault-list.command.js', () => ({
+  handleVaultList: vi.fn(),
+}));
+vi.mock('./features/vault/commands/vault-remove.command.js', () => ({
+  handleVaultRemove: vi.fn(),
+}));
+vi.mock('./core/database/database.js', () => ({
+  getDb: vi.fn(() => ({})),
 }));
 
 import { createProgram } from './cli.js';
@@ -55,6 +76,12 @@ import { handleExtRestart } from './features/extensions/commands/ext-restart.com
 import { handleRegistrySync } from './features/registry/commands/registry-sync.command.js';
 import { handleRegistryList } from './features/registry/commands/registry-list.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
+import { handleExtOutdated } from './features/extensions/commands/ext-outdated.command.js';
+import { handleExtUpdate } from './features/extensions/commands/ext-update.command.js';
+import { handleExtCleanup } from './features/extensions/commands/ext-cleanup.command.js';
+import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
+import { handleVaultList } from './features/vault/commands/vault-list.command.js';
+import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
 
 describe('cli', () => {
   beforeEach(() => {
@@ -140,8 +167,10 @@ describe('cli', () => {
   it('runs ext:config command', async () => {
     const program = createProgram();
     program.exitOverride();
-    await program.parseAsync(['node', 'renre-kit', 'ext:config']);
-    expect(handleExtConfig).toHaveBeenCalled();
+    await program.parseAsync(['node', 'renre-kit', 'ext:config', 'my-ext']);
+    expect(handleExtConfig).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'my-ext',
+    }));
   });
 
   it('runs ext:status command', async () => {
@@ -180,6 +209,56 @@ describe('cli', () => {
     await program.parseAsync(['node', 'renre-kit', 'capabilities']);
     expect(handleCapabilities).toHaveBeenCalledWith(expect.objectContaining({
       projectPath: expect.any(String),
+    }));
+  });
+
+  it('runs ext:outdated command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'ext:outdated']);
+    expect(handleExtOutdated).toHaveBeenCalled();
+  });
+
+  it('runs ext:update command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'ext:update', 'my-ext']);
+    expect(handleExtUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'my-ext',
+    }));
+  });
+
+  it('runs ext:cleanup command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'ext:cleanup']);
+    expect(handleExtCleanup).toHaveBeenCalled();
+  });
+
+  it('runs vault:set command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'vault:set', 'my-key', '--secret', '--value', 'my-val']);
+    expect(handleVaultSet).toHaveBeenCalledWith(expect.objectContaining({
+      key: 'my-key',
+      value: 'my-val',
+      secret: true,
+    }));
+  });
+
+  it('runs vault:list command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'vault:list']);
+    expect(handleVaultList).toHaveBeenCalled();
+  });
+
+  it('runs vault:remove command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'vault:remove', 'my-key']);
+    expect(handleVaultRemove).toHaveBeenCalledWith(expect.objectContaining({
+      key: 'my-key',
     }));
   });
 });

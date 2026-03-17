@@ -9,9 +9,16 @@ import { handleExtDeactivate } from './features/extensions/commands/ext-deactiva
 import { handleExtConfig } from './features/extensions/commands/ext-config.command.js';
 import { handleExtStatus } from './features/extensions/commands/ext-status.command.js';
 import { handleExtRestart } from './features/extensions/commands/ext-restart.command.js';
+import { handleExtOutdated } from './features/extensions/commands/ext-outdated.command.js';
+import { handleExtUpdate } from './features/extensions/commands/ext-update.command.js';
+import { handleExtCleanup } from './features/extensions/commands/ext-cleanup.command.js';
 import { handleRegistrySync } from './features/registry/commands/registry-sync.command.js';
 import { handleRegistryList } from './features/registry/commands/registry-list.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
+import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
+import { handleVaultList } from './features/vault/commands/vault-list.command.js';
+import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
+import { getDb } from './core/database/database.js';
 
 export function createProgram(): Command {
   const program = new Command();
@@ -103,10 +110,13 @@ export function createProgram(): Command {
     });
 
   program
-    .command('ext:config')
-    .description('Manage extension configuration')
-    .action(() => {
-      handleExtConfig();
+    .command('ext:config <name>')
+    .description('Configure an extension interactively')
+    .action(async (name: string) => {
+      await handleExtConfig({
+        name,
+        projectPath: process.cwd(),
+      });
     });
 
   program
@@ -141,6 +151,66 @@ export function createProgram(): Command {
     .description('List configured registries')
     .action(() => {
       handleRegistryList({ configs: [] });
+    });
+
+  // Extension versioning commands
+  program
+    .command('ext:outdated')
+    .description('Check for outdated extensions')
+    .action(() => {
+      handleExtOutdated({ registryConfigs: [], db: getDb() });
+    });
+
+  program
+    .command('ext:update [name]')
+    .description('Update an extension to the latest version')
+    .option('--all', 'Update all extensions')
+    .action(async (name: string | undefined, opts: { all?: boolean }) => {
+      await handleExtUpdate({
+        name,
+        all: !!opts.all,
+        registryConfigs: [],
+        projectPath: process.cwd(),
+        db: getDb(),
+      });
+    });
+
+  program
+    .command('ext:cleanup')
+    .description('Remove unused extension versions')
+    .action(() => {
+      handleExtCleanup({ db: getDb() });
+    });
+
+  // Vault commands
+  program
+    .command('vault:set <key>')
+    .description('Store a variable in the vault')
+    .option('--secret', 'Encrypt the value at rest')
+    .option('--tags <tags>', 'Comma-separated tags', '')
+    .option('--value <value>', 'Value to store (prompted if omitted)')
+    .action(async (key: string, opts: { secret?: boolean; tags: string; value?: string }) => {
+      const tags = opts.tags ? opts.tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+      await handleVaultSet({
+        key,
+        value: opts.value,
+        secret: !!opts.secret,
+        tags,
+      });
+    });
+
+  program
+    .command('vault:list')
+    .description('List all vault variables')
+    .action(() => {
+      handleVaultList();
+    });
+
+  program
+    .command('vault:remove <key>')
+    .description('Remove a variable from the vault')
+    .action((key: string) => {
+      handleVaultRemove({ key });
     });
 
   // Skills command
