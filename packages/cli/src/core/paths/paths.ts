@@ -2,7 +2,7 @@ import path from 'node:path';
 import os from 'node:os';
 
 // Global paths
-export const GLOBAL_DIR = path.join(os.homedir(), '.renre-kit');
+export const GLOBAL_DIR = process.env['RENRE_KIT_HOME'] ?? path.join(os.homedir(), '.renre-kit');
 export const DB_PATH = path.join(GLOBAL_DIR, 'db.sqlite');
 export const EXTENSIONS_DIR = path.join(GLOBAL_DIR, 'extensions');
 export const REGISTRIES_DIR = path.join(GLOBAL_DIR, 'registries');
@@ -38,7 +38,7 @@ export function getManifestPath(projectPath: string): string {
 }
 
 export function getExtensionDir(name: string, version: string): string {
-  return path.join(EXTENSIONS_DIR, name, version);
+  return path.join(EXTENSIONS_DIR, `${name}@${version}`);
 }
 
 export function getSkillsDir(

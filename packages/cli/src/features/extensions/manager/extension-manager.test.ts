@@ -4,6 +4,15 @@ import path from 'node:path';
 import os from 'node:os';
 import BetterSqlite3 from 'better-sqlite3';
 import type Database from 'better-sqlite3';
+
+vi.mock('../../config/config-manager.js', () => ({
+  getExtensionConfigMappings: vi.fn().mockReturnValue({}),
+}));
+vi.mock('../../vault/vault-manager.js', () => ({
+  hasEntry: vi.fn().mockReturnValue(false),
+  getDecryptedValue: vi.fn().mockReturnValue(undefined),
+}));
+
 import {
   install,
   remove,
@@ -12,7 +21,10 @@ import {
   deactivate,
   getActivated,
   status,
+  validateVaultKeys,
 } from './extension-manager.js';
+import { getExtensionConfigMappings } from '../../config/config-manager.js';
+import { hasEntry } from '../../vault/vault-manager.js';
 
 describe('extension-manager', () => {
   let db: Database.Database;
@@ -151,7 +163,7 @@ describe('extension-manager', () => {
       // Should not throw even with missing hook
       await expect(
         activate('ext-nohook', '1.0.0', projectDir, extDir),
-      ).resolves.toBeUndefined();
+      ).resolves.toBeDefined();
     });
 
     it('runs onInit hook when defined', async () => {
@@ -178,6 +190,31 @@ describe('extension-manager', () => {
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
       const plugins = JSON.parse(fs.readFileSync(pluginsPath, 'utf-8'));
       expect(plugins['ext-hook']).toBeDefined();
+    });
+
+    it('emits ext:activate event when bus is provided', async () => {
+      const extDir = path.join(tmpDir, 'ext-bus@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-bus',
+          version: '1.0.0',
+          description: 'Test',
+          type: 'standard',
+          commands: {},
+        }),
+      );
+
+      const mockBus = { emit: vi.fn().mockResolvedValue(undefined) };
+      await activate('ext-bus', '1.0.0', projectDir, extDir, mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus);
+
+      expect(mockBus.emit).toHaveBeenCalledWith('ext:activate', {
+        type: 'ext:activate',
+        extensionName: 'ext-bus',
+        version: '1.0.0',
+        projectPath: projectDir,
+      });
     });
 
     it('preserves existing plugins when activating new one', async () => {
@@ -237,6 +274,33 @@ describe('extension-manager', () => {
       expect(plugins['ext-b']).toBe('2.0.0');
     });
 
+    it('emits ext:deactivate event when bus is provided', async () => {
+      const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
+      fs.writeFileSync(pluginsPath, JSON.stringify({ 'ext-bus': '1.0.0' }));
+
+      const extDir = path.join(tmpDir, 'ext-bus@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-bus',
+          version: '1.0.0',
+          description: 'Test',
+          type: 'standard',
+          commands: {},
+        }),
+      );
+
+      const mockBus = { emit: vi.fn().mockResolvedValue(undefined) };
+      await deactivate('ext-bus', projectDir, extDir, mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus);
+
+      expect(mockBus.emit).toHaveBeenCalledWith('ext:deactivate', {
+        type: 'ext:deactivate',
+        extensionName: 'ext-bus',
+        projectPath: projectDir,
+      });
+    });
+
     it('handles deactivating when plugins.json does not exist', async () => {
       const extDir = path.join(tmpDir, 'ext-a@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
@@ -274,6 +338,33 @@ describe('extension-manager', () => {
 
       const result = getActivated(projectDir);
       expect(result['my-ext']).toBe('1.0.0');
+    });
+  });
+
+  describe('validateVaultKeys', () => {
+    it('returns empty array when no vault mappings exist', () => {
+      vi.mocked(getExtensionConfigMappings).mockReturnValue({});
+      expect(validateVaultKeys('my-ext')).toEqual([]);
+    });
+
+    it('returns missing vault keys', () => {
+      vi.mocked(getExtensionConfigMappings).mockReturnValue({
+        apiToken: { source: 'vault', value: 'missing-key' },
+        baseUrl: { source: 'direct', value: 'https://example.com' },
+      });
+      vi.mocked(hasEntry).mockReturnValue(false);
+
+      const missing = validateVaultKeys('my-ext');
+      expect(missing).toEqual(['apiToken → vault:missing-key']);
+    });
+
+    it('returns empty when all vault keys exist', () => {
+      vi.mocked(getExtensionConfigMappings).mockReturnValue({
+        apiToken: { source: 'vault', value: 'my-token' },
+      });
+      vi.mocked(hasEntry).mockReturnValue(true);
+
+      expect(validateVaultKeys('my-ext')).toEqual([]);
     });
   });
 

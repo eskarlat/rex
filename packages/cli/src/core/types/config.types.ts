@@ -24,7 +24,6 @@ export interface RegistryEntry {
 export interface ConfigMapping {
   source: 'vault' | 'direct';
   value: string;
-  vaultKey?: string;
 }
 
 export interface ConfigSchemaField {

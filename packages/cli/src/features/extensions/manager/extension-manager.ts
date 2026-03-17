@@ -3,6 +3,9 @@ import path from 'node:path';
 import type Database from 'better-sqlite3';
 import type { PluginsJson } from '../../../core/types/index.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
+import type { EventBus } from '../../../core/event-bus/event-bus.js';
+import { getExtensionConfigMappings } from '../../config/config-manager.js';
+import { hasEntry } from '../../vault/vault-manager.js';
 
 export interface InstalledExtension {
   name: string;
@@ -90,27 +93,55 @@ export function listInstalled(db: Database.Database): InstalledExtension[] {
   return stmt.all() as InstalledExtension[];
 }
 
+export function validateVaultKeys(extensionName: string): string[] {
+  const mappings = getExtensionConfigMappings(extensionName);
+  const missing: string[] = [];
+
+  for (const [field, mapping] of Object.entries(mappings)) {
+    if (mapping.source === 'vault' && !hasEntry(mapping.value)) {
+      missing.push(`${field} → vault:${mapping.value}`);
+    }
+  }
+
+  return missing;
+}
+
 export async function activate(
   name: string,
   version: string,
   projectPath: string,
   extensionDir: string,
-): Promise<void> {
+  bus?: EventBus,
+): Promise<string[]> {
   const manifest = loadManifest(extensionDir);
   const plugins = readPluginsJson(projectPath);
 
   plugins[name] = version;
   writePluginsJson(projectPath, plugins);
 
+  const missingKeys = validateVaultKeys(name);
+
   if (manifest.hooks?.onInit) {
     await runHook(extensionDir, manifest.hooks.onInit, projectPath);
   }
+
+  if (bus) {
+    void bus.emit('ext:activate', {
+      type: 'ext:activate',
+      extensionName: name,
+      version,
+      projectPath,
+    });
+  }
+
+  return missingKeys;
 }
 
 export async function deactivate(
   name: string,
   projectPath: string,
   extensionDir: string,
+  bus?: EventBus,
 ): Promise<void> {
   const manifest = loadManifest(extensionDir);
 
@@ -121,6 +152,14 @@ export async function deactivate(
   const plugins = readPluginsJson(projectPath);
   delete plugins[name];
   writePluginsJson(projectPath, plugins);
+
+  if (bus) {
+    void bus.emit('ext:deactivate', {
+      type: 'ext:deactivate',
+      extensionName: name,
+      projectPath,
+    });
+  }
 }
 
 export function getActivated(projectPath: string): PluginsJson {

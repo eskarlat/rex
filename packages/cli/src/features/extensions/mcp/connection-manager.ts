@@ -17,10 +17,12 @@ import {
   ExtensionError,
   ErrorCode,
 } from '../../../core/errors/extension-error.js';
+import { interpolate } from '../../../shared/interpolation.js';
 
 interface InternalConnection {
   metadata: McpConnection;
   config: McpConfig;
+  resolvedConfig: Record<string, unknown>;
   stdioProcess?: McpStdioProcess;
   sseConnection?: McpSseConnection;
   lastActivity: number;
@@ -31,19 +33,26 @@ interface InternalConnection {
 type LifecycleMode = 'cli' | 'dashboard';
 
 const CLI_IDLE_TIMEOUT_MS = 30_000;
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 1000;
 
 export class ConnectionManager {
   private readonly connections = new Map<string, InternalConnection>();
   private mode: LifecycleMode = 'cli';
+  private backoffBaseMs = BASE_BACKOFF_MS;
 
-  getConnection(extensionName: string, mcpConfig: McpConfig): McpConnection {
+  getConnection(
+    extensionName: string,
+    mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
+  ): McpConnection {
     const existing = this.connections.get(extensionName);
     if (existing && existing.metadata.state === 'running') {
       existing.lastActivity = Date.now();
       return existing.metadata;
     }
 
-    const internal = this.startConnection(extensionName, mcpConfig);
+    const internal = this.startConnection(extensionName, mcpConfig, resolvedConfig);
     this.connections.set(extensionName, internal);
     this.resetIdleTimer(extensionName);
     return internal.metadata;
@@ -66,6 +75,22 @@ export class ConnectionManager {
     internal.lastActivity = Date.now();
     this.resetIdleTimer(extensionName);
 
+    try {
+      return await this.sendRequest(extensionName, internal, toolName, args);
+    } catch (err) {
+      if (isCrashError(err)) {
+        return this.retryWithBackoff(extensionName, internal, toolName, args);
+      }
+      throw err;
+    }
+  }
+
+  private async sendRequest(
+    extensionName: string,
+    internal: InternalConnection,
+    toolName: string,
+    args: Record<string, unknown>,
+  ): Promise<unknown> {
     const requestId = ++internal.requestId;
     const request = buildToolCallRequest(toolName, args, requestId);
 
@@ -86,6 +111,50 @@ export class ConnectionManager {
     );
   }
 
+  private async retryWithBackoff(
+    extensionName: string,
+    internal: InternalConnection,
+    toolName: string,
+    args: Record<string, unknown>,
+  ): Promise<unknown> {
+    let retries = 0;
+    while (retries < MAX_RETRIES) {
+      retries++;
+      internal.metadata.retryCount = retries;
+      const delay = this.backoffBaseMs * Math.pow(2, retries - 1);
+      await sleep(delay);
+
+      await this.stopConnection(extensionName, internal);
+      const restarted = this.startConnection(
+        extensionName,
+        internal.config,
+        internal.resolvedConfig,
+      );
+      internal.stdioProcess = restarted.stdioProcess;
+      internal.sseConnection = restarted.sseConnection;
+      internal.metadata.state = 'running';
+
+      try {
+        const result = await this.sendRequest(extensionName, internal, toolName, args);
+        internal.metadata.retryCount = 0;
+        this.resetIdleTimer(extensionName);
+        return result;
+      } catch (err) {
+        if (!isCrashError(err)) {
+          throw err;
+        }
+      }
+    }
+
+    internal.metadata.state = 'errored';
+    internal.metadata.lastError = `Failed after ${MAX_RETRIES} restart attempts`;
+    throw new ExtensionError(
+      extensionName,
+      ErrorCode.MCP_PROCESS_CRASHED,
+      `MCP process for ${extensionName} crashed and failed to restart after ${MAX_RETRIES} attempts`,
+    );
+  }
+
   async stopAll(): Promise<void> {
     const stopPromises: Promise<void>[] = [];
     for (const [name, internal] of this.connections) {
@@ -98,13 +167,14 @@ export class ConnectionManager {
   async restart(
     extensionName: string,
     mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
   ): Promise<McpConnection> {
     const existing = this.connections.get(extensionName);
     if (existing) {
       await this.stopConnection(extensionName, existing);
     }
 
-    const internal = this.startConnection(extensionName, mcpConfig);
+    const internal = this.startConnection(extensionName, mcpConfig, resolvedConfig);
     this.connections.set(extensionName, internal);
     this.resetIdleTimer(extensionName);
     return internal.metadata;
@@ -133,6 +203,7 @@ export class ConnectionManager {
   private startConnection(
     extensionName: string,
     mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
   ): InternalConnection {
     const metadata: McpConnection = {
       extensionName,
@@ -144,15 +215,17 @@ export class ConnectionManager {
     const internal: InternalConnection = {
       metadata,
       config: mcpConfig,
+      resolvedConfig: resolvedConfig ?? {},
       lastActivity: Date.now(),
       requestId: 0,
     };
 
     if (mcpConfig.transport === 'stdio') {
+      const env = resolveEnv(mcpConfig.env ?? {}, resolvedConfig ?? {});
       internal.stdioProcess = spawnProcess(
         mcpConfig.command ?? '',
         mcpConfig.args ?? [],
-        mcpConfig.env ?? {},
+        env,
         process.cwd(),
       );
     } else {
@@ -204,4 +277,23 @@ export class ConnectionManager {
       });
     }, CLI_IDLE_TIMEOUT_MS);
   }
+}
+
+function isCrashError(err: unknown): boolean {
+  return err instanceof ExtensionError && err.code === ErrorCode.MCP_PROCESS_CRASHED;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => { setTimeout(resolve, ms); });
+}
+
+function resolveEnv(
+  env: Record<string, string>,
+  config: Record<string, unknown>,
+): Record<string, string> {
+  const resolved: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    resolved[key] = interpolate(value, config);
+  }
+  return resolved;
 }

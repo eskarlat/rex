@@ -2,6 +2,7 @@ import * as clack from '@clack/prompts';
 import { ProjectManager } from '../../../core/project/project-manager.js';
 import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getActivated, deactivate } from '../../extensions/manager/extension-manager.js';
+import { getExtensionDir } from '../../../core/paths/paths.js';
 
 interface DestroyOptions {
   projectPath: string;
@@ -28,7 +29,7 @@ export async function handleDestroy(options: DestroyOptions): Promise<void> {
   for (const extName of Object.keys(plugins)) {
     const version = plugins[extName];
     if (version) {
-      const extDir = `${extName}@${version}`;
+      const extDir = getExtensionDir(extName, version);
       try {
         await deactivate(extName, options.projectPath, extDir);
       } catch {

@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ConnectionManager } from './connection-manager.js';
 import type { McpConfig } from '../types/extension.types.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 
 vi.mock('./mcp-stdio-transport.js');
 vi.mock('./mcp-sse-transport.js');
+vi.mock('../../../shared/interpolation.js', async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return { ...actual };
+});
 
 import { spawnProcess, sendRequest as stdioSendRequest, killProcess } from './mcp-stdio-transport.js';
 import { connect, sendRequest as sseSendRequest, disconnect } from './mcp-sse-transport.js';
@@ -161,6 +166,57 @@ describe('connection-manager', () => {
     });
   });
 
+  describe('env resolution', () => {
+    it('should interpolate config values into MCP env vars', () => {
+      const configWithEnv: McpConfig = {
+        transport: 'stdio',
+        command: 'node',
+        args: ['server.js'],
+        env: {
+          API_TOKEN: '${config.apiToken}',
+          BASE_URL: '${config.baseUrl}',
+          STATIC: 'no-change',
+        },
+      };
+
+      const resolvedConfig = {
+        apiToken: 'my-secret-token',
+        baseUrl: 'https://api.example.com',
+      };
+
+      manager.getConnection('ext-env', configWithEnv, resolvedConfig);
+
+      expect(spawnProcess).toHaveBeenCalledWith(
+        'node',
+        ['server.js'],
+        {
+          API_TOKEN: 'my-secret-token',
+          BASE_URL: 'https://api.example.com',
+          STATIC: 'no-change',
+        },
+        expect.any(String),
+      );
+    });
+
+    it('should pass raw env when no resolvedConfig provided', () => {
+      const configWithEnv: McpConfig = {
+        transport: 'stdio',
+        command: 'node',
+        args: [],
+        env: { KEY: 'value' },
+      };
+
+      manager.getConnection('ext-raw', configWithEnv);
+
+      expect(spawnProcess).toHaveBeenCalledWith(
+        'node',
+        [],
+        { KEY: 'value' },
+        expect.any(String),
+      );
+    });
+  });
+
   describe('setMode', () => {
     it('should accept cli mode', () => {
       expect(() => manager.setMode('cli')).not.toThrow();
@@ -168,6 +224,66 @@ describe('connection-manager', () => {
 
     it('should accept dashboard mode', () => {
       expect(() => manager.setMode('dashboard')).not.toThrow();
+    });
+  });
+
+  describe('crash recovery', () => {
+    beforeEach(() => {
+      // Zero-out backoff delay for fast tests
+      (manager as unknown as { backoffBaseMs: number }).backoffBaseMs = 0;
+    });
+
+    it('should retry on process crash and succeed', async () => {
+      manager.getConnection('ext-a', stdioConfig);
+      const crashError = new ExtensionError('ext-a', ErrorCode.MCP_PROCESS_CRASHED, 'crashed');
+      vi.mocked(stdioSendRequest)
+        .mockRejectedValueOnce(crashError)
+        .mockResolvedValueOnce({ jsonrpc: '2.0', result: 'recovered', id: 2 });
+
+      const result = await manager.executeToolCall('ext-a', 'tool', {});
+      expect(result).toBe('recovered');
+      expect(spawnProcess).toHaveBeenCalledTimes(2);
+    });
+
+    it('should mark errored after max retries', async () => {
+      manager.getConnection('ext-a', stdioConfig);
+      const crashError = new ExtensionError('ext-a', ErrorCode.MCP_PROCESS_CRASHED, 'crashed');
+      vi.mocked(stdioSendRequest).mockRejectedValue(crashError);
+
+      await expect(
+        manager.executeToolCall('ext-a', 'tool', {}),
+      ).rejects.toThrow('failed to restart after 3 attempts');
+
+      const status = manager.status();
+      expect(status.get('ext-a')).toBe('errored');
+    });
+
+    it('should not retry on non-crash errors', async () => {
+      manager.getConnection('ext-a', stdioConfig);
+      vi.mocked(stdioSendRequest).mockRejectedValueOnce(new Error('timeout'));
+
+      await expect(
+        manager.executeToolCall('ext-a', 'tool', {}),
+      ).rejects.toThrow('timeout');
+      expect(spawnProcess).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reset retry count on successful recovery', async () => {
+      manager.getConnection('ext-a', stdioConfig);
+      const crashError = new ExtensionError('ext-a', ErrorCode.MCP_PROCESS_CRASHED, 'crashed');
+
+      // First crash + recovery
+      vi.mocked(stdioSendRequest)
+        .mockRejectedValueOnce(crashError)
+        .mockResolvedValueOnce({ jsonrpc: '2.0', result: 'ok', id: 2 });
+      await manager.executeToolCall('ext-a', 'tool', {});
+
+      // Second crash + recovery (should have fresh retry count)
+      vi.mocked(stdioSendRequest)
+        .mockRejectedValueOnce(crashError)
+        .mockResolvedValueOnce({ jsonrpc: '2.0', result: 'ok2', id: 4 });
+      const result = await manager.executeToolCall('ext-a', 'tool', {});
+      expect(result).toBe('ok2');
     });
   });
 });
