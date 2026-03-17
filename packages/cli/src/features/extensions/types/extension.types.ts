@@ -39,7 +39,7 @@ export interface SkillRef {
 }
 
 export interface AgentAssets {
-  skills?: string | SkillRef[];
+  skills?: SkillRef[];
   prompts?: string[];
   agents?: string[];
   workflows?: string[];
@@ -59,10 +59,8 @@ export interface ExtensionManifest {
     schema: Record<string, ConfigSchemaField>;
   };
   hooks?: HookConfig;
-  /** @deprecated Use agent.skills instead */
-  skills?: string | SkillRef[];
   ui?: {
     panels: UiPanel[];
   };
-  agent?: string | AgentAssets;
+  agent?: AgentAssets;
 }

@@ -1,3 +1,6 @@
+import path from 'node:path';
+import { deployAgentAssets, cleanupAgentAssets } from '@renre-kit/extension-sdk/node';
+
 interface CommandResult {
   output: string;
   exitCode: number;
@@ -10,12 +13,20 @@ interface ExecutionContext {
   config: Record<string, unknown>;
 }
 
-export function onInit(context: ExecutionContext): void {
-  console.log(`[hello-world] Activated for project: ${context.projectPath}`);
+interface HookContext {
+  projectDir: string;
 }
 
-export function onDestroy(context: ExecutionContext): void {
-  console.log(`[hello-world] Deactivated for project: ${context.projectPath}`);
+function getExtensionDir(): string {
+  return path.resolve(import.meta.dirname, '..');
+}
+
+export function onInit(context: HookContext): void {
+  deployAgentAssets(getExtensionDir(), context.projectDir);
+}
+
+export function onDestroy(context: HookContext): void {
+  cleanupAgentAssets(getExtensionDir(), context.projectDir);
 }
 
 export function greet(context: ExecutionContext): CommandResult {

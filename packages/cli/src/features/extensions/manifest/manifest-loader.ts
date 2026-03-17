@@ -46,7 +46,7 @@ const skillRefSchema = z.object({
 });
 
 const agentAssetsSchema = z.object({
-  skills: z.union([z.string(), z.array(skillRefSchema)]).optional(),
+  skills: z.array(skillRefSchema).optional(),
   prompts: z.array(z.string()).optional(),
   agents: z.array(z.string()).optional(),
   workflows: z.array(z.string()).optional(),
@@ -69,13 +69,12 @@ const extensionManifestSchema = z
       })
       .optional(),
     hooks: hookConfigSchema.optional(),
-    skills: z.union([z.string(), z.array(skillRefSchema)]).optional(),
     ui: z
       .object({
         panels: z.array(uiPanelSchema),
       })
       .optional(),
-    agent: z.union([z.string(), agentAssetsSchema]).optional(),
+    agent: agentAssetsSchema.optional(),
   })
   .refine(
     (data) => {

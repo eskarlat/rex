@@ -76,8 +76,13 @@ describe('manifest-loader', () => {
         icon: '🔧',
         iconColor: '#FF0000',
         hooks: { onInit: 'hooks/init.js', onDestroy: 'hooks/destroy.js' },
-        skills: 'SKILL.md',
-        agent: 'agent/',
+        agent: {
+          skills: [
+            { name: 'greet', path: 'skills/greet/SKILL.md' },
+          ],
+          prompts: ['agent/prompts/default.md'],
+          context: ['agent/context/docs.md'],
+        },
         ui: {
           panels: [
             { id: 'panel-1', title: 'Dashboard', entry: 'ui/dashboard.js' },
@@ -103,7 +108,9 @@ describe('manifest-loader', () => {
       const result = loadManifest(tempDir);
       expect(result.icon).toBe('🔧');
       expect(result.hooks?.onInit).toBe('hooks/init.js');
-      expect(result.skills).toBe('SKILL.md');
+      expect(result.agent?.skills).toHaveLength(1);
+      expect(result.agent?.prompts).toHaveLength(1);
+      expect(result.agent?.context).toHaveLength(1);
       expect(result.ui?.panels).toHaveLength(1);
       expect(result.config?.schema.apiKey?.secret).toBe(true);
       expect(result.config?.schema.retries?.default).toBe(3);
@@ -244,100 +251,9 @@ describe('manifest-loader', () => {
       }
     });
 
-    // --- Multi-skill support ---
-
-    it('should accept skills as a string for backward compatibility', () => {
-      writeManifest({
-        ...validStandardManifest,
-        skills: 'SKILL.md',
-      });
-      const result = loadManifest(tempDir);
-      expect(result.skills).toBe('SKILL.md');
-    });
-
-    it('should accept skills as an array of skill references', () => {
-      writeManifest({
-        ...validStandardManifest,
-        skills: [
-          { name: 'greet', path: 'skills/greet/SKILL.md' },
-          { name: 'analyze', path: 'skills/analyze/SKILL.md' },
-        ],
-      });
-      const result = loadManifest(tempDir);
-      expect(Array.isArray(result.skills)).toBe(true);
-      const skills = result.skills as Array<{ name: string; path: string }>;
-      expect(skills).toHaveLength(2);
-      expect(skills[0]!.name).toBe('greet');
-      expect(skills[0]!.path).toBe('skills/greet/SKILL.md');
-      expect(skills[1]!.name).toBe('analyze');
-      expect(skills[1]!.path).toBe('skills/analyze/SKILL.md');
-    });
-
-    it('should reject skills array with missing name', () => {
-      writeManifest({
-        ...validStandardManifest,
-        skills: [{ path: 'skills/greet/SKILL.md' }],
-      });
-      expect(() => loadManifest(tempDir)).toThrow();
-    });
-
-    it('should reject skills array with missing path', () => {
-      writeManifest({
-        ...validStandardManifest,
-        skills: [{ name: 'greet' }],
-      });
-      expect(() => loadManifest(tempDir)).toThrow();
-    });
-
     // --- Agent assets support ---
 
-    it('should accept agent as a string for backward compatibility', () => {
-      writeManifest({
-        ...validStandardManifest,
-        agent: 'agent/',
-      });
-      const result = loadManifest(tempDir);
-      expect(result.agent).toBe('agent/');
-    });
-
-    it('should accept agent as a structured AgentAssets object', () => {
-      writeManifest({
-        ...validStandardManifest,
-        agent: {
-          prompts: ['agent/prompts/default.md', 'agent/prompts/custom.md'],
-          agents: ['agent/agents/researcher.md'],
-          workflows: ['agent/workflows/deploy.md'],
-          context: ['agent/context/docs.md'],
-        },
-      });
-      const result = loadManifest(tempDir);
-      expect(typeof result.agent).toBe('object');
-      const agent = result.agent as {
-        prompts: string[];
-        agents: string[];
-        workflows: string[];
-        context: string[];
-      };
-      expect(agent.prompts).toHaveLength(2);
-      expect(agent.agents).toHaveLength(1);
-      expect(agent.workflows).toHaveLength(1);
-      expect(agent.context).toHaveLength(1);
-    });
-
-    it('should accept agent as partial AgentAssets (only prompts)', () => {
-      writeManifest({
-        ...validStandardManifest,
-        agent: {
-          prompts: ['agent/prompts/default.md'],
-        },
-      });
-      const result = loadManifest(tempDir);
-      expect(typeof result.agent).toBe('object');
-      const agent = result.agent as { prompts: string[] };
-      expect(agent.prompts).toHaveLength(1);
-    });
-
-    it('should accept agent with skills inside (unified field)', () => {
+    it('should accept agent with skills array', () => {
       writeManifest({
         ...validStandardManifest,
         agent: {
@@ -345,40 +261,71 @@ describe('manifest-loader', () => {
             { name: 'greet', path: 'skills/greet/SKILL.md' },
             { name: 'analyze', path: 'skills/analyze/SKILL.md' },
           ],
-          prompts: ['agent/prompts/default.md'],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent?.skills).toHaveLength(2);
+      expect(result.agent?.skills?.[0]?.name).toBe('greet');
+      expect(result.agent?.skills?.[0]?.path).toBe('skills/greet/SKILL.md');
+      expect(result.agent?.skills?.[1]?.name).toBe('analyze');
+    });
+
+    it('should reject agent.skills entry with missing name', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [{ path: 'skills/greet/SKILL.md' }],
+        },
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should reject agent.skills entry with missing path', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [{ name: 'greet' }],
+        },
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should accept agent with all asset types', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          prompts: ['agent/prompts/default.md', 'agent/prompts/custom.md'],
+          agents: ['agent/agents/researcher.md'],
+          workflows: ['agent/workflows/deploy.md'],
           context: ['agent/context/docs.md'],
         },
       });
       const result = loadManifest(tempDir);
-      expect(typeof result.agent).toBe('object');
-      const agent = result.agent as {
-        skills: Array<{ name: string; path: string }>;
-        prompts: string[];
-        context: string[];
-      };
-      expect(agent.skills).toHaveLength(2);
-      expect(agent.skills[0]!.name).toBe('greet');
-      expect(agent.prompts).toHaveLength(1);
-      expect(agent.context).toHaveLength(1);
+      expect(result.agent?.skills).toHaveLength(1);
+      expect(result.agent?.prompts).toHaveLength(2);
+      expect(result.agent?.agents).toHaveLength(1);
+      expect(result.agent?.workflows).toHaveLength(1);
+      expect(result.agent?.context).toHaveLength(1);
     });
 
-    it('should accept agent with skills as string inside (backward compat)', () => {
+    it('should accept agent with partial assets (only prompts)', () => {
       writeManifest({
         ...validStandardManifest,
         agent: {
-          skills: 'SKILL.md',
           prompts: ['agent/prompts/default.md'],
         },
       });
       const result = loadManifest(tempDir);
-      const agent = result.agent as { skills: string };
-      expect(agent.skills).toBe('SKILL.md');
+      expect(result.agent?.prompts).toHaveLength(1);
+      expect(result.agent?.skills).toBeUndefined();
     });
 
-    it('should accept empty arrays in AgentAssets', () => {
+    it('should accept empty arrays in agent assets', () => {
       writeManifest({
         ...validStandardManifest,
         agent: {
+          skills: [],
           prompts: [],
           agents: [],
           workflows: [],
@@ -386,7 +333,24 @@ describe('manifest-loader', () => {
         },
       });
       const result = loadManifest(tempDir);
-      expect(typeof result.agent).toBe('object');
+      expect(result.agent).toBeDefined();
+    });
+
+    it('should reject agent as a string', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: 'agent/',
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should strip top-level skills field (not part of schema)', () => {
+      writeManifest({
+        ...validStandardManifest,
+        skills: 'SKILL.md',
+      });
+      const result = loadManifest(tempDir);
+      expect((result as Record<string, unknown>)['skills']).toBeUndefined();
     });
   });
 });
