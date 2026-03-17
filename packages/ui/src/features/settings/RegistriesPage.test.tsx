@@ -154,7 +154,7 @@ describe('RegistriesPage', () => {
   it('shows loading skeleton when isLoading', () => {
     mockRegistriesData = { data: undefined, isLoading: true };
     renderWithProviders(<RegistriesPage />);
-    expect(screen.queryByText('Registries')).not.toBeInTheDocument();
+    expect(screen.getByText('Registries')).toBeInTheDocument();
     expect(screen.queryByText('Add Registry')).not.toBeInTheDocument();
   });
 });

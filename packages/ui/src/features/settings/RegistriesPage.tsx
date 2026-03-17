@@ -3,15 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
   Table,
   TableBody,
   TableCell,
@@ -19,13 +10,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   useRegistries,
   useAddRegistry,
   useRemoveRegistry,
   useSyncRegistry,
 } from '@/core/hooks/use-registries';
+import { ResourcePage } from '@/core/components/ResourcePage';
 
 export function RegistriesPage() {
   const { data: registries, isLoading } = useRegistries();
@@ -52,71 +43,53 @@ export function RegistriesPage() {
     );
   }
 
-  if (isLoading) {
-    return <Skeleton className="h-64 w-full" />;
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Registries</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage extension registries.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>Add Registry</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Registry</DialogTitle>
-              <DialogDescription>
-                Add a new extension registry source.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="reg-name">Name</Label>
-                <Input
-                  id="reg-name"
-                  placeholder="Registry name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reg-url">URL</Label>
-                <Input
-                  id="reg-url"
-                  placeholder="https://github.com/user/registry"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reg-priority">Priority</Label>
-                <Input
-                  id="reg-priority"
-                  type="number"
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={handleAdd}
-                disabled={!name || !url || addRegistry.isPending}
-              >
-                {addRegistry.isPending ? 'Adding...' : 'Add'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
+    <ResourcePage
+      title="Registries"
+      description="Manage extension registries."
+      isLoading={isLoading}
+      dialogOpen={open}
+      onDialogOpenChange={setOpen}
+      dialogTitle="Add Registry"
+      dialogDescription="Add a new extension registry source."
+      triggerLabel="Add Registry"
+      submitLabel="Add"
+      submitPendingLabel="Adding..."
+      submitDisabled={!name || !url || addRegistry.isPending}
+      isPending={addRegistry.isPending}
+      onSubmit={handleAdd}
+      formContent={
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="reg-name">Name</Label>
+            <Input
+              id="reg-name"
+              placeholder="Registry name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="reg-url">URL</Label>
+            <Input
+              id="reg-url"
+              placeholder="https://github.com/user/registry"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="reg-priority">Priority</Label>
+            <Input
+              id="reg-priority"
+              type="number"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+            />
+          </div>
+        </>
+      }
+    >
       <Table>
         <TableHeader>
           <TableRow>
@@ -175,6 +148,6 @@ export function RegistriesPage() {
           )}
         </TableBody>
       </Table>
-    </div>
+    </ResourcePage>
   );
 }

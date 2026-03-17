@@ -3,15 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
   Table,
   TableBody,
   TableCell,
@@ -19,12 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   useVaultEntries,
   useSetVaultEntry,
   useRemoveVaultEntry,
 } from '@/core/hooks/use-vault';
+import { ResourcePage } from '@/core/components/ResourcePage';
 
 export function VaultPage(): React.ReactElement {
   const { data: entries, isLoading } = useVaultEntries();
@@ -58,77 +49,54 @@ export function VaultPage(): React.ReactElement {
     removeEntry.mutate(key);
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Vault</h1>
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Vault</h1>
-          <p className="text-muted-foreground">
-            Manage encrypted secrets and keys.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>Add Entry</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Vault Entry</DialogTitle>
-              <DialogDescription>
-                Store a new encrypted secret in the vault.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="vault-key">Key</Label>
-                <Input
-                  id="vault-key"
-                  placeholder="e.g. GITHUB_TOKEN"
-                  value={newKey}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="vault-value">Value</Label>
-                <Input
-                  id="vault-value"
-                  type="password"
-                  placeholder="Secret value"
-                  value={newValue}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="vault-tags">Tags (comma-separated)</Label>
-                <Input
-                  id="vault-tags"
-                  placeholder="e.g. github, api"
-                  value={newTags}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTags(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={handleAdd}
-                disabled={!newKey || !newValue || setEntry.isPending}
-              >
-                {setEntry.isPending ? 'Saving...' : 'Save'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
+    <ResourcePage
+      title="Vault"
+      description="Manage encrypted secrets and keys."
+      isLoading={isLoading}
+      dialogOpen={open}
+      onDialogOpenChange={setOpen}
+      dialogTitle="Add Vault Entry"
+      dialogDescription="Store a new encrypted secret in the vault."
+      triggerLabel="Add Entry"
+      submitLabel="Save"
+      submitPendingLabel="Saving..."
+      submitDisabled={!newKey || !newValue || setEntry.isPending}
+      isPending={setEntry.isPending}
+      onSubmit={handleAdd}
+      formContent={
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="vault-key">Key</Label>
+            <Input
+              id="vault-key"
+              placeholder="e.g. GITHUB_TOKEN"
+              value={newKey}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="vault-value">Value</Label>
+            <Input
+              id="vault-value"
+              type="password"
+              placeholder="Secret value"
+              value={newValue}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="vault-tags">Tags (comma-separated)</Label>
+            <Input
+              id="vault-tags"
+              placeholder="e.g. github, api"
+              value={newTags}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTags(e.target.value)}
+            />
+          </div>
+        </>
+      }
+    >
       <Table>
         <TableHeader>
           <TableRow>
@@ -172,6 +140,6 @@ export function VaultPage(): React.ReactElement {
           )}
         </TableBody>
       </Table>
-    </div>
+    </ResourcePage>
   );
 }
