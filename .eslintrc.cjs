@@ -76,5 +76,5 @@ module.exports = {
       },
     },
   ],
-  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'coverage/', '**/*.test.ts', '**/*.test.tsx'],
+  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'coverage/', '**/*.test.ts', '**/*.test.tsx', '**/e2e/**'],
 };
