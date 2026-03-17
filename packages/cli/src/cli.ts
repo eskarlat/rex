@@ -20,6 +20,7 @@ import { handleVaultList } from './features/vault/commands/vault-list.command.js
 import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
 import { handleSchedulerList } from './features/scheduler/commands/scheduler-list.command.js';
 import { handleSchedulerTrigger } from './features/scheduler/commands/scheduler-trigger.command.js';
+import { handleUi } from './features/ui/commands/ui.command.js';
 import { getDb } from './core/database/database.js';
 import { getExtensionDir } from './core/paths/paths.js';
 import { ConnectionManager } from './features/extensions/mcp/connection-manager.js';
@@ -367,6 +368,23 @@ export function createProgram(): Command {
     .description('Manually trigger a scheduled task')
     .action((taskId: string) => {
       handleSchedulerTrigger({ taskId, db: getDb() });
+    });
+
+  // UI command
+  program
+    .command('ui')
+    .description('Start local web dashboard server and open browser')
+    .option('--port <port>', 'Port to listen on', '4200')
+    .option('--lan', 'Bind to 0.0.0.0 for LAN access')
+    .option('--no-browser', 'Do not open browser automatically')
+    .option('--no-sleep', 'Disable sleep prevention')
+    .action((opts: { port: string; browser: boolean; sleep: boolean; lan?: boolean }) => {
+      handleUi({
+        port: Number(opts.port),
+        lan: !!opts.lan,
+        noBrowser: !opts.browser,
+        noSleep: !opts.sleep,
+      });
     });
 
   // Skills command

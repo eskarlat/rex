@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { getDb } from '@renre-kit/cli/lib';
-import { parseExpression } from 'cron-parser';
+import cronParser from 'cron-parser';
+const { parseExpression } = cronParser;
 
 const TICK_INTERVAL_MS = 60_000;
 const MAX_OUTPUT_LENGTH = 10_240;

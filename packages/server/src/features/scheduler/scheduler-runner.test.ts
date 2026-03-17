@@ -15,6 +15,11 @@ vi.mock('@renre-kit/cli/lib', () => ({
 }));
 
 vi.mock('cron-parser', () => ({
+  default: {
+    parseExpression: vi.fn(() => ({
+      next: () => ({ toISOString: () => '2025-01-01T01:00:00.000Z' }),
+    })),
+  },
   parseExpression: vi.fn(() => ({
     next: () => ({ toISOString: () => '2025-01-01T01:00:00.000Z' }),
   })),
