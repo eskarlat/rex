@@ -89,6 +89,40 @@ describe('capabilities-aggregator', () => {
     expect(result).not.toContain('some-file');
   });
 
+  it('aggregates nested skill files (multi-skill per extension)', () => {
+    const extDir = path.join(tmpDir, '.agent', 'skills', 'multi-ext');
+    fs.mkdirSync(path.join(extDir, 'greet'), { recursive: true });
+    fs.mkdirSync(path.join(extDir, 'analyze'), { recursive: true });
+    fs.writeFileSync(path.join(extDir, 'greet', 'SKILL.md'), 'Greet skill content');
+    fs.writeFileSync(path.join(extDir, 'analyze', 'SKILL.md'), 'Analyze skill content');
+
+    const result = aggregateSkills(tmpDir);
+    expect(result).toContain('multi-ext');
+    expect(result).toContain('Greet skill content');
+    expect(result).toContain('Analyze skill content');
+  });
+
+  it('aggregates both single and nested skills together', () => {
+    // Single skill extension
+    const singleDir = path.join(tmpDir, '.agent', 'skills', 'simple-ext');
+    fs.mkdirSync(singleDir, { recursive: true });
+    fs.writeFileSync(path.join(singleDir, 'SKILL.md'), 'Simple skill');
+
+    // Multi-skill extension
+    const multiDir = path.join(tmpDir, '.agent', 'skills', 'multi-ext');
+    fs.mkdirSync(path.join(multiDir, 'alpha'), { recursive: true });
+    fs.mkdirSync(path.join(multiDir, 'beta'), { recursive: true });
+    fs.writeFileSync(path.join(multiDir, 'alpha', 'SKILL.md'), 'Alpha skill');
+    fs.writeFileSync(path.join(multiDir, 'beta', 'SKILL.md'), 'Beta skill');
+
+    const result = aggregateSkills(tmpDir);
+    expect(result).toContain('simple-ext');
+    expect(result).toContain('Simple skill');
+    expect(result).toContain('multi-ext');
+    expect(result).toContain('Alpha skill');
+    expect(result).toContain('Beta skill');
+  });
+
   it('uses separator between multiple skills', () => {
     const ext1Dir = path.join(tmpDir, '.agent', 'skills', 'first');
     const ext2Dir = path.join(tmpDir, '.agent', 'skills', 'second');

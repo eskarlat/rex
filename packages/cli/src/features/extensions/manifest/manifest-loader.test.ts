@@ -76,8 +76,13 @@ describe('manifest-loader', () => {
         icon: '🔧',
         iconColor: '#FF0000',
         hooks: { onInit: 'hooks/init.js', onDestroy: 'hooks/destroy.js' },
-        skills: 'SKILL.md',
-        agent: 'agent/',
+        agent: {
+          skills: [
+            { name: 'greet', path: 'skills/greet/SKILL.md' },
+          ],
+          prompts: ['agent/prompts/default.md'],
+          context: ['agent/context/docs.md'],
+        },
         ui: {
           panels: [
             { id: 'panel-1', title: 'Dashboard', entry: 'ui/dashboard.js' },
@@ -103,7 +108,9 @@ describe('manifest-loader', () => {
       const result = loadManifest(tempDir);
       expect(result.icon).toBe('🔧');
       expect(result.hooks?.onInit).toBe('hooks/init.js');
-      expect(result.skills).toBe('SKILL.md');
+      expect(result.agent?.skills).toHaveLength(1);
+      expect(result.agent?.prompts).toHaveLength(1);
+      expect(result.agent?.context).toHaveLength(1);
       expect(result.ui?.panels).toHaveLength(1);
       expect(result.config?.schema.apiKey?.secret).toBe(true);
       expect(result.config?.schema.retries?.default).toBe(3);
@@ -242,6 +249,108 @@ describe('manifest-loader', () => {
         const error = err as Error;
         expect(error.message).toContain(tempDir);
       }
+    });
+
+    // --- Agent assets support ---
+
+    it('should accept agent with skills array', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [
+            { name: 'greet', path: 'skills/greet/SKILL.md' },
+            { name: 'analyze', path: 'skills/analyze/SKILL.md' },
+          ],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent?.skills).toHaveLength(2);
+      expect(result.agent?.skills?.[0]?.name).toBe('greet');
+      expect(result.agent?.skills?.[0]?.path).toBe('skills/greet/SKILL.md');
+      expect(result.agent?.skills?.[1]?.name).toBe('analyze');
+    });
+
+    it('should reject agent.skills entry with missing name', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [{ path: 'skills/greet/SKILL.md' }],
+        },
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should reject agent.skills entry with missing path', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [{ name: 'greet' }],
+        },
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should accept agent with all asset types', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          prompts: ['agent/prompts/default.md', 'agent/prompts/custom.md'],
+          agents: ['agent/agents/researcher.md'],
+          workflows: ['agent/workflows/deploy.md'],
+          context: ['agent/context/docs.md'],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent?.skills).toHaveLength(1);
+      expect(result.agent?.prompts).toHaveLength(2);
+      expect(result.agent?.agents).toHaveLength(1);
+      expect(result.agent?.workflows).toHaveLength(1);
+      expect(result.agent?.context).toHaveLength(1);
+    });
+
+    it('should accept agent with partial assets (only prompts)', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          prompts: ['agent/prompts/default.md'],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent?.prompts).toHaveLength(1);
+      expect(result.agent?.skills).toBeUndefined();
+    });
+
+    it('should accept empty arrays in agent assets', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [],
+          prompts: [],
+          agents: [],
+          workflows: [],
+          context: [],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent).toBeDefined();
+    });
+
+    it('should reject agent as a string', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: 'agent/',
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should strip top-level skills field (not part of schema)', () => {
+      writeManifest({
+        ...validStandardManifest,
+        skills: 'SKILL.md',
+      });
+      const result = loadManifest(tempDir);
+      expect((result as Record<string, unknown>)['skills']).toBeUndefined();
     });
   });
 });

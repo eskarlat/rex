@@ -13,44 +13,56 @@ interface SchedulerTriggerOptions {
   db: Database.Database;
 }
 
-export function parseCommandString(input: string): string[] {
-  const tokens: string[] = [];
-  let current = '';
-  let inSingle = false;
-  let inDouble = false;
-  let escaped = false;
+interface ParseState {
+  tokens: string[];
+  current: string;
+  inSingle: boolean;
+  inDouble: boolean;
+  escaped: boolean;
+}
 
+function createParseState(): ParseState {
+  return { tokens: [], current: '', inSingle: false, inDouble: false, escaped: false };
+}
+
+function isQuoteToggle(ch: string, state: ParseState): boolean {
+  return (ch === "'" && !state.inDouble) || (ch === '"' && !state.inSingle);
+}
+
+function processChar(ch: string, state: ParseState): void {
+  if (state.escaped) {
+    state.current += ch;
+    state.escaped = false;
+    return;
+  }
+  if (ch === '\\' && !state.inSingle) {
+    state.escaped = true;
+    return;
+  }
+  if (isQuoteToggle(ch, state)) {
+    if (ch === "'") state.inSingle = !state.inSingle;
+    else state.inDouble = !state.inDouble;
+    return;
+  }
+  if (/\s/.test(ch) && !state.inSingle && !state.inDouble) {
+    if (state.current.length > 0) {
+      state.tokens.push(state.current);
+      state.current = '';
+    }
+    return;
+  }
+  state.current += ch;
+}
+
+export function parseCommandString(input: string): string[] {
+  const state = createParseState();
   for (const ch of input) {
-    if (escaped) {
-      current += ch;
-      escaped = false;
-      continue;
-    }
-    if (ch === '\\' && !inSingle) {
-      escaped = true;
-      continue;
-    }
-    if (ch === "'" && !inDouble) {
-      inSingle = !inSingle;
-      continue;
-    }
-    if (ch === '"' && !inSingle) {
-      inDouble = !inDouble;
-      continue;
-    }
-    if (/\s/.test(ch) && !inSingle && !inDouble) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-    current += ch;
+    processChar(ch, state);
   }
-  if (current.length > 0) {
-    tokens.push(current);
+  if (state.current.length > 0) {
+    state.tokens.push(state.current);
   }
-  return tokens;
+  return state.tokens;
 }
 
 export function handleSchedulerTrigger(options: SchedulerTriggerOptions): void {

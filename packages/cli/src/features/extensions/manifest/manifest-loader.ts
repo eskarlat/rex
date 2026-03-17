@@ -40,6 +40,19 @@ const configSchemaFieldSchema = z.object({
   default: z.union([z.string(), z.number(), z.boolean()]).optional(),
 });
 
+const skillRefSchema = z.object({
+  name: z.string(),
+  path: z.string(),
+});
+
+const agentAssetsSchema = z.object({
+  skills: z.array(skillRefSchema).optional(),
+  prompts: z.array(z.string()).optional(),
+  agents: z.array(z.string()).optional(),
+  workflows: z.array(z.string()).optional(),
+  context: z.array(z.string()).optional(),
+});
+
 const extensionManifestSchema = z
   .object({
     name: z.string(),
@@ -56,13 +69,12 @@ const extensionManifestSchema = z
       })
       .optional(),
     hooks: hookConfigSchema.optional(),
-    skills: z.string().optional(),
     ui: z
       .object({
         panels: z.array(uiPanelSchema),
       })
       .optional(),
-    agent: z.string().optional(),
+    agent: agentAssetsSchema.optional(),
   })
   .refine(
     (data) => {

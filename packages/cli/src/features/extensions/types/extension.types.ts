@@ -33,6 +33,19 @@ export interface ConfigSchemaField {
   default?: string | number | boolean;
 }
 
+export interface SkillRef {
+  name: string;
+  path: string;
+}
+
+export interface AgentAssets {
+  skills?: SkillRef[];
+  prompts?: string[];
+  agents?: string[];
+  workflows?: string[];
+  context?: string[];
+}
+
 export interface ExtensionManifest {
   name: string;
   version: string;
@@ -46,9 +59,8 @@ export interface ExtensionManifest {
     schema: Record<string, ConfigSchemaField>;
   };
   hooks?: HookConfig;
-  skills?: string;
   ui?: {
     panels: UiPanel[];
   };
-  agent?: string;
+  agent?: AgentAssets;
 }

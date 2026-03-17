@@ -1,0 +1,38 @@
+{
+  "name": "hello-world",
+  "version": "1.0.0",
+  "description": "A simple hello world extension for RenreKit",
+  "icon": "wave",
+  "type": "standard",
+  "commands": {
+    "hello:greet": {
+      "handler": "greet",
+      "description": "Greet the user with a friendly message"
+    },
+    "hello:info": {
+      "handler": "info",
+      "description": "Show extension info"
+    }
+  },
+  "hooks": {
+    "onInit": "src/index.js",
+    "onDestroy": "src/index.js"
+  },
+  "agent": {
+    "skills": [
+      { "name": "greet", "path": "skills/greet/SKILL.md" },
+      { "name": "info", "path": "skills/info/SKILL.md" }
+    ],
+    "prompts": ["agent/prompts/greeting-style.md"],
+    "context": ["agent/context/extension-docs.md"]
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "hello-panel",
+        "title": "Hello World",
+        "entry": "ui/panel.js"
+      }
+    ]
+  }
+}

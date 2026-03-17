@@ -13,6 +13,10 @@
     "./types": {
       "import": "./dist/core/types/index.js",
       "types": "./dist/core/types/index.d.ts"
+    },
+    "./lib": {
+      "import": "./dist/lib.js",
+      "types": "./dist/lib.d.ts"
     }
   },
   "bin": {

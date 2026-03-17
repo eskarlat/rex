@@ -124,7 +124,6 @@ describe('extension-manager', () => {
     it('creates .renre-kit dir if it does not exist', async () => {
       const freshProject = path.join(tmpDir, 'fresh-project');
       fs.mkdirSync(freshProject, { recursive: true });
-      // No .renre-kit dir
 
       const extDir = path.join(tmpDir, 'ext-fresh@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
@@ -160,7 +159,6 @@ describe('extension-manager', () => {
         }),
       );
 
-      // Should not throw even with missing hook
       await expect(
         activate('ext-nohook', '1.0.0', projectDir, extDir),
       ).resolves.toBeDefined();
@@ -244,6 +242,32 @@ describe('extension-manager', () => {
       expect(plugins['existing']).toBe('1.0.0');
       expect(plugins['new-ext']).toBe('2.0.0');
     });
+
+    it('does not auto-deploy assets — extensions manage via hooks', async () => {
+      const extDir = path.join(tmpDir, 'no-deploy@1.0.0');
+      fs.mkdirSync(path.join(extDir, 'skills', 'greet'), { recursive: true });
+      fs.writeFileSync(path.join(extDir, 'skills', 'greet', 'SKILL.md'), '# Greet');
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'no-deploy',
+          version: '1.0.0',
+          description: 'No auto deploy',
+          type: 'standard',
+          commands: {},
+          agent: {
+            skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+            prompts: ['agent/prompts/default.md'],
+          },
+        }),
+      );
+
+      await activate('no-deploy', '1.0.0', projectDir, extDir);
+
+      // Core does NOT auto-deploy — extensions handle this in onInit hooks
+      const skillPath = path.join(projectDir, '.agent', 'skills', 'no-deploy', 'greet', 'SKILL.md');
+      expect(fs.existsSync(skillPath)).toBe(false);
+    });
   });
 
   describe('deactivate', () => {
@@ -299,6 +323,35 @@ describe('extension-manager', () => {
         extensionName: 'ext-bus',
         projectPath: projectDir,
       });
+    });
+
+    it('does not auto-cleanup assets — extensions manage via hooks', async () => {
+      // Pre-deploy skills (as if an onInit hook had done it)
+      const skillsDir = path.join(projectDir, '.agent', 'skills', 'manual-ext');
+      fs.mkdirSync(path.join(skillsDir, 'greet'), { recursive: true });
+      fs.writeFileSync(path.join(skillsDir, 'greet', 'SKILL.md'), '# Greet');
+
+      const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
+      fs.writeFileSync(pluginsPath, JSON.stringify({ 'manual-ext': '1.0.0' }));
+
+      const extDir = path.join(tmpDir, 'manual-ext@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'manual-ext',
+          version: '1.0.0',
+          description: 'Manual cleanup',
+          type: 'standard',
+          commands: {},
+        }),
+      );
+
+      await deactivate('manual-ext', projectDir, extDir);
+
+      // Core does NOT auto-cleanup — extensions handle this in onDestroy hooks
+      // Skills should still be there since no hook cleaned them up
+      expect(fs.existsSync(path.join(skillsDir, 'greet', 'SKILL.md'))).toBe(true);
     });
 
     it('handles deactivating when plugins.json does not exist', async () => {

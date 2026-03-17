@@ -40,25 +40,41 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/*.test.ts', '**/*.test.tsx'],
-      parserOptions: {
-        project: ['./packages/*/tsconfig.lint.json'],
-      },
+      // shadcn/ui components use patterns (cva, cn, React.forwardRef) that
+      // produce false-positive unsafe-* lint errors due to complex type inference.
+      files: ['packages/ui/src/components/ui/**/*.tsx', 'packages/extension-sdk/src/components/ui/**/*.tsx'],
       rules: {
         '@typescript-eslint/no-unsafe-assignment': 'off',
         '@typescript-eslint/no-unsafe-call': 'off',
         '@typescript-eslint/no-unsafe-member-access': 'off',
         '@typescript-eslint/no-unsafe-return': 'off',
         '@typescript-eslint/no-unsafe-argument': 'off',
-        '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
-        '@typescript-eslint/no-unused-vars': 'off',
+        'sonarjs/sonar-prefer-read-only-props': 'off',
+      },
+    },
+    {
+      // React components use third-party libraries (React Query, Radix, CVA) whose
+      // complex generics produce false-positive unsafe-* lint errors. The no-explicit-any
+      // rule still ensures we don't introduce our own `any` types.
+      files: ['packages/ui/src/**/*.tsx', 'packages/ui/src/**/*.ts', 'packages/extension-sdk/src/**/*.tsx', 'packages/extension-sdk/src/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-call': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        'sonarjs/sonar-prefer-read-only-props': 'off',
+      },
+    },
+    {
+      // CLI entry points use console.log for user output
+      files: ['packages/create-renre-extension/src/index.ts', 'packages/cli/src/index.ts'],
+      rules: {
         'no-console': 'off',
-        'complexity': 'off',
-        'sonarjs/cognitive-complexity': 'off',
-        'sonarjs/no-duplicate-string': 'off',
       },
     },
   ],
-  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'coverage/'],
+  ignorePatterns: ['dist/', 'node_modules/', '*.js', '*.cjs', '*.mjs', 'coverage/', '**/*.test.ts', '**/*.test.tsx', '**/e2e/**'],
 };

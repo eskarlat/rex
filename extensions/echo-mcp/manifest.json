@@ -1,0 +1,14 @@
+{
+  "name": "echo-mcp",
+  "version": "1.0.0",
+  "description": "An echo MCP extension for RenreKit — echoes back any message via JSON-RPC",
+  "icon": "repeat",
+  "type": "mcp-stdio",
+  "commands": {},
+  "mcp": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["src/server.js"]
+  },
+  "skills": "SKILL.md"
+}
