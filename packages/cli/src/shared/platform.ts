@@ -1,5 +1,5 @@
 import os from 'node:os';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 
@@ -21,12 +21,11 @@ export function getOSType(): OSType {
 
 function getHardwareUUIDMacOS(): string | undefined {
   try {
-    /* eslint-disable sonarjs/no-os-command-from-path -- Platform-specific system command requires PATH */
-    const output = execSync(
-      'ioreg -d2 -c IOPlatformExpertDevice | grep IOPlatformUUID',
+    const output = execFileSync(
+      '/usr/sbin/ioreg',
+      ['-d2', '-c', 'IOPlatformExpertDevice'],
       { encoding: 'utf-8' },
     );
-    /* eslint-enable sonarjs/no-os-command-from-path */
     const match = /[A-F0-9-]{36}/i.exec(output);
     return match?.[0];
   } catch {
@@ -51,9 +50,12 @@ function getHardwareUUIDLinux(): string | undefined {
 
 function getHardwareUUIDWindows(): string | undefined {
   try {
-    /* eslint-disable sonarjs/no-os-command-from-path -- Platform-specific system command requires PATH */
-    const output = execSync('wmic csproduct get UUID', { encoding: 'utf-8' });
-    /* eslint-enable sonarjs/no-os-command-from-path */
+    const wmicPath = `${process.env['SYSTEMROOT'] ?? 'C:\\Windows'}\\System32\\wbem\\wmic.exe`;
+    const output = execFileSync(
+      wmicPath,
+      ['csproduct', 'get', 'UUID'],
+      { encoding: 'utf-8', windowsHide: true },
+    );
     const lines = output.trim().split(/\r?\n/);
     const uuidLine = lines[1]?.trim();
     if (uuidLine && uuidLine.length > 0) {

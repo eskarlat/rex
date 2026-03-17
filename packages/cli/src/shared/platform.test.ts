@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { NetworkInterfaceInfo } from 'node:os';
 
 vi.mock('node:os', () => ({
@@ -10,7 +10,7 @@ vi.mock('node:os', () => ({
 }));
 
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
 vi.mock('node:fs', () => ({
@@ -34,57 +34,61 @@ describe('platform', () => {
     vi.resetModules();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   describe('getOSType', () => {
     it('should return "windows" when platform is win32', async () => {
       vi.stubGlobal('process', { ...process, platform: 'win32' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('windows');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return "macos" when platform is darwin', async () => {
       vi.stubGlobal('process', { ...process, platform: 'darwin' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('macos');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return "linux" when platform is linux', async () => {
       vi.stubGlobal('process', { ...process, platform: 'linux' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('linux');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return "linux" for unknown platforms', async () => {
       vi.stubGlobal('process', { ...process, platform: 'freebsd' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('linux');
-      vi.unstubAllGlobals();
+
     });
   });
 
   describe('getHardwareUUID', () => {
     it('should return UUID from ioreg on macOS', async () => {
       vi.stubGlobal('process', { ...process, platform: 'darwin' });
-      const { execSync } = await import('node:child_process');
-      vi.mocked(execSync).mockReturnValue(
+      const { execFileSync } = await import('node:child_process');
+      vi.mocked(execFileSync).mockReturnValue(
         '    | "IOPlatformUUID" = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"\n',
       );
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('A1B2C3D4-E5F6-7890-ABCD-EF1234567890');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return fallback on macOS when ioreg fails', async () => {
       vi.stubGlobal('process', { ...process, platform: 'darwin' });
-      const { execSync } = await import('node:child_process');
-      vi.mocked(execSync).mockImplementation(() => {
+      const { execFileSync } = await import('node:child_process');
+      vi.mocked(execFileSync).mockImplementation(() => {
         throw new Error('command not found');
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890fallbackhash');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return machine-id on Linux from /etc/machine-id', async () => {
@@ -95,7 +99,7 @@ describe('platform', () => {
       );
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890abcdef1234567890');
-      vi.unstubAllGlobals();
+
     });
 
     it('should try /var/lib/dbus/machine-id when /etc/machine-id fails on Linux', async () => {
@@ -111,7 +115,7 @@ describe('platform', () => {
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('dbus-machine-id-value');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return fallback on Linux when both machine-id files fail', async () => {
@@ -122,29 +126,29 @@ describe('platform', () => {
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890fallbackhash');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return UUID from wmic on Windows', async () => {
       vi.stubGlobal('process', { ...process, platform: 'win32' });
-      const { execSync } = await import('node:child_process');
-      vi.mocked(execSync).mockReturnValue(
+      const { execFileSync } = await import('node:child_process');
+      vi.mocked(execFileSync).mockReturnValue(
         'UUID\r\nA1B2C3D4-E5F6-7890-ABCD-EF1234567890\r\n',
       );
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('A1B2C3D4-E5F6-7890-ABCD-EF1234567890');
-      vi.unstubAllGlobals();
+
     });
 
     it('should return fallback on Windows when wmic fails', async () => {
       vi.stubGlobal('process', { ...process, platform: 'win32' });
-      const { execSync } = await import('node:child_process');
-      vi.mocked(execSync).mockImplementation(() => {
+      const { execFileSync } = await import('node:child_process');
+      vi.mocked(execFileSync).mockImplementation(() => {
         throw new Error('command not found');
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890fallbackhash');
-      vi.unstubAllGlobals();
+
     });
   });
 
