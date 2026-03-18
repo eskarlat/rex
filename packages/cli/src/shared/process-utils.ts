@@ -6,11 +6,8 @@ export function isProcessRunning(pid: number): boolean {
     return true;
   } catch (err: unknown) {
     // EPERM means the process exists but belongs to another user
-    if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'EPERM') {
-      return true;
-    }
     // ESRCH means no such process — expected case
-    return false;
+    return err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'EPERM';
   }
 }
 
