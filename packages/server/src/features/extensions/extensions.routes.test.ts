@@ -118,6 +118,28 @@ describe('extensions routes', () => {
         status: 'available',
       });
     });
+
+    it('classifies multi-version extensions by activated version', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+        { name: 'ext1', version: '2.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '2.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active).toHaveLength(1);
+      expect(body.active[0].version).toBe('2.0.0');
+      expect(body.installed).toHaveLength(1);
+      expect(body.installed[0].version).toBe('1.0.0');
+    });
   });
 
   describe('POST /api/extensions/install', () => {

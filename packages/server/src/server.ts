@@ -62,7 +62,8 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
 
     // SPA fallback: serve index.html for non-API routes
     fastify.setNotFoundHandler((request, reply) => {
-      if (request.url === '/api' || request.url.startsWith('/api/')) {
+      const pathname = new URL(request.url, 'http://localhost').pathname;
+      if (pathname === '/api' || pathname.startsWith('/api/')) {
         return reply.status(404).send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
       }
       return reply.sendFile('index.html');

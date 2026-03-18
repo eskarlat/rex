@@ -82,4 +82,12 @@ describe('readPidFile', () => {
     mockReadFileSync.mockReturnValue('12345\n');
     expect(readPidFile('/fake/path')).toBe(12345);
   });
+
+  it('returns null when file is removed between existsSync and readFileSync', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT: no such file or directory');
+    });
+    expect(readPidFile('/fake/path')).toBeNull();
+  });
 });

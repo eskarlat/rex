@@ -51,7 +51,7 @@ export async function handleInit(options: InitOptions): Promise<void> {
     pm.init(name, options.projectPath);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    if (message.includes('already initialized')) {
+    if (message.startsWith('Project already initialized at')) {
       clack.log.warn(`Project already initialized at ${options.projectPath}`);
       clack.outro('Nothing to do.');
       return;

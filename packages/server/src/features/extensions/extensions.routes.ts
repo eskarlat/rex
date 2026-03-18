@@ -49,7 +49,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     const activatedPlugins = projectPath ? getActivated(projectPath) : {};
 
     const active = installed
-      .filter((ext) => activatedPlugins[ext.name] !== undefined)
+      .filter((ext) => activatedPlugins[ext.name] === ext.version)
       .map((ext) => ({
         name: ext.name,
         version: ext.version,
@@ -58,7 +58,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       }));
 
     const installedOnly = installed
-      .filter((ext) => activatedPlugins[ext.name] === undefined)
+      .filter((ext) => activatedPlugins[ext.name] !== ext.version)
       .map((ext) => ({
         name: ext.name,
         version: ext.version,
