@@ -101,8 +101,9 @@ describe('registry-manager', () => {
         makeConfig('reg2', 'https://git.example.com/r2.git', 2),
       ];
 
-      await syncAll(configs);
+      const errors = await syncAll(configs);
 
+      expect(errors).toEqual([]);
       expect(mockGit.clone).toHaveBeenCalledTimes(2);
     });
   });

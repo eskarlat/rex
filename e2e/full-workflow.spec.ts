@@ -78,8 +78,10 @@ test.beforeAll(async () => {
       },
     ],
   };
+  const renreKitDir = path.join(registryRepoDir, '.renre-kit');
+  fs.mkdirSync(renreKitDir, { recursive: true });
   fs.writeFileSync(
-    path.join(registryRepoDir, 'extensions.json'),
+    path.join(renreKitDir, 'extensions.json'),
     JSON.stringify(extensionsJson, null, 2),
   );
   gitInit(registryRepoDir);
@@ -148,7 +150,7 @@ test.describe.serial('CLI workflow', () => {
     const home = process.env['HOME'] ?? '';
     const regDir = path.join(home, '.renre-kit', 'registries', 'e2e-local');
     expect(fs.existsSync(regDir)).toBeTruthy();
-    expect(fs.existsSync(path.join(regDir, 'extensions.json'))).toBeTruthy();
+    expect(fs.existsSync(path.join(regDir, '.renre-kit', 'extensions.json'))).toBeTruthy();
   });
 
   test('registry:list shows e2e-local registry', () => {

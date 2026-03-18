@@ -51,10 +51,17 @@ export async function sync(
   updateTimestamp(regDir);
 }
 
-export async function syncAll(configs: RegistryConfig[]): Promise<void> {
+export async function syncAll(configs: RegistryConfig[]): Promise<string[]> {
+  const errors: string[] = [];
   for (const config of configs) {
-    await sync(config.name, config);
+    try {
+      await sync(config.name, config);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${config.name}: ${message}`);
+    }
   }
+  return errors;
 }
 
 export function list(configs: RegistryConfig[]): RegistryStatus[] {
@@ -84,7 +91,11 @@ export async function ensureSynced(configs: RegistryConfig[]): Promise<void> {
   for (const config of configs) {
     const regDir = getRegistryPath(config.name);
     if (!fs.existsSync(regDir) || checkStale(regDir, config.cacheTTL)) {
-      await sync(config.name, config);
+      try {
+        await sync(config.name, config);
+      } catch {
+        // Sync may fail (e.g. no network) — continue with stale/missing data
+      }
     }
   }
 }
