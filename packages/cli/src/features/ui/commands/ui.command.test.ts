@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ChildProcess } from 'node:child_process';
-import type { EventEmitter } from 'node:events';
 
 const mockSpawn = vi.fn();
 
@@ -12,11 +11,56 @@ vi.mock('node:os', () => ({
   default: { platform: () => 'linux' },
 }));
 
-import { handleUi } from './ui.command.js';
+const mockIntro = vi.fn();
+const mockOutro = vi.fn();
+const mockLogWarn = vi.fn();
+const mockLogInfo = vi.fn();
+const mockLogError = vi.fn();
+const mockSpinnerStart = vi.fn();
+const mockSpinnerStop = vi.fn();
 
-function createMockChild(): ChildProcess {
+vi.mock('@clack/prompts', () => ({
+  intro: (...args: unknown[]) => mockIntro(...args),
+  outro: (...args: unknown[]) => mockOutro(...args),
+  log: {
+    warn: (...args: unknown[]) => mockLogWarn(...args),
+    info: (...args: unknown[]) => mockLogInfo(...args),
+    error: (...args: unknown[]) => mockLogError(...args),
+  },
+  spinner: () => ({
+    start: (...args: unknown[]) => mockSpinnerStart(...args),
+    stop: (...args: unknown[]) => mockSpinnerStop(...args),
+  }),
+}));
+
+const mockWriteFileSync = vi.fn();
+const mockUnlinkSync = vi.fn();
+
+vi.mock('node:fs', () => ({
+  existsSync: () => true,
+  writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
+  unlinkSync: (...args: unknown[]) => mockUnlinkSync(...args),
+}));
+
+vi.mock('../../../core/paths/paths.js', () => ({
+  // eslint-disable-next-line sonarjs/publicly-writable-directories
+  SERVER_PID_PATH: '/tmp/test-server.pid',
+}));
+
+const mockIsProcessRunning = vi.fn();
+const mockReadPidFile = vi.fn();
+
+vi.mock('../../../shared/process-utils.js', () => ({
+  isProcessRunning: (...args: unknown[]) => mockIsProcessRunning(...args),
+  readPidFile: (...args: unknown[]) => mockReadPidFile(...args),
+}));
+
+const { handleUi } = await import('./ui.command.js');
+
+function createMockChild(pid = 42): ChildProcess {
   const handlers: Record<string, (...args: unknown[]) => void> = {};
   return {
+    pid,
     on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
       handlers[event] = handler;
     }),
@@ -29,41 +73,62 @@ function createMockChild(): ChildProcess {
 describe('ui command', () => {
   let mockChild: ChildProcess;
   const originalExit = process.exit;
-  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockChild = createMockChild();
     mockSpawn.mockReturnValue(mockChild);
+    mockReadPidFile.mockReturnValue(null);
+    mockIsProcessRunning.mockReturnValue(false);
     process.exit = vi.fn() as never;
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Mock fetch to resolve immediately (server ready)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 200 }));
   });
 
   afterEach(() => {
     process.exit = originalExit;
-    process.env = { ...originalEnv };
-    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
-  it('spawns server with default options', () => {
-    handleUi();
+  it('spawns server in detached mode with default options', async () => {
+    await handleUi({ noBrowser: true });
 
     expect(mockSpawn).toHaveBeenCalledWith(
       process.execPath,
       [expect.any(String)],
       expect.objectContaining({
         env: expect.objectContaining({ PORT: '4200' }),
-        stdio: 'inherit',
+        detached: true,
+        stdio: 'ignore',
       }),
-    );
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('127.0.0.1:4200'),
     );
   });
 
-  it('uses custom port', () => {
-    handleUi({ port: 8080 });
+  it('shows clack intro and outro', async () => {
+    await handleUi({ noBrowser: true });
+
+    expect(mockIntro).toHaveBeenCalledWith('RenreKit Dashboard');
+    expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('127.0.0.1:4200'));
+  });
+
+  it('writes PID file after spawn', async () => {
+    await handleUi({ noBrowser: true });
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      '/tmp/test-server.pid',
+      '42',
+      'utf-8',
+    );
+  });
+
+  it('unrefs the child process', async () => {
+    await handleUi({ noBrowser: true });
+
+    expect(mockChild.unref).toHaveBeenCalled();
+  });
+
+  it('uses custom port', async () => {
+    await handleUi({ port: 8080, noBrowser: true });
 
     expect(mockSpawn).toHaveBeenCalledWith(
       process.execPath,
@@ -72,13 +137,11 @@ describe('ui command', () => {
         env: expect.objectContaining({ PORT: '8080' }),
       }),
     );
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('8080'),
-    );
+    expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('8080'));
   });
 
-  it('sets LAN_MODE env when lan flag is true', () => {
-    handleUi({ lan: true });
+  it('sets LAN_MODE env when lan flag is true', async () => {
+    await handleUi({ lan: true, noBrowser: true });
 
     expect(mockSpawn).toHaveBeenCalledWith(
       process.execPath,
@@ -87,13 +150,11 @@ describe('ui command', () => {
         env: expect.objectContaining({ LAN_MODE: 'true' }),
       }),
     );
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('localhost:4200'),
-    );
+    expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('localhost'));
   });
 
-  it('sets NO_SLEEP env when noSleep is true', () => {
-    handleUi({ noSleep: true });
+  it('sets NO_SLEEP env when noSleep is true', async () => {
+    await handleUi({ noSleep: true, noBrowser: true });
 
     expect(mockSpawn).toHaveBeenCalledWith(
       process.execPath,
@@ -104,90 +165,114 @@ describe('ui command', () => {
     );
   });
 
-  it('does not open browser when noBrowser is true', () => {
-    vi.useFakeTimers();
-    handleUi({ noBrowser: true });
+  it('does not open browser when noBrowser is true', async () => {
+    await handleUi({ noBrowser: true });
 
     // Only one spawn call (the server), no browser spawn
     expect(mockSpawn).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(2000);
-    // Still only the server spawn
-    expect(mockSpawn).toHaveBeenCalledTimes(1);
-    vi.useRealTimers();
   });
 
-  it('opens browser after delay when noBrowser is false', () => {
-    vi.useFakeTimers();
-    handleUi({ noBrowser: false });
+  it('opens browser when noBrowser is false', async () => {
+    await handleUi({ noBrowser: false });
 
-    // Server spawn
-    expect(mockSpawn).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(1500);
-    // Browser spawn (xdg-open on linux)
+    // Server spawn + browser spawn
     expect(mockSpawn).toHaveBeenCalledTimes(2);
     expect(mockSpawn).toHaveBeenLastCalledWith(
       'xdg-open',
       ['http://127.0.0.1:4200'],
       expect.objectContaining({ stdio: 'ignore', detached: true }),
     );
-    vi.useRealTimers();
   });
 
-  it('exits with child process exit code', () => {
-    handleUi({ noBrowser: true });
+  it('reports already running when PID exists and process is alive', async () => {
+    mockReadPidFile.mockReturnValue(999);
+    mockIsProcessRunning.mockReturnValue(true);
 
-    const exitHandler = (mockChild.on as ReturnType<typeof vi.fn>).mock.calls.find(
-      (call: unknown[]) => call[0] === 'exit',
+    await handleUi({ noBrowser: true });
+
+    expect(mockLogWarn).toHaveBeenCalledWith(
+      expect.stringContaining('already running'),
     );
-    expect(exitHandler).toBeDefined();
-
-    // Simulate child exit
-    exitHandler![1](1);
-    expect(process.exit).toHaveBeenCalledWith(1);
+    // Server should not be spawned
+    expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('exits with code 0 when child exits with null', () => {
-    handleUi({ noBrowser: true });
+  it('cleans up stale PID and continues when process is dead', async () => {
+    mockReadPidFile.mockReturnValue(999);
+    mockIsProcessRunning.mockReturnValue(false);
 
-    const exitHandler = (mockChild.on as ReturnType<typeof vi.fn>).mock.calls.find(
-      (call: unknown[]) => call[0] === 'exit',
-    );
-    exitHandler![1](null);
-    expect(process.exit).toHaveBeenCalledWith(0);
+    await handleUi({ noBrowser: true });
+
+    expect(mockUnlinkSync).toHaveBeenCalled();
+    // Server should still be spawned
+    expect(mockSpawn).toHaveBeenCalledTimes(1);
   });
 
-  it('logs error and exits when child emits error', () => {
-    handleUi({ noBrowser: true });
+  it('shows spinner while waiting for server', async () => {
+    await handleUi({ noBrowser: true });
 
-    const errorHandler = (mockChild.on as ReturnType<typeof vi.fn>).mock.calls.find(
-      (call: unknown[]) => call[0] === 'error',
-    );
-    expect(errorHandler).toBeDefined();
-
-    errorHandler![1](new Error('spawn failed'));
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining('spawn failed'),
-    );
-    expect(process.exit).toHaveBeenCalledWith(1);
+    expect(mockSpinnerStart).toHaveBeenCalledWith('Starting dashboard server...');
+    expect(mockSpinnerStop).toHaveBeenCalledWith('Dashboard server is running.');
   });
 
-  it('forwards SIGINT and SIGTERM to child process', () => {
-    const sigintListeners: Array<() => void> = [];
-    const sigtermListeners: Array<() => void> = [];
-    vi.spyOn(process, 'on').mockImplementation((event: string, handler: (...args: unknown[]) => void) => {
-      if (event === 'SIGINT') sigintListeners.push(handler as () => void);
-      if (event === 'SIGTERM') sigtermListeners.push(handler as () => void);
-      return process;
+  it('shows initializing message when server is slow', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
+
+    // Temporarily override waitForServer timeout by mocking Date.now
+    let callCount = 0;
+    const realNow = Date.now;
+    vi.spyOn(Date, 'now').mockImplementation(() => {
+      callCount++;
+      // After first call, simulate timeout exceeded
+      return callCount <= 1 ? realNow() : realNow() + 6000;
     });
 
-    handleUi({ noBrowser: true });
+    await handleUi({ noBrowser: true });
 
-    sigintListeners[0]?.();
-    expect(mockChild.kill).toHaveBeenCalledWith('SIGINT');
+    expect(mockSpinnerStop).toHaveBeenCalledWith('Server started (still initializing).');
 
-    sigtermListeners[0]?.();
-    expect(mockChild.kill).toHaveBeenCalledWith('SIGTERM');
+    vi.restoreAllMocks();
+  });
+
+  it('logs PID info', async () => {
+    await handleUi({ noBrowser: true });
+
+    expect(mockLogInfo).toHaveBeenCalledWith('PID: 42');
+  });
+
+  it('exits when child emits error', async () => {
+    const handlers: Record<string, (...args: unknown[]) => void> = {};
+    const child = {
+      pid: 42,
+      on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+        handlers[event] = handler;
+      }),
+      unref: vi.fn(),
+    } as unknown as ChildProcess;
+    mockSpawn.mockReturnValue(child);
+
+    await handleUi({ noBrowser: true });
+
+    // Trigger the error handler
+    handlers['error']?.(new Error('spawn failed'));
+
+    expect(mockSpinnerStop).toHaveBeenCalledWith('Failed to start server.');
+    expect(mockLogError).toHaveBeenCalledWith('spawn failed');
+    expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  it('exits when child.pid is undefined', async () => {
+    const child = {
+      pid: undefined,
+      on: vi.fn(),
+      unref: vi.fn(),
+    } as unknown as ChildProcess;
+    mockSpawn.mockReturnValue(child);
+
+    await handleUi({ noBrowser: true });
+
+    expect(mockSpinnerStop).toHaveBeenCalledWith('Failed to start server.');
+    expect(mockLogError).toHaveBeenCalledWith('Could not obtain server process ID.');
+    expect(process.exit).toHaveBeenCalledWith(1);
   });
 });

@@ -5,6 +5,7 @@ import {
   listInstalled,
   activate,
   deactivate,
+  getActivated,
   getDb,
   EventBus,
   loadGlobalConfig,
@@ -35,14 +36,35 @@ interface RemoveParams {
 const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   const bus = new EventBus();
 
-  fastify.get('/api/marketplace', () => {
+  fastify.get('/api/marketplace', (request: FastifyRequest) => {
     const db = getDb();
     const installed = listInstalled(db);
-    const config = loadGlobalConfig();
+    const projectPath = request.projectPath;
+
+    const activatedPlugins = projectPath ? getActivated(projectPath) : {};
+
+    const active = installed
+      .filter((ext) => activatedPlugins[ext.name] !== undefined)
+      .map((ext) => ({
+        name: ext.name,
+        version: ext.version,
+        type: ext.type,
+        status: 'active' as const,
+      }));
+
+    const installedOnly = installed
+      .filter((ext) => activatedPlugins[ext.name] === undefined)
+      .map((ext) => ({
+        name: ext.name,
+        version: ext.version,
+        type: ext.type,
+        status: 'installed' as const,
+      }));
 
     return {
-      installed,
-      registries: config.registries,
+      active,
+      installed: installedOnly,
+      available: [],
     };
   });
 

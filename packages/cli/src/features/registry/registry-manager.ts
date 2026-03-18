@@ -71,7 +71,7 @@ export function list(configs: RegistryConfig[]): RegistryStatus[] {
 }
 
 function readExtensionsJson(regDir: string): RegistryEntry[] {
-  const filePath = path.join(regDir, 'extensions.json');
+  const filePath = path.join(regDir, '.renre-kit', 'extensions.json');
   if (!fs.existsSync(filePath)) {
     return [];
   }

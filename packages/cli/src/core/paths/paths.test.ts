@@ -9,6 +9,7 @@ import {
   VAULT_PATH,
   CONFIG_PATH,
   LOGS_DIR,
+  SERVER_PID_PATH,
   PROJECT_DIR,
   PLUGINS_JSON,
   MANIFEST_JSON,
@@ -58,6 +59,10 @@ describe('paths', () => {
 
     it('should define LOGS_DIR inside GLOBAL_DIR', () => {
       expect(LOGS_DIR).toBe(path.join(expectedGlobalDir, 'logs'));
+    });
+
+    it('should define SERVER_PID_PATH inside GLOBAL_DIR', () => {
+      expect(SERVER_PID_PATH).toBe(path.join(expectedGlobalDir, 'server.pid'));
     });
   });
 

@@ -95,6 +95,12 @@ vi.mock('./features/registry/commands/registry-sync.command.js', () => ({
 vi.mock('./features/registry/commands/registry-list.command.js', () => ({
   handleRegistryList: vi.fn(),
 }));
+vi.mock('./features/registry/commands/registry-add.command.js', () => ({
+  handleRegistryAdd: vi.fn(),
+}));
+vi.mock('./features/registry/commands/registry-remove.command.js', () => ({
+  handleRegistryRemove: vi.fn(),
+}));
 vi.mock('./features/skills/commands/capabilities.command.js', () => ({
   handleCapabilities: vi.fn(),
 }));
@@ -117,6 +123,10 @@ const mockHandleUi = vi.fn();
 vi.mock('./features/ui/commands/ui.command.js', () => ({
   handleUi: (...args: unknown[]) => mockHandleUi(...args),
 }));
+const mockHandleStop = vi.fn();
+vi.mock('./features/ui/commands/stop.command.js', () => ({
+  handleStop: (...args: unknown[]) => mockHandleStop(...args),
+}));
 vi.mock('./core/database/database.js', () => ({
   getDb: vi.fn(() => ({})),
 }));
@@ -134,6 +144,8 @@ import { handleExtStatus } from './features/extensions/commands/ext-status.comma
 import { handleExtRestart } from './features/extensions/commands/ext-restart.command.js';
 import { handleRegistrySync } from './features/registry/commands/registry-sync.command.js';
 import { handleRegistryList } from './features/registry/commands/registry-list.command.js';
+import { handleRegistryAdd } from './features/registry/commands/registry-add.command.js';
+import { handleRegistryRemove } from './features/registry/commands/registry-remove.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
 import { handleExtOutdated } from './features/extensions/commands/ext-outdated.command.js';
 import { handleExtUpdate } from './features/extensions/commands/ext-update.command.js';
@@ -276,6 +288,25 @@ describe('cli', () => {
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'registry:list']);
     expect(handleRegistryList).toHaveBeenCalled();
+  });
+
+  it('runs registry:add command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'registry:add', 'internal', 'https://github.com/company/reg.git']);
+    expect(handleRegistryAdd).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'internal',
+      url: 'https://github.com/company/reg.git',
+    }));
+  });
+
+  it('runs registry:remove command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'registry:remove', 'internal']);
+    expect(handleRegistryRemove).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'internal',
+    }));
   });
 
   it('runs capabilities command', async () => {
@@ -484,6 +515,13 @@ describe('cli', () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid port'));
     expect(mockExit).toHaveBeenCalledWith(1);
     mockExit.mockRestore();
+  });
+
+  it('runs stop command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'stop']);
+    expect(mockHandleStop).toHaveBeenCalled();
   });
 
   it('shows suggestions for unknown commands', async () => {

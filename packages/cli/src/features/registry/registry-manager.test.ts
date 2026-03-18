@@ -156,7 +156,7 @@ describe('registry-manager', () => {
 
     it('resolves extension from extensions.json', () => {
       const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
-      const regDir = path.join(tmpDir, 'registries', 'reg1');
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
       fs.mkdirSync(regDir, { recursive: true });
       fs.writeFileSync(
         path.join(regDir, 'extensions.json'),
@@ -191,7 +191,7 @@ describe('registry-manager', () => {
         makeConfig('high', 'https://git.example.com/high.git', 1),
       ];
       for (const cfg of configs) {
-        const regDir = path.join(tmpDir, 'registries', cfg.name);
+        const regDir = path.join(tmpDir, 'registries', cfg.name, '.renre-kit');
         fs.mkdirSync(regDir, { recursive: true });
         fs.writeFileSync(
           path.join(regDir, 'extensions.json'),

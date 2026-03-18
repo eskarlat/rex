@@ -47,7 +47,17 @@ export async function handleInit(options: InitOptions): Promise<void> {
     }
   }
 
-  pm.init(name, options.projectPath);
+  try {
+    pm.init(name, options.projectPath);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('already initialized')) {
+      clack.log.warn(`Project already initialized at ${options.projectPath}`);
+      clack.outro('Nothing to do.');
+      return;
+    }
+    throw err;
+  }
 
   for (const extName of selectedExtensions) {
     const ext = installed.find((e) => e.name === extName);

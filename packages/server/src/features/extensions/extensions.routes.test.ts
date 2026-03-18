@@ -8,6 +8,7 @@ const mockRemove = vi.fn();
 const mockListInstalled = vi.fn();
 const mockActivate = vi.fn();
 const mockDeactivate = vi.fn();
+const mockGetActivated = vi.fn();
 const mockGetDb = vi.fn();
 const mockLoadGlobalConfig = vi.fn();
 const mockResolveExtension = vi.fn();
@@ -21,6 +22,7 @@ vi.mock('@renre-kit/cli/lib', () => ({
   listInstalled: (...args: unknown[]) => mockListInstalled(...args),
   activate: (...args: unknown[]) => mockActivate(...args),
   deactivate: (...args: unknown[]) => mockDeactivate(...args),
+  getActivated: (...args: unknown[]) => mockGetActivated(...args),
   getDb: () => mockGetDb(),
   EventBus: vi.fn().mockImplementation(() => ({})),
   loadGlobalConfig: () => mockLoadGlobalConfig(),
@@ -48,15 +50,35 @@ describe('extensions routes', () => {
   });
 
   describe('GET /api/marketplace', () => {
-    it('returns installed extensions and registries', async () => {
-      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0' }]);
-      mockLoadGlobalConfig.mockReturnValue({ registries: [{ name: 'default', url: 'https://example.com' }] });
+    it('returns active, installed, and available arrays', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+        { name: 'ext2', version: '2.0.0', type: 'mcp-stdio' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active).toHaveLength(1);
+      expect(body.active[0].name).toBe('ext1');
+      expect(body.installed).toHaveLength(1);
+      expect(body.installed[0].name).toBe('ext2');
+      expect(body.available).toEqual([]);
+    });
+
+    it('returns all as installed when no project context', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
 
       const response = await app.inject({ method: 'GET', url: '/api/marketplace' });
       expect(response.statusCode).toBe(200);
       const body = response.json();
+      expect(body.active).toHaveLength(0);
       expect(body.installed).toHaveLength(1);
-      expect(body.registries).toHaveLength(1);
     });
   });
 

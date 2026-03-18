@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type { GlobalConfig, ConfigMapping, ConfigSchemaField } from '../../core/types/index.js';
+import type { GlobalConfig, ConfigMapping, ConfigSchemaField, RegistryConfig } from '../../core/types/index.js';
 import type { ProjectManifest } from '../../core/types/project.types.js';
 import { CONFIG_PATH, GLOBAL_DIR, PROJECT_DIR, MANIFEST_JSON } from '../../core/paths/paths.js';
 import {
@@ -10,8 +10,15 @@ import {
 } from '../../shared/fs-helpers.js';
 import { getDecryptedValue } from '../vault/vault-manager.js';
 
+export const DEFAULT_REGISTRY: RegistryConfig = {
+  name: 'default',
+  url: 'https://github.com/eskarlat/rex.git',
+  priority: 0,
+  cacheTTL: 3600,
+};
+
 const DEFAULT_CONFIG: GlobalConfig = {
-  registries: [],
+  registries: [DEFAULT_REGISTRY],
   settings: {},
   extensionConfigs: {},
 };
@@ -20,7 +27,12 @@ export function loadGlobalConfig(): GlobalConfig {
   if (!pathExistsSync(CONFIG_PATH)) {
     return { ...DEFAULT_CONFIG, extensionConfigs: {} };
   }
-  return readJsonSync<GlobalConfig>(CONFIG_PATH);
+  const stored = readJsonSync<Partial<GlobalConfig>>(CONFIG_PATH);
+  return {
+    ...DEFAULT_CONFIG,
+    ...stored,
+    extensionConfigs: stored.extensionConfigs ?? {},
+  };
 }
 
 export function saveGlobalConfig(config: GlobalConfig): void {
