@@ -1,3 +1,10 @@
+export class ProjectAlreadyInitializedError extends Error {
+  constructor(projectPath: string) {
+    super(`Project already initialized at ${projectPath}`);
+    this.name = 'ProjectAlreadyInitializedError';
+  }
+}
+
 export enum ErrorCode {
   // Core errors (Phase 1A spec)
   MANIFEST_INVALID = 'MANIFEST_INVALID',

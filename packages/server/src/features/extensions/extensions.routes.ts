@@ -38,9 +38,12 @@ interface RemoveParams {
 const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   const bus = new EventBus();
 
-  fastify.get('/api/marketplace', async (request: FastifyRequest) => {
+  // Sync registries once at startup (background, non-blocking)
+  const { registries: startupRegistries } = loadGlobalConfig();
+  void ensureSynced(startupRegistries);
+
+  fastify.get('/api/marketplace', (request: FastifyRequest) => {
     const { registries } = loadGlobalConfig();
-    await ensureSynced(registries);
 
     const db = getDb();
     const installed = listInstalled(db);

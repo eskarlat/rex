@@ -23,4 +23,4 @@ export type {
 
 export type { ExecutionContext } from './context.types.js';
 
-export { ErrorCode } from './errors.types.js';
+export { ErrorCode, ProjectAlreadyInitializedError } from './errors.types.js';

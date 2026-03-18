@@ -35,9 +35,11 @@ vi.mock('@clack/prompts', () => ({
 
 const mockWriteFileSync = vi.fn();
 const mockUnlinkSync = vi.fn();
+const mockMkdirSync = vi.fn();
 
 vi.mock('node:fs', () => ({
   existsSync: () => true,
+  mkdirSync: (...args: unknown[]) => mockMkdirSync(...args),
   writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
   unlinkSync: (...args: unknown[]) => mockUnlinkSync(...args),
 }));
@@ -45,6 +47,8 @@ vi.mock('node:fs', () => ({
 vi.mock('../../../core/paths/paths.js', () => ({
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   SERVER_PID_PATH: '/tmp/test-server.pid',
+  // eslint-disable-next-line sonarjs/publicly-writable-directories
+  GLOBAL_DIR: '/tmp/test-renre-kit',
 }));
 
 const mockIsProcessRunning = vi.fn();

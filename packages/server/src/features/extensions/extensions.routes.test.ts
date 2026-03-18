@@ -43,6 +43,7 @@ describe('extensions routes', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mockGetDb.mockReturnValue(mockDb);
+    mockLoadGlobalConfig.mockReturnValue({ registries: [] });
     app = Fastify();
     await app.register(projectScope);
     await app.register(extensionsRoutes);

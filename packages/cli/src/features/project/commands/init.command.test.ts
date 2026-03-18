@@ -38,6 +38,7 @@ vi.mock('../../../core/paths/paths.js', () => ({
 import * as clack from '@clack/prompts';
 import { handleInit } from './init.command.js';
 import * as extensionManager from '../../extensions/manager/extension-manager.js';
+import { ProjectAlreadyInitializedError } from '../../../core/types/errors.types.js';
 
 describe('init command', () => {
   beforeEach(() => {
@@ -111,12 +112,12 @@ describe('init command', () => {
   it('shows warning when project is already initialized', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
     mockInit.mockImplementationOnce(() => {
-      throw new Error('Project already initialized at /tmp/test');
+      throw new ProjectAlreadyInitializedError('/tmp/test');
     });
 
     await handleInit({ projectPath: '/tmp/test', force: false });
 
-    expect(clack.log.warn).toHaveBeenCalledWith('Project already initialized at /tmp/test');
+    expect(clack.log.warn).toHaveBeenCalledWith(expect.stringContaining('already initialized'));
     expect(clack.outro).toHaveBeenCalledWith('Nothing to do.');
     expect(extensionManager.activate).not.toHaveBeenCalled();
   });

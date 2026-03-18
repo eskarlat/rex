@@ -60,13 +60,18 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
       wildcard: false,
     });
 
-    // SPA fallback: serve index.html for non-API routes
+    // SPA fallback: serve index.html for navigational requests only
     fastify.setNotFoundHandler((request, reply) => {
       const pathname = new URL(request.url, 'http://localhost').pathname;
       if (pathname === '/api' || pathname.startsWith('/api/')) {
         return reply.status(404).send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
       }
-      return reply.sendFile('index.html');
+      const method = request.method;
+      const accept = request.headers.accept ?? '';
+      if ((method === 'GET' || method === 'HEAD') && accept.includes('text/html')) {
+        return reply.sendFile('index.html');
+      }
+      return reply.status(404).send({ message: 'Not Found', statusCode: 404 });
     });
   }
 

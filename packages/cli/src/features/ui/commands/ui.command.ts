@@ -1,11 +1,11 @@
 import { spawn } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
-import { existsSync, writeFileSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import * as clack from '@clack/prompts';
-import { SERVER_PID_PATH } from '../../../core/paths/paths.js';
+import { SERVER_PID_PATH, GLOBAL_DIR } from '../../../core/paths/paths.js';
 import { isProcessRunning, readPidFile } from '../../../shared/process-utils.js';
 
 export interface UiCommandOptions {
@@ -156,6 +156,7 @@ export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise
     return;
   }
 
+  mkdirSync(GLOBAL_DIR, { recursive: true });
   writeFileSync(SERVER_PID_PATH, String(pid), 'utf-8');
   child.unref();
 
