@@ -27,6 +27,8 @@ vi.mock('@renre-kit/cli/lib', () => ({
   getExtensionDir: vi.fn(),
   resolveExtension: vi.fn(),
   installExtension: vi.fn(),
+  ensureSynced: vi.fn().mockResolvedValue(undefined),
+  listAvailableExtensions: vi.fn().mockReturnValue([]),
   sync: vi.fn(),
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   LOGS_DIR: '/tmp/test-logs',

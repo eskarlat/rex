@@ -34,11 +34,26 @@ describe('config-manager', () => {
       const { loadGlobalConfig } = await import('./config-manager.js');
       const config = loadGlobalConfig();
 
-      expect(config).toEqual({
-        registries: [],
-        settings: {},
-        extensionConfigs: {},
+      expect(config.registries).toHaveLength(1);
+      expect(config.registries[0]).toMatchObject({ name: 'default', url: 'https://github.com/eskarlat/rex.git' });
+      expect(config.settings).toEqual({});
+      expect(config.extensionConfigs).toEqual({});
+    });
+
+    it('should merge defaults for missing fields in config file', async () => {
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
+      vi.mocked(pathExistsSync).mockReturnValue(true);
+      vi.mocked(readJsonSync).mockReturnValue({
+        settings: { theme: 'dark' },
       });
+
+      const { loadGlobalConfig } = await import('./config-manager.js');
+      const config = loadGlobalConfig();
+
+      expect(config.registries).toHaveLength(1);
+      expect(config.registries[0]).toMatchObject({ name: 'default' });
+      expect(config.settings).toEqual({ theme: 'dark' });
+      expect(config.extensionConfigs).toEqual({});
     });
 
     it('should load config from file', async () => {

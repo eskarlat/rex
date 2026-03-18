@@ -10,13 +10,14 @@ export async function handleRegistrySync(options: RegistrySyncOptions): Promise<
   const s = clack.spinner();
   s.start('Syncing registries...');
 
-  try {
-    await syncAll(options.configs);
+  const errors = await syncAll(options.configs);
+  if (errors.length === 0) {
     s.stop('Registries synced');
     clack.log.success('All registries synchronized.');
-  } catch (err) {
-    s.stop('Sync failed');
-    const message = err instanceof Error ? err.message : String(err);
-    clack.log.error(`Failed to sync registries: ${message}`);
+  } else {
+    s.stop('Sync completed with errors');
+    for (const error of errors) {
+      clack.log.warn(`Failed to sync: ${error}`);
+    }
   }
 }

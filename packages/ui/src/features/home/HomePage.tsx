@@ -42,7 +42,7 @@ export function HomePage() {
   const { activeProject } = useProjectContext();
   const { data: marketplace, isLoading } = useMarketplace();
 
-  const activeCount = marketplace?.active.length ?? 0;
+  const activeCount = marketplace?.active?.length ?? 0;
 
   return (
     <div className="space-y-6">

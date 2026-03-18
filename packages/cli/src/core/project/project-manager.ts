@@ -8,6 +8,7 @@ import {
   MANIFEST_JSON,
   PLUGINS_JSON,
 } from '../paths/paths.js';
+import { ProjectAlreadyInitializedError } from '../types/errors.types.js';
 
 export class ProjectManager {
   private bus: EventBus;
@@ -20,7 +21,7 @@ export class ProjectManager {
     const projectDir = path.join(projectPath, PROJECT_DIR);
 
     if (fs.existsSync(path.join(projectDir, MANIFEST_JSON))) {
-      throw new Error(`Project already initialized at ${projectPath}`);
+      throw new ProjectAlreadyInitializedError(projectPath);
     }
 
     fs.mkdirSync(projectDir, { recursive: true });

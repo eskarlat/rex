@@ -1,6 +1,6 @@
 import * as clack from '@clack/prompts';
 import type { RegistryConfig } from '../../../core/types/index.js';
-import { resolve, installExtension } from '../../registry/registry-manager.js';
+import { resolve, installExtension, ensureSynced } from '../../registry/registry-manager.js';
 import { install, activate } from '../manager/extension-manager.js';
 import { getDb } from '../../../core/database/database.js';
 
@@ -11,6 +11,7 @@ interface ExtAddOptions {
 }
 
 export async function handleExtAdd(options: ExtAddOptions): Promise<void> {
+  await ensureSynced(options.registryConfigs);
   const resolved = resolve(options.name, options.registryConfigs);
   if (!resolved) {
     clack.log.error(`Extension "${options.name}" not found in any registry.`);
@@ -24,6 +25,7 @@ export async function handleExtAdd(options: ExtAddOptions): Promise<void> {
     resolved.name,
     resolved.gitUrl,
     resolved.latestVersion,
+    resolved.registryName,
   );
 
   const db = getDb();

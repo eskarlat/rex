@@ -5,6 +5,7 @@ import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getDb } from '../../../core/database/database.js';
 import { listInstalled, activate } from '../../extensions/manager/extension-manager.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
+import { ProjectAlreadyInitializedError } from '../../../core/types/errors.types.js';
 
 interface InitOptions {
   projectPath: string;
@@ -47,7 +48,16 @@ export async function handleInit(options: InitOptions): Promise<void> {
     }
   }
 
-  pm.init(name, options.projectPath);
+  try {
+    pm.init(name, options.projectPath);
+  } catch (err: unknown) {
+    if (err instanceof ProjectAlreadyInitializedError) {
+      clack.log.warn(err.message);
+      clack.outro('Nothing to do.');
+      return;
+    }
+    throw err;
+  }
 
   for (const extName of selectedExtensions) {
     const ext = installed.find((e) => e.name === extName);

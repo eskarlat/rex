@@ -51,10 +51,17 @@ export async function sync(
   updateTimestamp(regDir);
 }
 
-export async function syncAll(configs: RegistryConfig[]): Promise<void> {
+export async function syncAll(configs: RegistryConfig[]): Promise<string[]> {
+  const errors: string[] = [];
   for (const config of configs) {
-    await sync(config.name, config);
+    try {
+      await sync(config.name, config);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${config.name}: ${message}`);
+    }
   }
+  return errors;
 }
 
 export function list(configs: RegistryConfig[]): RegistryStatus[] {
@@ -71,13 +78,45 @@ export function list(configs: RegistryConfig[]): RegistryStatus[] {
 }
 
 function readExtensionsJson(regDir: string): RegistryEntry[] {
-  const filePath = path.join(regDir, 'extensions.json');
+  const filePath = path.join(regDir, '.renre-kit', 'extensions.json');
   if (!fs.existsSync(filePath)) {
     return [];
   }
   const raw = fs.readFileSync(filePath, 'utf-8');
   const data = JSON.parse(raw) as { extensions: RegistryEntry[] };
   return data.extensions;
+}
+
+export async function ensureSynced(configs: RegistryConfig[]): Promise<void> {
+  for (const config of configs) {
+    const regDir = getRegistryPath(config.name);
+    if (!fs.existsSync(regDir) || checkStale(regDir, config.cacheTTL)) {
+      try {
+        await sync(config.name, config);
+      } catch {
+        // Sync may fail (e.g. no network) — continue with stale/missing data
+      }
+    }
+  }
+}
+
+export function listAvailable(configs: RegistryConfig[]): RegistryEntry[] {
+  const sorted = [...configs].sort((a, b) => a.priority - b.priority);
+  const seen = new Set<string>();
+  const result: RegistryEntry[] = [];
+
+  for (const config of sorted) {
+    const regDir = getRegistryPath(config.name);
+    const entries = readExtensionsJson(regDir);
+    for (const entry of entries) {
+      if (!seen.has(entry.name)) {
+        seen.add(entry.name);
+        result.push(entry);
+      }
+    }
+  }
+
+  return result;
 }
 
 export function resolve(
@@ -104,13 +143,29 @@ export function resolve(
   return null;
 }
 
+function isLocalPath(source: string): boolean {
+  return source.startsWith('./') || source.startsWith('../') || source.startsWith('/');
+}
+
 export async function installExtension(
   name: string,
   gitUrl: string,
   version: string,
+  registryName?: string,
 ): Promise<string> {
   const extDir = path.join(getExtensionsDir(), `${name}@${version}`);
-  const git = simpleGit();
-  await git.clone(gitUrl, extDir, ['--branch', `v${version}`, '--depth', '1']);
+
+  if (isLocalPath(gitUrl)) {
+    const basePath = registryName ? getRegistryPath(registryName) : process.cwd();
+    const sourcePath = path.resolve(basePath, gitUrl);
+    if (!fs.existsSync(sourcePath)) {
+      throw new Error(`Local extension path not found: ${sourcePath}`);
+    }
+    fs.cpSync(sourcePath, extDir, { recursive: true });
+  } else {
+    const git = simpleGit();
+    await git.clone(gitUrl, extDir, ['--branch', `v${version}`, '--depth', '1']);
+  }
+
   return extDir;
 }

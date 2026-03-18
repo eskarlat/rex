@@ -14,6 +14,8 @@ import { handleExtUpdate } from './features/extensions/commands/ext-update.comma
 import { handleExtCleanup } from './features/extensions/commands/ext-cleanup.command.js';
 import { handleRegistrySync } from './features/registry/commands/registry-sync.command.js';
 import { handleRegistryList } from './features/registry/commands/registry-list.command.js';
+import { handleRegistryAdd } from './features/registry/commands/registry-add.command.js';
+import { handleRegistryRemove } from './features/registry/commands/registry-remove.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
 import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
 import { handleVaultList } from './features/vault/commands/vault-list.command.js';
@@ -21,6 +23,7 @@ import { handleVaultRemove } from './features/vault/commands/vault-remove.comman
 import { handleSchedulerList } from './features/scheduler/commands/scheduler-list.command.js';
 import { handleSchedulerTrigger } from './features/scheduler/commands/scheduler-trigger.command.js';
 import { handleUi } from './features/ui/commands/ui.command.js';
+import { handleStop } from './features/ui/commands/stop.command.js';
 import { getDb } from './core/database/database.js';
 import { getExtensionDir } from './core/paths/paths.js';
 import { ConnectionManager } from './features/extensions/mcp/connection-manager.js';
@@ -293,6 +296,41 @@ export function createProgram(): Command {
       handleRegistryList({ configs: registries });
     });
 
+  program
+    .command('registry:add <name> <url>')
+    .description('Add a new extension registry')
+    .option('--priority <number>', 'Resolution priority (lower = higher)', '100')
+    .option('--cache-ttl <seconds>', 'Cache TTL in seconds', '3600')
+    .action((name: string, url: string, opts: { priority: string; cacheTtl: string }) => {
+      const priority = parseInt(opts.priority, 10);
+      const cacheTTL = parseInt(opts.cacheTtl, 10);
+
+      if (!Number.isFinite(priority) || priority < 0) {
+        console.error('Error: --priority must be a non-negative integer');
+        process.exitCode = 1;
+        return;
+      }
+      if (!Number.isFinite(cacheTTL) || cacheTTL < 0) {
+        console.error('Error: --cache-ttl must be a non-negative integer');
+        process.exitCode = 1;
+        return;
+      }
+
+      handleRegistryAdd({
+        name,
+        url,
+        priority,
+        cacheTTL,
+      });
+    });
+
+  program
+    .command('registry:remove <name>')
+    .description('Remove an extension registry')
+    .action((name: string) => {
+      handleRegistryRemove({ name });
+    });
+
   // Extension versioning commands
   program
     .command('ext:outdated')
@@ -378,19 +416,27 @@ export function createProgram(): Command {
     .option('--lan', 'Bind to 0.0.0.0 for LAN access')
     .option('--no-browser', 'Do not open browser automatically')
     .option('--no-sleep', 'Disable sleep prevention')
-    .action((opts: { port: string; browser: boolean; sleep: boolean; lan?: boolean }) => {
+    .action(async (opts: { port: string; browser: boolean; sleep: boolean; lan?: boolean }) => {
       const port = Number(opts.port);
       if (!Number.isFinite(port) || !Number.isInteger(port) || port < 1 || port > 65535) {
         // eslint-disable-next-line no-console
         console.error(`Invalid port: "${opts.port}". Must be an integer between 1 and 65535.`);
         process.exit(1);
       }
-      handleUi({
+      await handleUi({
         port,
         lan: !!opts.lan,
         noBrowser: !opts.browser,
         noSleep: !opts.sleep,
       });
+    });
+
+  // Stop command
+  program
+    .command('stop')
+    .description('Stop the running dashboard server')
+    .action(() => {
+      handleStop();
     });
 
   // Skills command

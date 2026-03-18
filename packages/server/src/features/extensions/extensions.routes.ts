@@ -5,10 +5,13 @@ import {
   listInstalled,
   activate,
   deactivate,
+  getActivated,
   getDb,
   EventBus,
   loadGlobalConfig,
   resolveExtension,
+  listAvailableExtensions,
+  ensureSynced,
   installExtension,
   getExtensionDir,
 } from '@renre-kit/cli/lib';
@@ -35,14 +38,54 @@ interface RemoveParams {
 const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   const bus = new EventBus();
 
-  fastify.get('/api/marketplace', () => {
+  // Sync registries once at startup (background, non-blocking)
+  const { registries: startupRegistries } = loadGlobalConfig();
+  void ensureSynced(startupRegistries);
+
+  fastify.get('/api/marketplace', (request: FastifyRequest) => {
+    const { registries } = loadGlobalConfig();
+
     const db = getDb();
     const installed = listInstalled(db);
-    const config = loadGlobalConfig();
+    const projectPath = request.projectPath;
+
+    const activatedPlugins = projectPath ? getActivated(projectPath) : {};
+
+    const active = installed
+      .filter((ext) => activatedPlugins[ext.name] === ext.version)
+      .map((ext) => ({
+        name: ext.name,
+        version: ext.version,
+        type: ext.type,
+        status: 'active' as const,
+      }));
+
+    const installedOnly = installed
+      .filter((ext) => activatedPlugins[ext.name] !== ext.version)
+      .map((ext) => ({
+        name: ext.name,
+        version: ext.version,
+        type: ext.type,
+        status: 'installed' as const,
+      }));
+
+    const installedNames = new Set(installed.map((ext) => ext.name));
+    const available = listAvailableExtensions(registries)
+      .filter((entry) => !installedNames.has(entry.name))
+      .map((entry) => ({
+        name: entry.name,
+        description: entry.description,
+        version: entry.latestVersion,
+        type: entry.type,
+        author: entry.author,
+        icon: entry.icon,
+        status: 'available' as const,
+      }));
 
     return {
-      installed,
-      registries: config.registries,
+      active,
+      installed: installedOnly,
+      available,
     };
   });
 
@@ -60,7 +103,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: `Extension '${body.name}' not found in registries` };
     }
 
-    const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion);
+    const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
     const db = getDb();
     install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 

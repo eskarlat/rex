@@ -1,7 +1,11 @@
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import fastifyStatic from '@fastify/static';
 import websocket from '@fastify/websocket';
 import projectScope from './core/middleware/project-scope.js';
 import errorHandler from './core/middleware/error-handler.js';
@@ -47,5 +51,47 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
   await fastify.register(schedulerRoutes);
   await fastify.register(logsWebsocket);
 
+  // Serve the built UI (SPA) if the dist directory exists
+  const uiDistPath = resolveUiDist();
+  if (uiDistPath) {
+    await fastify.register(fastifyStatic, {
+      root: uiDistPath,
+      prefix: '/',
+      wildcard: false,
+    });
+
+    // SPA fallback: serve index.html for navigational requests only
+    fastify.setNotFoundHandler((request, reply) => {
+      const pathname = new URL(request.url, 'http://localhost').pathname;
+      if (pathname === '/api' || pathname.startsWith('/api/')) {
+        return reply.status(404).send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
+      }
+      const method = request.method;
+      const accept = request.headers.accept ?? '';
+      if ((method === 'GET' || method === 'HEAD') && accept.includes('text/html')) {
+        return reply.sendFile('index.html');
+      }
+      return reply.status(404).send({ message: 'Not Found', statusCode: 404 });
+    });
+  }
+
   return fastify;
+}
+
+function resolveUiDist(): string | null {
+  const thisDir = dirname(fileURLToPath(import.meta.url));
+
+  // From source (src/): ../../ui/dist
+  // From built (dist/): ../../ui/dist
+  const candidates = [
+    resolve(thisDir, '..', '..', 'ui', 'dist'),
+    resolve(thisDir, '..', 'ui', 'dist'),
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(resolve(candidate, 'index.html'))) {
+      return candidate;
+    }
+  }
+  return null;
 }

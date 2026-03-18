@@ -19,6 +19,8 @@ import {
   syncAll,
   list,
   resolve,
+  listAvailable,
+  ensureSynced,
   installExtension,
 } from './registry-manager.js';
 import type { RegistryConfig } from '../../core/types/index.js';
@@ -99,8 +101,9 @@ describe('registry-manager', () => {
         makeConfig('reg2', 'https://git.example.com/r2.git', 2),
       ];
 
-      await syncAll(configs);
+      const errors = await syncAll(configs);
 
+      expect(errors).toEqual([]);
       expect(mockGit.clone).toHaveBeenCalledTimes(2);
     });
   });
@@ -156,7 +159,7 @@ describe('registry-manager', () => {
 
     it('resolves extension from extensions.json', () => {
       const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
-      const regDir = path.join(tmpDir, 'registries', 'reg1');
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
       fs.mkdirSync(regDir, { recursive: true });
       fs.writeFileSync(
         path.join(regDir, 'extensions.json'),
@@ -191,7 +194,7 @@ describe('registry-manager', () => {
         makeConfig('high', 'https://git.example.com/high.git', 1),
       ];
       for (const cfg of configs) {
-        const regDir = path.join(tmpDir, 'registries', cfg.name);
+        const regDir = path.join(tmpDir, 'registries', cfg.name, '.renre-kit');
         fs.mkdirSync(regDir, { recursive: true });
         fs.writeFileSync(
           path.join(regDir, 'extensions.json'),
@@ -214,6 +217,111 @@ describe('registry-manager', () => {
       const result = resolve('shared-ext', configs);
       expect(result).not.toBeNull();
       expect(result!.registryName).toBe('high');
+    });
+  });
+
+  describe('listAvailable', () => {
+    it('returns empty array when no registries have extensions', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const result = listAvailable(configs);
+      expect(result).toEqual([]);
+    });
+
+    it('returns all extensions from a registry', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
+      fs.mkdirSync(regDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(regDir, 'extensions.json'),
+        JSON.stringify({
+          extensions: [
+            { name: 'ext-a', description: 'A', gitUrl: 'https://example.com/a.git', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test' },
+            { name: 'ext-b', description: 'B', gitUrl: 'https://example.com/b.git', latestVersion: '2.0.0', type: 'mcp', icon: 'star', author: 'test' },
+          ],
+        }),
+      );
+
+      const result = listAvailable(configs);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.name).toBe('ext-a');
+      expect(result[1]!.name).toBe('ext-b');
+    });
+
+    it('deduplicates extensions by name using highest priority registry', () => {
+      const configs = [
+        makeConfig('low', 'https://git.example.com/low.git', 10),
+        makeConfig('high', 'https://git.example.com/high.git', 1),
+      ];
+      for (const cfg of configs) {
+        const regDir = path.join(tmpDir, 'registries', cfg.name, '.renre-kit');
+        fs.mkdirSync(regDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(regDir, 'extensions.json'),
+          JSON.stringify({
+            extensions: [
+              { name: 'shared-ext', description: `From ${cfg.name}`, gitUrl: `https://example.com/${cfg.name}.git`, latestVersion: '1.0.0', type: 'standard', icon: '', author: cfg.name },
+            ],
+          }),
+        );
+      }
+
+      const result = listAvailable(configs);
+      expect(result).toHaveLength(1);
+      expect(result[0]!.author).toBe('high');
+    });
+  });
+
+  describe('ensureSynced', () => {
+    it('syncs registries that have not been fetched yet', async () => {
+      const simpleGitModule = await import('simple-git');
+      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const configs = [makeConfig('new-reg', 'https://git.example.com/reg.git', 1)];
+
+      await ensureSynced(configs);
+
+      expect(mockGit.clone).toHaveBeenCalledOnce();
+    });
+
+    it('skips registries that are already synced and fresh', async () => {
+      const simpleGitModule = await import('simple-git');
+      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+
+      // Create a fresh registry dir with recent timestamp
+      const regDir = path.join(tmpDir, 'registries', 'fresh-reg');
+      fs.mkdirSync(regDir, { recursive: true });
+      fs.writeFileSync(path.join(regDir, '.fetched_at'), new Date().toISOString());
+
+      const configs = [makeConfig('fresh-reg', 'https://git.example.com/reg.git', 1)];
+
+      await ensureSynced(configs);
+
+      expect(mockGit.clone).not.toHaveBeenCalled();
+      expect(mockGit.pull).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('installExtension — local paths', () => {
+    it('copies local extension directory instead of git clone', async () => {
+      const simpleGitModule = await import('simple-git');
+      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+
+      // Create a registry with a local extension
+      const regDir = path.join(tmpDir, 'registries', 'local-reg');
+      const extSrc = path.join(regDir, 'extensions', 'my-ext');
+      fs.mkdirSync(extSrc, { recursive: true });
+      fs.writeFileSync(path.join(extSrc, 'manifest.json'), '{"name":"my-ext"}');
+
+      const result = await installExtension('my-ext', './extensions/my-ext', '1.0.0', 'local-reg');
+
+      expect(mockGit.clone).not.toHaveBeenCalled();
+      expect(result).toContain('my-ext@1.0.0');
+      expect(fs.existsSync(path.join(result, 'manifest.json'))).toBe(true);
+    });
+
+    it('throws when local path does not exist', async () => {
+      await expect(
+        installExtension('missing', './nonexistent', '1.0.0', 'some-reg'),
+      ).rejects.toThrow('Local extension path not found');
     });
   });
 

@@ -9,6 +9,7 @@ export const REGISTRIES_DIR = path.join(GLOBAL_DIR, 'registries');
 export const VAULT_PATH = path.join(GLOBAL_DIR, 'vault.json');
 export const CONFIG_PATH = path.join(GLOBAL_DIR, 'config.json');
 export const LOGS_DIR = path.join(GLOBAL_DIR, 'logs');
+export const SERVER_PID_PATH = path.join(GLOBAL_DIR, 'server.pid');
 
 // Per-project constants
 export const PROJECT_DIR = '.renre-kit';

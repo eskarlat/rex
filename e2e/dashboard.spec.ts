@@ -77,7 +77,8 @@ test.describe('Marketplace page', () => {
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data).toHaveProperty('installed');
-    expect(data).toHaveProperty('registries');
+    expect(data).toHaveProperty('available');
+    expect(data).toHaveProperty('active');
   });
 });
 

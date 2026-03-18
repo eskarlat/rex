@@ -1,9 +1,12 @@
 import { spawn } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
+import * as clack from '@clack/prompts';
+import { SERVER_PID_PATH, GLOBAL_DIR } from '../../../core/paths/paths.js';
+import { isProcessRunning, readPidFile } from '../../../shared/process-utils.js';
 
 export interface UiCommandOptions {
   port: number;
@@ -56,59 +59,112 @@ function resolveServerEntry(): string {
   throw new Error('Could not find @renre-kit/server. Ensure the server package is built.');
 }
 
-export function handleUi(options: Partial<UiCommandOptions> = {}): void {
-  const port = options.port ?? DEFAULT_PORT;
-  const lan = options.lan ?? false;
-  const noBrowser = options.noBrowser ?? false;
-  const noSleep = options.noSleep ?? false;
+function waitForServer(url: string, timeoutMs: number): Promise<boolean> {
+  return new Promise((resolvePromise) => {
+    const start = Date.now();
+    const check = (): void => {
+      fetch(url)
+        .then((res) => {
+          if (res.status < 500) {
+            resolvePromise(true);
+          } else {
+            retry();
+          }
+        })
+        .catch(() => {
+          retry();
+        });
+    };
+    const retry = (): void => {
+      if (Date.now() - start >= timeoutMs) {
+        resolvePromise(false);
+        return;
+      }
+      setTimeout(check, 300);
+    };
+    check();
+  });
+}
 
-  const serverEntry = resolveServerEntry();
+function buildDashboardUrl(port: number, lan: boolean): string {
+  const host = lan ? '0.0.0.0' : '127.0.0.1';
+  return `http://${lan ? 'localhost' : host}:${port}`;
+}
 
+function buildServerEnv(port: number, lan: boolean, noSleep: boolean): Record<string, string> {
   const env: Record<string, string> = {
     ...process.env as Record<string, string>,
     PORT: String(port),
   };
+  if (lan) env['LAN_MODE'] = 'true';
+  if (noSleep) env['NO_SLEEP'] = 'true';
+  return env;
+}
 
-  if (lan) {
-    env['LAN_MODE'] = 'true';
-  }
-  if (noSleep) {
-    env['NO_SLEEP'] = 'true';
+/** Returns true if an existing server is already running (early exit). */
+function checkExistingServer(url: string): boolean {
+  const existingPid = readPidFile(SERVER_PID_PATH);
+  if (existingPid === null) return false;
+
+  if (isProcessRunning(existingPid)) {
+    clack.log.warn(`Dashboard server is already running (PID ${existingPid}).`);
+    clack.outro(`Dashboard: ${url}`);
+    return true;
   }
 
-  const child = spawn(process.execPath, [serverEntry], {
+  // Stale PID file — clean up
+  try {
+    unlinkSync(SERVER_PID_PATH);
+  } catch {
+    // PID file may have been removed by another process
+  }
+  return false;
+}
+
+export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise<void> {
+  clack.intro('RenreKit Dashboard');
+
+  const port = options.port ?? DEFAULT_PORT;
+  const lan = options.lan ?? false;
+  const noBrowser = options.noBrowser ?? false;
+  const noSleep = options.noSleep ?? false;
+  const url = buildDashboardUrl(port, lan);
+
+  if (checkExistingServer(url)) return;
+
+  const env = buildServerEnv(port, lan, noSleep);
+  const s = clack.spinner();
+  s.start('Starting dashboard server...');
+
+  const child = spawn(process.execPath, [resolveServerEntry()], {
     env,
-    stdio: 'inherit',
+    detached: true,
+    stdio: 'ignore',
   });
 
   child.on('error', (err) => {
-    // eslint-disable-next-line no-console
-    console.error(`Failed to start dashboard server: ${err.message}`);
+    s.stop('Failed to start server.');
+    clack.log.error(err.message);
     process.exit(1);
   });
 
-  const host = lan ? '0.0.0.0' : '127.0.0.1';
-  const url = `http://${lan ? 'localhost' : host}:${port}`;
-
-  // eslint-disable-next-line no-console
-  console.log(`Starting RenreKit Dashboard on ${url}`);
-
-  if (!noBrowser) {
-    // Small delay to let the server start before opening browser
-    setTimeout(() => {
-      openBrowser(url);
-    }, 1500);
+  const pid = child.pid;
+  if (pid === undefined) {
+    s.stop('Failed to start server.');
+    clack.log.error('Could not obtain server process ID.');
+    process.exit(1);
+    return;
   }
 
-  // Forward signals to child
-  const forwardSignal = (signal: NodeJS.Signals): void => {
-    child.kill(signal);
-  };
+  mkdirSync(GLOBAL_DIR, { recursive: true });
+  writeFileSync(SERVER_PID_PATH, String(pid), 'utf-8');
+  child.unref();
 
-  process.on('SIGINT', () => forwardSignal('SIGINT'));
-  process.on('SIGTERM', () => forwardSignal('SIGTERM'));
+  const ready = await waitForServer(`http://127.0.0.1:${port}/api/projects`, 5000);
+  s.stop(ready ? 'Dashboard server is running.' : 'Server started (still initializing).');
 
-  child.on('exit', (code) => {
-    process.exit(code ?? 0);
-  });
+  if (!noBrowser) openBrowser(url);
+
+  clack.log.info(`PID: ${pid}`);
+  clack.outro(`Dashboard: ${url}`);
 }

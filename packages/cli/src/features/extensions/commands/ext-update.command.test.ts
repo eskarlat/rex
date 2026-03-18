@@ -15,6 +15,7 @@ vi.mock('../manager/extension-manager.js', () => ({
 vi.mock('../../registry/registry-manager.js', () => ({
   resolve: vi.fn(),
   installExtension: vi.fn(() => Promise.resolve('/tmp/ext')),
+  ensureSynced: vi.fn().mockResolvedValue(undefined),
 }));
 
 import * as clack from '@clack/prompts';
@@ -44,7 +45,7 @@ describe('ext-update command', () => {
       db: {} as never,
     });
 
-    expect(installExtension).toHaveBeenCalledWith('jira', 'https://github.com/ext-jira', '1.1.0');
+    expect(installExtension).toHaveBeenCalledWith('jira', 'https://github.com/ext-jira', '1.1.0', 'default');
     expect(install).toHaveBeenCalledWith('jira', '1.1.0', 'default', 'standard', expect.anything());
     expect(activate).toHaveBeenCalledWith('jira', '1.1.0', '/tmp/project', '/tmp/ext');
     expect(clack.log.success).toHaveBeenCalled();

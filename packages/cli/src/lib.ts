@@ -3,7 +3,7 @@
 
 // Core infrastructure
 export { initDatabase, getDb, closeDatabase } from './core/database/database.js';
-export { GLOBAL_DIR, getExtensionDir, getManifestPath, getPluginsPath, getAgentDir, getSkillsDir, LOGS_DIR, REGISTRIES_DIR } from './core/paths/paths.js';
+export { GLOBAL_DIR, getExtensionDir, getManifestPath, getPluginsPath, getAgentDir, getSkillsDir, LOGS_DIR, REGISTRIES_DIR, SERVER_PID_PATH } from './core/paths/paths.js';
 export { EventBus } from './core/event-bus/event-bus.js';
 export { Logger } from './core/logger/logger.js';
 export { CommandRegistry } from './core/command-registry/command-registry.js';
@@ -22,7 +22,7 @@ export { setEntry, getEntry, removeEntry, listEntries, getDecryptedValue, hasEnt
 export { loadGlobalConfig, saveGlobalConfig, setExtensionConfig, getExtensionConfigMappings, resolveExtensionConfig, getReferencingExtensions } from './features/config/config-manager.js';
 
 // Registry
-export { sync, syncAll, list as listRegistries, resolve as resolveExtension, installExtension } from './features/registry/registry-manager.js';
+export { sync, syncAll, ensureSynced, list as listRegistries, resolve as resolveExtension, listAvailable as listAvailableExtensions, installExtension } from './features/registry/registry-manager.js';
 
 // Skills
 export { aggregateSkills } from './features/skills/capabilities-aggregator.js';

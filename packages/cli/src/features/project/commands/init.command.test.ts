@@ -9,6 +9,7 @@ vi.mock('@clack/prompts', () => ({
   multiselect: vi.fn(),
   isCancel: vi.fn().mockReturnValue(false),
   cancel: vi.fn(),
+  log: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
 
 vi.mock('../../../core/project/project-manager.js', () => ({
@@ -37,6 +38,7 @@ vi.mock('../../../core/paths/paths.js', () => ({
 import * as clack from '@clack/prompts';
 import { handleInit } from './init.command.js';
 import * as extensionManager from '../../extensions/manager/extension-manager.js';
+import { ProjectAlreadyInitializedError } from '../../../core/types/errors.types.js';
 
 describe('init command', () => {
   beforeEach(() => {
@@ -105,6 +107,28 @@ describe('init command', () => {
 
     expect(mockInit).toHaveBeenCalled();
     expect(extensionManager.activate).not.toHaveBeenCalled();
+  });
+
+  it('shows warning when project is already initialized', async () => {
+    vi.mocked(clack.text).mockResolvedValue('my-project');
+    mockInit.mockImplementationOnce(() => {
+      throw new ProjectAlreadyInitializedError('/tmp/test');
+    });
+
+    await handleInit({ projectPath: '/tmp/test', force: false });
+
+    expect(clack.log.warn).toHaveBeenCalledWith(expect.stringContaining('already initialized'));
+    expect(clack.outro).toHaveBeenCalledWith('Nothing to do.');
+    expect(extensionManager.activate).not.toHaveBeenCalled();
+  });
+
+  it('re-throws non-init errors from projectManager.init', async () => {
+    vi.mocked(clack.text).mockResolvedValue('my-project');
+    mockInit.mockImplementationOnce(() => {
+      throw new Error('Database is locked');
+    });
+
+    await expect(handleInit({ projectPath: '/tmp/test', force: false })).rejects.toThrow('Database is locked');
   });
 
   it('activates multiple selected extensions', async () => {
