@@ -11,6 +11,7 @@ import {
   loadGlobalConfig,
   resolveExtension,
   listAvailableExtensions,
+  ensureSynced,
   installExtension,
   getExtensionDir,
 } from '@renre-kit/cli/lib';
@@ -37,7 +38,10 @@ interface RemoveParams {
 const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   const bus = new EventBus();
 
-  fastify.get('/api/marketplace', (request: FastifyRequest) => {
+  fastify.get('/api/marketplace', async (request: FastifyRequest) => {
+    const { registries } = loadGlobalConfig();
+    await ensureSynced(registries);
+
     const db = getDb();
     const installed = listInstalled(db);
     const projectPath = request.projectPath;
@@ -62,7 +66,6 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
         status: 'installed' as const,
       }));
 
-    const { registries } = loadGlobalConfig();
     const installedNames = new Set(installed.map((ext) => ext.name));
     const available = listAvailableExtensions(registries)
       .filter((entry) => !installedNames.has(entry.name))
@@ -97,7 +100,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: `Extension '${body.name}' not found in registries` };
     }
 
-    const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion);
+    const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
     const db = getDb();
     install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 

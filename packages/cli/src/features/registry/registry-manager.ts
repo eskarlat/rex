@@ -80,6 +80,15 @@ function readExtensionsJson(regDir: string): RegistryEntry[] {
   return data.extensions;
 }
 
+export async function ensureSynced(configs: RegistryConfig[]): Promise<void> {
+  for (const config of configs) {
+    const regDir = getRegistryPath(config.name);
+    if (!fs.existsSync(regDir) || checkStale(regDir, config.cacheTTL)) {
+      await sync(config.name, config);
+    }
+  }
+}
+
 export function listAvailable(configs: RegistryConfig[]): RegistryEntry[] {
   const sorted = [...configs].sort((a, b) => a.priority - b.priority);
   const seen = new Set<string>();
@@ -123,13 +132,29 @@ export function resolve(
   return null;
 }
 
+function isLocalPath(source: string): boolean {
+  return source.startsWith('./') || source.startsWith('../') || source.startsWith('/');
+}
+
 export async function installExtension(
   name: string,
   gitUrl: string,
   version: string,
+  registryName?: string,
 ): Promise<string> {
   const extDir = path.join(getExtensionsDir(), `${name}@${version}`);
-  const git = simpleGit();
-  await git.clone(gitUrl, extDir, ['--branch', `v${version}`, '--depth', '1']);
+
+  if (isLocalPath(gitUrl)) {
+    const basePath = registryName ? getRegistryPath(registryName) : process.cwd();
+    const sourcePath = path.resolve(basePath, gitUrl);
+    if (!fs.existsSync(sourcePath)) {
+      throw new Error(`Local extension path not found: ${sourcePath}`);
+    }
+    fs.cpSync(sourcePath, extDir, { recursive: true });
+  } else {
+    const git = simpleGit();
+    await git.clone(gitUrl, extDir, ['--branch', `v${version}`, '--depth', '1']);
+  }
+
   return extDir;
 }

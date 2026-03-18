@@ -2,7 +2,7 @@ import * as clack from '@clack/prompts';
 import type Database from 'better-sqlite3';
 import type { RegistryConfig } from '../../../core/types/index.js';
 import { listInstalled, install, activate, getActivated } from '../manager/extension-manager.js';
-import { resolve, installExtension } from '../../registry/registry-manager.js';
+import { resolve, installExtension, ensureSynced } from '../../registry/registry-manager.js';
 
 interface ExtUpdateOptions {
   name?: string;
@@ -40,7 +40,7 @@ async function updateSingle(
   const s = clack.spinner();
   s.start(`Updating ${name} ${ext.version} → ${resolved.latestVersion}...`);
 
-  const extPath = await installExtension(name, resolved.gitUrl, resolved.latestVersion);
+  const extPath = await installExtension(name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
   install(name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 
   // Re-activate if the extension was active in this project
@@ -55,6 +55,8 @@ async function updateSingle(
 }
 
 export async function handleExtUpdate(options: ExtUpdateOptions): Promise<void> {
+  await ensureSynced(options.registryConfigs);
+
   if (options.all) {
     const installed = listInstalled(options.db);
     let updated = 0;

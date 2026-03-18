@@ -13,6 +13,7 @@ const mockGetDb = vi.fn();
 const mockLoadGlobalConfig = vi.fn();
 const mockResolveExtension = vi.fn();
 const mockListAvailableExtensions = vi.fn();
+const mockEnsureSynced = vi.fn();
 const mockInstallExtension = vi.fn();
 const mockGetExtensionDir = vi.fn();
 const mockDb = {};
@@ -29,6 +30,7 @@ vi.mock('@renre-kit/cli/lib', () => ({
   loadGlobalConfig: () => mockLoadGlobalConfig(),
   resolveExtension: (...args: unknown[]) => mockResolveExtension(...args),
   listAvailableExtensions: (...args: unknown[]) => mockListAvailableExtensions(...args),
+  ensureSynced: (...args: unknown[]) => mockEnsureSynced(...args),
   installExtension: (...args: unknown[]) => mockInstallExtension(...args),
   getExtensionDir: (...args: unknown[]) => mockGetExtensionDir(...args),
 }));

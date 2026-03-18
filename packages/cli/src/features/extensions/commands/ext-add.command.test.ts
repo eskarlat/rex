@@ -8,6 +8,7 @@ vi.mock('@clack/prompts', () => ({
 vi.mock('../../registry/registry-manager.js', () => ({
   resolve: vi.fn(),
   installExtension: vi.fn().mockResolvedValue('/path/to/ext'),
+  ensureSynced: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../manager/extension-manager.js', () => ({
@@ -45,7 +46,7 @@ describe('ext-add command', () => {
     });
 
     expect(registryManager.resolve).toHaveBeenCalledWith('my-ext', expect.any(Array));
-    expect(registryManager.installExtension).toHaveBeenCalledWith('my-ext', 'https://github.com/user/my-ext.git', '1.0.0');
+    expect(registryManager.installExtension).toHaveBeenCalledWith('my-ext', 'https://github.com/user/my-ext.git', '1.0.0', 'default');
     expect(extensionManager.install).toHaveBeenCalled();
   });
 
