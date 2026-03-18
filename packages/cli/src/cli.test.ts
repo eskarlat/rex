@@ -113,6 +113,10 @@ vi.mock('./features/scheduler/commands/scheduler-list.command.js', () => ({
 vi.mock('./features/scheduler/commands/scheduler-trigger.command.js', () => ({
   handleSchedulerTrigger: vi.fn(),
 }));
+const mockHandleUi = vi.fn();
+vi.mock('./features/ui/commands/ui.command.js', () => ({
+  handleUi: (...args: unknown[]) => mockHandleUi(...args),
+}));
 vi.mock('./core/database/database.js', () => ({
   getDb: vi.fn(() => ({})),
 }));
@@ -436,6 +440,50 @@ describe('cli', () => {
     const cmd = program.commands.find((c) => c.name() === 'my-tool:run');
     expect(cmd).toBeDefined();
     expect(cmd?.description()).toBe('Run my-tool:run');
+  });
+
+  it('runs ui command with default port', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'ui', '--no-browser']);
+    expect(mockHandleUi).toHaveBeenCalledWith(expect.objectContaining({
+      port: 4200,
+      noBrowser: true,
+    }));
+  });
+
+  it('rejects invalid port for ui command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      await program.parseAsync(['node', 'renre-kit', 'ui', '--port', 'abc']);
+    } catch {
+      // expected
+    }
+
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid port'));
+    expect(mockExit).toHaveBeenCalledWith(1);
+    mockExit.mockRestore();
+  });
+
+  it('rejects out-of-range port for ui command', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      await program.parseAsync(['node', 'renre-kit', 'ui', '--port', '99999']);
+    } catch {
+      // expected
+    }
+
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Invalid port'));
+    expect(mockExit).toHaveBeenCalledWith(1);
+    mockExit.mockRestore();
   });
 
   it('shows suggestions for unknown commands', async () => {

@@ -15,18 +15,21 @@
     "typecheck": "turbo run typecheck",
     "validate": "turbo run validate",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\""
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
+    "test:e2e": "playwright test",
+    "test:cli": "node --test tests/"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
+    "@vitest/coverage-istanbul": "^2.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-sonarjs": "^2.0.0",
     "jscpd": "^4.0.5",
     "prettier": "^3.4.2",
     "turbo": "^2.3.0",
     "typescript": "^5.7.0",
-    "vitest": "^2.1.0",
-    "@vitest/coverage-istanbul": "^2.1.0"
+    "vitest": "^2.1.0"
   }
 }

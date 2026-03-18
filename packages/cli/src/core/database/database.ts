@@ -38,14 +38,18 @@ export function closeDatabase(): void {
   }
 }
 
+function findMigrationsDir(): string {
+  // In source: import.meta.dirname = src/core/database → ../../../migrations
+  // In bundle: import.meta.dirname = dist → ../migrations
+  const fromSource = path.resolve(import.meta.dirname, '..', '..', '..', 'migrations');
+  if (fs.existsSync(fromSource)) {
+    return fromSource;
+  }
+  return path.resolve(import.meta.dirname, '..', 'migrations');
+}
+
 function runMigrations(database: Database.Database): void {
-  const migrationsDir = path.resolve(
-    import.meta.dirname,
-    '..',
-    '..',
-    '..',
-    'migrations',
-  );
+  const migrationsDir = findMigrationsDir();
 
   let files: string[];
   try {

@@ -1,0 +1,22 @@
+{
+  "extensions": [
+    {
+      "name": "hello-world",
+      "description": "A simple hello world extension for RenreKit",
+      "gitUrl": "https://github.com/eskarlat/rex.git#extensions/hello-world",
+      "latestVersion": "1.0.0",
+      "type": "standard",
+      "icon": "wave",
+      "author": "eskarlat"
+    },
+    {
+      "name": "echo-mcp",
+      "description": "An echo MCP extension — echoes back any message via JSON-RPC",
+      "gitUrl": "https://github.com/eskarlat/rex.git#extensions/echo-mcp",
+      "latestVersion": "1.0.0",
+      "type": "mcp",
+      "icon": "repeat",
+      "author": "eskarlat"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { getDb } from '@renre-kit/cli/lib';
-import { parseExpression } from 'cron-parser';
+import { Cron } from 'croner';
 
 const TICK_INTERVAL_MS = 60_000;
 const MAX_OUTPUT_LENGTH = 10_240;
@@ -17,8 +17,12 @@ interface ScheduledTaskRow {
 }
 
 function computeNextRun(cronExpression: string): string {
-  const interval = parseExpression(cronExpression);
-  return interval.next().toISOString();
+  const job = new Cron(cronExpression);
+  const next = job.nextRun();
+  if (!next) {
+    throw new Error(`No next run for cron expression: ${cronExpression}`);
+  }
+  return next.toISOString();
 }
 
 export function parseCommandString(input: string): string[] {
