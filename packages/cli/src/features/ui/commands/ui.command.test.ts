@@ -157,4 +157,37 @@ describe('ui command', () => {
     exitHandler![1](null);
     expect(process.exit).toHaveBeenCalledWith(0);
   });
+
+  it('logs error and exits when child emits error', () => {
+    handleUi({ noBrowser: true });
+
+    const errorHandler = (mockChild.on as ReturnType<typeof vi.fn>).mock.calls.find(
+      (call: unknown[]) => call[0] === 'error',
+    );
+    expect(errorHandler).toBeDefined();
+
+    errorHandler![1](new Error('spawn failed'));
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining('spawn failed'),
+    );
+    expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  it('forwards SIGINT and SIGTERM to child process', () => {
+    const sigintListeners: Array<() => void> = [];
+    const sigtermListeners: Array<() => void> = [];
+    vi.spyOn(process, 'on').mockImplementation((event: string, handler: (...args: unknown[]) => void) => {
+      if (event === 'SIGINT') sigintListeners.push(handler as () => void);
+      if (event === 'SIGTERM') sigtermListeners.push(handler as () => void);
+      return process;
+    });
+
+    handleUi({ noBrowser: true });
+
+    sigintListeners[0]?.();
+    expect(mockChild.kill).toHaveBeenCalledWith('SIGINT');
+
+    sigtermListeners[0]?.();
+    expect(mockChild.kill).toHaveBeenCalledWith('SIGTERM');
+  });
 });
