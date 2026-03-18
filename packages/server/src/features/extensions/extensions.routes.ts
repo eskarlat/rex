@@ -10,6 +10,7 @@ import {
   EventBus,
   loadGlobalConfig,
   resolveExtension,
+  listAvailableExtensions,
   installExtension,
   getExtensionDir,
 } from '@renre-kit/cli/lib';
@@ -61,12 +62,24 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
         status: 'installed' as const,
       }));
 
-    // TODO: Populate `available` from registry data once registry search is implemented.
-    // Currently returns an empty array, making the "Available" marketplace tab non-functional.
+    const { registries } = loadGlobalConfig();
+    const installedNames = new Set(installed.map((ext) => ext.name));
+    const available = listAvailableExtensions(registries)
+      .filter((entry) => !installedNames.has(entry.name))
+      .map((entry) => ({
+        name: entry.name,
+        description: entry.description,
+        version: entry.latestVersion,
+        type: entry.type,
+        author: entry.author,
+        icon: entry.icon,
+        status: 'available' as const,
+      }));
+
     return {
       active,
       installed: installedOnly,
-      available: [],
+      available,
     };
   });
 

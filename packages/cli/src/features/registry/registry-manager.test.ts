@@ -19,6 +19,7 @@ import {
   syncAll,
   list,
   resolve,
+  listAvailable,
   installExtension,
 } from './registry-manager.js';
 import type { RegistryConfig } from '../../core/types/index.js';
@@ -214,6 +215,57 @@ describe('registry-manager', () => {
       const result = resolve('shared-ext', configs);
       expect(result).not.toBeNull();
       expect(result!.registryName).toBe('high');
+    });
+  });
+
+  describe('listAvailable', () => {
+    it('returns empty array when no registries have extensions', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const result = listAvailable(configs);
+      expect(result).toEqual([]);
+    });
+
+    it('returns all extensions from a registry', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
+      fs.mkdirSync(regDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(regDir, 'extensions.json'),
+        JSON.stringify({
+          extensions: [
+            { name: 'ext-a', description: 'A', gitUrl: 'https://example.com/a.git', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test' },
+            { name: 'ext-b', description: 'B', gitUrl: 'https://example.com/b.git', latestVersion: '2.0.0', type: 'mcp', icon: 'star', author: 'test' },
+          ],
+        }),
+      );
+
+      const result = listAvailable(configs);
+      expect(result).toHaveLength(2);
+      expect(result[0]!.name).toBe('ext-a');
+      expect(result[1]!.name).toBe('ext-b');
+    });
+
+    it('deduplicates extensions by name using highest priority registry', () => {
+      const configs = [
+        makeConfig('low', 'https://git.example.com/low.git', 10),
+        makeConfig('high', 'https://git.example.com/high.git', 1),
+      ];
+      for (const cfg of configs) {
+        const regDir = path.join(tmpDir, 'registries', cfg.name, '.renre-kit');
+        fs.mkdirSync(regDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(regDir, 'extensions.json'),
+          JSON.stringify({
+            extensions: [
+              { name: 'shared-ext', description: `From ${cfg.name}`, gitUrl: `https://example.com/${cfg.name}.git`, latestVersion: '1.0.0', type: 'standard', icon: '', author: cfg.name },
+            ],
+          }),
+        );
+      }
+
+      const result = listAvailable(configs);
+      expect(result).toHaveLength(1);
+      expect(result[0]!.author).toBe('high');
     });
   });
 

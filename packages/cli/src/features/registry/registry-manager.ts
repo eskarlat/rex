@@ -80,6 +80,25 @@ function readExtensionsJson(regDir: string): RegistryEntry[] {
   return data.extensions;
 }
 
+export function listAvailable(configs: RegistryConfig[]): RegistryEntry[] {
+  const sorted = [...configs].sort((a, b) => a.priority - b.priority);
+  const seen = new Set<string>();
+  const result: RegistryEntry[] = [];
+
+  for (const config of sorted) {
+    const regDir = getRegistryPath(config.name);
+    const entries = readExtensionsJson(regDir);
+    for (const entry of entries) {
+      if (!seen.has(entry.name)) {
+        seen.add(entry.name);
+        result.push(entry);
+      }
+    }
+  }
+
+  return result;
+}
+
 export function resolve(
   extensionName: string,
   configs: RegistryConfig[],

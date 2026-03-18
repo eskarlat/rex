@@ -22,7 +22,7 @@ export { setEntry, getEntry, removeEntry, listEntries, getDecryptedValue, hasEnt
 export { loadGlobalConfig, saveGlobalConfig, setExtensionConfig, getExtensionConfigMappings, resolveExtensionConfig, getReferencingExtensions } from './features/config/config-manager.js';
 
 // Registry
-export { sync, syncAll, list as listRegistries, resolve as resolveExtension, installExtension } from './features/registry/registry-manager.js';
+export { sync, syncAll, list as listRegistries, resolve as resolveExtension, listAvailable as listAvailableExtensions, installExtension } from './features/registry/registry-manager.js';
 
 // Skills
 export { aggregateSkills } from './features/skills/capabilities-aggregator.js';
