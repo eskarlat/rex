@@ -302,11 +302,25 @@ export function createProgram(): Command {
     .option('--priority <number>', 'Resolution priority (lower = higher)', '100')
     .option('--cache-ttl <seconds>', 'Cache TTL in seconds', '3600')
     .action((name: string, url: string, opts: { priority: string; cacheTtl: string }) => {
+      const priority = parseInt(opts.priority, 10);
+      const cacheTTL = parseInt(opts.cacheTtl, 10);
+
+      if (!Number.isFinite(priority) || priority < 0) {
+        console.error('Error: --priority must be a non-negative integer');
+        process.exitCode = 1;
+        return;
+      }
+      if (!Number.isFinite(cacheTTL) || cacheTTL < 0) {
+        console.error('Error: --cache-ttl must be a non-negative integer');
+        process.exitCode = 1;
+        return;
+      }
+
       handleRegistryAdd({
         name,
         url,
-        priority: parseInt(opts.priority, 10),
-        cacheTTL: parseInt(opts.cacheTtl, 10),
+        priority,
+        cacheTTL,
       });
     });
 

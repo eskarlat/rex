@@ -15,7 +15,11 @@ export function handleStop(): void {
 
   if (!isProcessRunning(pid)) {
     clack.log.warn(`Server process ${pid} is not running. Cleaning up stale PID file.`);
-    unlinkSync(SERVER_PID_PATH);
+    try {
+      unlinkSync(SERVER_PID_PATH);
+    } catch {
+      // PID file may have been removed by another process
+    }
     clack.outro('Nothing to stop.');
     return;
   }
@@ -28,8 +32,12 @@ export function handleStop(): void {
     clack.log.error(`Failed to stop server: ${message}`);
   }
 
-  if (existsSync(SERVER_PID_PATH)) {
-    unlinkSync(SERVER_PID_PATH);
+  try {
+    if (existsSync(SERVER_PID_PATH)) {
+      unlinkSync(SERVER_PID_PATH);
+    }
+  } catch {
+    // PID file may have been removed between check and unlink
   }
 
   clack.outro('Done.');

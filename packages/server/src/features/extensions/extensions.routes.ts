@@ -61,6 +61,8 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
         status: 'installed' as const,
       }));
 
+    // TODO: Populate `available` from registry data once registry search is implemented.
+    // Currently returns an empty array, making the "Available" marketplace tab non-functional.
     return {
       active,
       installed: installedOnly,

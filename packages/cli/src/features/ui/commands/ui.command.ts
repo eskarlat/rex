@@ -113,7 +113,11 @@ function checkExistingServer(url: string): boolean {
   }
 
   // Stale PID file — clean up
-  unlinkSync(SERVER_PID_PATH);
+  try {
+    unlinkSync(SERVER_PID_PATH);
+  } catch {
+    // PID file may have been removed by another process
+  }
   return false;
 }
 

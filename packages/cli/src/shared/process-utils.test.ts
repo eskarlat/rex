@@ -23,6 +23,30 @@ describe('isProcessRunning', () => {
     // PID 0 is special and will throw EPERM on some systems, use a very high PID
     expect(isProcessRunning(4000000)).toBe(false);
   });
+
+  it('returns true when process.kill throws EPERM (process exists, different user)', () => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
+      const err = new Error('EPERM') as NodeJS.ErrnoException;
+      err.code = 'EPERM';
+      throw err;
+    });
+
+    expect(isProcessRunning(99999)).toBe(true);
+
+    killSpy.mockRestore();
+  });
+
+  it('returns false when process.kill throws ESRCH (no such process)', () => {
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
+      const err = new Error('ESRCH') as NodeJS.ErrnoException;
+      err.code = 'ESRCH';
+      throw err;
+    });
+
+    expect(isProcessRunning(99999)).toBe(false);
+
+    killSpy.mockRestore();
+  });
 });
 
 describe('readPidFile', () => {
