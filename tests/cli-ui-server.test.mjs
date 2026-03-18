@@ -7,8 +7,6 @@
  * 3. It shuts down cleanly on SIGTERM
  */
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -68,13 +66,16 @@ describe('ui command — server lifecycle', () => {
   });
 
   after(async () => {
-    if (serverProc && !serverProc.killed) {
+    if (serverProc && serverProc.exitCode === null) {
       serverProc.kill('SIGTERM');
-      // Wait for process to exit
-      await new Promise((resolve) => {
-        serverProc.on('exit', resolve);
-        setTimeout(resolve, 3000);
+      // Wait for process to exit, escalate to SIGKILL if needed
+      const exited = await new Promise((resolve) => {
+        serverProc.on('exit', () => resolve(true));
+        setTimeout(() => resolve(false), 3000);
       });
+      if (!exited && serverProc.exitCode === null) {
+        serverProc.kill('SIGKILL');
+      }
     }
   });
 

@@ -379,8 +379,14 @@ export function createProgram(): Command {
     .option('--no-browser', 'Do not open browser automatically')
     .option('--no-sleep', 'Disable sleep prevention')
     .action((opts: { port: string; browser: boolean; sleep: boolean; lan?: boolean }) => {
+      const port = Number(opts.port);
+      if (!Number.isFinite(port) || !Number.isInteger(port) || port < 1 || port > 65535) {
+        // eslint-disable-next-line no-console
+        console.error(`Invalid port: "${opts.port}". Must be an integer between 1 and 65535.`);
+        process.exit(1);
+      }
       handleUi({
-        port: Number(opts.port),
+        port,
         lan: !!opts.lan,
         noBrowser: !opts.browser,
         noSleep: !opts.sleep,

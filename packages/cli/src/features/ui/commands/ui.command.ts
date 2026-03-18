@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 
 export interface UiCommandOptions {
@@ -42,7 +43,7 @@ function resolveServerEntry(): string {
   // Resolve from monorepo structure: packages/cli/dist/ -> packages/server/dist/
   // In source: src/features/ui/commands/ -> 6 levels up to packages/, then server/dist/
   // In bundle: dist/ -> 2 levels up to packages/, then server/dist/
-  const thisDir = dirname(new URL(import.meta.url).pathname);
+  const thisDir = dirname(fileURLToPath(import.meta.url));
   const levelsUp = [2, 3, 4, 5, 6];
   for (const n of levelsUp) {
     const segments = Array.from({ length: n }, () => '..');

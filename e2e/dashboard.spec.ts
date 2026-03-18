@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const TEST_PROJECT_DIR = join(tmpdir(), 'e2e-test-project');
 
 // ──────────────────────────────────────────────
 // Dashboard home page
@@ -68,7 +72,7 @@ test.describe('Marketplace page', () => {
 
   test('marketplace API responds with extension data', async ({ request }) => {
     const response = await request.get('/api/marketplace', {
-      headers: { 'X-RenreKit-Project': '/tmp/e2e-test-project' },
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
     });
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
@@ -107,7 +111,7 @@ test.describe('Scheduler page', () => {
 
   test('scheduler API responds', async ({ request }) => {
     const response = await request.get('/api/scheduler', {
-      headers: { 'X-RenreKit-Project': '/tmp/e2e-test-project' },
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
     });
     expect(response.ok()).toBeTruthy();
   });
@@ -167,14 +171,14 @@ test.describe('API integration', () => {
 
   test('GET /api/scheduler returns tasks', async ({ request }) => {
     const response = await request.get('/api/scheduler', {
-      headers: { 'X-RenreKit-Project': '/tmp/e2e-test-project' },
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
     });
     expect(response.ok()).toBeTruthy();
   });
 
   test('GET /api/marketplace returns extension lists', async ({ request }) => {
     const response = await request.get('/api/marketplace', {
-      headers: { 'X-RenreKit-Project': '/tmp/e2e-test-project' },
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
     });
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
