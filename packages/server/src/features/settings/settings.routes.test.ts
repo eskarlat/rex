@@ -8,11 +8,19 @@ const mockSaveGlobalConfig = vi.fn();
 const mockResolveExtensionConfig = vi.fn();
 const mockSetExtensionConfig = vi.fn();
 
+const mockGetActivated = vi.fn().mockReturnValue({});
+const mockGetExtensionDir = vi.fn().mockReturnValue('/mock/ext');
+const mockLoadManifest = vi.fn().mockReturnValue({ commands: {}, config: { schema: {} } });
+
 vi.mock('@renre-kit/cli/lib', () => ({
   loadGlobalConfig: () => mockLoadGlobalConfig(),
   saveGlobalConfig: (...args: unknown[]) => mockSaveGlobalConfig(...args),
   resolveExtensionConfig: (...args: unknown[]) => mockResolveExtensionConfig(...args),
   setExtensionConfig: (...args: unknown[]) => mockSetExtensionConfig(...args),
+  getActivated: (...args: unknown[]) => mockGetActivated(...args),
+  getExtensionDir: (...args: unknown[]) => mockGetExtensionDir(...args),
+  loadManifest: (...args: unknown[]) => mockLoadManifest(...args),
+  getLogger: vi.fn().mockReturnValue({ info: vi.fn(), setLevel: vi.fn() }),
 }));
 
 const { default: settingsRoutes } = await import('./settings.routes.js');
@@ -54,18 +62,43 @@ describe('settings routes', () => {
       expect(response.statusCode).toBe(200);
       expect(mockSaveGlobalConfig).toHaveBeenCalledWith(config);
     });
+
+    it('applies log level change when logLevels are provided', async () => {
+      const { getLogger } = await import('@renre-kit/cli/lib');
+      const config = { registries: [], settings: { logLevels: ['warn', 'error'] }, extensionConfigs: {} };
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: config,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(vi.mocked(getLogger)().setLevel).toHaveBeenCalledWith('warn');
+    });
   });
 
   describe('GET /api/settings/extensions/:name', () => {
     it('returns resolved extension config', async () => {
+      mockGetActivated.mockReturnValue({ 'my-ext': '1.0.0' });
       mockResolveExtensionConfig.mockReturnValue({ apiKey: '***' });
 
       const response = await app.inject({
         method: 'GET',
         url: '/api/settings/extensions/my-ext',
+        headers: { 'x-renrekit-project': '/mock/project' },
       });
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ apiKey: '***' });
+      expect(response.json()).toEqual({ schema: {}, values: { apiKey: '***' } });
+    });
+
+    it('returns 404 when extension is not activated', async () => {
+      mockGetActivated.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/settings/extensions/not-active',
+        headers: { 'x-renrekit-project': '/mock/project' },
+      });
+      expect(response.statusCode).toBe(404);
     });
   });
 

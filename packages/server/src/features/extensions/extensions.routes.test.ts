@@ -399,10 +399,49 @@ describe('extensions routes', () => {
       });
       expect(response.statusCode).toBe(400);
     });
+
+    it('auto-resolves version from installed extensions when not provided', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '2.0.0' }]);
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@2.0.0');
+      mockActivate.mockResolvedValue([]);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/activate',
+        payload: { name: 'ext1', projectPath: '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(mockGetExtensionDir).toHaveBeenCalledWith('ext1', '2.0.0');
+    });
+
+    it('returns 404 when extension is not installed and no version provided', async () => {
+      mockListInstalled.mockReturnValue([]);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/activate',
+        payload: { name: 'nonexistent', projectPath: '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('returns missing keys when activation requires config', async () => {
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockActivate.mockResolvedValue(['API_KEY', 'SECRET']);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/activate',
+        payload: { name: 'ext1', version: '1.0.0', projectPath: '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ ok: true, missingKeys: ['API_KEY', 'SECRET'] });
+    });
   });
 
   describe('POST /api/extensions/deactivate', () => {
     it('deactivates an extension', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0' }]);
       mockGetExtensionDir.mockReturnValue('/path/to/ext1@');
       mockDeactivate.mockResolvedValue(undefined);
 
@@ -421,6 +460,58 @@ describe('extensions routes', () => {
         payload: { name: 'ext1' },
       });
       expect(response.statusCode).toBe(400);
+    });
+
+    it('returns 404 when extension is not installed', async () => {
+      mockListInstalled.mockReturnValue([]);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/deactivate',
+        payload: { name: 'nonexistent', projectPath: '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe('GET /api/extensions/:name/panel.js', () => {
+    it('serves the default panel', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        ui: {
+          panels: [{ id: 'main', title: 'Main', entry: 'dist/panel.js' }],
+        },
+      });
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue('export default {}');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/panel.js',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('application/javascript');
+    });
+
+    it('returns 404 when panel not found', async () => {
+      mockListInstalled.mockReturnValue([]);
+      mockGetActivated.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/nonexistent/panel.js',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
     });
   });
 

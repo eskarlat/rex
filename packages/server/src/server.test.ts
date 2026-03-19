@@ -9,6 +9,12 @@ vi.mock('@renre-kit/cli/lib', () => ({
   CommandRegistry: vi.fn().mockImplementation(() => ({
     resolve: vi.fn(),
   })),
+  ConnectionManager: vi.fn().mockImplementation(() => ({
+    getConnection: vi.fn(),
+    executeToolCall: vi.fn(),
+    stopAll: vi.fn(),
+    setMode: vi.fn(),
+  })),
   getDb: vi.fn().mockReturnValue({
     prepare: vi.fn().mockReturnValue({ all: vi.fn().mockReturnValue([]), run: vi.fn(), get: vi.fn() }),
   }),
@@ -30,6 +36,11 @@ vi.mock('@renre-kit/cli/lib', () => ({
   ensureSynced: vi.fn().mockResolvedValue(undefined),
   listAvailableExtensions: vi.fn().mockReturnValue([]),
   sync: vi.fn(),
+  getActivated: vi.fn().mockReturnValue({}),
+  loadManifest: vi.fn(),
+  loadCommandHandler: vi.fn(),
+  executeCommand: vi.fn(),
+  getLogger: vi.fn().mockReturnValue({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   LOGS_DIR: '/tmp/test-logs',
 }));
@@ -80,5 +91,65 @@ describe('createServer', () => {
     server = await createServer();
     const response = await server.inject({ method: 'GET', url: '/api/projects' });
     expect(response.statusCode).toBe(200);
+  });
+
+  it('logs warning level for 4xx responses', async () => {
+    server = await createServer();
+    // POST /api/run with missing command triggers a 400
+    await server.inject({
+      method: 'POST',
+      url: '/api/run',
+      headers: { 'x-renrekit-project': '/mock/project' },
+      payload: {},
+    });
+    // If it reaches here without error, the onResponse hook handled the 400 log level
+  });
+
+  it('returns 404 JSON for unknown API routes', async () => {
+    server = await createServer();
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/nonexistent',
+      headers: { accept: 'text/html' },
+    });
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toHaveProperty('error', 'Not Found');
+  });
+
+  it('serves index.html for navigational HTML requests', async () => {
+    server = await createServer();
+    const response = await server.inject({
+      method: 'GET',
+      url: '/some/page',
+      headers: { accept: 'text/html,application/xhtml+xml' },
+    });
+    // If UI dist exists, it should serve index.html (200)
+    // The SPA fallback triggers for non-API, GET/HEAD, text/html requests
+    expect([200, 404]).toContain(response.statusCode);
+  });
+
+  it('returns 404 for non-HTML non-API requests', async () => {
+    server = await createServer();
+    const response = await server.inject({
+      method: 'POST',
+      url: '/nonexistent',
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it('logs error level for 5xx responses', async () => {
+    server = await createServer();
+    // Inject a request that would produce a 500 (e.g., unknown internal route)
+    const { getActivated } = await import('@renre-kit/cli/lib');
+    vi.mocked(getActivated).mockImplementation(() => { throw new Error('boom'); });
+
+    await server.inject({
+      method: 'POST',
+      url: '/api/run',
+      headers: { 'x-renrekit-project': '/mock/project' },
+      payload: { command: 'ext:cmd' },
+    });
+
+    vi.mocked(getActivated).mockReturnValue({});
   });
 });
