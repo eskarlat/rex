@@ -100,7 +100,8 @@ describe('Sidebar', () => {
       },
     });
     renderWithProviders(<Sidebar />);
-    const img = screen.getByAltText('');
+    const link = screen.getByRole('link', { name: 'hello-world' });
+    const img = link.querySelector('img');
     expect(img).toHaveAttribute('src', '/api/extensions/hello-world/icon');
   });
 

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, relative } from 'node:path';
 import semver from 'semver';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
 import {
@@ -34,6 +34,46 @@ interface InstallBody {
 interface UpdateBody {
   name: string;
   force?: boolean;
+}
+
+interface UpdateValidationError {
+  code: number;
+  body: Record<string, unknown>;
+}
+
+interface UpdateValidationSuccess {
+  ext: { name: string; version: string };
+  resolved: NonNullable<ReturnType<typeof resolveExtension>>;
+  config: ReturnType<typeof loadGlobalConfig>;
+  db: ReturnType<typeof getDb>;
+}
+
+function validateUpdate(
+  body: UpdateBody,
+): UpdateValidationError | UpdateValidationSuccess {
+  const db = getDb();
+  const installed = listInstalled(db);
+  const ext = installed.find((e) => e.name === body.name);
+  if (!ext) {
+    return { code: 404, body: { error: `Extension "${body.name}" is not installed.` } };
+  }
+
+  const config = loadGlobalConfig();
+  const resolved = resolveExtension(body.name, config.registries);
+  if (!resolved) {
+    return { code: 404, body: { error: `Extension "${body.name}" not found in any registry.` } };
+  }
+
+  if (!semver.valid(resolved.latestVersion) || !semver.valid(ext.version) || !semver.gt(resolved.latestVersion, ext.version)) {
+    return { code: 200, body: { name: body.name, message: 'Already up to date' } };
+  }
+
+  const compat = checkEngineConstraints(resolved.engines, CLI_VERSION, SDK_VERSION);
+  if (!compat.compatible && !body.force) {
+    return { code: 409, body: { error: 'Engine incompatible', issues: compat.issues } };
+  }
+
+  return { ext, resolved, config, db };
 }
 
 interface ActivateBody {
@@ -110,33 +150,31 @@ const ICON_CONTENT_TYPES: Record<string, string> = {
   '.gif': 'image/gif',
 };
 
+function isIconSafe(extDir: string, iconField: string): boolean {
+  const iconPath = resolve(extDir, iconField);
+  const rel = relative(extDir, iconPath);
+  return !rel.startsWith('..') && resolve(iconPath) === iconPath && existsSync(iconPath);
+}
+
+function readIconFromDir(extDir: string): { content: Buffer; contentType: string } | null {
+  const manifest = loadManifest(extDir);
+  if (!manifest.icon) return null;
+  if (!isIconSafe(extDir, manifest.icon)) return null;
+  const iconPath = resolve(extDir, manifest.icon);
+  const ext = iconPath.substring(iconPath.lastIndexOf('.'));
+  const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
+  return { content: readFileSync(iconPath), contentType };
+}
+
 function findExtensionIcon(
   name: string,
   projectPath: string | undefined,
 ): { content: Buffer; contentType: string } | null {
-  const db = getDb();
-  const installed = listInstalled(db);
-  const activated = projectPath ? getActivated(projectPath) : {};
-  const activatedVersion = activated[name];
-
-  const candidates: string[] = [];
-  if (activatedVersion) candidates.push(activatedVersion);
-  for (const ext of installed) {
-    if (ext.name === name && ext.version !== activatedVersion) {
-      candidates.push(ext.version);
-    }
-  }
+  const candidates = getVersionCandidates(name, projectPath);
 
   for (const version of candidates) {
-    const extDir = getExtensionDir(name, version);
     try {
-      const manifest = loadManifest(extDir);
-      if (!manifest.icon) continue;
-      const iconPath = join(extDir, manifest.icon);
-      if (!existsSync(iconPath)) continue;
-      const ext = iconPath.substring(iconPath.lastIndexOf('.'));
-      const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
-      return { content: readFileSync(iconPath), contentType };
+      return readIconFromDir(getExtensionDir(name, version));
     } catch {
       // try next version
     }
@@ -160,10 +198,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
 
     const activatedPlugins = projectPath ? getActivated(projectPath) : {};
     const updateCache = readUpdateCache();
+    const updateMap = new Map(
+      (updateCache?.updates ?? []).map((u) => [u.name, u]),
+    );
 
     function getUpdateInfo(extName: string): { updateAvailable: string | null; engineCompatible: boolean } {
-      if (!updateCache) return { updateAvailable: null, engineCompatible: true };
-      const update = updateCache.updates.find((u) => u.name === extName);
+      const update = updateMap.get(extName);
       if (!update) return { updateAvailable: null, engineCompatible: true };
       return { updateAvailable: update.availableVersion, engineCompatible: update.engineCompatible };
     }
@@ -183,7 +223,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
           hasConfig = Object.keys(manifest.config?.schema ?? {}).length > 0;
           title = manifest.title;
           description = manifest.description;
-          hasIcon = !!manifest.icon && existsSync(join(extDir, manifest.icon));
+          hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
           panels = (manifest.ui?.panels ?? []).map((p) => ({ id: p.id, title: p.title }));
           widgets = (manifest.ui?.widgets ?? []).map((w) => ({
             id: w.id,
@@ -219,7 +259,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
           const manifest = loadManifest(extDir);
           title = manifest.title;
           description = manifest.description;
-          hasIcon = !!manifest.icon && existsSync(join(extDir, manifest.icon));
+          hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
         } catch { /* ignore */ }
         return {
           name: ext.name,
@@ -234,19 +274,29 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       });
 
     const installedNames = new Set(installed.map((ext) => ext.name));
-    const available = listAvailableExtensions(registries)
-      .filter((entry) => !installedNames.has(entry.name))
-      .map((entry) => ({
-        name: entry.name,
-        description: entry.description,
-        version: entry.latestVersion,
-        type: entry.type,
-        author: entry.author,
-        icon: entry.icon,
-        tags: entry.tags ?? [],
-        status: 'available' as const,
-        hasIcon: !!resolveRegistryIcon(entry.name, registries),
-      }));
+    const availableEntries = listAvailableExtensions(registries)
+      .filter((entry) => !installedNames.has(entry.name));
+
+    // Pre-compute icon availability, skipping entries without an icon field
+    const extensionsWithIcons = new Set<string>();
+    for (const entry of availableEntries) {
+      if (entry.icon) {
+        const iconPath = resolveRegistryIcon(entry.name, registries);
+        if (iconPath) extensionsWithIcons.add(entry.name);
+      }
+    }
+
+    const available = availableEntries.map((entry) => ({
+      name: entry.name,
+      description: entry.description,
+      version: entry.latestVersion,
+      type: entry.type,
+      author: entry.author,
+      icon: entry.icon,
+      tags: entry.tags ?? [],
+      status: 'available' as const,
+      hasIcon: extensionsWithIcons.has(entry.name),
+    }));
 
     return {
       active,
@@ -409,32 +459,18 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       reply.code(400);
       return { error: 'name is required' };
     }
-
-    const db = getDb();
-    const installed = listInstalled(db);
-    const ext = installed.find((e) => e.name === body.name);
-    if (!ext) {
-      reply.code(404);
-      return { error: `Extension "${body.name}" is not installed.` };
+    if (body.force !== undefined && typeof body.force !== 'boolean') {
+      reply.code(400);
+      return { error: 'force must be a boolean' };
     }
 
-    const config = loadGlobalConfig();
-    const resolved = resolveExtension(body.name, config.registries);
-    if (!resolved) {
-      reply.code(404);
-      return { error: `Extension "${body.name}" not found in any registry.` };
+    const result = validateUpdate(body);
+    if ('code' in result) {
+      reply.code(result.code);
+      return result.body;
     }
 
-    if (!semver.valid(resolved.latestVersion) || !semver.valid(ext.version) || !semver.gt(resolved.latestVersion, ext.version)) {
-      return { name: body.name, message: 'Already up to date' };
-    }
-
-    const compat = checkEngineConstraints(resolved.engines, CLI_VERSION, SDK_VERSION);
-    if (!compat.compatible && !body.force) {
-      reply.code(409);
-      return { error: 'Engine incompatible', issues: compat.issues };
-    }
-
+    const { ext, resolved, config, db } = result;
     const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
     install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 
