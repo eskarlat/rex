@@ -1,6 +1,6 @@
 ---
 name: greet
-description: This tool need to be used when the user asks to be greeted, wants a hello message, or requests a welcome — e.g. "say hi", "greet me", "hello"
+description: This tool needs to be used when the user asks to be greeted, wants a hello message, or requests a welcome — e.g. "say hi", "greet me", "hello"
 ---
 
 # hello-world/greet

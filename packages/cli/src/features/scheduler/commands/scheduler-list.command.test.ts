@@ -28,7 +28,8 @@ describe('scheduler-list command', () => {
     const mockAll = vi.fn().mockReturnValue([
       {
         id: 'figma:sync',
-        extension_name: 'figma',
+        name: 'figma',
+        type: 'extension',
         project_path: '/my/project',
         cron: '*/5 * * * *',
         command: 'renre-kit figma:content',
@@ -55,7 +56,8 @@ describe('scheduler-list command', () => {
         all: vi.fn().mockReturnValue([
           {
             id: 'task-1',
-            extension_name: 'ext',
+            name: 'ext',
+            type: 'manual',
             project_path: null,
             cron: '0 * * * *',
             command: 'echo hello',

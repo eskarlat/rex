@@ -3,7 +3,8 @@ import type Database from 'better-sqlite3';
 
 interface ScheduledTask {
   id: string;
-  extension_name: string;
+  name: string;
+  type: string;
   project_path: string | null;
   cron: string;
   command: string;

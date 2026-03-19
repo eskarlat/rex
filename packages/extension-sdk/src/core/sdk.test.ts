@@ -271,7 +271,8 @@ describe('RenreKitSDKImpl', () => {
   describe('scheduler', () => {
     const mockTask: ScheduledTask = {
       id: '1',
-      extension_name: 'test-ext',
+      name: 'test-ext',
+      type: 'extension',
       project_path: '/my/project',
       cron: '0 * * * *',
       command: 'sync',

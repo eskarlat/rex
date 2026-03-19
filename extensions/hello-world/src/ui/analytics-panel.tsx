@@ -17,7 +17,7 @@ export default function AnalyticsPanel({ sdk, extensionName }: PanelProps) {
     if (!sdk) return;
     setLoading(true);
     sdk.scheduler.list()
-      .then((all) => setTasks(all.filter((t) => t.extension_name === extName)))
+      .then((all) => setTasks(all.filter((t) => t.name === extName)))
       .catch(() => setTasks([]))
       .finally(() => setLoading(false));
   }, [sdk, extName]);
@@ -27,7 +27,7 @@ export default function AnalyticsPanel({ sdk, extensionName }: PanelProps) {
     setLoading(true);
     try {
       const all = await sdk.scheduler.list();
-      setTasks(all.filter((t) => t.extension_name === extName));
+      setTasks(all.filter((t) => t.name === extName));
     } catch {
       setTasks([]);
     } finally {
