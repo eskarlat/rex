@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **RenreKit CLI** — a lightweight, plugin-driven development CLI following a **Microkernel (Plugin Architecture)** pattern. A thin core handles discovery, loading, and routing while **extensions** provide all domain-specific functionality through three interaction modes: CLI commands, web dashboard UI panels, and LLM skill definitions (SKILL.md files).
 
+## Prerequisites
+
+- **Node.js** `>=20.0.0`
+- **pnpm** `9.15.4` (pinned via `packageManager` in root `package.json`)
+
 ## Build & Development Commands
 
 ```bash
@@ -20,6 +25,7 @@ pnpm typecheck            # tsc --noEmit across all packages
 pnpm format               # Prettier format all files
 pnpm format:check         # Check formatting without writing
 pnpm validate             # Run ALL quality gates (lint + typecheck + coverage + duplication)
+pnpm test:e2e             # Playwright E2E tests (spins up API on :4200 + UI on :4201)
 ```
 
 ### Per-package commands (run from package directory or with `--filter`):
@@ -31,9 +37,13 @@ pnpm --filter @renre-kit/ui dev                      # UI dev server with HMR (p
 pnpm --filter @renre-kit/server dev                  # Server dev with tsx watch (port 4200)
 ```
 
+## Environment Variables
+
+- **`RENRE_KIT_HOME`** — Override the global directory (defaults to `~/.renre-kit`). Used in E2E tests to isolate state.
+
 ## Monorepo Structure
 
-Turborepo + pnpm workspaces. Build order: `extension-sdk` first (no deps), then `cli` and `ui` (both depend on extension-sdk, can build in parallel), then `server` (depends on cli).
+Turborepo + pnpm workspaces (`packages/*` and `extensions/*`). Build order: `extension-sdk` first (no deps), then `cli` and `ui` (both depend on extension-sdk, can build in parallel), then `server` (depends on cli).
 
 | Package | Path | Build | Purpose |
 |---------|------|-------|---------|
@@ -68,11 +78,20 @@ src/
 
 Every dashboard action imports CLI managers through `@renre-kit/cli/lib` and calls them directly. All requests scoped by `X-RenreKit-Project` header. Routes are thin wrappers around ProjectManager, ExtensionManager, VaultManager, etc.
 
+### Extension SDK Export Paths
+
+The SDK (`@renre-kit/extension-sdk`) has three export subpaths:
+- **`.`** — API client, React hooks for extension UIs
+- **`./components`** — Shared shadcn/ui components
+- **`./node`** — Node-only utilities: `deployAgentAssets`, `cleanupAgentAssets`, `buildPanel` (esbuild bundler for extension UI panels)
+
 ### Reference Extensions
 
 `extensions/` at repo root contains two example extensions for testing and reference:
-- **hello-world** — Standard type (in-process). Has agent assets (`agent/context/`, `agent/prompts/`), skills (`skills/greet/`, `skills/info/`), and a `SKILL.md`.
-- **echo-mcp** — MCP stdio type. Minimal MCP server in `src/server.ts` with manifest and `SKILL.md`.
+- **hello-world** — Standard type (in-process). Has agent assets (`agent/context/`, `agent/prompts/`, `agent/skills/`).
+- **echo-mcp** — MCP stdio type. Minimal MCP server in `src/server.ts` with manifest and agent skills.
+
+Both follow the build pattern: `tsc && node build-panel.js` (where `build-panel.js` uses the SDK's `buildPanel` to bundle React panels with esbuild).
 
 ### Global vs Per-Project State
 
@@ -108,9 +127,13 @@ These are hard requirements, not suggestions:
 - `noUncheckedIndexedAccess: true` — always handle potential `undefined` from indexing
 - Each package has `tsconfig.json` (base), `tsconfig.build.json` (build), and `tsconfig.lint.json` (lint) variants
 
+## Formatting
+
+Prettier: 100 char line width, single quotes, trailing commas, semicolons, 2-space indent. Config in `.prettierrc`.
+
 ## Architecture Documentation
 
-The full architecture spec lives in `renre-kit-architecture/README.md` (14 sections, source of truth). ADRs in `renre-kit-architecture/adr/` (23 decisions across core, extensions, vault, dashboard, sdk, llm-skills, scheduler, security). Database ER diagram in `renre-kit-architecture/diagrams/database-schema.md`. Data flow diagrams in `renre-kit-architecture/diagrams/dfd-overview.md`.
+The full architecture spec lives in `renre-kit-architecture/README.md` (14 sections, source of truth). ADRs in `renre-kit-architecture/adr/` (~25 decisions across core, extensions, vault, dashboard, sdk, llm-skills, scheduler, security). Database ER diagram in `renre-kit-architecture/diagrams/database-schema.md`. Data flow diagrams in `renre-kit-architecture/diagrams/dfd-overview.md`.
 
 ## MVP Phases
 
