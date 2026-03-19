@@ -13,15 +13,26 @@ export function checkEngineCompat(
 ): CompatResult {
   const issues: string[] = [];
 
-  if (!semver.satisfies(coreVersion, manifest.engines['renre-kit'])) {
+  const coreRange = manifest.engines['renre-kit'];
+  const sdkRange = manifest.engines['extension-sdk'];
+
+  if (!semver.validRange(coreRange)) {
     issues.push(
-      `Extension "${manifest.name}" requires renre-kit ${manifest.engines['renre-kit']}, but current version is ${coreVersion}`,
+      `Extension "${manifest.name}" has invalid renre-kit engine constraint: "${coreRange}"`,
+    );
+  } else if (!semver.satisfies(coreVersion, coreRange)) {
+    issues.push(
+      `Extension "${manifest.name}" requires renre-kit ${coreRange}, but current version is ${coreVersion}`,
     );
   }
 
-  if (!semver.satisfies(sdkVersion, manifest.engines['extension-sdk'])) {
+  if (!semver.validRange(sdkRange)) {
     issues.push(
-      `Extension "${manifest.name}" requires extension-sdk ${manifest.engines['extension-sdk']}, but current version is ${sdkVersion}`,
+      `Extension "${manifest.name}" has invalid extension-sdk engine constraint: "${sdkRange}"`,
+    );
+  } else if (!semver.satisfies(sdkVersion, sdkRange)) {
+    issues.push(
+      `Extension "${manifest.name}" requires extension-sdk ${sdkRange}, but current version is ${sdkVersion}`,
     );
   }
 

@@ -97,5 +97,27 @@ describe('schema-migration', () => {
       ];
       expect(() => migrateFile(nonExistentPath, data, migrations)).not.toThrow();
     });
+
+    it('should throw on migration gap', () => {
+      const data = { key: 'value' };
+      fs.writeFileSync(filePath, JSON.stringify(data));
+      const migrations: SchemaMigration[] = [
+        { fromVersion: 0, toVersion: 1, migrate: (d) => ({ ...d, schemaVersion: 1 }) },
+        { fromVersion: 2, toVersion: 3, migrate: (d) => ({ ...d, schemaVersion: 3 }) },
+      ];
+      expect(() => migrateFile(filePath, data, migrations)).toThrow('Migration gap');
+    });
+
+    it('should only apply migrations from current version forward', () => {
+      const data = { schemaVersion: 1, key: 'value' };
+      fs.writeFileSync(filePath, JSON.stringify(data));
+      const migrations: SchemaMigration[] = [
+        { fromVersion: 0, toVersion: 1, migrate: (d) => ({ ...d, schemaVersion: 1, step1: true }) },
+        { fromVersion: 1, toVersion: 2, migrate: (d) => ({ ...d, schemaVersion: 2, step2: true }) },
+      ];
+      const result = migrateFile(filePath, data, migrations);
+      expect(result).toEqual({ key: 'value', schemaVersion: 2, step2: true });
+      expect(result).not.toHaveProperty('step1');
+    });
   });
 });

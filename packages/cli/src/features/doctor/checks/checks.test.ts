@@ -375,10 +375,10 @@ describe('doctor checks', () => {
       expect(result.message).toContain('1 manifest error');
     });
 
-    it('fails when initDatabase throws', async () => {
+    it('fails when database open throws', async () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      const { initDatabase } = await import('../../../core/database/database.js');
-      vi.mocked(initDatabase).mockImplementation(() => { throw new Error('DB error'); });
+      const BetterSqlite3 = (await import('better-sqlite3')).default;
+      vi.mocked(BetterSqlite3).mockImplementation(() => { throw new Error('DB error'); });
       const result = extensionManifestsCheck.run();
       expect(result.status).toBe('fail');
       expect(result.message).toContain('cannot check');

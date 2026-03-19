@@ -87,4 +87,36 @@ describe('checkEngineCompat', () => {
     expect(result.compatible).toBe(true);
     expect(result.issues).toEqual([]);
   });
+
+  it('returns incompatible when renre-kit engine constraint is invalid', () => {
+    const result = checkEngineCompat(
+      makeManifest({ 'renre-kit': 'not-a-range', 'extension-sdk': '>=0.0.1' }),
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toContain('invalid renre-kit engine constraint');
+  });
+
+  it('returns incompatible when extension-sdk engine constraint is invalid', () => {
+    const result = checkEngineCompat(
+      makeManifest({ 'renre-kit': '>=0.0.1', 'extension-sdk': '%%%' }),
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toContain('invalid extension-sdk engine constraint');
+  });
+
+  it('reports both issues when both engine constraints are invalid', () => {
+    const result = checkEngineCompat(
+      makeManifest({ 'renre-kit': 'bad', 'extension-sdk': 'also-bad' }),
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(2);
+  });
 });
