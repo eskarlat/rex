@@ -25,7 +25,12 @@ export function handleStop(): void {
   }
 
   try {
-    process.kill(pid, 'SIGTERM');
+    // On Windows, SIGTERM is not supported; process.kill uses TerminateProcess
+    if (process.platform === 'win32') {
+      process.kill(pid);
+    } else {
+      process.kill(pid, 'SIGTERM');
+    }
     clack.log.success(`Dashboard server stopped (PID ${pid}).`);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
