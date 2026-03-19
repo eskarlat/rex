@@ -20,6 +20,19 @@ vi.mock('../../../core/database/database.js', () => ({
   getDb: vi.fn().mockReturnValue({}),
 }));
 
+vi.mock('../manifest/manifest-loader.js', () => ({
+  loadManifest: vi.fn().mockReturnValue({
+    name: 'my-ext',
+    version: '1.0.0',
+    type: 'standard',
+    commands: {},
+  }),
+}));
+
+vi.mock('../engine/engine-compat.js', () => ({
+  checkEngineCompat: vi.fn().mockReturnValue({ compatible: true, issues: [] }),
+}));
+
 import * as clack from '@clack/prompts';
 import { handleExtAdd } from './ext-add.command.js';
 import * as registryManager from '../../registry/registry-manager.js';

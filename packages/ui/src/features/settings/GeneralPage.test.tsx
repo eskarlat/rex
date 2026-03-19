@@ -6,11 +6,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GeneralPage } from './GeneralPage';
 
 const mockMutate = vi.fn();
+const mockSetTheme = vi.fn();
 let mockSettings: {
   data:
     | {
         registries: unknown[];
-        settings: { port: number; theme: string; logLevel: string };
+        settings: { logLevels: string[] };
         extensionConfigs: Record<string, unknown>;
       }
     | undefined;
@@ -21,6 +22,10 @@ let mockIsPending = false;
 vi.mock('@/core/hooks/use-settings', () => ({
   useSettings: () => mockSettings,
   useUpdateSettings: () => ({ mutate: mockMutate, isPending: mockIsPending }),
+}));
+
+vi.mock('next-themes', () => ({
+  useTheme: () => ({ setTheme: mockSetTheme, theme: 'light' }),
 }));
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -41,18 +46,34 @@ describe('GeneralPage', () => {
     mockSettings = {
       data: {
         registries: [],
-        settings: { port: 4200, theme: 'light', logLevel: 'info' },
+        settings: { logLevels: ['info', 'warn', 'error'] },
         extensionConfigs: {},
       },
       isLoading: false,
     };
   });
 
-  it('renders port input with value', () => {
+  it('renders Theme label', () => {
     renderWithProviders(<GeneralPage />);
-    const portInput = screen.getByLabelText('Port');
-    expect(portInput).toBeInTheDocument();
-    expect(portInput).toHaveValue(4200);
+    expect(screen.getByText('Theme')).toBeInTheDocument();
+  });
+
+  it('renders Log Level label', () => {
+    renderWithProviders(<GeneralPage />);
+    expect(screen.getByText('Log Level')).toBeInTheDocument();
+  });
+
+  it('does not render Port field', () => {
+    renderWithProviders(<GeneralPage />);
+    expect(screen.queryByLabelText('Port')).not.toBeInTheDocument();
+  });
+
+  it('renders log level checkboxes', () => {
+    renderWithProviders(<GeneralPage />);
+    expect(screen.getByText('debug')).toBeInTheDocument();
+    expect(screen.getByText('info')).toBeInTheDocument();
+    expect(screen.getByText('warn')).toBeInTheDocument();
+    expect(screen.getByText('error')).toBeInTheDocument();
   });
 
   it('renders Save Settings button', () => {
@@ -71,10 +92,9 @@ describe('GeneralPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Save Settings' })
     ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Port')).not.toBeInTheDocument();
   });
 
-  it('form submit calls updateSettings.mutate', async () => {
+  it('form submit saves logLevels without theme', async () => {
     const user = userEvent.setup();
     renderWithProviders(<GeneralPage />);
 
@@ -84,7 +104,7 @@ describe('GeneralPage', () => {
 
     expect(mockMutate).toHaveBeenCalledWith({
       registries: [],
-      settings: { port: 4200, theme: 'light', logLevel: 'info' },
+      settings: { logLevels: ['info', 'warn', 'error'] },
       extensionConfigs: {},
     });
   });
@@ -95,23 +115,5 @@ describe('GeneralPage', () => {
     expect(
       screen.getByRole('button', { name: 'Saving...' })
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Save Settings' })
-    ).not.toBeInTheDocument();
-  });
-
-  it('renders Theme label', () => {
-    renderWithProviders(<GeneralPage />);
-    expect(screen.getByText('Theme')).toBeInTheDocument();
-  });
-
-  it('renders Log Level label', () => {
-    renderWithProviders(<GeneralPage />);
-    expect(screen.getByText('Log Level')).toBeInTheDocument();
-  });
-
-  it('renders Port label', () => {
-    renderWithProviders(<GeneralPage />);
-    expect(screen.getByText('Port')).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import {
   loadGlobalConfig,
   saveGlobalConfig,
   sync,
+  listRegistries,
 } from '@renre-kit/cli/lib';
 import type { RegistryConfig } from '@renre-kit/cli/lib';
 
@@ -23,7 +24,13 @@ const DEFAULT_CACHE_TTL = 3600;
 const registriesRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   fastify.get('/api/registries', () => {
     const config = loadGlobalConfig();
-    return config.registries;
+    const statuses = listRegistries(config.registries);
+    return statuses.map((s) => ({
+      name: s.name,
+      url: s.url,
+      priority: s.priority,
+      last_synced: s.lastFetched?.toISOString() ?? undefined,
+    }));
   });
 
   fastify.post('/api/registries', (request: FastifyRequest, reply: FastifyReply): Record<string, unknown> => {

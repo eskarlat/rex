@@ -1,9 +1,12 @@
-import { Component, Suspense, lazy, type ReactNode } from 'react';
+import { Component, Suspense, lazy, useMemo, type ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useProjectContext } from '@/core/providers/ProjectProvider';
+import { useExtensionSDK } from '@/core/hooks/use-extension-sdk';
 
 interface DynamicPanelProps {
   extensionName: string;
+  panelId?: string;
 }
 
 interface ErrorBoundaryProps {
@@ -57,10 +60,16 @@ function PanelError({ extensionName }: { extensionName: string }) {
   );
 }
 
-export function DynamicPanel({ extensionName }: DynamicPanelProps) {
-  const panelUrl = `/api/extensions/${extensionName}/panel.js`;
-  const LazyPanel = lazy(
-    () => import(/* @vite-ignore */ panelUrl)
+export function DynamicPanel({ extensionName, panelId }: DynamicPanelProps) {
+  const { activeProject } = useProjectContext();
+  const sdk = useExtensionSDK(extensionName);
+  const panelUrl = panelId
+    ? `/api/extensions/${extensionName}/panels/${panelId}.js`
+    : `/api/extensions/${extensionName}/panel.js`;
+
+  const LazyPanel = useMemo(
+    () => lazy(() => import(/* @vite-ignore */ panelUrl)),
+    [panelUrl],
   );
 
   return (
@@ -68,7 +77,11 @@ export function DynamicPanel({ extensionName }: DynamicPanelProps) {
       fallback={<PanelError extensionName={extensionName} />}
     >
       <Suspense fallback={<PanelSkeleton />}>
-        <LazyPanel />
+        <LazyPanel
+          sdk={sdk}
+          extensionName={extensionName}
+          projectPath={activeProject}
+        />
       </Suspense>
     </PanelErrorBoundary>
   );

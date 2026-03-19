@@ -1,10 +1,14 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useMarketplace } from '@/core/hooks/use-extensions';
+import { useMarketplaceFilter } from './hooks/use-marketplace-filter';
 import { ExtensionCard } from './components/ExtensionCard';
 
 export function MarketplacePage() {
   const { data: marketplace, isLoading } = useMarketplace();
+  const filter = useMarketplaceFilter(marketplace);
 
   if (isLoading) {
     return (
@@ -19,10 +23,6 @@ export function MarketplacePage() {
     );
   }
 
-  const active = marketplace?.active ?? [];
-  const installed = marketplace?.installed ?? [];
-  const available = marketplace?.available ?? [];
-
   return (
     <div className="space-y-6">
       <div>
@@ -32,27 +32,50 @@ export function MarketplacePage() {
         </p>
       </div>
 
+      <Input
+        placeholder="Search extensions..."
+        value={filter.searchQuery}
+        onChange={(e) => filter.setSearchQuery(e.target.value)}
+      />
+
+      {filter.allTags.length > 0 && (
+        <div className="flex flex-wrap gap-2" data-testid="tag-filter">
+          {filter.allTags.map((tag) => (
+            <Badge
+              key={tag}
+              variant={filter.selectedTag === tag ? 'default' : 'outline'}
+              className="cursor-pointer"
+              onClick={() =>
+                filter.setSelectedTag(filter.selectedTag === tag ? null : tag)
+              }
+            >
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+
       <Tabs defaultValue="active">
         <TabsList>
           <TabsTrigger value="active">
-            Active ({active.length})
+            Active ({filter.filteredActive.length})
           </TabsTrigger>
           <TabsTrigger value="installed">
-            Installed ({installed.length})
+            Installed ({filter.filteredInstalled.length})
           </TabsTrigger>
           <TabsTrigger value="available">
-            Available ({available.length})
+            Available ({filter.filteredAvailable.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {active.length === 0 ? (
+            {filter.filteredActive.length === 0 ? (
               <p className="col-span-full text-muted-foreground">
                 No active extensions in this project.
               </p>
             ) : (
-              active.map((ext) => (
+              filter.filteredActive.map((ext) => (
                 <ExtensionCard key={ext.name} extension={ext} />
               ))
             )}
@@ -61,12 +84,12 @@ export function MarketplacePage() {
 
         <TabsContent value="installed">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {installed.length === 0 ? (
+            {filter.filteredInstalled.length === 0 ? (
               <p className="col-span-full text-muted-foreground">
                 No installed extensions.
               </p>
             ) : (
-              installed.map((ext) => (
+              filter.filteredInstalled.map((ext) => (
                 <ExtensionCard key={ext.name} extension={ext} />
               ))
             )}
@@ -75,12 +98,12 @@ export function MarketplacePage() {
 
         <TabsContent value="available">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {available.length === 0 ? (
+            {filter.filteredAvailable.length === 0 ? (
               <p className="col-span-full text-muted-foreground">
                 No available extensions in registries.
               </p>
             ) : (
-              available.map((ext) => (
+              filter.filteredAvailable.map((ext) => (
                 <ExtensionCard key={ext.name} extension={ext} />
               ))
             )}

@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { Logger } from './logger.js';
-import type { LogLevel } from './logger.js';
 
 describe('Logger', () => {
   let tmpDir: string;
@@ -18,25 +17,29 @@ describe('Logger', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
+  function readLogEntries(): Record<string, unknown>[] {
+    const files = fs.readdirSync(tmpDir).filter((f) => f.endsWith('.log'));
+    if (files.length === 0) return [];
+    const content = fs.readFileSync(path.join(tmpDir, files[0]!), 'utf-8');
+    return content
+      .trim()
+      .split('\n')
+      .filter((line) => line.length > 0)
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+  }
+
   it('should create log directory on construction', () => {
     expect(fs.existsSync(tmpDir)).toBe(true);
   });
 
   it('should write log entries as JSON lines', () => {
     logger.info('test-source', 'hello world');
-    const files = fs.readdirSync(tmpDir).filter((f) => f.endsWith('.log'));
-    expect(files.length).toBe(1);
-    const content = fs.readFileSync(path.join(tmpDir, files[0]!), 'utf-8');
-    const entry = JSON.parse(content.trim()) as {
-      level: string;
-      source: string;
-      message: string;
-      timestamp: string;
-    };
-    expect(entry.level).toBe('info');
-    expect(entry.source).toBe('test-source');
-    expect(entry.message).toBe('hello world');
-    expect(entry.timestamp).toBeDefined();
+    const entries = readLogEntries();
+    expect(entries.length).toBe(1);
+    expect(entries[0]!.level).toBe('info');
+    expect(entries[0]!.source).toBe('test-source');
+    expect(entries[0]!.msg).toBe('hello world');
+    expect(entries[0]!.time).toBeDefined();
   });
 
   it('should log at all four levels', () => {
@@ -46,10 +49,9 @@ describe('Logger', () => {
     logger.warn('src', 'warn msg');
     logger.error('src', 'error msg');
 
-    const files = fs.readdirSync(tmpDir).filter((f) => f.endsWith('.log'));
-    const content = fs.readFileSync(path.join(tmpDir, files[0]!), 'utf-8');
-    const lines = content.trim().split('\n');
-    expect(lines.length).toBe(4);
+    const entries = readLogEntries();
+    expect(entries.length).toBe(4);
+    expect(entries.map((e) => e.level)).toEqual(['debug', 'info', 'warn', 'error']);
   });
 
   it('should respect log level filtering', () => {
@@ -59,18 +61,15 @@ describe('Logger', () => {
     logger.warn('src', 'should appear');
     logger.error('src', 'should appear');
 
-    const files = fs.readdirSync(tmpDir).filter((f) => f.endsWith('.log'));
-    const content = fs.readFileSync(path.join(tmpDir, files[0]!), 'utf-8');
-    const lines = content.trim().split('\n');
-    expect(lines.length).toBe(2);
+    const entries = readLogEntries();
+    expect(entries.length).toBe(2);
+    expect(entries.map((e) => e.level)).toEqual(['warn', 'error']);
   });
 
   it('should include optional data in log entry', () => {
     logger.info('src', 'with data', { key: 'value' });
-    const files = fs.readdirSync(tmpDir).filter((f) => f.endsWith('.log'));
-    const content = fs.readFileSync(path.join(tmpDir, files[0]!), 'utf-8');
-    const entry = JSON.parse(content.trim()) as { data: { key: string } };
-    expect(entry.data).toEqual({ key: 'value' });
+    const entries = readLogEntries();
+    expect(entries[0]!.data).toEqual({ key: 'value' });
   });
 
   it('should generate log filename with current date', () => {

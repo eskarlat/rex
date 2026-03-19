@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, mkdirSync, copyFileSync, rmSync } from 'node:fs';
-import { join, basename, dirname } from 'node:path';
+import { join, dirname, relative } from 'node:path';
 
 interface SkillRef {
   name: string;
@@ -45,13 +45,46 @@ function removeDir(dir: string): void {
 }
 
 /**
+ * Computes the relative path within a category directory.
+ * Given a manifest path like "agent/prompts/api/style.prompt.md",
+ * extracts the portion after "agent/{category}/" → "api/style.prompt.md".
+ * This preserves subdirectory structure to prevent basename collisions.
+ */
+function getCategoryRelativePath(filePath: string, category: string): string {
+  const categoryPrefix = `agent/${category}/`;
+  const idx = filePath.indexOf(categoryPrefix);
+  if (idx >= 0) {
+    return filePath.substring(idx + categoryPrefix.length);
+  }
+  // Fallback: use path relative to first "agent/" occurrence
+  const agentIdx = filePath.indexOf('agent/');
+  if (agentIdx >= 0) {
+    const afterAgent = filePath.substring(agentIdx + 6);
+    // Strip category prefix if present (e.g., "prompts/file.md" → "file.md")
+    const slashIdx = afterAgent.indexOf('/');
+    if (slashIdx >= 0) {
+      return afterAgent.substring(slashIdx + 1);
+    }
+    return afterAgent;
+  }
+  // Last resort: just the filename
+  return relative('.', filePath).split('/').pop() ?? filePath;
+}
+
+/**
  * Deploys agent assets (skills, prompts, agents, workflows, context)
- * from an extension directory to the project's `.agent/` directory.
+ * from an extension directory to the project's `.agents/` directory.
  *
- * Reads the extension's `manifest.json` to discover which assets to deploy.
+ * Skills are deployed to `.agents/skills/{ext}/{skillName}/SKILL.md`.
+ * Other assets preserve their relative path structure within the category:
+ *   `.agents/{category}/{ext}/{relativePath}`
  *
- * @param extensionDir - Root directory of the extension (contains manifest.json)
- * @param projectDir - Root directory of the project (`.agent/` will be created here)
+ * File naming conventions:
+ *   - Skills: `SKILL.md` (in named folder)
+ *   - Prompts: `*.prompt.md`
+ *   - Agents: `*.agent.md`
+ *   - Workflows: `*.workflow.md`
+ *   - Context: `*.context.md`
  */
 export function deployAgentAssets(extensionDir: string, projectDir: string): void {
   const manifest = readManifestName(extensionDir);
@@ -60,7 +93,7 @@ export function deployAgentAssets(extensionDir: string, projectDir: string): voi
     return;
   }
 
-  const agentDir = join(projectDir, '.agent');
+  const agentDir = join(projectDir, '.agents');
   const extName = manifest.name;
 
   if (agent.skills) {
@@ -79,26 +112,21 @@ export function deployAgentAssets(extensionDir: string, projectDir: string): voi
       continue;
     }
     for (const filePath of paths) {
+      const relativePath = getCategoryRelativePath(filePath, category);
       copyFile(
         join(extensionDir, filePath),
-        join(agentDir, category, extName, basename(filePath)),
+        join(agentDir, category, extName, relativePath),
       );
     }
   }
 }
 
 /**
- * Removes all agent assets deployed by an extension from the project's `.agent/` directory.
- *
- * Reads the extension's `manifest.json` to get the extension name,
- * then removes `{category}/{extensionName}/` for each agent category.
- *
- * @param extensionDir - Root directory of the extension (contains manifest.json)
- * @param projectDir - Root directory of the project
+ * Removes all agent assets deployed by an extension from the project's `.agents/` directory.
  */
 export function cleanupAgentAssets(extensionDir: string, projectDir: string): void {
   const manifest = readManifestName(extensionDir);
-  const agentDir = join(projectDir, '.agent');
+  const agentDir = join(projectDir, '.agents');
 
   for (const category of AGENT_CATEGORIES) {
     removeDir(join(agentDir, category, manifest.name));

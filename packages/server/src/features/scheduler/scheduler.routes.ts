@@ -6,24 +6,28 @@ interface SchedulerIdParams {
 }
 
 interface CreateTaskBody {
-  name: string;
+  name?: string;
+  extension_name?: string;
+  type?: 'manual' | 'extension';
   command: string;
   cron: string;
+  project_path?: string;
   enabled?: boolean;
 }
 
 interface UpdateTaskBody {
-  name?: string;
   command?: string;
   cron?: string;
-  enabled?: boolean;
+  enabled?: number;
 }
 
 interface ScheduledTask {
-  id: number;
+  id: string;
   name: string;
-  command: string;
+  type: string;
+  project_path: string | null;
   cron: string;
+  command: string;
   enabled: number;
   next_run_at: string | null;
   last_run_at: string | null;
@@ -33,35 +37,50 @@ interface ScheduledTask {
 
 const HISTORY_LIMIT = 50;
 
+function generateId(): string {
+  const bytes = new Uint8Array(8);
+  globalThis.crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${Date.now()}-${hex}`;
+}
+
 const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   fastify.get('/api/scheduler', () => {
     const db = getDb();
-    const tasks = db.prepare('SELECT * FROM scheduled_tasks ORDER BY created_at DESC').all() as ScheduledTask[];
-    return tasks;
+    return db.prepare('SELECT * FROM scheduled_tasks ORDER BY created_at DESC').all() as ScheduledTask[];
   });
 
   fastify.post('/api/scheduler', (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as CreateTaskBody;
-    if (!body.name || !body.command || !body.cron) {
+    const name = body.name ?? body.extension_name;
+    const type = body.type ?? (body.extension_name ? 'extension' : 'manual');
+    if (!name || !body.command || !body.cron) {
       reply.code(400);
       return { error: 'name, command, and cron are required' };
     }
 
     const db = getDb();
+    const id = generateId();
     const enabled = body.enabled !== false ? 1 : 0;
     const now = new Date().toISOString();
+    const projectPath = body.project_path ?? request.projectPath ?? fastify.activeProjectPath ?? null;
 
-    const result = db.prepare(
-      'INSERT INTO scheduled_tasks (name, command, cron, enabled, created_at) VALUES (?, ?, ?, ?, ?)',
-    ).run(body.name, body.command, body.cron, enabled, now);
+    db.prepare(
+      'INSERT INTO scheduled_tasks (id, name, type, project_path, cron, command, enabled, next_run_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(id, name, type, projectPath, body.cron, body.command, enabled, now, now);
 
     reply.code(201);
     return {
-      id: result.lastInsertRowid,
-      name: body.name,
-      command: body.command,
+      id,
+      name,
+      type,
+      project_path: projectPath,
       cron: body.cron,
+      command: body.command,
       enabled,
+      next_run_at: now,
+      last_run_at: null,
+      last_status: null,
       created_at: now,
     };
   });
@@ -71,23 +90,19 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
     const body = request.body as UpdateTaskBody;
     const db = getDb();
 
-    const existing = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(Number(params.id)) as ScheduledTask | undefined;
+    const existing = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(params.id) as ScheduledTask | undefined;
     if (!existing) {
       reply.code(404);
       return { error: 'Task not found' };
     }
 
-    const name = body.name ?? existing.name;
     const command = body.command ?? existing.command;
     const cron = body.cron ?? existing.cron;
-    let enabled = existing.enabled;
-    if (body.enabled !== undefined) {
-      enabled = body.enabled ? 1 : 0;
-    }
+    const enabled = body.enabled ?? existing.enabled;
 
     db.prepare(
-      'UPDATE scheduled_tasks SET name = ?, command = ?, cron = ?, enabled = ? WHERE id = ?',
-    ).run(name, command, cron, enabled, Number(params.id));
+      'UPDATE scheduled_tasks SET command = ?, cron = ?, enabled = ? WHERE id = ?',
+    ).run(command, cron, enabled, params.id);
 
     return { ok: true };
   });
@@ -95,7 +110,7 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
   fastify.delete('/api/scheduler/:id', (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as SchedulerIdParams;
     const db = getDb();
-    const result = db.prepare('DELETE FROM scheduled_tasks WHERE id = ?').run(Number(params.id));
+    const result = db.prepare('DELETE FROM scheduled_tasks WHERE id = ?').run(params.id);
     if (result.changes === 0) {
       reply.code(404);
       return { error: 'Task not found' };
@@ -106,7 +121,7 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
   fastify.post('/api/scheduler/:id/trigger', (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as SchedulerIdParams;
     const db = getDb();
-    const task = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(Number(params.id)) as ScheduledTask | undefined;
+    const task = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(params.id) as ScheduledTask | undefined;
     if (!task) {
       reply.code(404);
       return { error: 'Task not found' };
@@ -115,11 +130,11 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
     const now = new Date().toISOString();
     db.prepare(
       'UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?',
-    ).run(now, 'triggered', Number(params.id));
+    ).run(now, 'triggered', params.id);
 
     db.prepare(
       'INSERT INTO task_history (task_id, started_at, status) VALUES (?, ?, ?)',
-    ).run(Number(params.id), now, 'triggered');
+    ).run(params.id, now, 'triggered');
 
     return { ok: true, triggered_at: now };
   });
@@ -127,10 +142,9 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
   fastify.get('/api/scheduler/:id/history', (request: FastifyRequest) => {
     const params = request.params as SchedulerIdParams;
     const db = getDb();
-    const history = db.prepare(
+    return db.prepare(
       'SELECT * FROM task_history WHERE task_id = ? ORDER BY started_at DESC LIMIT ?',
-    ).all(Number(params.id), HISTORY_LIMIT);
-    return history;
+    ).all(params.id, HISTORY_LIMIT);
   });
 
   done();

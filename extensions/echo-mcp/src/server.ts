@@ -14,19 +14,48 @@ interface JsonRpcResponse {
   error?: { code: number; message: string };
 }
 
-function handleRequest(request: JsonRpcRequest): JsonRpcResponse {
-  switch (request.method) {
+interface ToolCallParams {
+  name: string;
+  arguments?: Record<string, unknown>;
+}
+
+function handleToolCall(params: ToolCallParams): unknown {
+  switch (params.name) {
     case 'echo':
-      return { jsonrpc: '2.0', id: request.id, result: request.params };
+      return params.arguments ?? {};
     case 'ping':
-      return { jsonrpc: '2.0', id: request.id, result: 'pong' };
+      return 'pong';
     default:
+      return null;
+  }
+}
+
+function handleRequest(request: JsonRpcRequest): JsonRpcResponse {
+  if (request.method === 'tools/call') {
+    const params = request.params as ToolCallParams | undefined;
+    if (!params?.name) {
       return {
         jsonrpc: '2.0',
         id: request.id,
-        error: { code: -32601, message: `Method not found: ${request.method}` },
+        error: { code: -32602, message: 'Missing tool name in params' },
       };
+    }
+    const result = handleToolCall(params);
+    if (result === null) {
+      return {
+        jsonrpc: '2.0',
+        id: request.id,
+        error: { code: -32601, message: `Tool not found: ${params.name}` },
+      };
+    }
+    return { jsonrpc: '2.0', id: request.id, result };
   }
+
+  return {
+    jsonrpc: '2.0',
+    id: request.id,
+    error: { code: -32601, message: `Method not found: ${request.method}` },
+  };
 }
 
 const rl = readline.createInterface({ input: process.stdin });

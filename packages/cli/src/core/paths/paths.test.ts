@@ -86,7 +86,7 @@ describe('paths', () => {
 
   describe('agent constants', () => {
     it('should define AGENT_DIR', () => {
-      expect(AGENT_DIR).toBe('.agent');
+      expect(AGENT_DIR).toBe('.agents');
     });
 
     it('should define SKILLS_DIR', () => {
@@ -137,22 +137,22 @@ describe('paths', () => {
 
     it('getSkillsDir returns skills dir for extension in project', () => {
       expect(getSkillsDir('/my/project', 'my-ext')).toBe(
-        path.join('/my/project', '.agent', 'skills', 'my-ext'),
+        path.join('/my/project', '.agents', 'skills', 'my-ext'),
       );
     });
 
     it('getAgentDir returns agent type dir for extension in project', () => {
       expect(getAgentDir('/my/project', 'prompts', 'my-ext')).toBe(
-        path.join('/my/project', '.agent', 'prompts', 'my-ext'),
+        path.join('/my/project', '.agents', 'prompts', 'my-ext'),
       );
       expect(getAgentDir('/my/project', 'agents', 'my-ext')).toBe(
-        path.join('/my/project', '.agent', 'agents', 'my-ext'),
+        path.join('/my/project', '.agents', 'agents', 'my-ext'),
       );
       expect(getAgentDir('/my/project', 'workflows', 'my-ext')).toBe(
-        path.join('/my/project', '.agent', 'workflows', 'my-ext'),
+        path.join('/my/project', '.agents', 'workflows', 'my-ext'),
       );
       expect(getAgentDir('/my/project', 'context', 'my-ext')).toBe(
-        path.join('/my/project', '.agent', 'context', 'my-ext'),
+        path.join('/my/project', '.agents', 'context', 'my-ext'),
       );
     });
   });

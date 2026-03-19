@@ -5,6 +5,7 @@ import {
   getStandardPackageJson,
   getStandardManifest,
   getStandardEntryPoint,
+  getStandardCommandHandler,
   getStandardTsconfig,
   getStandardSkillMd,
 } from './templates/standard.js';
@@ -28,6 +29,7 @@ function getStandardFiles(name: string, extDir: string): FileEntry[] {
     { filePath: path.join(extDir, 'package.json'), content: getStandardPackageJson(name) },
     { filePath: path.join(extDir, 'manifest.json'), content: getStandardManifest(name) },
     { filePath: path.join(extDir, 'src', 'index.ts'), content: getStandardEntryPoint(name) },
+    { filePath: path.join(extDir, 'commands', 'hello.ts'), content: getStandardCommandHandler(name) },
     { filePath: path.join(extDir, 'tsconfig.json'), content: getStandardTsconfig() },
     { filePath: path.join(extDir, 'SKILL.md'), content: getStandardSkillMd(name) },
   ];

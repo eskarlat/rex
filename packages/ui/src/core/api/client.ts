@@ -33,7 +33,7 @@ export async function fetchApi<T>(
   const { body, headers: customHeaders, ...rest } = options;
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(body !== undefined && { 'Content-Type': 'application/json' }),
     ...(customHeaders as Record<string, string>),
   };
 

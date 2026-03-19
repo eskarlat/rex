@@ -20,6 +20,7 @@ import {
   list,
   resolve,
   listAvailable,
+  searchAvailable,
   ensureSynced,
   installExtension,
 } from './registry-manager.js';
@@ -268,6 +269,91 @@ describe('registry-manager', () => {
       const result = listAvailable(configs);
       expect(result).toHaveLength(1);
       expect(result[0]!.author).toBe('high');
+    });
+  });
+
+  describe('searchAvailable', () => {
+    function setupRegistry(entries: Record<string, unknown>[]) {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
+      fs.mkdirSync(regDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(regDir, 'extensions.json'),
+        JSON.stringify({ extensions: entries }),
+      );
+      return configs;
+    }
+
+    const sampleEntries = [
+      { name: 'hello-world', description: 'A simple hello extension', gitUrl: 'https://example.com/hw.git', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test', tags: ['example', 'greeting'] },
+      { name: 'echo-mcp', description: 'An echo MCP server', gitUrl: 'https://example.com/echo.git', latestVersion: '1.0.0', type: 'mcp', icon: '', author: 'test', tags: ['example', 'mcp'] },
+      { name: 'analytics', description: 'Track usage analytics', gitUrl: 'https://example.com/analytics.git', latestVersion: '2.0.0', type: 'standard', icon: '', author: 'test' },
+    ];
+
+    it('returns all extensions when no filters are provided', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, {});
+      expect(result).toHaveLength(3);
+    });
+
+    it('filters by query matching name', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { query: 'hello' });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.name).toBe('hello-world');
+    });
+
+    it('filters by query matching description', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { query: 'analytics' });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.name).toBe('analytics');
+    });
+
+    it('query is case-insensitive', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { query: 'HELLO' });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.name).toBe('hello-world');
+    });
+
+    it('filters by type', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { type: 'mcp' });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.name).toBe('echo-mcp');
+    });
+
+    it('filters by tag', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { tag: 'greeting' });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.name).toBe('hello-world');
+    });
+
+    it('tag filter is case-insensitive', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { tag: 'EXAMPLE' });
+      expect(result).toHaveLength(2);
+    });
+
+    it('excludes extensions without tags when filtering by tag', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { tag: 'example' });
+      expect(result.find((e) => e.name === 'analytics')).toBeUndefined();
+    });
+
+    it('combines query and type filters', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { query: 'echo', type: 'mcp' });
+      expect(result).toHaveLength(1);
+      expect(result[0]!.name).toBe('echo-mcp');
+    });
+
+    it('returns empty when no matches', () => {
+      const configs = setupRegistry(sampleEntries);
+      const result = searchAvailable(configs, { query: 'nonexistent' });
+      expect(result).toHaveLength(0);
     });
   });
 

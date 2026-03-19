@@ -7,20 +7,12 @@ import {
   useUpdateTask,
   useDeleteTask,
   useTriggerTask,
+  type ScheduledTask,
 } from '@/core/hooks/use-scheduler';
 import { HistoryModal } from './HistoryModal';
 
 interface TaskRowProps {
-  task: {
-    id: number;
-    name: string;
-    extension_name: string;
-    command: string;
-    cron: string;
-    enabled: boolean;
-    last_run?: string;
-    next_run?: string;
-  } | undefined;
+  task: ScheduledTask | undefined;
 }
 
 export function TaskRow({ task }: TaskRowProps) {
@@ -39,54 +31,48 @@ export function TaskRow({ task }: TaskRowProps) {
     );
   }
 
-  function handleToggle(checked: boolean) {
-    if (!task) return;
-    updateTask.mutate({ id: task.id, enabled: checked });
-  }
-
-  function handleTrigger() {
-    if (!task) return;
-    triggerTask.mutate(task.id);
-  }
-
-  function handleDelete() {
-    if (!task) return;
-    deleteTask.mutate(task.id);
-  }
+  const isEnabled = task.enabled === 1;
 
   return (
     <>
       <TableRow>
-        <TableCell className="font-medium">{task.name}</TableCell>
-        <TableCell>{task.extension_name}</TableCell>
+        <TableCell>
+          <span className="font-medium">{task.name}</span>
+          <Badge variant="outline" className="ml-2 text-xs">{task.type}</Badge>
+        </TableCell>
+        <TableCell>
+          <code className="text-xs text-muted-foreground">{task.command}</code>
+        </TableCell>
         <TableCell>
           <code className="text-sm">{task.cron}</code>
         </TableCell>
         <TableCell>
           <div className="flex items-center gap-2">
             <Switch
-              checked={task.enabled}
-              onCheckedChange={handleToggle}
+              checked={isEnabled}
+              onCheckedChange={(checked) =>
+                updateTask.mutate({ id: task.id, enabled: checked ? 1 : 0 })
+              }
               aria-label="Toggle task"
             />
-            <Badge variant={task.enabled ? 'default' : 'secondary'}>
-              {task.enabled ? 'Enabled' : 'Disabled'}
+            <Badge variant={isEnabled ? 'default' : 'secondary'}>
+              {isEnabled ? 'Enabled' : 'Disabled'}
             </Badge>
           </div>
         </TableCell>
         <TableCell>
-          {task.last_run
-            ? new Date(task.last_run).toLocaleString()
+          {task.last_run_at
+            ? new Date(task.last_run_at).toLocaleString()
             : 'Never'}
         </TableCell>
         <TableCell>
-          {task.next_run
-            ? new Date(task.next_run).toLocaleString()
+          {task.next_run_at
+            ? new Date(task.next_run_at).toLocaleString()
             : '-'}
         </TableCell>
         <TableCell>
           <div className="flex gap-1">
-            <Button size="sm" variant="outline" onClick={handleTrigger}>
+            <Button size="sm" variant="outline" onClick={() => triggerTask.mutate(task.id)}>
               Run Now
             </Button>
             <Button
@@ -99,7 +85,7 @@ export function TaskRow({ task }: TaskRowProps) {
             <Button
               size="sm"
               variant="destructive"
-              onClick={handleDelete}
+              onClick={() => deleteTask.mutate(task.id)}
             >
               Delete
             </Button>

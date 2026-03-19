@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SKILLS_SUBDIR = path.join('.agent', 'skills');
+const SKILLS_SUBDIR = path.join('.agents', 'skills');
 const SKILL_FILE = 'SKILL.md';
 
 /**

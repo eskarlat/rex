@@ -19,6 +19,7 @@ export interface RegistryEntry {
   type: 'standard' | 'mcp';
   icon: string;
   author: string;
+  tags?: string[];
 }
 
 export interface ConfigMapping {

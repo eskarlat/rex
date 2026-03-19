@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTaskHistory } from '@/core/hooks/use-scheduler';
 
 interface HistoryModalProps {
-  taskId: number;
+  taskId: string;
   taskName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,7 +31,7 @@ export function HistoryModal({
   open,
   onOpenChange,
 }: HistoryModalProps) {
-  const { data: history, isLoading } = useTaskHistory(open ? taskId : 0);
+  const { data: history, isLoading } = useTaskHistory(open ? taskId : '');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -44,6 +45,7 @@ export function HistoryModal({
         {isLoading ? (
           <Skeleton className="h-48 w-full" />
         ) : (
+          <ScrollArea className="max-h-96">
           <Table>
             <TableHeader>
               <TableRow>
@@ -71,9 +73,9 @@ export function HistoryModal({
                       {new Date(entry.started_at).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      {new Date(entry.finished_at).toLocaleString()}
+                      {entry.finished_at ? new Date(entry.finished_at).toLocaleString() : '-'}
                     </TableCell>
-                    <TableCell>{entry.duration_ms}ms</TableCell>
+                    <TableCell>{entry.duration_ms != null ? `${entry.duration_ms}ms` : '-'}</TableCell>
                     <TableCell>
                       <Badge
                         variant={
@@ -85,14 +87,17 @@ export function HistoryModal({
                         {entry.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {entry.output ?? entry.error ?? '-'}
+                    <TableCell>
+                      <pre className="max-h-24 max-w-xs overflow-auto whitespace-pre-wrap text-xs font-mono">
+                        {entry.output ?? '-'}
+                      </pre>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
+          </ScrollArea>
         )}
       </DialogContent>
     </Dialog>

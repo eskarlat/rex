@@ -23,17 +23,17 @@ export function getMcpManifest(name: string): string {
     version: '0.0.1',
     description: 'A RenreKit MCP extension',
     type: 'mcp',
-    commands: {
-      hello: {
-        handler: 'handleHello',
-        description: 'Say hello',
-      },
+    main: 'dist/index.js',
+    engines: {
+      'renre-kit': '>=0.0.1',
+      'extension-sdk': '>=0.0.1',
     },
-    hooks: {
-      onInit: 'src/server.js',
-      onDestroy: 'src/server.js',
+    commands: {},
+    mcp: {
+      transport: 'stdio',
+      command: 'node',
+      args: ['dist/server.js'],
     },
-    skills: 'SKILL.md',
   };
   return JSON.stringify(manifest, null, 2) + '\n';
 }
@@ -94,7 +94,12 @@ rl.on('line', (line: string) => {
 export { getTsconfig as getMcpTsconfig } from './shared.js';
 
 export function getMcpSkillMd(name: string): string {
-  return `# ${name}
+  return `---
+name: hello
+description: This tool should be used when the user wants to say hello or test the ${name} MCP extension
+---
+
+# ${name}
 
 ## Description
 

@@ -61,7 +61,7 @@ src/
 - **Extension types**: Standard (in-process `require()`), MCP stdio (child process JSON-RPC), MCP SSE (HTTP)
 - **Connection Manager**: Manages MCP server lifecycle — lazy start, 30s idle timeout, exponential backoff restart (max 3 retries)
 - **Database**: SQLite via better-sqlite3 (synchronous API). 4 tables: `projects`, `installed_extensions`, `scheduled_tasks`, `task_history`. Migration files in `migrations/001-initial-schema.sql`.
-- **Extension hooks**: Extensions use `onInit`/`onDestroy` hooks to deploy/remove SKILL.md and agent assets. Core triggers hooks — extensions do the file copying.
+- **Extension lifecycle**: Extensions export `onInit`/`onDestroy` named exports from their `main` entry point to deploy/remove SKILL.md and agent assets. Core imports the module and calls these exports — extensions do the file copying.
 - **Config resolution chain**: project override (`.renre-kit/manifest.json`) → global (`~/.renre-kit/config.json`) → schema defaults. Vault-mapped fields get decrypted via indirection.
 
 ### Server Package — zero business logic
@@ -78,7 +78,7 @@ Every dashboard action imports CLI managers through `@renre-kit/cli/lib` and cal
 
 - **Global** (`~/.renre-kit/`): `db.sqlite`, `extensions/{name}@{version}/`, `registries/{name}/`, `vault.json`, `config.json`, `logs/`
 - **Per-project** (`.renre-kit/`): `manifest.json`, `plugins.json` (exact version pins), `storage/`
-- **LLM assets** (`.agent/`): `skills/{name}/SKILL.md`, `prompts/`, `agents/`, `workflows/`, `context/`
+- **LLM assets** (`.agents/`): `skills/{name}/SKILL.md`, `prompts/`, `agents/`, `workflows/`, `context/`
 
 ## Testing
 

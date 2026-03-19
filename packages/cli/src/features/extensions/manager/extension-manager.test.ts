@@ -155,7 +155,7 @@ describe('extension-manager', () => {
           description: 'Test',
           type: 'standard',
           commands: {},
-          hooks: { onInit: './nonexistent-hook.js' },
+          main: './nonexistent-hook.js',
         }),
       );
 
@@ -164,7 +164,7 @@ describe('extension-manager', () => {
       ).resolves.toBeDefined();
     });
 
-    it('runs onInit hook when defined', async () => {
+    it('runs onInit hook from main entry point', async () => {
       const extDir = path.join(tmpDir, 'ext-hook@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
@@ -175,19 +175,37 @@ describe('extension-manager', () => {
           description: 'Hook test',
           type: 'standard',
           commands: {},
-          hooks: { onInit: './init.js' },
+          main: './entry.mjs',
         }),
       );
       fs.writeFileSync(
-        path.join(extDir, 'init.js'),
-        `import fs from 'node:fs'; import path from 'node:path'; export default function(ctx) { fs.writeFileSync(path.join(ctx.projectDir, '.init-ran'), 'yes'); }`,
+        path.join(extDir, 'entry.mjs'),
+        `import fs from 'node:fs'; import path from 'node:path'; export function onInit(ctx) { fs.writeFileSync(path.join(ctx.projectDir, '.init-ran'), 'yes'); }`,
       );
 
       await activate('ext-hook', '1.0.0', projectDir, extDir);
 
-      const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
-      const plugins = JSON.parse(fs.readFileSync(pluginsPath, 'utf-8'));
-      expect(plugins['ext-hook']).toBeDefined();
+      expect(fs.existsSync(path.join(projectDir, '.init-ran'))).toBe(true);
+      expect(fs.readFileSync(path.join(projectDir, '.init-ran'), 'utf-8')).toBe('yes');
+    });
+
+    it('skips hook when main is not defined', async () => {
+      const extDir = path.join(tmpDir, 'ext-no-main@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-no-main',
+          version: '1.0.0',
+          description: 'No main entry',
+          type: 'standard',
+          commands: {},
+        }),
+      );
+
+      await expect(
+        activate('ext-no-main', '1.0.0', projectDir, extDir),
+      ).resolves.toBeDefined();
     });
 
     it('emits ext:activate event when bus is provided', async () => {
@@ -243,6 +261,67 @@ describe('extension-manager', () => {
       expect(plugins['new-ext']).toBe('2.0.0');
     });
 
+    it('logs warning on engine mismatch but still succeeds', async () => {
+      const extDir = path.join(tmpDir, 'ext-engine@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-engine',
+          version: '1.0.0',
+          description: 'Test engine compat',
+          type: 'standard',
+          commands: {},
+          engines: { 'renre-kit': '>=99.0.0' },
+        }),
+      );
+
+      const { getLogger } = await import('../../../core/logger/index.js');
+      const warnSpy = vi.spyOn(getLogger(), 'warn');
+
+      const missingKeys = await activate('ext-engine', '1.0.0', projectDir, extDir);
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        'extension-manager',
+        expect.stringContaining('renre-kit'),
+      );
+      // Activation still succeeds (pre-1.0 = warn only)
+      expect(missingKeys).toBeDefined();
+      const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
+      const plugins = JSON.parse(fs.readFileSync(pluginsPath, 'utf-8'));
+      expect(plugins['ext-engine']).toBe('1.0.0');
+
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn when engines are compatible', async () => {
+      const extDir = path.join(tmpDir, 'ext-compat@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-compat',
+          version: '1.0.0',
+          description: 'Test engine compat',
+          type: 'standard',
+          commands: {},
+          engines: { 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' },
+        }),
+      );
+
+      const { getLogger } = await import('../../../core/logger/index.js');
+      const warnSpy = vi.spyOn(getLogger(), 'warn');
+
+      await activate('ext-compat', '1.0.0', projectDir, extDir);
+
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        'extension-manager',
+        expect.stringContaining('requires'),
+      );
+
+      warnSpy.mockRestore();
+    });
+
     it('does not auto-deploy assets — extensions manage via hooks', async () => {
       const extDir = path.join(tmpDir, 'no-deploy@1.0.0');
       fs.mkdirSync(path.join(extDir, 'skills', 'greet'), { recursive: true });
@@ -265,7 +344,7 @@ describe('extension-manager', () => {
       await activate('no-deploy', '1.0.0', projectDir, extDir);
 
       // Core does NOT auto-deploy — extensions handle this in onInit hooks
-      const skillPath = path.join(projectDir, '.agent', 'skills', 'no-deploy', 'greet', 'SKILL.md');
+      const skillPath = path.join(projectDir, '.agents', 'skills', 'no-deploy', 'greet', 'SKILL.md');
       expect(fs.existsSync(skillPath)).toBe(false);
     });
   });
@@ -327,7 +406,7 @@ describe('extension-manager', () => {
 
     it('does not auto-cleanup assets — extensions manage via hooks', async () => {
       // Pre-deploy skills (as if an onInit hook had done it)
-      const skillsDir = path.join(projectDir, '.agent', 'skills', 'manual-ext');
+      const skillsDir = path.join(projectDir, '.agents', 'skills', 'manual-ext');
       fs.mkdirSync(path.join(skillsDir, 'greet'), { recursive: true });
       fs.writeFileSync(path.join(skillsDir, 'greet', 'SKILL.md'), '# Greet');
 

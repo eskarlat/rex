@@ -42,7 +42,7 @@ flowchart TD
     G -->|No| H["Done"]
     G -->|Yes| I["Activate extension"]
     I --> J["Copy SKILL.md"]
-    J --> K["Copy agent/ assets<br/>via onInit hook"]
+    J --> K["Copy agent/ assets<br/>via onInit export"]
     K --> L["Update plugins.json"]
     L --> H
 ```

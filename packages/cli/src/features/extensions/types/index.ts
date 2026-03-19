@@ -2,9 +2,9 @@ export type {
   ExtensionType,
   ExtensionCommand,
   UiPanel,
-  HookConfig,
   McpConfig,
   ConfigSchemaField,
+  EngineConstraints,
   ExtensionManifest,
 } from './extension.types.js';
 

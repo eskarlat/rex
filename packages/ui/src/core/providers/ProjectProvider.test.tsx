@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import { ProjectProvider, useProjectContext } from './ProjectProvider';
 
-const mockSetActiveProjectPath = vi.fn();
+const { mockSetActiveProjectPath } = vi.hoisted(() => ({
+  mockSetActiveProjectPath: vi.fn(),
+}));
 
 vi.mock('@/core/api/client', () => ({
   setActiveProjectPath: (...args: unknown[]) => mockSetActiveProjectPath(...args),
 }));
+
+import { ProjectProvider, useProjectContext } from './ProjectProvider';
 
 function TestConsumer() {
   const { activeProject, setActiveProject } = useProjectContext();

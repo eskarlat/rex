@@ -3,5 +3,17 @@
   "version": "1.0.0",
   "description": "A simple hello world extension for RenreKit",
   "type": "module",
-  "main": "src/index.js"
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && node build-panel.js"
+  },
+  "dependencies": {
+    "@renre-kit/extension-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "esbuild": "^0.21.0",
+    "react": "^19.0.0"
+  }
 }

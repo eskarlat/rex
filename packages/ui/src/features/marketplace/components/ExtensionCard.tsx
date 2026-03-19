@@ -20,7 +20,7 @@ interface ExtensionCardProps {
   extension: Extension;
 }
 
-export function ExtensionCard({ extension }: ExtensionCardProps) {
+function CardActions({ extension }: ExtensionCardProps) {
   const install = useInstallExtension();
   const activate = useActivateExtension();
   const deactivate = useDeactivateExtension();
@@ -32,6 +32,57 @@ export function ExtensionCard({ extension }: ExtensionCardProps) {
     deactivate.isPending ||
     remove.isPending;
 
+  if (extension.status === 'available') {
+    return (
+      <Button
+        size="sm"
+        disabled={isPending}
+        onClick={() => install.mutate({ name: extension.name })}
+      >
+        Install
+      </Button>
+    );
+  }
+
+  if (extension.status === 'installed') {
+    return (
+      <>
+        <Button
+          size="sm"
+          disabled={isPending}
+          onClick={() => activate.mutate({ name: extension.name, version: extension.version })}
+        >
+          Activate
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          disabled={isPending}
+          onClick={() => remove.mutate(extension.name)}
+        >
+          Uninstall
+        </Button>
+      </>
+    );
+  }
+
+  if (extension.status === 'active') {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={isPending}
+        onClick={() => deactivate.mutate(extension.name)}
+      >
+        Deactivate
+      </Button>
+    );
+  }
+
+  return null;
+}
+
+export function ExtensionCard({ extension }: ExtensionCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -52,46 +103,18 @@ export function ExtensionCard({ extension }: ExtensionCardProps) {
             By {extension.author}
           </p>
         )}
+        {extension.tags && extension.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {extension.tags.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="gap-2">
-        {extension.status === 'available' && (
-          <Button
-            size="sm"
-            disabled={isPending}
-            onClick={() => install.mutate({ name: extension.name })}
-          >
-            Install
-          </Button>
-        )}
-        {extension.status === 'installed' && (
-          <>
-            <Button
-              size="sm"
-              disabled={isPending}
-              onClick={() => activate.mutate(extension.name)}
-            >
-              Activate
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              disabled={isPending}
-              onClick={() => remove.mutate(extension.name)}
-            >
-              Remove
-            </Button>
-          </>
-        )}
-        {extension.status === 'active' && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={isPending}
-            onClick={() => deactivate.mutate(extension.name)}
-          >
-            Deactivate
-          </Button>
-        )}
+        <CardActions extension={extension} />
       </CardFooter>
     </Card>
   );

@@ -23,38 +23,41 @@ export function getStandardManifest(name: string): string {
     version: '0.0.1',
     description: 'A RenreKit extension',
     type: 'standard',
+    main: 'dist/index.js',
+    engines: {
+      'renre-kit': '>=0.0.1',
+      'extension-sdk': '>=0.0.1',
+    },
     commands: {
       hello: {
-        handler: 'handleHello',
+        handler: 'dist/commands/hello.js',
         description: 'Say hello',
       },
     },
-    hooks: {
-      onInit: 'src/index.js',
-      onDestroy: 'src/index.js',
-    },
-    skills: 'SKILL.md',
   };
   return JSON.stringify(manifest, null, 2) + '\n';
 }
 
 export function getStandardEntryPoint(name: string): string {
-  return `export function onInit(context: Record<string, unknown>): void {
-  console.log('${name} initialized');
+  return `export function onInit(context: { projectDir: string }): void {
+  console.log('${name} initialized in', context.projectDir);
 }
 
-export function onDestroy(context: Record<string, unknown>): void {
-  console.log('${name} destroyed');
+export function onDestroy(context: { projectDir: string }): void {
+  console.log('${name} destroyed in', context.projectDir);
+}
+`;
 }
 
-export const commands = {
-  hello: {
-    handler: 'handleHello',
-    description: 'Say hello',
-  },
-};
+export function getStandardCommandHandler(name: string): string {
+  return `interface ExecutionContext {
+  projectName: string;
+  projectPath: string;
+  args: Record<string, unknown>;
+  config: Record<string, unknown>;
+}
 
-export function handleHello(_context: Record<string, unknown>): { output: string; exitCode: number } {
+export default function hello(_context: ExecutionContext): { output: string; exitCode: number } {
   return { output: 'Hello from ${name}!', exitCode: 0 };
 }
 `;
@@ -63,7 +66,12 @@ export function handleHello(_context: Record<string, unknown>): { output: string
 export { getTsconfig as getStandardTsconfig } from './shared.js';
 
 export function getStandardSkillMd(name: string): string {
-  return `# ${name}
+  return `---
+name: hello
+description: This tool should be used when the user wants to say hello or get a greeting from the ${name} extension
+---
+
+# ${name}
 
 ## Description
 

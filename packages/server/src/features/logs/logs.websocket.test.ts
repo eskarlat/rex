@@ -99,4 +99,21 @@ describe('logs websocket plugin', () => {
     });
     expect(response.statusCode).toBeDefined();
   });
+
+  it('registers the /api/logs/console/entries endpoint', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/logs/console/entries',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual(expect.any(Array));
+  });
+
+  it('registers the /api/logs/console websocket endpoint', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/logs/console',
+    });
+    expect(response.statusCode).toBeDefined();
+  });
 });

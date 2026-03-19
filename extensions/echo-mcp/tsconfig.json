@@ -3,13 +3,14 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "src",
+    "outDir": "dist",
+    "jsx": "react-jsx",
     "strict": true,
     "declaration": true,
     "esModuleInterop": true,
     "skipLibCheck": true
   },
   "include": ["src"],
-  "exclude": ["dist", "node_modules"]
+  "exclude": ["node_modules", "dist"]
 }

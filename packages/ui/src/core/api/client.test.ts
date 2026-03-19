@@ -30,7 +30,7 @@ describe('fetchApi', () => {
 
     expect(result).toEqual(data);
     expect(mockFetch).toHaveBeenCalledWith('/api/test', {
-      headers: { 'Content-Type': 'application/json' },
+      headers: {},
       body: undefined,
     });
   });

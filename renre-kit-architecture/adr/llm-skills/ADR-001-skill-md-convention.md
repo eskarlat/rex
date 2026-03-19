@@ -9,8 +9,8 @@ Extensions need to teach LLM agents how to use their commands and capabilities. 
 ## Decision
 Adopt a convention-based approach using markdown files:
 1. Extensions define skills in `skills/SKILL.md` in their source tree
-2. Core SDK copies `skills/SKILL.md` to `.agent/skills/{extensionName}/SKILL.md` when extension is activated
-3. LLM agents scan `.agent/skills/*/SKILL.md` to discover available skills
+2. Core SDK copies `skills/SKILL.md` to `.agents/skills/{extensionName}/SKILL.md` when extension is activated
+3. LLM agents scan `.agents/skills/*/SKILL.md` to discover available skills
 4. SKILL.md uses natural language (markdown) to describe the extension's capabilities
 5. Format is flexible; each extension can structure as needed (prose, lists, examples)
 

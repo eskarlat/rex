@@ -45,6 +45,7 @@ export class ConnectionManager {
     extensionName: string,
     mcpConfig: McpConfig,
     resolvedConfig?: Record<string, unknown>,
+    cwd?: string,
   ): McpConnection {
     const existing = this.connections.get(extensionName);
     if (existing && existing.metadata.state === 'running') {
@@ -52,7 +53,7 @@ export class ConnectionManager {
       return existing.metadata;
     }
 
-    const internal = this.startConnection(extensionName, mcpConfig, resolvedConfig);
+    const internal = this.startConnection(extensionName, mcpConfig, resolvedConfig, cwd);
     this.connections.set(extensionName, internal);
     this.resetIdleTimer(extensionName);
     return internal.metadata;
@@ -204,6 +205,7 @@ export class ConnectionManager {
     extensionName: string,
     mcpConfig: McpConfig,
     resolvedConfig?: Record<string, unknown>,
+    cwd?: string,
   ): InternalConnection {
     const metadata: McpConnection = {
       extensionName,
@@ -226,7 +228,7 @@ export class ConnectionManager {
         mcpConfig.command ?? '',
         mcpConfig.args ?? [],
         env,
-        process.cwd(),
+        cwd ?? process.cwd(),
       );
     } else {
       internal.sseConnection = connect(
@@ -291,7 +293,9 @@ function resolveEnv(
   env: Record<string, string>,
   config: Record<string, unknown>,
 ): Record<string, string> {
-  const resolved: Record<string, string> = {};
+  const resolved: Record<string, string> = {
+    ...(process.env as Record<string, string>),
+  };
   for (const [key, value] of Object.entries(env)) {
     resolved[key] = interpolate(value, config);
   }
