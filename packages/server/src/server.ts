@@ -18,6 +18,7 @@ import settingsRoutes from './features/settings/settings.routes.js';
 import vaultRoutes from './features/vault/vault.routes.js';
 import registriesRoutes from './features/registries/registries.routes.js';
 import schedulerRoutes from './features/scheduler/scheduler.routes.js';
+import dashboardRoutes from './features/dashboard/dashboard.routes.js';
 import logsWebsocket from './features/logs/logs.websocket.js';
 
 export interface CreateServerOptions {
@@ -67,6 +68,7 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
   await fastify.register(vaultRoutes);
   await fastify.register(registriesRoutes);
   await fastify.register(schedulerRoutes);
+  await fastify.register(dashboardRoutes);
   await fastify.register(logsWebsocket);
 
   // Serve the built UI (SPA) if the dist directory exists

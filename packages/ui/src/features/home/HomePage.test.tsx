@@ -18,6 +18,10 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   }),
 }));
 
+vi.mock('@/features/dashboard/components/WidgetGrid', () => ({
+  WidgetGrid: () => <div data-testid="widget-grid" />,
+}));
+
 vi.mock('@/core/providers/ProjectProvider', () => ({
   useProjectContext: () => ({
     activeProject: '/home/user/my-project',
@@ -54,6 +58,10 @@ describe('HomePage', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
+  it('renders WidgetGrid', () => {
+    renderWithProviders(<HomePage />);
+    expect(screen.getByTestId('widget-grid')).toBeInTheDocument();
+  });
 });
 
 describe('HomePage no project', () => {

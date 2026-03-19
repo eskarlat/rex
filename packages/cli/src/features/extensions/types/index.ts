@@ -2,6 +2,8 @@ export type {
   ExtensionType,
   ExtensionCommand,
   UiPanel,
+  WidgetSize,
+  UiWidget,
   McpConfig,
   ConfigSchemaField,
   EngineConstraints,

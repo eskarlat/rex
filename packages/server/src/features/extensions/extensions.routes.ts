@@ -41,12 +41,18 @@ interface RemoveParams {
   name: string;
 }
 
-function findExtensionPanel(name: string, projectPath: string | undefined, panelId?: string): string | null {
+function findInstalledExtension(name: string): { name: string; version: string } | null {
+  const db = getDb();
+  const installed = listInstalled(db);
+  return installed.find((e) => e.name === name) ?? null;
+}
+
+function getVersionCandidates(name: string, projectPath: string | undefined): string[] {
   const db = getDb();
   const installed = listInstalled(db);
   const activated = projectPath ? getActivated(projectPath) : {};
-
   const activatedVersion = activated[name];
+
   const candidates: string[] = [];
   if (activatedVersion) {
     candidates.push(activatedVersion);
@@ -56,20 +62,27 @@ function findExtensionPanel(name: string, projectPath: string | undefined, panel
       candidates.push(ext.version);
     }
   }
+  return candidates;
+}
+
+function findExtensionUiAsset(
+  name: string,
+  projectPath: string | undefined,
+  assetType: 'panels' | 'widgets',
+  assetId?: string,
+): string | null {
+  const candidates = getVersionCandidates(name, projectPath);
 
   for (const version of candidates) {
     const extDir = getExtensionDir(name, version);
     try {
       const manifest = loadManifest(extDir);
-      const panels = manifest.ui?.panels ?? [];
-      const panel = panelId
-        ? panels.find((p) => p.id === panelId)
-        : panels[0];
-      if (panel?.entry) {
-        const panelPath = join(extDir, panel.entry);
-        if (existsSync(panelPath)) {
-          return readFileSync(panelPath, 'utf-8');
-        }
+      const assets = manifest.ui?.[assetType] ?? [];
+      const asset = assetId ? assets.find((a) => a.id === assetId) : assets[0];
+      if (!asset?.entry) continue;
+      const assetPath = join(extDir, asset.entry);
+      if (existsSync(assetPath)) {
+        return readFileSync(assetPath, 'utf-8');
       }
     } catch {
       // try next version
@@ -100,12 +113,20 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
         let hasConfig = false;
         let title: string | undefined;
         let panels: Array<{ id: string; title: string }> = [];
+        let widgets: Array<{ id: string; title: string; defaultSize: { w: number; h: number }; minSize?: { w: number; h: number }; maxSize?: { w: number; h: number } }> = [];
         try {
           const extDir = getExtensionDir(ext.name, ext.version);
           const manifest = loadManifest(extDir);
           hasConfig = Object.keys(manifest.config?.schema ?? {}).length > 0;
           title = manifest.title;
           panels = (manifest.ui?.panels ?? []).map((p) => ({ id: p.id, title: p.title }));
+          widgets = (manifest.ui?.widgets ?? []).map((w) => ({
+            id: w.id,
+            title: w.title,
+            defaultSize: w.defaultSize,
+            ...(w.minSize ? { minSize: w.minSize } : {}),
+            ...(w.maxSize ? { maxSize: w.maxSize } : {}),
+          }));
         } catch { /* ignore */ }
         return {
           name: ext.name,
@@ -115,6 +136,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
           hasConfig,
           title,
           panels,
+          widgets,
         };
       });
 
@@ -161,7 +183,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
   // Note: browser import() cannot send custom headers, so we also check activeProjectPath
   fastify.get('/api/extensions/:name/panel.js', (request: FastifyRequest, reply: FastifyReply) => {
     const { name } = request.params as { name: string };
-    const panelContent = findExtensionPanel(name, request.projectPath ?? fastify.activeProjectPath);
+    const panelContent = findExtensionUiAsset(name, request.projectPath ?? fastify.activeProjectPath, 'panels');
     if (!panelContent) {
       reply.code(404);
       return reply.send({ error: `Panel not found for extension '${name}'` });
@@ -173,13 +195,25 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
   // Serve specific panel by ID: /api/extensions/{name}/panels/{panelId}.js
   fastify.get('/api/extensions/:name/panels/:panelId.js', (request: FastifyRequest, reply: FastifyReply) => {
     const { name, panelId } = request.params as { name: string; panelId: string };
-    const panelContent = findExtensionPanel(name, request.projectPath ?? fastify.activeProjectPath, panelId);
+    const panelContent = findExtensionUiAsset(name, request.projectPath ?? fastify.activeProjectPath, 'panels', panelId);
     if (!panelContent) {
       reply.code(404);
       return reply.send({ error: `Panel '${panelId}' not found for extension '${name}'` });
     }
     reply.header('Content-Type', 'application/javascript');
     return reply.send(panelContent);
+  });
+
+  // Serve widget JS by ID: /api/extensions/{name}/widgets/{widgetId}.js
+  fastify.get('/api/extensions/:name/widgets/:widgetId.js', (request: FastifyRequest, reply: FastifyReply) => {
+    const { name, widgetId } = request.params as { name: string; widgetId: string };
+    const widgetContent = findExtensionUiAsset(name, request.projectPath ?? fastify.activeProjectPath, 'widgets', widgetId);
+    if (!widgetContent) {
+      reply.code(404);
+      return reply.send({ error: `Widget '${widgetId}' not found for extension '${name}'` });
+    }
+    reply.header('Content-Type', 'application/javascript');
+    return reply.send(widgetContent);
   });
 
   fastify.post('/api/extensions/install', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -248,9 +282,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: 'projectPath is required' };
     }
 
-    const db = getDb();
-    const installed = listInstalled(db);
-    const ext = installed.find((e) => e.name === body.name);
+    const ext = findInstalledExtension(body.name);
     if (!ext) {
       reply.code(404);
       return { error: `Extension "${body.name}" is not installed.` };
@@ -263,14 +295,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
 
   fastify.delete('/api/extensions/:name', (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as RemoveParams;
-    const db = getDb();
-    const installed = listInstalled(db);
-    const ext = installed.find((e) => e.name === params.name);
+    const ext = findInstalledExtension(params.name);
     if (!ext) {
       reply.code(404);
       return { error: `Extension '${params.name}' not installed` };
     }
-    remove(params.name, ext.version, db);
+    remove(params.name, ext.version, getDb());
     return { ok: true };
   });
 

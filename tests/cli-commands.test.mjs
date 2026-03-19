@@ -38,6 +38,24 @@ function runCli(args, options = {}) {
   });
 }
 
+/**
+ * Run a CLI command in an isolated temp directory and assert it fails
+ * with an error message about missing project.
+ */
+async function assertFailsWithoutProject(command, tmpPrefix, options = {}) {
+  const noProjectDir = await mkdtemp(join(tmpdir(), tmpPrefix));
+  try {
+    const { code, stderr } = await runCli([command], { cwd: noProjectDir, ...options });
+    assert.notEqual(code, 0, `${command} should fail without a project`);
+    assert.ok(
+      stderr.includes('No RenreKit project') || stderr.includes('Error'),
+      'Should report missing project',
+    );
+  } finally {
+    await rm(noProjectDir, { recursive: true, force: true });
+  }
+}
+
 // ──────────────────────────────────────────────
 // Test: CLI basics
 // ──────────────────────────────────────────────
@@ -139,20 +157,7 @@ describe('project lifecycle', () => {
   });
 
   it('destroy fails when no project exists', async () => {
-    const noProjectDir = await mkdtemp(join(tmpdir(), 'renre-no-project-'));
-    try {
-      const { stderr, code } = await runCli(['destroy'], {
-        cwd: noProjectDir,
-        home: homeDir,
-      });
-      assert.notEqual(code, 0, 'destroy should fail with no project');
-      assert.ok(
-        stderr.includes('No RenreKit project') || stderr.includes('Error'),
-        'Should report missing project',
-      );
-    } finally {
-      await rm(noProjectDir, { recursive: true, force: true });
-    }
+    await assertFailsWithoutProject('destroy', 'renre-no-project-', { home: homeDir });
   });
 });
 
@@ -285,17 +290,7 @@ describe('scheduler commands', () => {
 
 describe('capabilities command', () => {
   it('fails when no project is found', async () => {
-    const noProjectDir = await mkdtemp(join(tmpdir(), 'renre-no-cap-'));
-    try {
-      const { code, stderr } = await runCli(['capabilities'], { cwd: noProjectDir });
-      assert.notEqual(code, 0, 'capabilities should fail without a project');
-      assert.ok(
-        stderr.includes('No RenreKit project') || stderr.includes('Error'),
-        'Should report missing project',
-      );
-    } finally {
-      await rm(noProjectDir, { recursive: true, force: true });
-    }
+    await assertFailsWithoutProject('capabilities', 'renre-no-cap-');
   });
 });
 

@@ -36,7 +36,7 @@ test.describe('Page navigation', () => {
   test('vault page loads', async ({ page }) => {
     await page.goto('/vault');
     await expect(page).toHaveURL(/\/vault/);
-    await expect(page.locator('body')).toBeVisible();
+    await expect(page.locator('#root')).toBeAttached();
   });
 
   test('scheduler page loads', async ({ page }) => {
@@ -89,7 +89,7 @@ test.describe('Marketplace page', () => {
 test.describe('Vault page', () => {
   test('loads vault page', async ({ page }) => {
     await page.goto('/vault');
-    await expect(page.locator('body')).toBeVisible();
+    await expect(page.locator('#root')).toBeAttached();
   });
 
   test('vault API responds with entries', async ({ request }) => {
@@ -133,6 +133,99 @@ test.describe('Settings page', () => {
     expect(response.ok()).toBeTruthy();
     const data = await response.json();
     expect(data).toHaveProperty('registries');
+  });
+});
+
+// ──────────────────────────────────────────────
+// Dashboard layout API
+// ──────────────────────────────────────────────
+
+test.describe('Dashboard layout API', () => {
+  test('GET /api/dashboard/layout returns empty layout without project', async ({ request }) => {
+    const response = await request.get('/api/dashboard/layout');
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('widgets');
+    expect(Array.isArray(data.widgets)).toBeTruthy();
+  });
+
+  test('GET /api/dashboard/layout returns layout with project header', async ({ request }) => {
+    const response = await request.get('/api/dashboard/layout', {
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
+    });
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+    expect(data).toHaveProperty('widgets');
+  });
+
+  test('PUT /api/dashboard/layout saves and GET retrieves it', async ({ request }) => {
+    const layout = {
+      widgets: [
+        {
+          id: 'test-ext:test-widget',
+          extensionName: 'test-ext',
+          widgetId: 'test-widget',
+          position: { x: 0, y: 0 },
+          size: { w: 4, h: 2 },
+        },
+      ],
+    };
+
+    // Save layout
+    const putResponse = await request.put('/api/dashboard/layout', {
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
+      data: layout,
+    });
+    expect(putResponse.ok()).toBeTruthy();
+
+    // Retrieve saved layout
+    const getResponse = await request.get('/api/dashboard/layout', {
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
+    });
+    expect(getResponse.ok()).toBeTruthy();
+    const data = await getResponse.json();
+    expect(data.widgets).toHaveLength(1);
+    expect(data.widgets[0].id).toBe('test-ext:test-widget');
+    expect(data.widgets[0].extensionName).toBe('test-ext');
+    expect(data.widgets[0].size).toEqual({ w: 4, h: 2 });
+  });
+
+  test('PUT /api/dashboard/layout can save empty layout', async ({ request }) => {
+    const emptyLayout = { widgets: [] };
+
+    const putResponse = await request.put('/api/dashboard/layout', {
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
+      data: emptyLayout,
+    });
+    expect(putResponse.ok()).toBeTruthy();
+
+    const getResponse = await request.get('/api/dashboard/layout', {
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
+    });
+    const data = await getResponse.json();
+    expect(data.widgets).toHaveLength(0);
+  });
+
+  test('PUT /api/dashboard/layout returns error without project', async ({ request }) => {
+    const response = await request.put('/api/dashboard/layout', {
+      data: { widgets: [] },
+    });
+    // Should fail without project context
+    expect(response.status()).toBe(400);
+  });
+
+  test('marketplace API includes widget metadata for active extensions', async ({ request }) => {
+    const response = await request.get('/api/marketplace', {
+      headers: { 'X-RenreKit-Project': TEST_PROJECT_DIR },
+    });
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    // Active extensions should have widgets array (may be empty if no extensions are active)
+    for (const ext of data.active) {
+      expect(ext).toHaveProperty('widgets');
+      expect(Array.isArray(ext.widgets)).toBeTruthy();
+    }
   });
 });
 

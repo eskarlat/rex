@@ -1,6 +1,6 @@
 import * as clack from '@clack/prompts';
-import { execFileSync } from 'node:child_process';
 import type Database from 'better-sqlite3';
+import { executeTaskCommand } from '../../../shared/task-execution.js';
 
 interface ScheduledTask {
   id: string;
@@ -75,31 +75,14 @@ export function handleSchedulerTrigger(options: SchedulerTriggerOptions): void {
     return;
   }
 
-  const startedAt = new Date().toISOString();
-  const start = Date.now();
+  const result = executeTaskCommand(task.command, parseCommandString);
+  const { status, output, durationMs, startedAt, finishedAt } = result;
 
-  let status = 'success';
-  let output = '';
-
-  try {
-    const parts = parseCommandString(task.command);
-    const cmd = parts[0] ?? '';
-    const args = parts.slice(1);
-    const result = execFileSync(cmd, args, {
-      encoding: 'utf-8',
-      timeout: 60_000,
-    });
-    output = result.slice(0, 10_240);
+  if (status === 'success') {
     clack.log.success(`Task "${options.taskId}" completed successfully.`);
-  } catch (err) {
-    status = 'error';
-    output = err instanceof Error ? err.message : String(err);
-    output = output.slice(0, 10_240);
+  } else {
     clack.log.error(`Task "${options.taskId}" failed: ${output}`);
   }
-
-  const durationMs = Date.now() - start;
-  const finishedAt = new Date().toISOString();
 
   options.db
     .prepare('UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?')

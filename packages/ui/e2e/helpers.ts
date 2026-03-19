@@ -22,6 +22,20 @@ export const mockMarketplace = {
       status: 'active',
       author: 'test-author',
       tags: ['demo', 'sample'],
+      widgets: [
+        {
+          id: 'status-widget',
+          title: 'Hello Status',
+          defaultSize: { w: 4, h: 2 },
+          minSize: { w: 3, h: 2 },
+          maxSize: { w: 6, h: 4 },
+        },
+        {
+          id: 'info-widget',
+          title: 'Hello Info',
+          defaultSize: { w: 3, h: 2 },
+        },
+      ],
     },
   ],
   installed: [
@@ -128,6 +142,22 @@ export const mockTaskHistory = [
   },
 ];
 
+export const mockDashboardLayout = {
+  widgets: [
+    {
+      id: 'hello-world:status-widget',
+      extensionName: 'hello-world',
+      widgetId: 'status-widget',
+      position: { x: 0, y: 0 },
+      size: { w: 4, h: 2 },
+    },
+  ],
+};
+
+export const mockEmptyDashboardLayout = {
+  widgets: [],
+};
+
 /**
  * Set up all common API route mocks for a page.
  * Call this before navigating to any page.
@@ -213,6 +243,13 @@ export async function setupAPIMocks(page: Page): Promise<void> {
   await page.route('**/api/registries/*', (route) =>
     route.fulfill({ json: { ok: true } }),
   );
+
+  await page.route('**/api/dashboard/layout', (route) => {
+    if (route.request().method() === 'GET') {
+      return route.fulfill({ json: mockDashboardLayout });
+    }
+    return route.fulfill({ json: { ok: true } });
+  });
 
   await page.route('**/api/settings/extensions/*', (route) => {
     if (route.request().method() === 'GET') {

@@ -1,9 +1,7 @@
-import { execFileSync } from 'node:child_process';
-import { getDb } from '@renre-kit/cli/lib';
+import { getDb, executeTaskCommand } from '@renre-kit/cli/lib';
 import { Cron } from 'croner';
 
 const TICK_INTERVAL_MS = 60_000;
-const MAX_OUTPUT_LENGTH = 10_240;
 
 interface ScheduledTaskRow {
   id: number;
@@ -58,10 +56,7 @@ interface CharResult {
   inDouble: boolean;
 }
 
-function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: boolean): CharResult {
-  if (escaped) {
-    return { action: 'append', escaped: false, inSingle, inDouble };
-  }
+function handleEscapeChar(ch: string, inSingle: boolean, inDouble: boolean): CharResult | null {
   if (ch === '\\' && !inSingle) {
     return { action: 'skip', escaped: true, inSingle, inDouble };
   }
@@ -71,6 +66,15 @@ function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: 
   if (ch === '"' && !inSingle) {
     return { action: 'skip', escaped: false, inSingle, inDouble: !inDouble };
   }
+  return null;
+}
+
+function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: boolean): CharResult {
+  if (escaped) {
+    return { action: 'append', escaped: false, inSingle, inDouble };
+  }
+  const escapeResult = handleEscapeChar(ch, inSingle, inDouble);
+  if (escapeResult) return escapeResult;
   if (/\s/.test(ch) && !inSingle && !inDouble) {
     return { action: 'split', escaped: false, inSingle, inDouble };
   }
@@ -79,29 +83,9 @@ function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: 
 
 function executeDueTask(task: ScheduledTaskRow): void {
   const db = getDb();
-  const startedAt = new Date().toISOString();
-  const start = Date.now();
-  let status = 'success';
-  let output = '';
-
-  // Execute the command
-  try {
-    const parts = parseCommandString(task.command);
-    const cmd = parts[0] ?? '';
-    const args = parts.slice(1);
-    const result = execFileSync(cmd, args, {
-      encoding: 'utf-8',
-      timeout: 60_000,
-    });
-    output = result.slice(0, MAX_OUTPUT_LENGTH);
-  } catch (err) {
-    status = 'error';
-    output = err instanceof Error ? err.message : String(err);
-    output = output.slice(0, MAX_OUTPUT_LENGTH);
-  }
-
-  const durationMs = Date.now() - start;
-  const finishedAt = new Date().toISOString();
+  const result = executeTaskCommand(task.command, parseCommandString);
+  let { status } = result;
+  const { output, startedAt, finishedAt, durationMs } = result;
 
   // Compute next run
   let nextRun: string | null;

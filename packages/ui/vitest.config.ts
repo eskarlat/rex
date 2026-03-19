@@ -1,11 +1,9 @@
-import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
+import { createCoverageConfig, createSrcAlias } from '../../vitest.shared.js';
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
+    alias: createSrcAlias(import.meta.url),
   },
   test: {
     globals: true,
@@ -13,24 +11,13 @@ export default defineConfig({
     passWithNoTests: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     setupFiles: ['./src/test-setup.ts'],
-    coverage: {
-      provider: 'istanbul',
-      reporter: ['text', 'text-summary', 'lcov'],
-      include: ['src/**/*.ts', 'src/**/*.tsx'],
+    ...createCoverageConfig({
       exclude: [
-        'src/**/*.test.ts',
-        'src/**/*.test.tsx',
         'src/test-setup.ts',
         'src/main.tsx',
         'src/App.tsx',
         'src/components/ui/**',
       ],
-      thresholds: {
-        statements: 86,
-        branches: 86,
-        functions: 86,
-        lines: 86,
-      },
-    },
+    }),
   },
 });

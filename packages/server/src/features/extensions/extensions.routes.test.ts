@@ -574,6 +574,131 @@ describe('extensions routes', () => {
     });
   });
 
+  describe('GET /api/extensions/:name/widgets/:widgetId.js', () => {
+    it('serves a widget by ID', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        ui: {
+          panels: [],
+          widgets: [
+            { id: 'status', title: 'Status', entry: 'dist/status-widget.js', defaultSize: { w: 4, h: 2 } },
+          ],
+        },
+      });
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue('export default function StatusWidget() {}');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/widgets/status.js',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('application/javascript');
+      expect(response.body).toBe('export default function StatusWidget() {}');
+    });
+
+    it('returns 404 for unknown widget ID', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        ui: {
+          panels: [],
+          widgets: [],
+        },
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/widgets/nonexistent.js',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe('marketplace widget metadata', () => {
+    it('returns widgets metadata for active extensions', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        title: 'Extension One',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        config: { schema: {} },
+        ui: {
+          panels: [],
+          widgets: [
+            { id: 'status', title: 'Status', entry: 'dist/status.js', defaultSize: { w: 4, h: 2 }, minSize: { w: 2, h: 1 } },
+          ],
+        },
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active[0].widgets).toHaveLength(1);
+      expect(body.active[0].widgets[0]).toEqual({
+        id: 'status',
+        title: 'Status',
+        defaultSize: { w: 4, h: 2 },
+        minSize: { w: 2, h: 1 },
+      });
+    });
+
+    it('returns empty widgets when manifest has no widgets', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        config: { schema: {} },
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active[0].widgets).toEqual([]);
+    });
+  });
+
   describe('DELETE /api/extensions/:name', () => {
     it('removes an installed extension', async () => {
       mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0' }]);

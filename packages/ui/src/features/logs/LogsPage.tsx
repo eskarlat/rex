@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, type ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLogSocket, useConsoleSocket, type LogMessage, type ConsoleMessage } from '@/core/api/websocket';
+import { useLogSocket, useConsoleSocket, type LogMessage } from '@/core/api/websocket';
 import { useSettings } from '@/core/hooks/use-settings';
 import { fetchApi } from '@/core/api/client';
 import { cn } from '@/lib/utils';
@@ -23,12 +23,54 @@ const LEVEL_COLORS: Record<string, string> = {
   error: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
+const consoleLevelColors: Record<string, string> = {
+  error: 'text-red-400',
+  warn: 'text-yellow-400',
+  debug: 'text-zinc-500',
+};
+
+function consoleColorForLevel(level: string): string {
+  return consoleLevelColors[level] ?? 'text-green-400';
+}
+
 function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleTimeString();
   } catch {
     return iso;
   }
+}
+
+interface StreamControls<T> {
+  messages: T[];
+  connected: boolean;
+  clear: () => void;
+  connect: () => void;
+  disconnect: () => void;
+  setInitial: (entries: T[]) => void;
+}
+
+function useStreamLifecycle<T>(
+  stream: StreamControls<T>,
+  initialUrl: string,
+  scrollRef: React.RefObject<HTMLDivElement | null>,
+  autoScroll: boolean,
+): void {
+  const { connect, disconnect, setInitial, messages } = stream;
+
+  useEffect(() => {
+    fetchApi<T[]>(initialUrl)
+      .then((entries) => { setInitial(entries); })
+      .catch(() => {})
+      .finally(() => { connect(); });
+    return () => disconnect();
+  }, [connect, disconnect, setInitial, initialUrl]);
+
+  useEffect(() => {
+    if (autoScroll && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, autoScroll, scrollRef]);
 }
 
 function LogEntry({ log }: { log: LogMessage }) {
@@ -118,26 +160,71 @@ function ConnectionStatus({ connected }: ConnectionStatusProps) {
   );
 }
 
+interface LogToolbarProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  autoScroll: boolean;
+  onAutoScrollToggle: () => void;
+  onClear: () => void;
+  connected: boolean;
+  placeholder: string;
+  extra?: ReactNode;
+}
+
+function LogToolbar({
+  search, onSearchChange, autoScroll, onAutoScrollToggle,
+  onClear, connected, placeholder, extra,
+}: LogToolbarProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        placeholder={placeholder}
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="max-w-sm"
+      />
+      {extra}
+      <Button variant="outline" size="sm" onClick={onAutoScrollToggle}>
+        {autoScroll ? 'Pause' : 'Resume'}
+      </Button>
+      <Button variant="outline" size="sm" onClick={onClear}>
+        Clear
+      </Button>
+      <div className="ml-auto">
+        <ConnectionStatus connected={connected} />
+      </div>
+    </div>
+  );
+}
+
+interface LogFooterProps {
+  filteredCount: number;
+  totalCount: number;
+  unit: string;
+  unitPlural: string;
+}
+
+function LogFooter({ filteredCount, totalCount, unit, unitPlural }: LogFooterProps) {
+  return (
+    <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <span>
+        {filteredCount} {filteredCount !== 1 ? unitPlural : unit}
+        {filteredCount !== totalCount && ` (${totalCount} total)`}
+      </span>
+      <span>Max 1000 entries</span>
+    </div>
+  );
+}
+
 function ExtensionLogsTab() {
-  const { messages, connected, connect, disconnect, clear, setInitial } = useLogSocket();
+  const stream = useLogSocket();
+  const { messages, connected, clear } = stream;
   const [search, setSearch] = useState('');
   const [levelFilter, setLevelFilter] = useState<string>('all');
   const [autoScroll, setAutoScroll] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchApi<LogMessage[]>('/api/logs/entries')
-      .then((entries) => { setInitial(entries); })
-      .catch(() => {})
-      .finally(() => { connect(); });
-    return () => disconnect();
-  }, [connect, disconnect, setInitial]);
-
-  useEffect(() => {
-    if (autoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, autoScroll]);
+  useStreamLifecycle(stream, '/api/logs/entries', scrollRef, autoScroll);
 
   const filtered = useMemo(() => {
     let result = messages;
@@ -155,41 +242,33 @@ function ExtensionLogsTab() {
     return result;
   }, [messages, levelFilter, search]);
 
+  const levelSelect = (
+    <Select value={levelFilter} onValueChange={setLevelFilter}>
+      <SelectTrigger className="w-32">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All levels</SelectItem>
+        <SelectItem value="debug">Debug</SelectItem>
+        <SelectItem value="info">Info</SelectItem>
+        <SelectItem value="warn">Warn</SelectItem>
+        <SelectItem value="error">Error</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
   return (
     <>
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Search logs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <Select value={levelFilter} onValueChange={setLevelFilter}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All levels</SelectItem>
-            <SelectItem value="debug">Debug</SelectItem>
-            <SelectItem value="info">Info</SelectItem>
-            <SelectItem value="warn">Warn</SelectItem>
-            <SelectItem value="error">Error</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setAutoScroll(!autoScroll)}
-        >
-          {autoScroll ? 'Pause' : 'Resume'}
-        </Button>
-        <Button variant="outline" size="sm" onClick={clear}>
-          Clear
-        </Button>
-        <div className="ml-auto">
-          <ConnectionStatus connected={connected} />
-        </div>
-      </div>
+      <LogToolbar
+        search={search}
+        onSearchChange={setSearch}
+        autoScroll={autoScroll}
+        onAutoScrollToggle={() => setAutoScroll(!autoScroll)}
+        onClear={clear}
+        connected={connected}
+        placeholder="Search logs..."
+        extra={levelSelect}
+      />
 
       <ScrollArea
         className="flex-1 rounded-md border bg-background"
@@ -210,36 +289,24 @@ function ExtensionLogsTab() {
         </div>
       </ScrollArea>
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>
-          {filtered.length} log{filtered.length !== 1 ? 's' : ''}
-          {filtered.length !== messages.length && ` (${messages.length} total)`}
-        </span>
-        <span>Max 1000 entries</span>
-      </div>
+      <LogFooter
+        filteredCount={filtered.length}
+        totalCount={messages.length}
+        unit="log"
+        unitPlural="logs"
+      />
     </>
   );
 }
 
 function ServerConsoleTab() {
-  const { messages, connected, connect, disconnect, clear, setInitial } = useConsoleSocket();
+  const stream = useConsoleSocket();
+  const { messages, connected, clear } = stream;
   const [search, setSearch] = useState('');
   const [autoScroll, setAutoScroll] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchApi<ConsoleMessage[]>('/api/logs/console/entries')
-      .then((entries) => { setInitial(entries); })
-      .catch(() => {})
-      .finally(() => { connect(); });
-    return () => disconnect();
-  }, [connect, disconnect, setInitial]);
-
-  useEffect(() => {
-    if (autoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, autoScroll]);
+  useStreamLifecycle(stream, '/api/logs/console/entries', scrollRef, autoScroll);
 
   const filtered = useMemo(() => {
     if (!search) return messages;
@@ -249,27 +316,15 @@ function ServerConsoleTab() {
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Search console output..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setAutoScroll(!autoScroll)}
-        >
-          {autoScroll ? 'Pause' : 'Resume'}
-        </Button>
-        <Button variant="outline" size="sm" onClick={clear}>
-          Clear
-        </Button>
-        <div className="ml-auto">
-          <ConnectionStatus connected={connected} />
-        </div>
-      </div>
+      <LogToolbar
+        search={search}
+        onSearchChange={setSearch}
+        autoScroll={autoScroll}
+        onAutoScrollToggle={() => setAutoScroll(!autoScroll)}
+        onClear={clear}
+        connected={connected}
+        placeholder="Search console output..."
+      />
 
       <ScrollArea
         className="flex-1 rounded-md border bg-zinc-950 dark:bg-zinc-950"
@@ -293,10 +348,7 @@ function ServerConsoleTab() {
                 </span>
                 <span className={cn(
                   'shrink-0 text-xs w-12',
-                  entry.level === 'error' ? 'text-red-400' :
-                  entry.level === 'warn' ? 'text-yellow-400' :
-                  entry.level === 'debug' ? 'text-zinc-500' :
-                  'text-green-400',
+                  consoleColorForLevel(entry.level),
                 )}>
                   {entry.level}
                 </span>
@@ -309,13 +361,12 @@ function ServerConsoleTab() {
         </div>
       </ScrollArea>
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>
-          {filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}
-          {filtered.length !== messages.length && ` (${messages.length} total)`}
-        </span>
-        <span>Max 1000 entries</span>
-      </div>
+      <LogFooter
+        filteredCount={filtered.length}
+        totalCount={messages.length}
+        unit="entry"
+        unitPlural="entries"
+      />
     </>
   );
 }

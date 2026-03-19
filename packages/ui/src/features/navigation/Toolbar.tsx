@@ -8,6 +8,38 @@ interface Crumb {
   to?: string;
 }
 
+function buildSettingsCrumbs(segments: string[], name?: string): Crumb[] {
+  const crumbs: Crumb[] = [{ label: 'Settings', to: segments.length > 1 ? '/settings' : undefined }];
+  const sub = segments[1];
+  if (sub === 'registries') crumbs.push({ label: 'Registries' });
+  else if (sub === 'vault') crumbs.push({ label: 'Vault' });
+  else if (sub === 'extensions' && name) crumbs.push({ label: name });
+  return crumbs;
+}
+
+function buildExtensionCrumbs(
+  name: string,
+  panelId: string | undefined,
+  active: Array<{ name: string; title?: string; panels?: Array<{ id: string; title: string }> }>,
+): Crumb[] {
+  const ext = active.find((e) => e.name === name);
+  const extLabel = ext?.title ?? name;
+  if (panelId) {
+    const panel = ext?.panels?.find((p) => p.id === panelId);
+    return [
+      { label: extLabel, to: `/extensions/${name}` },
+      { label: panel?.title ?? panelId },
+    ];
+  }
+  return [{ label: extLabel }];
+}
+
+const simplePaths: Record<string, string> = {
+  marketplace: 'Marketplace',
+  scheduler: 'Scheduler',
+  logs: 'Logs',
+};
+
 function useBreadcrumbs(): Crumb[] {
   const location = useLocation();
   const params = useParams<{ name?: string; panelId?: string }>();
@@ -18,36 +50,36 @@ function useBreadcrumbs(): Crumb[] {
 
   if (segments.length === 0) return crumbs;
 
-  const first = segments[0];
+  const first = segments[0]!;
+  const simpleLabel = simplePaths[first];
 
-  if (first === 'marketplace') {
-    crumbs.push({ label: 'Marketplace' });
-  } else if (first === 'scheduler') {
-    crumbs.push({ label: 'Scheduler' });
-  } else if (first === 'logs') {
-    crumbs.push({ label: 'Logs' });
+  if (simpleLabel) {
+    crumbs.push({ label: simpleLabel });
   } else if (first === 'settings') {
-    crumbs.push({ label: 'Settings', to: segments.length > 1 ? '/settings' : undefined });
-    if (segments[1] === 'registries') {
-      crumbs.push({ label: 'Registries' });
-    } else if (segments[1] === 'vault') {
-      crumbs.push({ label: 'Vault' });
-    } else if (segments[1] === 'extensions' && params.name) {
-      crumbs.push({ label: params.name });
-    }
+    crumbs.push(...buildSettingsCrumbs(segments, params.name));
   } else if (first === 'extensions' && params.name) {
-    const ext = marketplace?.active.find((e) => e.name === params.name);
-    const extLabel = ext?.title ?? params.name;
-    if (params.panelId) {
-      crumbs.push({ label: extLabel, to: `/extensions/${params.name}` });
-      const panel = ext?.panels?.find((p) => p.id === params.panelId);
-      crumbs.push({ label: panel?.title ?? params.panelId });
-    } else {
-      crumbs.push({ label: extLabel });
-    }
+    crumbs.push(...buildExtensionCrumbs(params.name, params.panelId, marketplace?.active ?? []));
   }
 
   return crumbs;
+}
+
+function CrumbItem({ crumb, isLast }: { crumb: Crumb; isLast: boolean }) {
+  if (crumb.to && !isLast) {
+    return (
+      <Link
+        to={crumb.to}
+        className="text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {crumb.label}
+      </Link>
+    );
+  }
+  return (
+    <span className={cn(isLast ? 'font-medium text-foreground' : 'text-muted-foreground')}>
+      {crumb.label}
+    </span>
+  );
 }
 
 export function Toolbar() {
@@ -56,26 +88,12 @@ export function Toolbar() {
   return (
     <div className="flex h-14 items-center justify-between border-b px-6">
       <nav className="flex items-center gap-1 text-sm" aria-label="Breadcrumb">
-        {crumbs.map((crumb, i) => {
-          const isLast = i === crumbs.length - 1;
-          return (
-            <span key={i} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-              {crumb.to && !isLast ? (
-                <Link
-                  to={crumb.to}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {crumb.label}
-                </Link>
-              ) : (
-                <span className={cn(isLast ? 'font-medium text-foreground' : 'text-muted-foreground')}>
-                  {crumb.label}
-                </span>
-              )}
-            </span>
-          );
-        })}
+        {crumbs.map((crumb, i) => (
+          <span key={crumb.to ?? crumb.label} className="flex items-center gap-1">
+            {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+            <CrumbItem crumb={crumb} isLast={i === crumbs.length - 1} />
+          </span>
+        ))}
       </nav>
       <Link
         to="/marketplace"

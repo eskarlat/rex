@@ -10,9 +10,13 @@ const mockDb = {
   prepare: mockPrepare,
 };
 
-vi.mock('@renre-kit/cli/lib', () => ({
-  getDb: () => mockDb,
-}));
+vi.mock('@renre-kit/cli/lib', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getDb: () => mockDb,
+  };
+});
 
 vi.mock('croner', () => ({
   Cron: vi.fn(() => ({

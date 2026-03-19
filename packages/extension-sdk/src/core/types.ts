@@ -1,6 +1,6 @@
 // RenreKit Extension SDK — Core Types
 
-/** Props passed to extension UI panels by the DynamicPanel loader */
+/** Props passed to extension UI panels and widgets by the dynamic loaders */
 export interface PanelProps {
   sdk: RenreKitSDK;
   extensionName: string;
@@ -138,3 +138,6 @@ export interface RenreKitSDK {
   readonly scheduler: SchedulerAPI;
   destroy(): void;
 }
+
+/** Semantic alias for PanelProps — widgets receive the same props as panels */
+export type WidgetProps = PanelProps;

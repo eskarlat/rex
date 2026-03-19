@@ -48,6 +48,31 @@ describe('useMarketplace', () => {
   });
 });
 
+describe('useMarketplace widget metadata', () => {
+  it('marketplace response includes widget metadata', async () => {
+    const marketplace = {
+      active: [{
+        name: 'ext-a',
+        version: '1.0.0',
+        type: 'standard',
+        status: 'active',
+        widgets: [{ id: 'status', title: 'Status', defaultSize: { w: 4, h: 2 } }],
+      }],
+      installed: [],
+      available: [],
+    };
+    mockFetchApi.mockResolvedValueOnce(marketplace);
+
+    const { result } = renderHook(() => useMarketplace(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.active[0]?.widgets).toHaveLength(1);
+    expect(result.current.data?.active[0]?.widgets?.[0]?.id).toBe('status');
+  });
+});
+
 describe('useInstallExtension', () => {
   it('calls fetchApi with POST to install endpoint', async () => {
     mockFetchApi.mockResolvedValueOnce(undefined);
