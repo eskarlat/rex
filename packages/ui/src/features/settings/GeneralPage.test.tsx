@@ -109,6 +109,46 @@ describe('GeneralPage', () => {
     });
   });
 
+  it('toggling a checked log level removes it', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<GeneralPage />);
+
+    // 'info' is checked by default, click it to uncheck
+    const infoCheckbox = screen.getByText('info').closest('label')?.querySelector('button');
+    expect(infoCheckbox).toBeTruthy();
+    await user.click(infoCheckbox!);
+
+    // Submit to verify the value was removed
+    await user.click(screen.getByRole('button', { name: 'Save Settings' }));
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: expect.objectContaining({
+          logLevels: expect.not.arrayContaining(['info']),
+        }),
+      }),
+    );
+  });
+
+  it('toggling an unchecked log level adds it', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<GeneralPage />);
+
+    // 'debug' is unchecked by default, click it to check
+    const debugCheckbox = screen.getByText('debug').closest('label')?.querySelector('button');
+    expect(debugCheckbox).toBeTruthy();
+    await user.click(debugCheckbox!);
+
+    // Submit to verify the value was added
+    await user.click(screen.getByRole('button', { name: 'Save Settings' }));
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: expect.objectContaining({
+          logLevels: expect.arrayContaining(['debug']),
+        }),
+      }),
+    );
+  });
+
   it('shows "Saving..." when isPending', () => {
     mockIsPending = true;
     renderWithProviders(<GeneralPage />);

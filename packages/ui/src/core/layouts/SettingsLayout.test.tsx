@@ -8,7 +8,7 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   useMarketplace: () => ({
     data: {
       active: [
-        { name: 'hello-world', version: 'dev', type: 'standard', status: 'active' },
+        { name: 'hello-world', version: 'dev', type: 'standard', status: 'active', hasConfig: true },
       ],
       installed: [],
       available: [],

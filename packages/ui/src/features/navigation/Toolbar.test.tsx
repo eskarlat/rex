@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toolbar } from './Toolbar';
 
@@ -70,5 +70,91 @@ describe('Toolbar', () => {
     expect(screen.getByText('Home')).toBeInTheDocument();
     // "Marketplace" appears both as breadcrumb and toolbar link
     expect(screen.getAllByText('Marketplace')).toHaveLength(2);
+  });
+
+  it('shows settings/extensions/:name breadcrumb', () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/settings/extensions/my-ext']}>
+          <Routes>
+            <Route path="/settings/extensions/:name" element={<Toolbar />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText('my-ext')).toBeInTheDocument();
+  });
+
+  it('shows extensions/:name breadcrumb with fallback label', () => {
+    mockMarketplace.mockReturnValue({
+      data: { active: [], installed: [], available: [] },
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/extensions/hello-world']}>
+          <Routes>
+            <Route path="/extensions/:name" element={<Toolbar />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('hello-world')).toBeInTheDocument();
+  });
+
+  it('shows extensions/:name/:panelId breadcrumb with panel title', () => {
+    mockMarketplace.mockReturnValue({
+      data: {
+        active: [
+          {
+            name: 'my-ext',
+            title: 'My Extension',
+            panels: [{ id: 'settings', title: 'Settings Panel' }],
+          },
+        ],
+        installed: [],
+        available: [],
+      },
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/extensions/my-ext/settings']}>
+          <Routes>
+            <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('My Extension')).toBeInTheDocument();
+    expect(screen.getByText('Settings Panel')).toBeInTheDocument();
+  });
+
+  it('shows extensions/:name/:panelId with fallback panelId when panel not found', () => {
+    mockMarketplace.mockReturnValue({
+      data: { active: [{ name: 'my-ext', panels: [] }], installed: [], available: [] },
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/extensions/my-ext/unknown']}>
+          <Routes>
+            <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText('my-ext')).toBeInTheDocument();
+    expect(screen.getByText('unknown')).toBeInTheDocument();
   });
 });

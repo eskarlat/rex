@@ -32,12 +32,17 @@ function renderInTable(ui: React.ReactElement) {
 }
 
 const baseTask = {
-  id: 1,
+  id: '1',
   name: 'Daily Backup',
-  extension_name: 'backup-ext',
+  type: 'backup-ext',
+  project_path: null,
   command: 'backup:run',
   cron: '0 0 * * *',
-  enabled: true,
+  enabled: 1,
+  last_run_at: null,
+  last_status: null,
+  next_run_at: null,
+  created_at: '2026-01-01T00:00:00Z',
 };
 
 describe('TaskRow', () => {
@@ -55,7 +60,7 @@ describe('TaskRow', () => {
     expect(screen.getByText('Daily Backup')).toBeInTheDocument();
   });
 
-  it('shows extension name', () => {
+  it('shows extension type badge', () => {
     renderInTable(<TaskRow task={baseTask} />);
     expect(screen.getByText('backup-ext')).toBeInTheDocument();
   });
@@ -71,7 +76,7 @@ describe('TaskRow', () => {
   });
 
   it('shows disabled badge when enabled is false', () => {
-    renderInTable(<TaskRow task={{ ...baseTask, enabled: false }} />);
+    renderInTable(<TaskRow task={{ ...baseTask, enabled: 0 }} />);
     expect(screen.getByText('Disabled')).toBeInTheDocument();
   });
 
@@ -85,20 +90,20 @@ describe('TaskRow', () => {
   it('clicking Run Now calls triggerTask.mutate', async () => {
     renderInTable(<TaskRow task={baseTask} />);
     await userEvent.click(screen.getByText('Run Now'));
-    expect(mockTriggerMutate).toHaveBeenCalledWith(1);
+    expect(mockTriggerMutate).toHaveBeenCalledWith('1');
   });
 
   it('clicking Delete calls deleteTask.mutate', async () => {
     renderInTable(<TaskRow task={baseTask} />);
     await userEvent.click(screen.getByText('Delete'));
-    expect(mockDeleteMutate).toHaveBeenCalledWith(1);
+    expect(mockDeleteMutate).toHaveBeenCalledWith('1');
   });
 
   it('toggling switch calls updateTask.mutate with enabled value', async () => {
     renderInTable(<TaskRow task={baseTask} />);
     const toggle = screen.getByRole('switch', { name: 'Toggle task' });
     await userEvent.click(toggle);
-    expect(mockUpdateMutate).toHaveBeenCalledWith({ id: 1, enabled: false });
+    expect(mockUpdateMutate).toHaveBeenCalledWith({ id: '1', enabled: 0 });
   });
 
   it('shows "Never" when last_run is undefined', () => {
@@ -111,26 +116,26 @@ describe('TaskRow', () => {
     expect(screen.getByText('-')).toBeInTheDocument();
   });
 
-  it('shows formatted date when last_run is provided', () => {
-    const task = { ...baseTask, last_run: '2026-01-15T10:30:00Z' };
+  it('shows formatted date when last_run_at is provided', () => {
+    const task = { ...baseTask, last_run_at: '2026-01-15T10:30:00Z' };
     renderInTable(<TaskRow task={task} />);
     const formatted = new Date('2026-01-15T10:30:00Z').toLocaleString();
     expect(screen.getByText(formatted)).toBeInTheDocument();
     expect(screen.queryByText('Never')).not.toBeInTheDocument();
   });
 
-  it('shows formatted date when next_run is provided', () => {
-    const task = { ...baseTask, next_run: '2026-02-20T14:00:00Z' };
+  it('shows formatted date when next_run_at is provided', () => {
+    const task = { ...baseTask, next_run_at: '2026-02-20T14:00:00Z' };
     renderInTable(<TaskRow task={task} />);
     const formatted = new Date('2026-02-20T14:00:00Z').toLocaleString();
     expect(screen.getByText(formatted)).toBeInTheDocument();
   });
 
-  it('shows both formatted dates when last_run and next_run are provided', () => {
+  it('shows both formatted dates when last_run_at and next_run_at are provided', () => {
     const task = {
       ...baseTask,
-      last_run: '2026-01-15T10:30:00Z',
-      next_run: '2026-02-20T14:00:00Z',
+      last_run_at: '2026-01-15T10:30:00Z',
+      next_run_at: '2026-02-20T14:00:00Z',
     };
     renderInTable(<TaskRow task={task} />);
     const lastFormatted = new Date('2026-01-15T10:30:00Z').toLocaleString();

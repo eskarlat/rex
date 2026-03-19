@@ -6,7 +6,12 @@ import { ConfigForm } from './ConfigForm';
 import type { ConfigField } from '@/core/hooks/use-settings';
 
 vi.mock('@/core/hooks/use-vault', () => ({
-  useVaultEntries: () => ({ data: [] }),
+  useVaultEntries: () => ({
+    data: [
+      { key: 'my.secret', created_at: '2026-01-01T00:00:00Z' },
+      { key: 'other.key', created_at: '2026-02-01T00:00:00Z' },
+    ],
+  }),
 }));
 
 function renderForm(overrides: Partial<Parameters<typeof ConfigForm>[0]> = {}) {
@@ -67,5 +72,112 @@ describe('ConfigForm', () => {
     renderForm();
     const vaultButtons = screen.getAllByTitle(/vault/i);
     expect(vaultButtons.length).toBeGreaterThan(0);
+  });
+
+  it('renders empty schema message', () => {
+    renderForm({ schema: {} });
+    expect(screen.getByText('No configuration fields defined.')).toBeInTheDocument();
+  });
+
+  it('renders password input for secret fields', () => {
+    renderForm();
+    const secretInput = screen.getByLabelText(/secret key/i);
+    expect(secretInput).toHaveAttribute('type', 'password');
+  });
+
+  it('renders vault placeholder hint', () => {
+    renderForm();
+    expect(screen.getByPlaceholderText('Vault hint: my.secret')).toBeInTheDocument();
+  });
+
+  it('shows Clear button when value is a vault reference', () => {
+    renderForm({
+      values: {
+        apiUrl: 'https://api.example.com',
+        port: 3000,
+        enabled: true,
+        secretKey: '{{VAULT:my.secret}}',
+      },
+    });
+    expect(screen.getByText('Clear')).toBeInTheDocument();
+  });
+
+  it('vault reference field is readOnly with muted style', () => {
+    renderForm({
+      values: {
+        apiUrl: 'https://api.example.com',
+        port: 3000,
+        enabled: true,
+        secretKey: '{{VAULT:my.secret}}',
+      },
+    });
+    const secretInput = screen.getByLabelText(/secret key/i);
+    expect(secretInput).toHaveAttribute('readOnly');
+    expect(secretInput).toHaveAttribute('type', 'text');
+  });
+
+  it('clicking vault icon opens vault picker dialog', async () => {
+    renderForm();
+    // Multiple vault buttons exist, get the one for secretKey (last string field)
+    const vaultButtons = screen.getAllByTitle('Select from vault');
+    await userEvent.click(vaultButtons[vaultButtons.length - 1]!);
+    expect(screen.getByText('Select Vault Key')).toBeInTheDocument();
+  });
+
+  it('vault picker shows vault entries and suggested hint', async () => {
+    renderForm();
+    const vaultButtons = screen.getAllByTitle('Select from vault');
+    await userEvent.click(vaultButtons[vaultButtons.length - 1]!);
+
+    expect(screen.getByText('Suggested:')).toBeInTheDocument();
+    // my.secret appears both as hint button and vault entry
+    expect(screen.getAllByText('my.secret').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('other.key')).toBeInTheDocument();
+  });
+
+  it('clicking a vault entry sets the vault reference', async () => {
+    const { onSave } = renderForm();
+    const vaultButtons = screen.getAllByTitle('Select from vault');
+    await userEvent.click(vaultButtons[vaultButtons.length - 1]!);
+
+    // Click the suggested hint button (which has the same key)
+    const suggestedButton = screen.getByText('Suggested:').querySelector('button');
+    expect(suggestedButton).toBeTruthy();
+    await userEvent.click(suggestedButton!);
+
+    // Submit form to verify vault ref was set
+    await userEvent.click(screen.getByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          fieldName: 'secretKey',
+          mapping: { source: 'vault', value: 'my.secret' },
+        }),
+      ]),
+    );
+  });
+
+  it('boolean field renders switch and can be toggled', async () => {
+    renderForm();
+    const switchEl = screen.getByRole('switch');
+    expect(switchEl).toBeInTheDocument();
+    await userEvent.click(switchEl);
+  });
+
+  it('submits boolean false correctly', async () => {
+    const { onSave } = renderForm({
+      values: {
+        apiUrl: 'https://api.example.com',
+        port: 3000,
+        enabled: false,
+        secretKey: '',
+      },
+    });
+    await userEvent.click(screen.getByText('Save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ fieldName: 'enabled', mapping: { source: 'direct', value: 'false' } }),
+      ]),
+    );
   });
 });
