@@ -36,6 +36,46 @@ interface UpdateBody {
   force?: boolean;
 }
 
+interface UpdateValidationError {
+  code: number;
+  body: Record<string, unknown>;
+}
+
+interface UpdateValidationSuccess {
+  ext: { name: string; version: string };
+  resolved: NonNullable<ReturnType<typeof resolveExtension>>;
+  config: ReturnType<typeof loadGlobalConfig>;
+  db: ReturnType<typeof getDb>;
+}
+
+function validateUpdate(
+  body: UpdateBody,
+): UpdateValidationError | UpdateValidationSuccess {
+  const db = getDb();
+  const installed = listInstalled(db);
+  const ext = installed.find((e) => e.name === body.name);
+  if (!ext) {
+    return { code: 404, body: { error: `Extension "${body.name}" is not installed.` } };
+  }
+
+  const config = loadGlobalConfig();
+  const resolved = resolveExtension(body.name, config.registries);
+  if (!resolved) {
+    return { code: 404, body: { error: `Extension "${body.name}" not found in any registry.` } };
+  }
+
+  if (!semver.valid(resolved.latestVersion) || !semver.valid(ext.version) || !semver.gt(resolved.latestVersion, ext.version)) {
+    return { code: 200, body: { name: body.name, message: 'Already up to date' } };
+  }
+
+  const compat = checkEngineConstraints(resolved.engines, CLI_VERSION, SDK_VERSION);
+  if (!compat.compatible && !body.force) {
+    return { code: 409, body: { error: 'Engine incompatible', issues: compat.issues } };
+  }
+
+  return { ext, resolved, config, db };
+}
+
 interface ActivateBody {
   name: string;
   version?: string;
@@ -110,35 +150,27 @@ const ICON_CONTENT_TYPES: Record<string, string> = {
   '.gif': 'image/gif',
 };
 
+function readIconFromDir(extDir: string): { content: Buffer; contentType: string } | null {
+  const manifest = loadManifest(extDir);
+  if (!manifest.icon) return null;
+  const iconPath = resolve(extDir, manifest.icon);
+  const rel = relative(extDir, iconPath);
+  if (rel.startsWith('..') || resolve(iconPath) !== iconPath) return null;
+  if (!existsSync(iconPath)) return null;
+  const ext = iconPath.substring(iconPath.lastIndexOf('.'));
+  const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
+  return { content: readFileSync(iconPath), contentType };
+}
+
 function findExtensionIcon(
   name: string,
   projectPath: string | undefined,
 ): { content: Buffer; contentType: string } | null {
-  const db = getDb();
-  const installed = listInstalled(db);
-  const activated = projectPath ? getActivated(projectPath) : {};
-  const activatedVersion = activated[name];
-
-  const candidates: string[] = [];
-  if (activatedVersion) candidates.push(activatedVersion);
-  for (const ext of installed) {
-    if (ext.name === name && ext.version !== activatedVersion) {
-      candidates.push(ext.version);
-    }
-  }
+  const candidates = getVersionCandidates(name, projectPath);
 
   for (const version of candidates) {
-    const extDir = getExtensionDir(name, version);
     try {
-      const manifest = loadManifest(extDir);
-      if (!manifest.icon) continue;
-      const iconPath = resolve(extDir, manifest.icon);
-      const rel = relative(extDir, iconPath);
-      if (rel.startsWith('..') || resolve(iconPath) !== iconPath) continue;
-      if (!existsSync(iconPath)) continue;
-      const ext = iconPath.substring(iconPath.lastIndexOf('.'));
-      const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
-      return { content: readFileSync(iconPath), contentType };
+      return readIconFromDir(getExtensionDir(name, version));
     } catch {
       // try next version
     }
@@ -422,31 +454,13 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: 'name is required' };
     }
 
-    const db = getDb();
-    const installed = listInstalled(db);
-    const ext = installed.find((e) => e.name === body.name);
-    if (!ext) {
-      reply.code(404);
-      return { error: `Extension "${body.name}" is not installed.` };
+    const result = validateUpdate(body);
+    if ('code' in result) {
+      reply.code(result.code);
+      return result.body;
     }
 
-    const config = loadGlobalConfig();
-    const resolved = resolveExtension(body.name, config.registries);
-    if (!resolved) {
-      reply.code(404);
-      return { error: `Extension "${body.name}" not found in any registry.` };
-    }
-
-    if (!semver.valid(resolved.latestVersion) || !semver.valid(ext.version) || !semver.gt(resolved.latestVersion, ext.version)) {
-      return { name: body.name, message: 'Already up to date' };
-    }
-
-    const compat = checkEngineConstraints(resolved.engines, CLI_VERSION, SDK_VERSION);
-    if (!compat.compatible && !body.force) {
-      reply.code(409);
-      return { error: 'Engine incompatible', issues: compat.issues };
-    }
-
+    const { ext, resolved, config, db } = result;
     const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
     install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 
