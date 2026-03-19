@@ -16,17 +16,17 @@ describe('core-skills-deployer', () => {
   });
 
   describe('deployCoreSkills', () => {
-    it('creates .agents/skills/renre-kit/cli/SKILL.md', () => {
+    it('creates .agents/skills/cli/SKILL.md', () => {
       deployCoreSkills(tmpDir);
 
-      const skillPath = path.join(tmpDir, '.agents', 'skills', 'renre-kit', 'cli', 'SKILL.md');
+      const skillPath = path.join(tmpDir, '.agents', 'skills', 'cli', 'SKILL.md');
       expect(fs.existsSync(skillPath)).toBe(true);
     });
 
     it('writes valid SKILL.md content with frontmatter', () => {
       deployCoreSkills(tmpDir);
 
-      const skillPath = path.join(tmpDir, '.agents', 'skills', 'renre-kit', 'cli', 'SKILL.md');
+      const skillPath = path.join(tmpDir, '.agents', 'skills', 'cli', 'SKILL.md');
       const content = fs.readFileSync(skillPath, 'utf-8');
 
       expect(content).toContain('---');
@@ -62,21 +62,21 @@ describe('core-skills-deployer', () => {
       deployCoreSkills(tmpDir);
       deployCoreSkills(tmpDir);
 
-      const skillPath = path.join(tmpDir, '.agents', 'skills', 'renre-kit', 'cli', 'SKILL.md');
+      const skillPath = path.join(tmpDir, '.agents', 'skills', 'cli', 'SKILL.md');
       expect(fs.existsSync(skillPath)).toBe(true);
     });
 
     it('creates directories recursively when .agents does not exist', () => {
       expect(fs.existsSync(path.join(tmpDir, '.agents'))).toBe(false);
       deployCoreSkills(tmpDir);
-      expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'renre-kit', 'cli'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'cli'))).toBe(true);
     });
   });
 
   describe('cleanupCoreSkills', () => {
     it('removes the renre-kit skills directory', () => {
       deployCoreSkills(tmpDir);
-      const renreKitDir = path.join(tmpDir, '.agents', 'skills', 'renre-kit');
+      const renreKitDir = path.join(tmpDir, '.agents', 'skills', 'cli');
       expect(fs.existsSync(renreKitDir)).toBe(true);
 
       cleanupCoreSkills(tmpDir);

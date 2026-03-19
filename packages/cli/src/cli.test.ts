@@ -515,7 +515,7 @@ describe('cli', () => {
       // Commander may throw for unknown command before our override runs
     }
 
-    expect(mockGetConnection).toHaveBeenCalledWith('mcp-ext', expect.objectContaining({ transport: 'stdio' }), expect.any(Object));
+    expect(mockGetConnection).toHaveBeenCalledWith('mcp-ext', expect.objectContaining({ transport: 'stdio' }), expect.any(Object), expect.any(String));
     expect(mockExecuteToolCall).toHaveBeenCalledWith('mcp-ext', 'query', expect.objectContaining({ _positional: ['arg1'] }));
 
     process.argv = originalArgv;

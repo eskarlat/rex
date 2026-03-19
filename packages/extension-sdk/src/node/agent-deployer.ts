@@ -19,8 +19,6 @@ interface Manifest {
   agent?: AgentAssets;
 }
 
-const AGENT_CATEGORIES = ['skills', 'prompts', 'agents', 'workflows', 'context'] as const;
-
 function readManifestName(extensionDir: string): Manifest {
   const manifestPath = join(extensionDir, 'manifest.json');
   if (!existsSync(manifestPath)) {
@@ -75,7 +73,7 @@ function getCategoryRelativePath(filePath: string, category: string): string {
  * Deploys agent assets (skills, prompts, agents, workflows, context)
  * from an extension directory to the project's `.agents/` directory.
  *
- * Skills are deployed to `.agents/skills/{ext}/{skillName}/SKILL.md`.
+ * Skills are deployed to `.agents/skills/{skillName}/SKILL.md`.
  * Other assets preserve their relative path structure within the category:
  *   `.agents/{category}/{ext}/{relativePath}`
  *
@@ -100,7 +98,7 @@ export function deployAgentAssets(extensionDir: string, projectDir: string): voi
     for (const skill of agent.skills) {
       copyFile(
         join(extensionDir, skill.path),
-        join(agentDir, 'skills', extName, skill.name, 'SKILL.md'),
+        join(agentDir, 'skills', skill.name, 'SKILL.md'),
       );
     }
   }
@@ -128,7 +126,14 @@ export function cleanupAgentAssets(extensionDir: string, projectDir: string): vo
   const manifest = readManifestName(extensionDir);
   const agentDir = join(projectDir, '.agents');
 
-  for (const category of AGENT_CATEGORIES) {
+  if (manifest.agent?.skills) {
+    for (const skill of manifest.agent.skills) {
+      removeDir(join(agentDir, 'skills', skill.name));
+    }
+  }
+
+  const nonSkillCategories = ['prompts', 'agents', 'workflows', 'context'] as const;
+  for (const category of nonSkillCategories) {
     removeDir(join(agentDir, category, manifest.name));
   }
 }

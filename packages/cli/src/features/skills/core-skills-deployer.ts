@@ -1,7 +1,6 @@
 import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
-const CORE_EXTENSION_NAME = 'renre-kit';
 const CORE_SKILL_NAME = 'cli';
 
 export const CORE_SKILL_CONTENT = `---
@@ -258,7 +257,7 @@ renre-kit capabilities
  * Called during `renre-kit init` so that agents always have access to CLI documentation.
  */
 export function deployCoreSkills(projectPath: string): void {
-  const skillPath = join(projectPath, '.agents', 'skills', CORE_EXTENSION_NAME, CORE_SKILL_NAME, 'SKILL.md');
+  const skillPath = join(projectPath, '.agents', 'skills', CORE_SKILL_NAME, 'SKILL.md');
   mkdirSync(dirname(skillPath), { recursive: true });
   writeFileSync(skillPath, CORE_SKILL_CONTENT, 'utf-8');
 }
@@ -268,7 +267,7 @@ export function deployCoreSkills(projectPath: string): void {
  * Called during `renre-kit destroy`.
  */
 export function cleanupCoreSkills(projectPath: string): void {
-  const coreDir = join(projectPath, '.agents', 'skills', CORE_EXTENSION_NAME);
+  const coreDir = join(projectPath, '.agents', 'skills', CORE_SKILL_NAME);
   if (existsSync(coreDir)) {
     rmSync(coreDir, { recursive: true, force: true });
   }
