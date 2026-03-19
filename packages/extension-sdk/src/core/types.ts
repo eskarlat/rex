@@ -45,7 +45,8 @@ export interface SDKEventPayload {
 /** Scheduled task */
 export interface ScheduledTask {
   id: string;
-  extension_name: string;
+  name: string;
+  type: string;
   project_path: string | null;
   cron: string;
   command: string;

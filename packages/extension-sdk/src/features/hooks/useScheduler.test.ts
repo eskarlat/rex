@@ -8,7 +8,8 @@ import type { RenreKitSDK, ScheduledTask } from '../../core/types';
 
 const mockTask: ScheduledTask = {
   id: 'task-1',
-  extension_name: 'test-ext',
+  name: 'test-ext',
+  type: 'extension',
   project_path: '/test',
   cron: '0 * * * *',
   command: 'echo hello',
