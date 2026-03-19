@@ -98,21 +98,42 @@ function decrypt(encoded: string): string {
   }
 }
 
+function getCurrentSupportedVersion(): number {
+  return Math.max(...vaultMigrations.map((m) => m.toVersion), 0);
+}
+
 function readVault(): VaultData {
   if (!pathExistsSync(VAULT_PATH)) {
     return {};
   }
   const raw = readJsonSync<Record<string, unknown>>(VAULT_PATH);
   const version = getSchemaVersion(raw);
+  const supported = getCurrentSupportedVersion();
 
-  if (version === 0) {
-    // v0 format: flat Record<string, VaultEntry> — migrate to envelope
+  if (version > supported) {
+    throw new ExtensionError(
+      '',
+      ErrorCode.VAULT_DECRYPT_FAILED,
+      `Vault schemaVersion ${version} is newer than supported version ${supported}. Please upgrade the CLI.`,
+    );
+  }
+
+  if (version < supported) {
+    // Migrate from current version to latest supported version
     const migrated = migrateFile(VAULT_PATH, raw, vaultMigrations) as unknown as VaultFileData;
     return migrated.entries;
   }
 
-  // v1+ format: { schemaVersion, entries }
-  return (raw as unknown as VaultFileData).entries;
+  // Already at current version
+  const fileData = raw as unknown as VaultFileData;
+  if (!fileData.entries) {
+    throw new ExtensionError(
+      '',
+      ErrorCode.VAULT_DECRYPT_FAILED,
+      'Vault file is missing required "entries" field.',
+    );
+  }
+  return fileData.entries;
 }
 
 function writeVault(data: VaultData): void {

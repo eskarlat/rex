@@ -215,6 +215,15 @@ describe('platform', () => {
       expect(getMACAddress()).toBeUndefined();
     });
 
+    it('should skip interfaces with undefined entries', async () => {
+      const os = await import('node:os');
+      vi.mocked(os.default.networkInterfaces).mockReturnValue({
+        eth0: undefined,
+      } as unknown as Record<string, NetworkInterfaceInfo[]>);
+      const { getMACAddress } = await import('./platform.js');
+      expect(getMACAddress()).toBeUndefined();
+    });
+
     it('should skip interfaces with all-zero MAC addresses', async () => {
       const os = await import('node:os');
       vi.mocked(os.default.networkInterfaces).mockReturnValue({

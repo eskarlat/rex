@@ -49,12 +49,22 @@ vi.mock('./WidgetCard', () => ({
   ),
 }));
 
+let capturedOnAdd: ((extensionName: string, widgetId: string, defaultSize: { w: number; h: number }) => void) | undefined;
+
 vi.mock('./WidgetPicker', () => ({
-  WidgetPicker: () => null,
+  WidgetPicker: ({ onAdd }: { onAdd: (extensionName: string, widgetId: string, defaultSize: { w: number; h: number }) => void }) => {
+    capturedOnAdd = onAdd;
+    return null;
+  },
 }));
 
+let capturedOnDragEnd: ((event: { active: { id: string }; over: { id: string } | null }) => void) | undefined;
+
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DndContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (event: { active: { id: string }; over: { id: string } | null }) => void }) => {
+    capturedOnDragEnd = onDragEnd;
+    return <div>{children}</div>;
+  },
   closestCenter: vi.fn(),
 }));
 
@@ -176,6 +186,81 @@ describe('WidgetGrid', () => {
     renderGrid();
     expect(screen.queryByTestId('min-ext:w2')).not.toBeInTheDocument();
     expect(screen.queryByTestId('max-ext:w2')).not.toBeInTheDocument();
+  });
+
+  it('handleDragEnd reorders widgets when dragged to a new position', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    capturedOnDragEnd?.({ active: { id: 'ext:w1' }, over: { id: 'ext:w2' } });
+    expect(mockMutate).toHaveBeenCalledWith({
+      widgets: [
+        { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+        { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+      ],
+    });
+  });
+
+  it('handleDragEnd does nothing when over is null', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    mockMutate.mockClear();
+    capturedOnDragEnd?.({ active: { id: 'ext:w1' }, over: null });
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('handleDragEnd does nothing when dragged to same position', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    mockMutate.mockClear();
+    capturedOnDragEnd?.({ active: { id: 'ext:w1' }, over: { id: 'ext:w1' } });
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('handleDragEnd does nothing when widget id not found', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    mockMutate.mockClear();
+    capturedOnDragEnd?.({ active: { id: 'ext:w1' }, over: { id: 'nonexistent' } });
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('handleAddWidget adds a widget placement and saves', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: { widgets: [] },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    mockMutate.mockClear();
+    capturedOnAdd?.('ext', 'w1', { w: 4, h: 2 });
+    expect(mockMutate).toHaveBeenCalledWith({
+      widgets: [
+        { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+      ],
+    });
   });
 
   it('hides widgets from deactivated extensions', () => {

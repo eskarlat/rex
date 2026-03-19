@@ -1,10 +1,9 @@
 import { existsSync } from 'node:fs';
+import BetterSqlite3 from 'better-sqlite3';
 import { DB_PATH } from '../../../core/paths/paths.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
-import { initDatabase, closeDatabase } from '../../../core/database/database.js';
 import { listInstalled } from '../../extensions/manager/extension-manager.js';
 import { loadManifest } from '../../extensions/manifest/manifest-loader.js';
-import { GLOBAL_DIR } from '../../../core/paths/paths.js';
 import type { DiagnosticCheck } from '../types.js';
 
 export const extensionManifestsCheck: DiagnosticCheck = {
@@ -18,9 +17,9 @@ export const extensionManifestsCheck: DiagnosticCheck = {
       };
     }
     try {
-      const db = initDatabase(GLOBAL_DIR);
+      const db = new BetterSqlite3(DB_PATH, { readonly: true });
       const installed = listInstalled(db);
-      closeDatabase();
+      db.close();
 
       if (installed.length === 0) {
         return {

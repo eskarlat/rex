@@ -4,7 +4,7 @@ import { getSchemaVersion } from '../../../shared/schema-migration.js';
 import { configMigrations } from '../../config/migrations/index.js';
 import type { DiagnosticCheck } from '../types.js';
 
-const CURRENT_VERSION = configMigrations.length;
+const SUPPORTED_VERSION = Math.max(...configMigrations.map((m) => m.toVersion), 0);
 
 export const configValidCheck: DiagnosticCheck = {
   name: 'config.json',
@@ -19,18 +19,18 @@ export const configValidCheck: DiagnosticCheck = {
     try {
       const raw = JSON.parse(readFileSync(CONFIG_PATH, 'utf-8')) as Record<string, unknown>;
       const version = getSchemaVersion(raw);
-      if (version > CURRENT_VERSION) {
+      if (version > SUPPORTED_VERSION) {
         return {
           name: 'config.json',
           status: 'fail',
-          message: `schemaVersion ${version} is newer than expected (${CURRENT_VERSION})`,
+          message: `schemaVersion ${version} is newer than supported (${SUPPORTED_VERSION})`,
           detail: 'This config was written by a newer CLI version.',
         };
       }
       return {
         name: 'config.json',
         status: 'pass',
-        message: `valid, schemaVersion ${version || CURRENT_VERSION}`,
+        message: `valid, schemaVersion ${version}`,
       };
     } catch (err) {
       return {
