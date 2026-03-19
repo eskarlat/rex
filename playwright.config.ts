@@ -12,6 +12,7 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
   retries: 0,
+  globalTeardown: './e2e/global-teardown.ts',
   use: {
     baseURL: 'http://localhost:4201',
     headless: true,

@@ -89,7 +89,9 @@ export function WidgetCard({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 px-3 py-2">
         <div className="flex items-center gap-1">
           <button
+            type="button"
             data-testid="drag-handle"
+            aria-label="Drag to reorder widget"
             className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
             {...listeners}
           >
@@ -130,6 +132,7 @@ export function WidgetCard({
             className="h-6 w-6"
             onClick={onRemove}
             data-testid="remove-widget"
+            aria-label="Remove widget"
           >
             <X className="h-3 w-3" />
           </Button>

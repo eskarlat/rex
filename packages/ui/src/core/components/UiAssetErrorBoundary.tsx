@@ -80,6 +80,7 @@ export function DynamicUiAsset({ extensionName, url, label, compact }: DynamicUi
 
   return (
     <UiAssetErrorBoundary
+      key={`${extensionName}:${url}`}
       fallback={<UiAssetError label={label} extensionName={extensionName} />}
     >
       <Suspense fallback={<UiAssetSkeleton compact={compact} />}>

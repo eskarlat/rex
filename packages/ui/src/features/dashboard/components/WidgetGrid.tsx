@@ -33,15 +33,17 @@ export function WidgetGrid() {
   const widgets = layout?.widgets ?? [];
   const addedWidgetIds = new Set(widgets.map((w) => w.id));
 
-  const constraintsMap = useMemo<WidgetConstraintsMap>(() => {
-    const map: WidgetConstraintsMap = {};
+  const { constraintsMap, titleMap } = useMemo(() => {
+    const constraints: WidgetConstraintsMap = {};
+    const titles: Record<string, string> = {};
     for (const ext of marketplace?.active ?? []) {
       for (const w of ext.widgets ?? []) {
         const key = `${ext.name}:${w.id}`;
-        map[key] = { minSize: w.minSize, maxSize: w.maxSize };
+        constraints[key] = { minSize: w.minSize, maxSize: w.maxSize };
+        titles[key] = w.title;
       }
     }
-    return map;
+    return { constraintsMap: constraints, titleMap: titles };
   }, [marketplace]);
 
   const saveLayout = useCallback(
@@ -121,7 +123,7 @@ export function WidgetGrid() {
                   id={w.id}
                   extensionName={w.extensionName}
                   widgetId={w.widgetId}
-                  title={w.widgetId}
+                  title={titleMap[w.id] ?? w.widgetId}
                   size={w.size}
                   constraints={constraintsMap[w.id]}
                   onRemove={() => handleRemove(w.id)}

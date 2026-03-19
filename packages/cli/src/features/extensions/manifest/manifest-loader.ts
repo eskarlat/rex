@@ -19,18 +19,46 @@ const uiPanelSchema = z.object({
 });
 
 const widgetSizeSchema = z.object({
-  w: z.number(),
-  h: z.number(),
+  w: z.number().int().min(1).max(12),
+  h: z.number().int().min(1),
 });
 
-const uiWidgetSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  entry: z.string(),
-  defaultSize: widgetSizeSchema,
-  minSize: widgetSizeSchema.optional(),
-  maxSize: widgetSizeSchema.optional(),
-});
+const uiWidgetSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    entry: z.string(),
+    defaultSize: widgetSizeSchema,
+    minSize: widgetSizeSchema.optional(),
+    maxSize: widgetSizeSchema.optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.minSize && data.maxSize) {
+        return data.minSize.w <= data.maxSize.w && data.minSize.h <= data.maxSize.h;
+      }
+      return true;
+    },
+    { message: 'minSize must not exceed maxSize' },
+  )
+  .refine(
+    (data) => {
+      if (data.minSize) {
+        return data.defaultSize.w >= data.minSize.w && data.defaultSize.h >= data.minSize.h;
+      }
+      return true;
+    },
+    { message: 'defaultSize must be at least minSize' },
+  )
+  .refine(
+    (data) => {
+      if (data.maxSize) {
+        return data.defaultSize.w <= data.maxSize.w && data.defaultSize.h <= data.maxSize.h;
+      }
+      return true;
+    },
+    { message: 'defaultSize must not exceed maxSize' },
+  );
 
 const mcpConfigSchema = z.object({
   transport: z.enum(['stdio', 'sse']),

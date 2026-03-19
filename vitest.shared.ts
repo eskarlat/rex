@@ -7,13 +7,15 @@ interface CoverageOptions {
   exclude?: string[];
 }
 
+const DEFAULT_EXCLUDE = ['src/index.ts'];
+
 export function createCoverageConfig(opts: CoverageOptions = {}): UserConfig['test'] {
   return {
     coverage: {
       provider: 'istanbul' as const,
       reporter: ['text', 'text-summary', 'lcov'] as const,
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', ...(opts.exclude ?? ['src/index.ts'])],
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', ...(opts.exclude ?? []), ...DEFAULT_EXCLUDE],
       thresholds: {
         statements: COVERAGE_THRESHOLD,
         branches: COVERAGE_THRESHOLD,

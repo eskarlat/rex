@@ -34,17 +34,22 @@ async function setupWithLayout(page: Page, layout: unknown): Promise<void> {
 async function setupWithLayoutAndCapture(
   page: Page,
   layout: unknown,
-): Promise<{ getSavedLayout: () => unknown }> {
+): Promise<{ getSavedLayout: () => unknown; waitForSave: () => Promise<void> }> {
   let savedLayout: unknown = null;
+  let resolveSave: (() => void) | null = null;
   await setupAPIMocks(page);
   await page.route('**/api/dashboard/layout', (route) => {
     if (route.request().method() === 'PUT') {
       savedLayout = route.request().postDataJSON();
+      resolveSave?.();
       return route.fulfill({ json: { ok: true } });
     }
     return route.fulfill({ json: layout });
   });
-  return { getSavedLayout: () => savedLayout };
+  return {
+    getSavedLayout: () => savedLayout,
+    waitForSave: () => new Promise<void>((resolve) => { resolveSave = resolve; }),
+  };
 }
 
 // ──────────────────────────────────────────────
@@ -66,7 +71,7 @@ test.describe('Dashboard Widget Grid', () => {
   });
 
   test('shows widget card for existing widget in layout', async ({ page }) => {
-    await expect(page.getByText('status-widget')).toBeVisible();
+    await expect(page.getByText('Hello Status')).toBeVisible();
   });
 
   test('widget card has drag handle', async ({ page }) => {
@@ -141,14 +146,15 @@ test.describe('Widget Picker Dialog', () => {
   });
 
   test('clicking Add triggers layout save API call', async ({ page }) => {
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
     await page.goto('/');
 
+    const savePromise = waitForSave();
     await page.getByRole('button', { name: /add widget/i }).click();
     const addBtn = page.getByTestId('widget-picker-list').getByRole('button', { name: 'Add', exact: true });
     await addBtn.click();
 
-    await page.waitForTimeout(500);
+    await savePromise;
     expect(getSavedLayout()).toBeTruthy();
   });
 
@@ -204,11 +210,12 @@ test.describe('Widget Picker Dialog', () => {
 
 test.describe('Widget Removal', () => {
   test('clicking remove triggers layout save without the widget', async ({ page }) => {
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
     await page.goto('/');
 
+    const savePromise = waitForSave();
     await page.getByTestId('remove-widget').click();
-    await page.waitForTimeout(500);
+    await savePromise;
 
     const saved = getSavedLayout() as { widgets: unknown[] };
     expect(saved).toBeTruthy();
@@ -257,7 +264,7 @@ test.describe('Widget Drag and Drop', () => {
   });
 
   test('dragging a widget triggers layout save with reordered widgets', async ({ page }) => {
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, twoWidgetLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, twoWidgetLayout);
     await page.goto('/');
 
     const firstHandle = page.getByTestId('drag-handle').first();
@@ -267,6 +274,7 @@ test.describe('Widget Drag and Drop', () => {
     const secondBox = await secondHandle.boundingBox();
 
     if (firstBox && secondBox) {
+      const savePromise = waitForSave();
       await page.mouse.move(
         firstBox.x + firstBox.width / 2,
         firstBox.y + firstBox.height / 2,
@@ -279,7 +287,7 @@ test.describe('Widget Drag and Drop', () => {
       );
       await page.mouse.up();
 
-      await page.waitForTimeout(500);
+      await savePromise;
 
       const saved = getSavedLayout() as { widgets: Array<{ id: string }> } | null;
       if (saved) {
@@ -295,8 +303,8 @@ test.describe('Widget Drag and Drop', () => {
     await page.goto('/');
 
     // Both widget titles should be visible
-    await expect(page.getByText('status-widget')).toBeVisible();
-    await expect(page.getByText('info-widget')).toBeVisible();
+    await expect(page.getByText('Hello Status')).toBeVisible();
+    await expect(page.getByText('Hello Info')).toBeVisible();
   });
 });
 
@@ -327,11 +335,12 @@ test.describe('Widget Resize', () => {
   });
 
   test('clicking grow saves layout with increased size', async ({ page }) => {
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
     await page.goto('/');
 
+    const savePromise = waitForSave();
     await page.getByTestId('grow-widget').click();
-    await page.waitForTimeout(500);
+    await savePromise;
 
     const saved = getSavedLayout() as { widgets: Array<{ size: { w: number; h: number } }> };
     expect(saved).toBeTruthy();
@@ -341,11 +350,12 @@ test.describe('Widget Resize', () => {
   });
 
   test('clicking shrink saves layout with decreased size', async ({ page }) => {
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
     await page.goto('/');
 
+    const savePromise = waitForSave();
     await page.getByTestId('shrink-widget').click();
-    await page.waitForTimeout(500);
+    await savePromise;
 
     const saved = getSavedLayout() as { widgets: Array<{ size: { w: number; h: number } }> };
     expect(saved).toBeTruthy();
@@ -411,11 +421,12 @@ test.describe('Widget Min/Max Size Constraints', () => {
         size: { w: 5, h: 3 },
       }],
     };
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, nearMaxLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, nearMaxLayout);
     await page.goto('/');
 
+    const savePromise = waitForSave();
     await page.getByTestId('grow-widget').click();
-    await page.waitForTimeout(500);
+    await savePromise;
 
     const saved = getSavedLayout() as { widgets: Array<{ size: { w: number; h: number } }> };
     expect(saved).toBeTruthy();
@@ -433,11 +444,12 @@ test.describe('Widget Min/Max Size Constraints', () => {
         size: { w: 4, h: 3 },
       }],
     };
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, nearMinLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, nearMinLayout);
     await page.goto('/');
 
+    const savePromise = waitForSave();
     await page.getByTestId('shrink-widget').click();
-    await page.waitForTimeout(500);
+    await savePromise;
 
     const saved = getSavedLayout() as { widgets: Array<{ size: { w: number; h: number } }> };
     expect(saved).toBeTruthy();
@@ -471,17 +483,18 @@ test.describe('Dashboard Layout API Integration', () => {
   test('GET /api/dashboard/layout returns layout data', async ({ page }) => {
     await setupAPIMocks(page);
     await page.goto('/');
-    await expect(page.getByText('status-widget')).toBeVisible();
+    await expect(page.getByText('Hello Status')).toBeVisible();
   });
 
   test('PUT /api/dashboard/layout sends correct payload when adding widget', async ({ page }) => {
-    const { getSavedLayout } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
     await page.goto('/');
 
+    const savePromise = waitForSave();
     await page.getByRole('button', { name: /add widget/i }).click();
     await page.getByTestId('widget-picker-list').getByRole('button', { name: 'Add', exact: true }).click();
 
-    await page.waitForTimeout(500);
+    await savePromise;
     const saved = getSavedLayout() as { widgets: unknown[] };
     expect(saved).toBeTruthy();
     expect(saved.widgets).toHaveLength(2);
