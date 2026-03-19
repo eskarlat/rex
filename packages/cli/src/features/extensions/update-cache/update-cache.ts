@@ -11,6 +11,8 @@ import { resolve } from '../../registry/registry-manager.js';
 import { checkEngineConstraints } from '../engine/engine-compat.js';
 import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
 
+// Mirrors UPDATE_CACHE_PATH from core/paths but evaluated per-call
+// so tests can override RENRE_KIT_HOME at runtime.
 function getCachePath(): string {
   const home = process.env['RENRE_KIT_HOME'] ?? path.join(os.homedir(), '.renre-kit');
   return path.join(home, 'update-cache.json');
@@ -55,9 +57,15 @@ export function writeUpdateCache(updates: UpdateInfo[]): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+  const cachePath = getCachePath();
   const tmpPath = path.join(dir, `.update-cache-${randomUUID()}.tmp`);
   fs.writeFileSync(tmpPath, JSON.stringify(cache, null, 2));
-  fs.renameSync(tmpPath, getCachePath());
+  try {
+    fs.unlinkSync(cachePath);
+  } catch {
+    // File may not exist yet
+  }
+  fs.renameSync(tmpPath, cachePath);
 }
 
 export function readUpdateCache(): UpdateCache | null {

@@ -150,13 +150,17 @@ const ICON_CONTENT_TYPES: Record<string, string> = {
   '.gif': 'image/gif',
 };
 
+function isIconSafe(extDir: string, iconField: string): boolean {
+  const iconPath = resolve(extDir, iconField);
+  const rel = relative(extDir, iconPath);
+  return !rel.startsWith('..') && resolve(iconPath) === iconPath && existsSync(iconPath);
+}
+
 function readIconFromDir(extDir: string): { content: Buffer; contentType: string } | null {
   const manifest = loadManifest(extDir);
   if (!manifest.icon) return null;
+  if (!isIconSafe(extDir, manifest.icon)) return null;
   const iconPath = resolve(extDir, manifest.icon);
-  const rel = relative(extDir, iconPath);
-  if (rel.startsWith('..') || resolve(iconPath) !== iconPath) return null;
-  if (!existsSync(iconPath)) return null;
   const ext = iconPath.substring(iconPath.lastIndexOf('.'));
   const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
   return { content: readFileSync(iconPath), contentType };
@@ -194,10 +198,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
 
     const activatedPlugins = projectPath ? getActivated(projectPath) : {};
     const updateCache = readUpdateCache();
+    const updateMap = new Map(
+      (updateCache?.updates ?? []).map((u) => [u.name, u]),
+    );
 
     function getUpdateInfo(extName: string): { updateAvailable: string | null; engineCompatible: boolean } {
-      if (!updateCache) return { updateAvailable: null, engineCompatible: true };
-      const update = updateCache.updates.find((u) => u.name === extName);
+      const update = updateMap.get(extName);
       if (!update) return { updateAvailable: null, engineCompatible: true };
       return { updateAvailable: update.availableVersion, engineCompatible: update.engineCompatible };
     }
@@ -217,7 +223,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
           hasConfig = Object.keys(manifest.config?.schema ?? {}).length > 0;
           title = manifest.title;
           description = manifest.description;
-          hasIcon = !!manifest.icon && existsSync(join(extDir, manifest.icon));
+          hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
           panels = (manifest.ui?.panels ?? []).map((p) => ({ id: p.id, title: p.title }));
           widgets = (manifest.ui?.widgets ?? []).map((w) => ({
             id: w.id,
@@ -253,7 +259,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
           const manifest = loadManifest(extDir);
           title = manifest.title;
           description = manifest.description;
-          hasIcon = !!manifest.icon && existsSync(join(extDir, manifest.icon));
+          hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
         } catch { /* ignore */ }
         return {
           name: ext.name,
@@ -271,7 +277,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     const availableEntries = listAvailableExtensions(registries)
       .filter((entry) => !installedNames.has(entry.name));
 
-    // Pre-compute icon availability in a single pass instead of per-entry FS lookups
+    // Pre-compute icon availability, skipping entries without an icon field
     const extensionsWithIcons = new Set<string>();
     for (const entry of availableEntries) {
       if (entry.icon) {
@@ -452,6 +458,10 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     if (!body.name || typeof body.name !== 'string') {
       reply.code(400);
       return { error: 'name is required' };
+    }
+    if (body.force !== undefined && typeof body.force !== 'boolean') {
+      reply.code(400);
+      return { error: 'force must be a boolean' };
     }
 
     const result = validateUpdate(body);

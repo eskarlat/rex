@@ -102,7 +102,7 @@ export function resolveRegistryIcon(
     if (found?.icon) {
       const iconsBase = path.join(regDir, '.renre-kit');
       const iconPath = path.resolve(iconsBase, found.icon);
-      if (!iconPath.startsWith(iconsBase + path.sep) && iconPath !== iconsBase) continue;
+      if (!iconPath.startsWith(iconsBase + path.sep)) continue;
       if (fs.existsSync(iconPath)) return iconPath;
     }
   }

@@ -88,24 +88,22 @@ export async function handleExtUpdate(options: ExtUpdateOptions): Promise<void> 
   await ensureSynced(options.registryConfigs);
 
   if (options.all) {
-    const updated = await updateAll(options);
-    if (updated > 0) refreshUpdateCache(options.db, options.registryConfigs);
-    return;
-  }
-
-  if (!options.name) {
+    await updateAll(options);
+  } else if (!options.name) {
     clack.log.error('Please specify an extension name or use --all.');
     return;
+  } else {
+    await updateSingle(
+      options.name,
+      options.registryConfigs,
+      options.projectPath,
+      options.db,
+      options.force,
+    );
   }
 
-  const success = await updateSingle(
-    options.name,
-    options.registryConfigs,
-    options.projectPath,
-    options.db,
-    options.force,
-  );
-  if (success) refreshUpdateCache(options.db, options.registryConfigs);
+  // Always refresh so checkedAt and availability stay accurate after sync
+  refreshUpdateCache(options.db, options.registryConfigs);
 }
 
 async function updateAll(options: ExtUpdateOptions): Promise<number> {
