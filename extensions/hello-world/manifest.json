@@ -67,8 +67,8 @@
   },
   "agent": {
     "skills": [
-      { "name": "greet", "path": "agent/skills/greet/SKILL.md" },
-      { "name": "info", "path": "agent/skills/info/SKILL.md" }
+      { "name": "greet", "path": "agent/skills/greet" },
+      { "name": "info", "path": "agent/skills/info" }
     ],
     "prompts": ["agent/prompts/greeting-style.prompt.md"],
     "context": ["agent/context/extension-docs.context.md"],

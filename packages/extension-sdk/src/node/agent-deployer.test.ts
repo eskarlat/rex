@@ -43,7 +43,7 @@ describe('agent-deployer', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'skills/greet' }],
         },
       });
 
@@ -62,8 +62,8 @@ describe('agent-deployer', () => {
         ...baseManifest,
         agent: {
           skills: [
-            { name: 'greet', path: 'skills/greet/SKILL.md' },
-            { name: 'info', path: 'skills/info/SKILL.md' },
+            { name: 'greet', path: 'skills/greet' },
+            { name: 'info', path: 'skills/info' },
           ],
         },
       });
@@ -167,7 +167,7 @@ describe('agent-deployer', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'agent/skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'agent/skills/greet' }],
           prompts: ['agent/prompts/style.prompt.md'],
           context: ['agent/context/docs.context.md'],
           agents: ['agent/agents/researcher.agent.md'],
@@ -206,7 +206,7 @@ describe('agent-deployer', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'skills/greet' }],
         },
       });
 
@@ -289,7 +289,7 @@ describe('agent-deployer', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'skills/greet' }],
         },
       });
 
@@ -307,7 +307,7 @@ describe('agent-deployer', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'missing', path: 'skills/missing/SKILL.md' }],
+          skills: [{ name: 'missing', path: 'skills/missing' }],
           prompts: ['agent/prompts/nonexistent.prompt.md'],
         },
       });
@@ -326,13 +326,91 @@ describe('agent-deployer', () => {
       expect(() => deployAgentAssets(extensionDir, projectDir)).toThrow(/manifest\.json/);
     });
 
+    it('should deploy skill directory with subdirectories recursively', () => {
+      writeExtFile('skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet Skill');
+      writeExtFile('skills/greet/examples/basic.md', '# Basic greeting example');
+      writeExtFile('skills/greet/schemas/input.json', '{"type":"object"}');
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet' }],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      const destDir = join(projectDir, '.agents', 'skills', 'test-ext.greet');
+      expect(existsSync(join(destDir, 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(destDir, 'examples', 'basic.md'))).toBe(true);
+      expect(existsSync(join(destDir, 'schemas', 'input.json'))).toBe(true);
+
+      // SKILL.md gets frontmatter transform
+      const skillContent = readFileSync(join(destDir, 'SKILL.md'), 'utf-8');
+      expect(skillContent).toContain('name: test-ext.greet');
+
+      // Other files are plain-copied (no transform)
+      const exampleContent = readFileSync(join(destDir, 'examples', 'basic.md'), 'utf-8');
+      expect(exampleContent).toBe('# Basic greeting example');
+
+      const schemaContent = readFileSync(join(destDir, 'schemas', 'input.json'), 'utf-8');
+      expect(schemaContent).toBe('{"type":"object"}');
+    });
+
+    it('should deploy deeply nested subdirectories in skill folder', () => {
+      writeExtFile('skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet');
+      writeExtFile('skills/greet/a/b/c/deep.md', '# Deep file');
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet' }],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      const destDir = join(projectDir, '.agents', 'skills', 'test-ext.greet');
+      expect(existsSync(join(destDir, 'a', 'b', 'c', 'deep.md'))).toBe(true);
+      const content = readFileSync(join(destDir, 'a', 'b', 'c', 'deep.md'), 'utf-8');
+      expect(content).toBe('# Deep file');
+    });
+
+    it('should handle mixed skills — some with extra files, some with only SKILL.md', () => {
+      writeExtFile('skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet');
+      writeExtFile('skills/greet/examples/basic.md', '# Example');
+      writeExtFile('skills/info/SKILL.md', '---\nname: info\n---\n# Info');
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [
+            { name: 'greet', path: 'skills/greet' },
+            { name: 'info', path: 'skills/info' },
+          ],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      // greet has extra files
+      expect(
+        existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md')),
+      ).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'examples', 'basic.md')),
+      ).toBe(true);
+
+      // info has only SKILL.md
+      expect(
+        existsSync(join(projectDir, '.agents', 'skills', 'test-ext.info', 'SKILL.md')),
+      ).toBe(true);
+    });
+
     it('should deploy to custom agent directory when specified', () => {
       writeExtFile('skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet');
       writeExtFile('agent/prompts/style.prompt.md', '---\nname: style\n---\n# Style');
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'skills/greet' }],
           prompts: ['agent/prompts/style.prompt.md'],
         },
       });
@@ -354,7 +432,7 @@ describe('agent-deployer', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'skills/greet' }],
         },
       });
       const agentDir = join(projectDir, '.agents');
@@ -402,11 +480,31 @@ describe('agent-deployer', () => {
       expect(existsSync(join(agentDir, 'hooks', 'test-ext.session.json'))).toBe(false);
     });
 
+    it('should remove skill directories with subdirectories recursively', () => {
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet' }],
+        },
+      });
+      const agentDir = join(projectDir, '.agents');
+      const skillDir = join(agentDir, 'skills', 'test-ext.greet');
+      mkdirSync(join(skillDir, 'examples'), { recursive: true });
+      mkdirSync(join(skillDir, 'schemas'), { recursive: true });
+      writeFileSync(join(skillDir, 'SKILL.md'), '# Greet');
+      writeFileSync(join(skillDir, 'examples', 'basic.md'), '# Example');
+      writeFileSync(join(skillDir, 'schemas', 'input.json'), '{}');
+
+      cleanupAgentAssets(extensionDir, projectDir);
+
+      expect(existsSync(skillDir)).toBe(false);
+    });
+
     it('should not remove other extensions files', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'skills/greet' }],
           prompts: ['agent/prompts/style.prompt.md'],
         },
       });
@@ -448,7 +546,7 @@ describe('agent-deployer', () => {
       writeManifest({
         ...baseManifest,
         agent: {
-          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          skills: [{ name: 'greet', path: 'skills/greet' }],
           prompts: ['agent/prompts/style.prompt.md'],
         },
       });

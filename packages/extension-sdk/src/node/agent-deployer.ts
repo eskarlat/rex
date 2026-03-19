@@ -1,5 +1,6 @@
 import {
   readFileSync,
+  readdirSync,
   existsSync,
   mkdirSync,
   writeFileSync,
@@ -11,6 +12,7 @@ import { join, dirname, basename } from 'node:path';
 
 interface SkillRef {
   name: string;
+  /** Path to skill directory relative to extension root. */
   path: string;
 }
 
@@ -102,6 +104,29 @@ function deployFile(
   }
 }
 
+/**
+ * Recursively deploys a skill directory.
+ * SKILL.md gets frontmatter name transform; all other files are plain-copied.
+ */
+function deploySkillDirectory(srcDir: string, destDir: string, extName: string): void {
+  if (!existsSync(srcDir)) {
+    return;
+  }
+  const entries = readdirSync(srcDir, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = join(srcDir, entry.name);
+    const destPath = join(destDir, entry.name);
+    if (entry.isDirectory()) {
+      deploySkillDirectory(srcPath, destPath, extName);
+    } else if (entry.name === 'SKILL.md') {
+      deployFile(srcPath, destPath, extName, true);
+    } else {
+      mkdirSync(dirname(destPath), { recursive: true });
+      copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 function removeDir(dir: string): void {
   if (existsSync(dir)) {
     rmSync(dir, { recursive: true, force: true });
@@ -149,12 +174,9 @@ export function deployAgentAssets(
 
   if (agent.skills) {
     for (const skill of agent.skills) {
-      deployFile(
-        join(extensionDir, skill.path),
-        join(agentDir, 'skills', `${extName}.${skill.name}`, 'SKILL.md'),
-        extName,
-        true,
-      );
+      const srcDir = join(extensionDir, skill.path);
+      const destDir = join(agentDir, 'skills', `${extName}.${skill.name}`);
+      deploySkillDirectory(srcDir, destDir, extName);
     }
   }
 

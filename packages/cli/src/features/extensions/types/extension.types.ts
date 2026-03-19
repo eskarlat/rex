@@ -44,6 +44,7 @@ export interface ConfigSchemaField {
 
 export interface SkillRef {
   name: string;
+  /** Path to skill directory relative to extension root. */
   path: string;
 }
 

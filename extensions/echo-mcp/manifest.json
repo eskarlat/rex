@@ -32,7 +32,7 @@
   },
   "agent": {
     "skills": [
-      { "name": "echo", "path": "agent/skills/echo/SKILL.md" }
+      { "name": "echo", "path": "agent/skills/echo" }
     ]
   }
 }
