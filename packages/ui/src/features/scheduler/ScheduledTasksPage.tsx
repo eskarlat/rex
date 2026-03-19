@@ -19,19 +19,17 @@ export function ScheduledTasksPage(): React.ReactElement {
   const { data: tasks, isLoading } = useScheduledTasks();
   const createTask = useCreateTask();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
   const [extensionName, setExtensionName] = useState('');
   const [command, setCommand] = useState('');
   const [cron, setCron] = useState('');
 
   function handleCreate(): void {
-    if (!name || !extensionName || !command || !cron) return;
+    if (!extensionName || !command || !cron) return;
     createTask.mutate(
-      { name, extension_name: extensionName, command, cron },
+      { extension_name: extensionName, command, cron },
       {
         onSuccess: () => {
           setOpen(false);
-          setName('');
           setExtensionName('');
           setCommand('');
           setCron('');
@@ -53,26 +51,17 @@ export function ScheduledTasksPage(): React.ReactElement {
       submitLabel="Create"
       submitPendingLabel="Creating..."
       submitDisabled={
-        !name || !extensionName || !command || !cron || createTask.isPending
+        !extensionName || !command || !cron || createTask.isPending
       }
       isPending={createTask.isPending}
       onSubmit={handleCreate}
       formContent={
         <>
           <div className="space-y-2">
-            <Label htmlFor="task-name">Name</Label>
-            <Input
-              id="task-name"
-              placeholder="Task name"
-              value={name}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="task-extension">Extension</Label>
+            <Label htmlFor="task-extension">Task Name</Label>
             <Input
               id="task-extension"
-              placeholder="Extension name"
+              placeholder="e.g. auto-greet, daily-sync"
               value={extensionName}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setExtensionName(e.target.value)}
             />
@@ -81,7 +70,7 @@ export function ScheduledTasksPage(): React.ReactElement {
             <Label htmlFor="task-command">Command</Label>
             <Input
               id="task-command"
-              placeholder="Command to run"
+              placeholder="renre-kit hello-world:greet"
               value={command}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setCommand(e.target.value)}
             />
@@ -101,8 +90,8 @@ export function ScheduledTasksPage(): React.ReactElement {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Extension</TableHead>
+            <TableHead>Task Name</TableHead>
+            <TableHead>Command</TableHead>
             <TableHead>Cron</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Last Run</TableHead>

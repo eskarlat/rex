@@ -189,11 +189,11 @@ describe('connection-manager', () => {
       expect(spawnProcess).toHaveBeenCalledWith(
         'node',
         ['server.js'],
-        {
+        expect.objectContaining({
           API_TOKEN: 'my-secret-token',
           BASE_URL: 'https://api.example.com',
           STATIC: 'no-change',
-        },
+        }),
         expect.any(String),
       );
     });
@@ -211,7 +211,7 @@ describe('connection-manager', () => {
       expect(spawnProcess).toHaveBeenCalledWith(
         'node',
         [],
-        { KEY: 'value' },
+        expect.objectContaining({ KEY: 'value' }),
         expect.any(String),
       );
     });

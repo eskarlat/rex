@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -17,32 +18,32 @@ import {
   type GlobalConfig,
 } from '@/core/hooks/use-settings';
 
+const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
+type LogLevel = (typeof LOG_LEVELS)[number];
+
 interface SettingsForm {
-  port: number;
-  theme: 'light' | 'dark';
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  logLevels: LogLevel[];
 }
 
 export function GeneralPage() {
   const { data: config, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
+  const { setTheme, theme: currentTheme } = useTheme();
 
   const form = useForm<SettingsForm>({
     defaultValues: {
-      port: 4200,
-      theme: 'light',
-      logLevel: 'info',
+      logLevels: ['info', 'warn', 'error'],
     },
   });
 
   useEffect(() => {
     if (config) {
-      const s = config.settings as Partial<SettingsForm>;
-      form.reset({
-        port: s.port ?? 4200,
-        theme: s.theme ?? 'light',
-        logLevel: s.logLevel ?? 'info',
-      });
+      const s = config.settings as Partial<{
+        logLevels: LogLevel[];
+        logLevel: LogLevel;
+      }>;
+      const logLevels = s.logLevels ?? (s.logLevel ? [s.logLevel] : ['info', 'warn', 'error']);
+      form.reset({ logLevels });
     }
   }, [config, form]);
 
@@ -55,34 +56,32 @@ export function GeneralPage() {
     updateSettings.mutate(updated);
   }
 
+  function toggleLogLevel(level: LogLevel) {
+    const current = form.getValues('logLevels');
+    const next = current.includes(level)
+      ? current.filter((l) => l !== level)
+      : [...current, level];
+    form.setValue('logLevels', next);
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
       </div>
     );
   }
 
+  const selectedLevels = form.watch('logLevels');
+
   return (
     <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="port">Port</Label>
-        <Input
-          id="port"
-          type="number"
-          {...form.register('port', { valueAsNumber: true })}
-        />
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="theme">Theme</Label>
         <Select
-          value={form.watch('theme')}
-          onValueChange={(value) =>
-            form.setValue('theme', value as SettingsForm['theme'])
-          }
+          value={currentTheme}
+          onValueChange={setTheme}
         >
           <SelectTrigger id="theme">
             <SelectValue />
@@ -94,24 +93,22 @@ export function GeneralPage() {
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="logLevel">Log Level</Label>
-        <Select
-          value={form.watch('logLevel')}
-          onValueChange={(value) =>
-            form.setValue('logLevel', value as SettingsForm['logLevel'])
-          }
-        >
-          <SelectTrigger id="logLevel">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="debug">Debug</SelectItem>
-            <SelectItem value="info">Info</SelectItem>
-            <SelectItem value="warn">Warn</SelectItem>
-            <SelectItem value="error">Error</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="space-y-3">
+        <Label>Log Level</Label>
+        <div className="flex flex-col gap-2">
+          {LOG_LEVELS.map((level) => (
+            <label
+              key={level}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <Checkbox
+                checked={selectedLevels.includes(level)}
+                onCheckedChange={() => toggleLogLevel(level)}
+              />
+              <span className="text-sm capitalize">{level}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <Button type="submit" disabled={updateSettings.isPending}>

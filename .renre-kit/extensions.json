@@ -7,7 +7,8 @@
       "latestVersion": "1.0.0",
       "type": "standard",
       "icon": "wave",
-      "author": "eskarlat"
+      "author": "eskarlat",
+      "tags": ["example", "greeting"]
     },
     {
       "name": "echo-mcp",
@@ -16,7 +17,8 @@
       "latestVersion": "1.0.0",
       "type": "mcp",
       "icon": "repeat",
-      "author": "eskarlat"
+      "author": "eskarlat",
+      "tags": ["example", "mcp"]
     }
   ]
 }

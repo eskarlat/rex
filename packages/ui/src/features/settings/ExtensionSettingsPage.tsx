@@ -3,9 +3,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   useExtensionSettings,
   useUpdateExtensionSettings,
-  type ConfigMapping,
 } from '@/core/hooks/use-settings';
 import { ConfigForm } from './components/ConfigForm';
+import type { ConfigFormResult } from './components/ConfigForm';
 import type { ConfigField } from '@/core/hooks/use-settings';
 
 export function ExtensionSettingsPage() {
@@ -43,19 +43,15 @@ function ExtensionSettingsContent({ name }: { name: string }) {
     );
   }
 
-  const schema = (config as Record<string, unknown>).schema as
+  const schema = config.schema as
     | Record<string, ConfigField>
     | undefined;
-  const values = (config as Record<string, unknown>).values as
+  const values = config.values as
     | Record<string, unknown>
     | undefined;
 
-  function handleSave(formValues: Record<string, unknown>) {
-    for (const [fieldName, value] of Object.entries(formValues)) {
-      const mapping: ConfigMapping = {
-        source: 'direct',
-        value: String(value),
-      };
+  function handleSave(results: ConfigFormResult[]) {
+    for (const { fieldName, mapping } of results) {
       updateSettings.mutate({ fieldName, mapping });
     }
   }
@@ -68,7 +64,7 @@ function ExtensionSettingsContent({ name }: { name: string }) {
       </div>
       <ConfigForm
         schema={schema ?? {}}
-        values={values ?? config as Record<string, unknown>}
+        values={values ?? config}
         onSave={handleSave}
         isSaving={updateSettings.isPending}
       />

@@ -37,6 +37,7 @@ export function useSetActiveProject(): UseMutationResult<void, Error, string> {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['project'] });
+      void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
       void queryClient.invalidateQueries({ queryKey: ['extensions'] });
       void queryClient.invalidateQueries({ queryKey: ['vault'] });
       void queryClient.invalidateQueries({ queryKey: ['scheduler'] });

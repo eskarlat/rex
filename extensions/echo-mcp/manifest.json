@@ -1,14 +1,38 @@
 {
   "name": "echo-mcp",
+  "title": "Echo MCP",
   "version": "1.0.0",
   "description": "An echo MCP extension for RenreKit — echoes back any message via JSON-RPC",
   "icon": "repeat",
-  "type": "mcp-stdio",
-  "commands": {},
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show MCP server status and available tools"
+    }
+  },
   "mcp": {
     "transport": "stdio",
     "command": "node",
-    "args": ["src/server.js"]
+    "args": ["dist/server.js"]
   },
-  "skills": "SKILL.md"
+  "ui": {
+    "panels": [
+      {
+        "id": "echo-panel",
+        "title": "Echo MCP",
+        "entry": "dist/panel.js"
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "echo", "path": "agent/skills/echo/SKILL.md" }
+    ]
+  }
 }

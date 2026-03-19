@@ -127,8 +127,8 @@ describe('database', () => {
 
   it('should cascade delete task_history when scheduled_task is deleted', () => {
     db.prepare(
-      'INSERT INTO scheduled_tasks (id, extension_name, project_path, cron, command, next_run_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    ).run('task-1', 'ext-a', '/tmp', '* * * * *', 'run', '2024-01-01', '2024-01-01');
+      'INSERT INTO scheduled_tasks (id, name, type, project_path, cron, command, next_run_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run('task-1', 'ext-a', 'manual', '/tmp', '* * * * *', 'run', '2024-01-01', '2024-01-01');
     db.prepare(
       'INSERT INTO task_history (task_id, started_at, status) VALUES (?, ?, ?)',
     ).run('task-1', '2024-01-01', 'success');

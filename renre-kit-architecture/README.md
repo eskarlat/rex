@@ -98,11 +98,11 @@ The project uses Turborepo with pnpm workspaces to manage four interdependent pa
 | `.renre-kit/manifest.json` | Project metadata: name, version, created timestamp |
 | `.renre-kit/plugins.json` | Activated extensions with exact version pinning for this project |
 | `.renre-kit/storage/` | Extension-scoped persistent storage (key/value JSON files) |
-| `.agent/skills/{name}/SKILL.md` | LLM skill files copied from activated extensions during init/ext:add |
-| `.agent/prompts/{name}/` | Prompt templates deployed by extensions via onInit hooks |
-| `.agent/agents/{name}/` | Agent definitions with system prompts and tool configurations |
-| `.agent/workflows/{name}/` | Multi-step workflow scripts for complex LLM automation |
-| `.agent/context/{name}/` | Reference documents, schemas, and examples for enriched LLM context |
+| `.agents/skills/{name}/SKILL.md` | LLM skill files copied from activated extensions during init/ext:add |
+| `.agents/prompts/{name}/` | Prompt templates deployed by extensions via onInit lifecycle export |
+| `.agents/agents/{name}/` | Agent definitions with system prompts and tool configurations |
+| `.agents/workflows/{name}/` | Multi-step workflow scripts for complex LLM automation |
+| `.agents/context/{name}/` | Reference documents, schemas, and examples for enriched LLM context |
 
 ---
 
@@ -124,11 +124,11 @@ The project uses Turborepo with pnpm workspaces to manage four interdependent pa
 | Command | Description |
 |---------|-------------|
 | `renre-kit init` | Initialize a new project: prompt for name, select extensions, create local .renre-kit/ and global DB record |
-| `renre-kit destroy` | Full cleanup: remove local .renre-kit/ folder, run extension onDestroy hooks, delete project from global DB |
+| `renre-kit destroy` | Full cleanup: remove local .renre-kit/ folder, call onDestroy exports, delete project from global DB |
 | `renre-kit ext:add <name>` | Install extension globally (if not cached) and activate for current project |
 | `renre-kit ext:remove <name>` | Deactivate from current project; warn if other projects use it before global removal |
 | `renre-kit ext:list` | Show all globally installed extensions with per-project activation status |
-| `renre-kit ext:activate <name>` | Activate a globally installed extension for the current project (copy SKILL.md, run onInit hook) |
+| `renre-kit ext:activate <name>` | Activate a globally installed extension for the current project (copy SKILL.md, run onInit from main entry) |
 | `renre-kit ext:deactivate <name>` | Deactivate extension from current project only (keep installed globally, MCP processes stay alive) |
 | `renre-kit ext:config <name>` | Interactive config setup: map extension config fields to vault variables or direct values |
 | `renre-kit ext:status` | Show connection state for MCP extensions (running, connected, stopped) |
@@ -154,14 +154,14 @@ The project uses Turborepo with pnpm workspaces to manage four interdependent pa
 2. **Display extension picker** showing all globally installed extensions as a multiselect list.
 3. **Create local .renre-kit/ directory** with manifest.json and plugins.json.
 4. **Register in global database** inserting a new record in ~/.renre-kit/db.sqlite.
-5. **Copy SKILL.md files** from each activated extension into .agent/skills/{name}/SKILL.md.
-6. **Execute onInit hooks** for each activated extension, passing the project context.
+5. **Copy SKILL.md files** from each activated extension into .agents/skills/{name}/SKILL.md.
+6. **Import each extension's `main` module** and call the `onInit` named export, passing the project context.
 
 **Destroy Flow** — When the user runs `renre-kit destroy`:
 
 1. **Prompts for confirmation** showing what will be removed. Supports --force flag to skip.
-2. **Executes onDestroy hooks** for each activated extension, allowing cleanup.
-3. **Removes .agent/skills/ entries** for each activated extension.
+2. **Calls onDestroy exports** from each activated extension's `main` module, allowing cleanup.
+3. **Removes .agents/skills/ entries** for each activated extension.
 4. **Deletes .renre-kit/ directory** removing all local configuration.
 5. **Removes project from global DB** deleting the SQLite record.
 
@@ -208,8 +208,8 @@ Every extension contains a `manifest.json` that declares its capabilities:
 | `commands` | object | Map of command names to JS entry files (standard) or MCP tool names (mcp) |
 | `mcp` | object | MCP config: transport (stdio/sse), command/args or url, env variable mappings |
 | `config.schema` | object | Declares required config fields with type, description, secret flag, and vaultHint |
-| `hooks` | object | Lifecycle hook handlers: onInit, onDestroy |
-| `skills` | string | Path to SKILL.md file (copied to .agent/skills/{name}/ on activation) |
+| `main` | string | Single entry point module exporting lifecycle hooks (onInit, onDestroy) as named exports |
+| `skills` | string | Path to SKILL.md file (copied to .agents/skills/{name}/ on activation) |
 | `ui.panels` | array | Web dashboard panel definitions with id, title, and entry path |
 | `agent` | string | Path to agent/ directory containing extended LLM assets deployed via hooks |
 
@@ -217,14 +217,13 @@ Every extension contains a `manifest.json` that declares its capabilities:
 
 | File / Directory | Purpose |
 |-----------------|---------|
-| `manifest.json` | Extension metadata, command declarations, hook registrations |
+| `manifest.json` | Extension metadata, command declarations, main entry point |
 | `assets/icon.png` | Extension icon for marketplace listing and dashboard sidebar |
-| `commands/content.js` | Individual command handler (one file per command) |
-| `hooks/onInit.js` | Lifecycle hook executed during project initialization |
-| `hooks/onDestroy.js` | Lifecycle hook executed during project destruction (cleanup) |
-| `skills/SKILL.md` | Markdown skill file: teaches LLMs how to use this extension's commands |
-| `ui/index.js` | Pre-built React component bundle for web dashboard panel |
-| `agent/` | Extended LLM assets: prompts/, agents/, workflows/, context/ |
+| `src/index.js` | Main entry point: exports onInit/onDestroy lifecycle hooks as named exports |
+| `commands/{name}.js` | Individual command handler files (one per command, exports `default` or `execute`) |
+| `skills/{name}/SKILL.md` | Markdown skill files: teach LLMs how to use this extension's commands |
+| `ui/panel.js` | Pre-built React component bundle for web dashboard panel |
+| `agent/` | Extended LLM assets: prompts/, agents/, workflows/, context/ (deployed via onInit) |
 | `server/` (MCP only) | Bundled MCP server: index.js, node_modules, package.json |
 
 ### 4.5 Extension Command Contract
@@ -295,7 +294,7 @@ RenreKit uses **exact version pinning** — each project records the precise ver
 | `renre-kit ext:update --all` | Update all extensions for the current project |
 | `renre-kit ext:cleanup` | Garbage collect versions not referenced by any project |
 
-**Update Flow:** Downloads new version into a new directory, runs onInit hook, updates plugins.json pin, re-copies SKILL.md and agent assets. Old version stays for other projects.
+**Update Flow:** Downloads new version into a new directory, imports `main` and calls `onInit`, updates plugins.json pin, re-copies SKILL.md and agent assets. Old version stays for other projects.
 
 **Garbage Collection:** `ext:cleanup` scans all projects' plugins.json, builds referenced set, deletes unreferenced directories. Never automatic — always explicit.
 
@@ -588,7 +587,7 @@ Each extension can ship a **SKILL.md** file that teaches an LLM how to use the e
 
 ### 9.3 Skill Deployment
 
-On activation, the CLI copies `skills/SKILL.md` to `.agent/skills/{extension-name}/SKILL.md`. Convention-based discovery: any LLM agent can scan `.agent/skills/*/SKILL.md`.
+On activation, the CLI copies `skills/SKILL.md` to `.agents/skills/{extension-name}/SKILL.md`. Convention-based discovery: any LLM agent can scan `.agents/skills/*/SKILL.md`.
 
 ### 9.4 Capabilities Command
 
@@ -606,10 +605,10 @@ Beyond SKILL.md, extensions can ship additional LLM assets via a two-layer provi
 
 | Extension Source | Project Destination | Purpose |
 |-----------------|-------------------|---------|
-| `agent/prompts/` | `.agent/prompts/{name}/` | Reusable prompt templates |
-| `agent/agents/` | `.agent/agents/{name}/` | Agent definitions |
-| `agent/workflows/` | `.agent/workflows/{name}/` | Multi-step workflow scripts |
-| `agent/context/` | `.agent/context/{name}/` | Reference docs, schemas, examples |
+| `agent/prompts/` | `.agents/prompts/{name}/` | Reusable prompt templates |
+| `agent/agents/` | `.agents/agents/{name}/` | Agent definitions |
+| `agent/workflows/` | `.agents/workflows/{name}/` | Multi-step workflow scripts |
+| `agent/context/` | `.agents/context/{name}/` | Reference docs, schemas, examples |
 
 ---
 

@@ -26,11 +26,11 @@ export interface GlobalConfig {
 }
 
 export interface ConfigField {
-  type: 'string' | 'number' | 'boolean' | 'secret';
-  label: string;
+  type: 'string' | 'number' | 'boolean';
   description?: string;
+  secret?: boolean;
+  vaultHint?: string;
   default?: unknown;
-  required?: boolean;
 }
 
 export function useSettings(): UseQueryResult<GlobalConfig> {

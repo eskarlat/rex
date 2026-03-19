@@ -18,7 +18,7 @@ export const MANIFEST_JSON = 'manifest.json';
 export const STORAGE_DIR = 'storage';
 
 // Agent constants
-export const AGENT_DIR = '.agent';
+export const AGENT_DIR = '.agents';
 export const SKILLS_DIR = 'skills';
 export const PROMPTS_DIR = 'prompts';
 export const AGENTS_DIR = 'agents';

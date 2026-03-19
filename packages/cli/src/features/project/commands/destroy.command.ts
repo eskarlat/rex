@@ -3,6 +3,7 @@ import { ProjectManager } from '../../../core/project/project-manager.js';
 import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getActivated, deactivate } from '../../extensions/manager/extension-manager.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
+import { cleanupCoreSkills } from '../../skills/core-skills-deployer.js';
 
 interface DestroyOptions {
   projectPath: string;
@@ -37,6 +38,8 @@ export async function handleDestroy(options: DestroyOptions): Promise<void> {
       }
     }
   }
+
+  cleanupCoreSkills(options.projectPath);
 
   const bus = new EventBus();
   const pm = new ProjectManager(bus);

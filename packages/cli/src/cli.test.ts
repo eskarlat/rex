@@ -101,6 +101,9 @@ vi.mock('./features/registry/commands/registry-add.command.js', () => ({
 vi.mock('./features/registry/commands/registry-remove.command.js', () => ({
   handleRegistryRemove: vi.fn(),
 }));
+vi.mock('./features/registry/commands/registry-search.command.js', () => ({
+  handleRegistrySearch: vi.fn(),
+}));
 vi.mock('./features/skills/commands/capabilities.command.js', () => ({
   handleCapabilities: vi.fn(),
 }));
@@ -146,6 +149,7 @@ import { handleRegistrySync } from './features/registry/commands/registry-sync.c
 import { handleRegistryList } from './features/registry/commands/registry-list.command.js';
 import { handleRegistryAdd } from './features/registry/commands/registry-add.command.js';
 import { handleRegistryRemove } from './features/registry/commands/registry-remove.command.js';
+import { handleRegistrySearch } from './features/registry/commands/registry-search.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
 import { handleExtOutdated } from './features/extensions/commands/ext-outdated.command.js';
 import { handleExtUpdate } from './features/extensions/commands/ext-update.command.js';
@@ -229,6 +233,37 @@ describe('cli', () => {
     }));
   });
 
+  it('parses name@version format in ext:activate', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'ext:activate', 'my-ext@1.0.0']);
+    expect(handleExtActivate).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'my-ext',
+      version: '1.0.0',
+    }));
+  });
+
+  it('parses name@version format in ext:remove', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'ext:remove', 'my-ext@1.0.0']);
+    expect(handleExtRemove).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'my-ext',
+      version: '1.0.0',
+    }));
+  });
+
+  it('parses name@version format in ext:deactivate', async () => {
+    vi.mocked(getActivated).mockReturnValue({ 'my-ext': '1.0.0' });
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'ext:deactivate', 'my-ext@1.0.0']);
+    expect(handleExtDeactivate).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'my-ext',
+    }));
+    vi.mocked(getActivated).mockReturnValue({});
+  });
+
   it('runs ext:deactivate command', async () => {
     vi.mocked(getActivated).mockReturnValue({ 'my-ext': '1.0.0' });
     const program = createProgram();
@@ -306,6 +341,25 @@ describe('cli', () => {
     await program.parseAsync(['node', 'renre-kit', 'registry:remove', 'internal']);
     expect(handleRegistryRemove).toHaveBeenCalledWith(expect.objectContaining({
       name: 'internal',
+    }));
+  });
+
+  it('runs registry:search command with query', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'registry:search', 'hello']);
+    expect(handleRegistrySearch).toHaveBeenCalledWith(expect.objectContaining({
+      query: 'hello',
+    }));
+  });
+
+  it('runs registry:search with --type and --tag flags', async () => {
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'registry:search', '--type', 'mcp', '--tag', 'example']);
+    expect(handleRegistrySearch).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'mcp',
+      tag: 'example',
     }));
   });
 
@@ -446,15 +500,25 @@ describe('cli', () => {
       description: 'MCP extension',
       type: 'mcp',
       mcp: { transport: 'stdio', command: 'node', args: ['server/index.js'] },
-      commands: { query: { handler: 'query_tool', description: 'Query data' } },
+      commands: {},
     });
+
+    // MCP extensions use catch-all routing: any mcp-ext:{tool} is forwarded to the MCP server
+    const originalArgv = process.argv;
+    process.argv = ['node', 'renre-kit', 'mcp-ext:query', 'arg1'];
 
     const program = createProgram();
     program.exitOverride();
-    await program.parseAsync(['node', 'renre-kit', 'mcp-ext:query']);
+    try {
+      await program.parseAsync(process.argv);
+    } catch {
+      // Commander may throw for unknown command before our override runs
+    }
 
-    expect(mockGetConnection).toHaveBeenCalledWith('mcp-ext', expect.objectContaining({ transport: 'stdio' }), expect.any(Object));
-    expect(mockExecuteToolCall).toHaveBeenCalledWith('mcp-ext', 'query_tool', expect.any(Object));
+    expect(mockGetConnection).toHaveBeenCalledWith('mcp-ext', expect.objectContaining({ transport: 'stdio' }), expect.any(Object), expect.any(String));
+    expect(mockExecuteToolCall).toHaveBeenCalledWith('mcp-ext', 'query', expect.objectContaining({ _positional: ['arg1'] }));
+
+    process.argv = originalArgv;
   });
 
   it('uses default description when extension command has none', async () => {

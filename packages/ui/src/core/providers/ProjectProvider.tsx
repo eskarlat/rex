@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -25,16 +24,19 @@ interface ProjectProviderProps {
   children: ReactNode;
 }
 
+function readStoredProject(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+// Set the header synchronously on module load so the first API call includes it
+setActiveProjectPath(readStoredProject());
+
 export function ProjectProvider({ children }: ProjectProviderProps): React.ReactElement {
-  const [projectPath, setProjectPath] = useState<string | null>(
-    () => {
-      try {
-        return localStorage.getItem(STORAGE_KEY);
-      } catch {
-        return null;
-      }
-    }
-  );
+  const [projectPath, setProjectPath] = useState<string | null>(readStoredProject);
 
   const handleSetActiveProject = useCallback((path: string | null): void => {
     setProjectPath(path);
@@ -49,10 +51,6 @@ export function ProjectProvider({ children }: ProjectProviderProps): React.React
       /* localStorage may not be available */
     }
   }, []);
-
-  useEffect(() => {
-    setActiveProjectPath(projectPath);
-  }, [projectPath]);
 
   const value = useMemo(
     () => ({ activeProject: projectPath, setActiveProject: handleSetActiveProject }),

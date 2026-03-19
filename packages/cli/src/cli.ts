@@ -12,10 +12,12 @@ import { handleExtRestart } from './features/extensions/commands/ext-restart.com
 import { handleExtOutdated } from './features/extensions/commands/ext-outdated.command.js';
 import { handleExtUpdate } from './features/extensions/commands/ext-update.command.js';
 import { handleExtCleanup } from './features/extensions/commands/ext-cleanup.command.js';
+import { handleExtLink } from './features/extensions/commands/ext-link.command.js';
 import { handleRegistrySync } from './features/registry/commands/registry-sync.command.js';
 import { handleRegistryList } from './features/registry/commands/registry-list.command.js';
 import { handleRegistryAdd } from './features/registry/commands/registry-add.command.js';
 import { handleRegistryRemove } from './features/registry/commands/registry-remove.command.js';
+import { handleRegistrySearch } from './features/registry/commands/registry-search.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
 import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
 import { handleVaultList } from './features/vault/commands/vault-list.command.js';
@@ -36,6 +38,7 @@ import { loadCommandHandler, executeCommand } from './features/extensions/runtim
 import { getManifestPath } from './core/paths/paths.js';
 import { pathExistsSync, readJsonSync } from './shared/fs-helpers.js';
 import type { ProjectManifest } from './core/types/project.types.js';
+import { CLI_VERSION } from './core/version.js';
 
 function detectProject(): string | null {
   const bus = new EventBus();
@@ -49,6 +52,14 @@ function requireProject(): string {
     throw new Error('No RenreKit project found. Run "renre-kit init" first.');
   }
   return projectPath;
+}
+
+function parseExtensionRef(nameArg: string): { name: string; version: string | undefined } {
+  const atIndex = nameArg.lastIndexOf('@');
+  if (atIndex > 0) {
+    return { name: nameArg.slice(0, atIndex), version: nameArg.slice(atIndex + 1) };
+  }
+  return { name: nameArg, version: undefined };
 }
 
 function resolveExtensionVersion(name: string, version: string): string {
@@ -73,6 +84,12 @@ function getProjectName(projectPath: string): string {
   return '';
 }
 
+interface McpExtensionEntry {
+  mcpConfig: import('./features/extensions/types/extension.types.js').McpConfig;
+  resolvedConfig: Record<string, unknown>;
+  extDir: string;
+}
+
 function registerExtensionCommands(
   program: Command,
   projectPath: string,
@@ -80,6 +97,7 @@ function registerExtensionCommands(
 ): void {
   const plugins = getActivated(projectPath);
   const projectName = getProjectName(projectPath);
+  const mcpExtensions = new Map<string, McpExtensionEntry>();
 
   for (const [extName, version] of Object.entries(plugins)) {
     if (!version) continue;
@@ -95,11 +113,16 @@ function registerExtensionCommands(
     const configSchema = manifest.config?.schema ?? {};
     const resolvedConfig = resolveExtensionConfig(extName, configSchema, projectPath);
 
+    // MCP extensions: store config so the catch-all forwards unknown tools to the MCP server
+    if (manifest.type === 'mcp' && manifest.mcp) {
+      mcpExtensions.set(extName, { mcpConfig: manifest.mcp, resolvedConfig, extDir });
+    }
+
+    // Register declared commands as file-based handlers (both standard and MCP extensions)
     for (const [cmdName, cmdDef] of Object.entries(manifest.commands)) {
       const fullName = `${extName}:${cmdName}`;
       const description = cmdDef.description ?? `Run ${fullName}`;
 
-      const capturedManifest = manifest;
       program
         .command(`${fullName} [args...]`)
         .description(description)
@@ -113,27 +136,42 @@ function registerExtensionCommands(
             config: resolvedConfig,
           };
 
-          if (capturedManifest.type === 'mcp' && capturedManifest.mcp) {
-            connectionManager.getConnection(extName, capturedManifest.mcp, resolvedConfig);
-            const result = await connectionManager.executeToolCall(
-              extName,
-              cmdDef.handler,
-              context.args,
-            );
-            if (result !== undefined) {
-              process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-              process.stdout.write('\n');
-            }
-          } else {
-            const handler = await loadCommandHandler(extDir, cmdDef.handler);
-            const result = await executeCommand(handler, context);
-            if (result !== undefined) {
-              process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-              process.stdout.write('\n');
-            }
+          const handler = await loadCommandHandler(extDir, cmdDef.handler);
+          const result = await executeCommand(handler, context);
+          if (result !== undefined) {
+            process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
+            process.stdout.write('\n');
           }
         });
     }
+  }
+
+  // MCP catch-all: intercept unknown commands matching {mcpExt}:{tool} pattern
+  if (mcpExtensions.size > 0) {
+    program.on('command:*', (operands: string[]) => {
+      const input = operands[0] ?? '';
+      const colonIdx = input.indexOf(':');
+      if (colonIdx > 0) {
+        const extName = input.substring(0, colonIdx);
+        const tool = input.substring(colonIdx + 1);
+        const entry = mcpExtensions.get(extName);
+        if (entry && tool) {
+          const args = process.argv.slice(3);
+          connectionManager.getConnection(extName, entry.mcpConfig, entry.resolvedConfig, entry.extDir);
+          connectionManager.executeToolCall(extName, tool, { _positional: args }).then(
+            (result) => {
+              if (result !== undefined) {
+                process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
+                process.stdout.write('\n');
+              }
+            },
+            () => { /* MCP tool call failures are reported by ConnectionManager */ },
+          );
+          return;
+        }
+      }
+      program.error(`error: unknown command '${input}'`, { exitCode: 1 });
+    });
   }
 }
 
@@ -143,7 +181,7 @@ export function createProgram(): Command {
 
   program
     .name('renre-kit')
-    .version('0.0.1')
+    .version(CLI_VERSION)
     .description('RenreKit CLI — lightweight plugin-driven development CLI')
     .option('--verbose', 'Enable verbose output')
     .option('--quiet', 'Suppress non-essential output')
@@ -188,13 +226,25 @@ export function createProgram(): Command {
     });
 
   program
+    .command('ext:link <path>')
+    .description('Link a local extension for development (symlink, changes reflect immediately)')
+    .action(async (localPath: string) => {
+      await handleExtLink({
+        localPath,
+        projectPath: detectProject(),
+      });
+    });
+
+  program
     .command('ext:remove <name>')
     .description('Remove an extension')
     .option('--version <version>', 'Extension version', 'latest')
-    .action(async (name: string, opts: { version: string }) => {
+    .action(async (nameArg: string, opts: { version: string }) => {
+      const ref = parseExtensionRef(nameArg);
+      const name = ref.name;
       await handleExtRemove({
         name,
-        version: resolveExtensionVersion(name, opts.version),
+        version: resolveExtensionVersion(name, ref.version ?? opts.version),
         projectPath: detectProject(),
       });
     });
@@ -210,9 +260,11 @@ export function createProgram(): Command {
     .command('ext:activate <name>')
     .description('Activate an extension in the current project')
     .option('--version <version>', 'Extension version', 'latest')
-    .action(async (name: string, opts: { version: string }) => {
+    .action(async (nameArg: string, opts: { version: string }) => {
       const projectPath = requireProject();
-      const version = resolveExtensionVersion(name, opts.version);
+      const ref = parseExtensionRef(nameArg);
+      const name = ref.name;
+      const version = resolveExtensionVersion(name, ref.version ?? opts.version);
       await handleExtActivate({
         name,
         version,
@@ -224,8 +276,9 @@ export function createProgram(): Command {
   program
     .command('ext:deactivate <name>')
     .description('Deactivate an extension from the current project')
-    .action(async (name: string) => {
+    .action(async (nameArg: string) => {
       const projectPath = requireProject();
+      const name = parseExtensionRef(nameArg).name;
       const plugins = getActivated(projectPath);
       const version = plugins[name];
       if (!version) {
@@ -329,6 +382,22 @@ export function createProgram(): Command {
     .description('Remove an extension registry')
     .action((name: string) => {
       handleRegistryRemove({ name });
+    });
+
+  program
+    .command('registry:search [query]')
+    .description('Search available extensions in registries')
+    .option('--type <type>', 'Filter by extension type (standard or mcp)')
+    .option('--tag <tag>', 'Filter by tag')
+    .action((query: string | undefined, opts: { type?: string; tag?: string }) => {
+      const { registries } = loadGlobalConfig();
+      const type = opts.type as 'standard' | 'mcp' | undefined;
+      handleRegistrySearch({
+        query,
+        type,
+        tag: opts.tag,
+        configs: registries,
+      });
     });
 
   // Extension versioning commands

@@ -9,6 +9,7 @@ import fastifyStatic from '@fastify/static';
 import websocket from '@fastify/websocket';
 import projectScope from './core/middleware/project-scope.js';
 import errorHandler from './core/middleware/error-handler.js';
+import { pushConsoleEntry } from './core/utils/console-capture.js';
 import lanAuth from './core/middleware/lan-auth.js';
 import projectsRoutes from './features/projects/projects.routes.js';
 import extensionsRoutes from './features/extensions/extensions.routes.js';
@@ -40,6 +41,23 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
   if (opts.lanMode) {
     await fastify.register(lanAuth, { pin: opts.lanPin });
   }
+
+  // Log HTTP requests to server console stream
+  fastify.addHook('onResponse', (request, reply, done) => {
+    const url = request.url;
+    // Skip log-related endpoints to avoid feedback loops
+    if (!url.startsWith('/api/logs')) {
+      const status = reply.statusCode;
+      let level: 'error' | 'warn' | 'info' = 'info';
+      if (status >= 500) {
+        level = 'error';
+      } else if (status >= 400) {
+        level = 'warn';
+      }
+      pushConsoleEntry(level, `${request.method} ${url} ${status} ${reply.elapsedTime?.toFixed(0) ?? 0}ms`);
+    }
+    done();
+  });
 
   // Feature routes
   await fastify.register(projectsRoutes);

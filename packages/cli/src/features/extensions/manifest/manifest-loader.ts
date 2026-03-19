@@ -18,11 +18,6 @@ const uiPanelSchema = z.object({
   entry: z.string(),
 });
 
-const hookConfigSchema = z.object({
-  onInit: z.string().optional(),
-  onDestroy: z.string().optional(),
-});
-
 const mcpConfigSchema = z.object({
   transport: z.enum(['stdio', 'sse']),
   command: z.string().optional(),
@@ -56,11 +51,13 @@ const agentAssetsSchema = z.object({
 const extensionManifestSchema = z
   .object({
     name: z.string(),
+    title: z.string().optional(),
     version: z.string(),
     description: z.string(),
     icon: z.string().optional(),
     iconColor: z.string().optional(),
     type: z.enum(['standard', 'mcp']),
+    main: z.string().optional(),
     commands: z.record(extensionCommandSchema),
     mcp: mcpConfigSchema.optional(),
     config: z
@@ -68,10 +65,15 @@ const extensionManifestSchema = z
         schema: z.record(configSchemaFieldSchema),
       })
       .optional(),
-    hooks: hookConfigSchema.optional(),
     ui: z
       .object({
         panels: z.array(uiPanelSchema),
+      })
+      .optional(),
+    engines: z
+      .object({
+        'renre-kit': z.string().optional(),
+        'extension-sdk': z.string().optional(),
       })
       .optional(),
     agent: agentAssetsSchema.optional(),

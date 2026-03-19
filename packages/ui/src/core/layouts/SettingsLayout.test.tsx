@@ -1,19 +1,37 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SettingsLayout } from './SettingsLayout';
 
-function renderWithRouter() {
+vi.mock('@/core/hooks/use-extensions', () => ({
+  useMarketplace: () => ({
+    data: {
+      active: [
+        { name: 'hello-world', version: 'dev', type: 'standard', status: 'active' },
+      ],
+      installed: [],
+      available: [],
+    },
+  }),
+}));
+
+function renderWithProviders() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter initialEntries={['/settings']}>
-      <SettingsLayout />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/settings']}>
+        <SettingsLayout />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 
 describe('SettingsLayout', () => {
   it('renders Settings heading', () => {
-    renderWithRouter();
+    renderWithProviders();
     expect(screen.getByText('Settings')).toBeInTheDocument();
     expect(
       screen.getByText('Manage your RenreKit configuration.')
@@ -21,20 +39,26 @@ describe('SettingsLayout', () => {
   });
 
   it('renders navigation links', () => {
-    renderWithRouter();
+    renderWithProviders();
     expect(screen.getByText('General')).toBeInTheDocument();
     expect(screen.getByText('Registries')).toBeInTheDocument();
     expect(screen.getByText('Vault')).toBeInTheDocument();
   });
 
+  it('renders active extensions in settings nav', () => {
+    renderWithProviders();
+    expect(screen.getByText('Extensions')).toBeInTheDocument();
+    expect(screen.getByText('hello-world')).toBeInTheDocument();
+  });
+
   it('links point to correct routes', () => {
-    renderWithRouter();
+    renderWithProviders();
     const generalLink = screen.getByText('General').closest('a');
     const registriesLink = screen.getByText('Registries').closest('a');
-    const vaultLink = screen.getByText('Vault').closest('a');
+    const extLink = screen.getByText('hello-world').closest('a');
 
     expect(generalLink).toHaveAttribute('href', '/settings');
     expect(registriesLink).toHaveAttribute('href', '/settings/registries');
-    expect(vaultLink).toHaveAttribute('href', '/settings/vault');
+    expect(extLink).toHaveAttribute('href', '/settings/extensions/hello-world');
   });
 });

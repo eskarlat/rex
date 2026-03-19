@@ -8,26 +8,27 @@ import {
 import { fetchApi } from '@/core/api/client';
 
 export interface ScheduledTask {
-  id: number;
+  id: string;
   name: string;
-  extension_name: string;
+  type: string;
+  project_path: string | null;
   command: string;
   cron: string;
-  enabled: boolean;
-  last_run?: string;
-  next_run?: string;
+  enabled: number;
+  last_run_at: string | null;
+  last_status: string | null;
+  next_run_at: string | null;
   created_at: string;
 }
 
 export interface TaskHistoryEntry {
   id: number;
-  task_id: number;
+  task_id: string;
   started_at: string;
-  finished_at: string;
-  duration_ms: number;
-  status: 'success' | 'failure';
+  finished_at: string | null;
+  duration_ms: number | null;
+  status: string;
   output?: string;
-  error?: string;
 }
 
 export function useScheduledTasks(): UseQueryResult<ScheduledTask[]> {
@@ -38,7 +39,6 @@ export function useScheduledTasks(): UseQueryResult<ScheduledTask[]> {
 }
 
 interface CreateTaskVariables {
-  name: string;
   extension_name: string;
   command: string;
   cron: string;
@@ -63,8 +63,8 @@ export function useCreateTask(): UseMutationResult<
 }
 
 interface UpdateTaskVariables {
-  id: number;
-  enabled?: boolean;
+  id: string;
+  enabled?: number;
   cron?: string;
 }
 
@@ -76,7 +76,7 @@ export function useUpdateTask(): UseMutationResult<
   const queryClient = useQueryClient();
   return useMutation<void, Error, UpdateTaskVariables>({
     mutationFn: (data: UpdateTaskVariables) =>
-      fetchApi<void>(`/api/scheduler/${String(data.id)}`, {
+      fetchApi<void>(`/api/scheduler/${data.id}`, {
         method: 'PUT',
         body: { enabled: data.enabled, cron: data.cron },
       }),
@@ -86,11 +86,11 @@ export function useUpdateTask(): UseMutationResult<
   });
 }
 
-export function useDeleteTask(): UseMutationResult<void, Error, number> {
+export function useDeleteTask(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: (id: number) =>
-      fetchApi<void>(`/api/scheduler/${String(id)}`, {
+  return useMutation<void, Error, string>({
+    mutationFn: (id: string) =>
+      fetchApi<void>(`/api/scheduler/${id}`, {
         method: 'DELETE',
       }),
     onSuccess: () => {
@@ -99,11 +99,11 @@ export function useDeleteTask(): UseMutationResult<void, Error, number> {
   });
 }
 
-export function useTriggerTask(): UseMutationResult<void, Error, number> {
+export function useTriggerTask(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, number>({
-    mutationFn: (id: number) =>
-      fetchApi<void>(`/api/scheduler/${String(id)}/trigger`, {
+  return useMutation<void, Error, string>({
+    mutationFn: (id: string) =>
+      fetchApi<void>(`/api/scheduler/${id}/trigger`, {
         method: 'POST',
       }),
     onSuccess: () => {
@@ -112,11 +112,11 @@ export function useTriggerTask(): UseMutationResult<void, Error, number> {
   });
 }
 
-export function useTaskHistory(id: number): UseQueryResult<TaskHistoryEntry[]> {
+export function useTaskHistory(id: string): UseQueryResult<TaskHistoryEntry[]> {
   return useQuery<TaskHistoryEntry[]>({
     queryKey: ['scheduler', id, 'history'],
     queryFn: () =>
-      fetchApi<TaskHistoryEntry[]>(`/api/scheduler/${String(id)}/history`),
-    enabled: id > 0,
+      fetchApi<TaskHistoryEntry[]>(`/api/scheduler/${id}/history`),
+    enabled: !!id,
   });
 }

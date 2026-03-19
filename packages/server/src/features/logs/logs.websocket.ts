@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
 import fs from 'node:fs';
 import path from 'node:path';
 import { LOGS_DIR } from '@renre-kit/cli/lib';
+import { getConsoleEntries, subscribeConsole } from '../../core/utils/console-capture.js';
 
 interface SocketLike {
   send(data: string): void;
@@ -47,7 +48,26 @@ export function getLogFilePath(): string {
   return path.join(LOGS_DIR, `renre-kit-${date}.log`);
 }
 
+const MAX_INITIAL_LINES = 200;
+
 const logsWebsocket: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
+  // REST endpoint: GET /api/logs/entries — returns existing log lines as JSON array
+  fastify.get('/api/logs/entries', () => {
+    const logFile = getLogFilePath();
+    if (!fs.existsSync(logFile)) {
+      return [];
+    }
+    const content = fs.readFileSync(logFile, 'utf-8');
+    const lines = content.split('\n').filter((line) => line.length > 0);
+    return lines.slice(-MAX_INITIAL_LINES).map((line) => {
+      try {
+        return JSON.parse(line) as Record<string, unknown>;
+      } catch {
+        return { level: 'info', msg: line, time: new Date().toISOString() };
+      }
+    });
+  });
+
   fastify.get('/api/logs', { websocket: true }, (socket: SocketLike) => {
     const logFile = getLogFilePath();
 
@@ -78,6 +98,21 @@ const logsWebsocket: FastifyPluginCallback = (fastify: FastifyInstance, _opts, d
 
     socket.on('close', () => {
       clearInterval(state.timer);
+    });
+  });
+
+  // REST endpoint: GET /api/logs/console/entries — returns buffered console entries
+  fastify.get('/api/logs/console/entries', () => {
+    return getConsoleEntries().slice(-MAX_INITIAL_LINES);
+  });
+
+  // WebSocket: GET /api/logs/console — live server console stream
+  fastify.get('/api/logs/console', { websocket: true }, (socket: SocketLike) => {
+    const unsubscribe = subscribeConsole((entry) => {
+      socket.send(JSON.stringify(entry));
+    });
+    socket.on('close', () => {
+      unsubscribe();
     });
   });
 

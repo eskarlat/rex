@@ -33,28 +33,48 @@ export function parseCommandString(input: string): string[] {
   let escaped = false;
 
   for (const ch of input) {
-    if (escaped) {
+    const result = processChar(ch, escaped, inSingle, inDouble);
+    escaped = result.escaped;
+    inSingle = result.inSingle;
+    inDouble = result.inDouble;
+
+    if (result.action === 'append') {
       current += ch;
-      escaped = false;
-    } else if (ch === '\\' && !inSingle) {
-      escaped = true;
-    } else if (ch === "'" && !inDouble) {
-      inSingle = !inSingle;
-    } else if (ch === '"' && !inSingle) {
-      inDouble = !inDouble;
-    } else if (/\s/.test(ch) && !inSingle && !inDouble) {
-      if (current.length > 0) {
-        tokens.push(current);
-        current = '';
-      }
-    } else {
-      current += ch;
+    } else if (result.action === 'split' && current.length > 0) {
+      tokens.push(current);
+      current = '';
     }
   }
   if (current.length > 0) {
     tokens.push(current);
   }
   return tokens;
+}
+
+interface CharResult {
+  action: 'append' | 'split' | 'skip';
+  escaped: boolean;
+  inSingle: boolean;
+  inDouble: boolean;
+}
+
+function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: boolean): CharResult {
+  if (escaped) {
+    return { action: 'append', escaped: false, inSingle, inDouble };
+  }
+  if (ch === '\\' && !inSingle) {
+    return { action: 'skip', escaped: true, inSingle, inDouble };
+  }
+  if (ch === "'" && !inDouble) {
+    return { action: 'skip', escaped: false, inSingle: !inSingle, inDouble };
+  }
+  if (ch === '"' && !inSingle) {
+    return { action: 'skip', escaped: false, inSingle, inDouble: !inDouble };
+  }
+  if (/\s/.test(ch) && !inSingle && !inDouble) {
+    return { action: 'split', escaped: false, inSingle, inDouble };
+  }
+  return { action: 'append', escaped: false, inSingle, inDouble };
 }
 
 function executeDueTask(task: ScheduledTaskRow): void {

@@ -63,6 +63,16 @@ describe('MarketplacePage', () => {
     renderWithProviders(<MarketplacePage />);
     expect(screen.getByText('active-ext')).toBeInTheDocument();
   });
+
+  it('renders search input', () => {
+    renderWithProviders(<MarketplacePage />);
+    expect(screen.getByPlaceholderText('Search extensions...')).toBeInTheDocument();
+  });
+
+  it('does not show tag chips when no available extensions have tags', () => {
+    renderWithProviders(<MarketplacePage />);
+    expect(screen.queryByTestId('tag-filter')).not.toBeInTheDocument();
+  });
 });
 
 describe('MarketplacePage loading', () => {

@@ -1,38 +1,66 @@
 {
   "name": "hello-world",
+  "title": "Hello World",
   "version": "1.0.0",
   "description": "A simple hello world extension for RenreKit",
   "icon": "wave",
   "type": "standard",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
   "commands": {
-    "hello:greet": {
-      "handler": "greet",
+    "greet": {
+      "handler": "dist/commands/greet.js",
       "description": "Greet the user with a friendly message"
     },
-    "hello:info": {
-      "handler": "info",
+    "info": {
+      "handler": "dist/commands/info.js",
       "description": "Show extension info"
     }
   },
-  "hooks": {
-    "onInit": "src/index.js",
-    "onDestroy": "src/index.js"
-  },
-  "agent": {
-    "skills": [
-      { "name": "greet", "path": "skills/greet/SKILL.md" },
-      { "name": "info", "path": "skills/info/SKILL.md" }
-    ],
-    "prompts": ["agent/prompts/greeting-style.md"],
-    "context": ["agent/context/extension-docs.md"]
+  "config": {
+    "schema": {
+      "companyName": {
+        "type": "string",
+        "description": "Company or team name displayed in greetings",
+        "secret": false,
+        "default": "RenreKit"
+      },
+      "apiToken": {
+        "type": "string",
+        "description": "API token for external service integration",
+        "secret": true,
+        "vaultHint": "hello-world.apiToken"
+      }
+    }
   },
   "ui": {
     "panels": [
       {
         "id": "hello-panel",
         "title": "Hello World",
-        "entry": "ui/panel.js"
+        "entry": "dist/panel.js"
+      },
+      {
+        "id": "settings-panel",
+        "title": "Settings",
+        "entry": "dist/settings-panel.js"
+      },
+      {
+        "id": "analytics-panel",
+        "title": "Analytics",
+        "entry": "dist/analytics-panel.js"
       }
     ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "greet", "path": "agent/skills/greet/SKILL.md" },
+      { "name": "info", "path": "agent/skills/info/SKILL.md" }
+    ],
+    "prompts": ["agent/prompts/greeting-style.prompt.md"],
+    "context": ["agent/context/extension-docs.context.md"]
   }
 }

@@ -78,13 +78,13 @@ describe('useActivateExtension', () => {
     });
 
     act(() => {
-      result.current.mutate('my-extension');
+      result.current.mutate({ name: 'my-extension', version: '1.0.0' });
     });
 
     await waitFor(() =>
       expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/activate', {
         method: 'POST',
-        body: { name: 'my-extension' },
+        body: { name: 'my-extension', version: '1.0.0' },
       }),
     );
   });

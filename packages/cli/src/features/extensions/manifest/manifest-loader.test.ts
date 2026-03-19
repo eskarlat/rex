@@ -75,7 +75,7 @@ describe('manifest-loader', () => {
         ...validStandardManifest,
         icon: '🔧',
         iconColor: '#FF0000',
-        hooks: { onInit: 'hooks/init.js', onDestroy: 'hooks/destroy.js' },
+        main: 'src/index.js',
         agent: {
           skills: [
             { name: 'greet', path: 'skills/greet/SKILL.md' },
@@ -107,7 +107,7 @@ describe('manifest-loader', () => {
       });
       const result = loadManifest(tempDir);
       expect(result.icon).toBe('🔧');
-      expect(result.hooks?.onInit).toBe('hooks/init.js');
+      expect(result.main).toBe('src/index.js');
       expect(result.agent?.skills).toHaveLength(1);
       expect(result.agent?.prompts).toHaveLength(1);
       expect(result.agent?.context).toHaveLength(1);
@@ -251,6 +251,23 @@ describe('manifest-loader', () => {
       }
     });
 
+    // --- Title support ---
+
+    it('should load manifest with top-level title', () => {
+      writeManifest({
+        ...validStandardManifest,
+        title: 'My Extension',
+      });
+      const result = loadManifest(tempDir);
+      expect(result.title).toBe('My Extension');
+    });
+
+    it('should accept manifest without title (optional)', () => {
+      writeManifest(validStandardManifest);
+      const result = loadManifest(tempDir);
+      expect(result.title).toBeUndefined();
+    });
+
     // --- Agent assets support ---
 
     it('should accept agent with skills array', () => {
@@ -342,6 +359,58 @@ describe('manifest-loader', () => {
         agent: 'agent/',
       });
       expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    // --- Engine constraints support ---
+
+    it('should load manifest with both engine constraints', () => {
+      writeManifest({
+        ...validStandardManifest,
+        engines: {
+          'renre-kit': '>=0.0.1',
+          'extension-sdk': '>=0.0.1',
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.engines).toEqual({
+        'renre-kit': '>=0.0.1',
+        'extension-sdk': '>=0.0.1',
+      });
+    });
+
+    it('should load manifest with only renre-kit engine constraint', () => {
+      writeManifest({
+        ...validStandardManifest,
+        engines: { 'renre-kit': '>=1.0.0' },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.engines?.['renre-kit']).toBe('>=1.0.0');
+      expect(result.engines?.['extension-sdk']).toBeUndefined();
+    });
+
+    it('should load manifest with only extension-sdk engine constraint', () => {
+      writeManifest({
+        ...validStandardManifest,
+        engines: { 'extension-sdk': '>=0.5.0' },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.engines?.['extension-sdk']).toBe('>=0.5.0');
+      expect(result.engines?.['renre-kit']).toBeUndefined();
+    });
+
+    it('should load manifest with empty engines object', () => {
+      writeManifest({
+        ...validStandardManifest,
+        engines: {},
+      });
+      const result = loadManifest(tempDir);
+      expect(result.engines).toEqual({});
+    });
+
+    it('should accept manifest without engines (optional)', () => {
+      writeManifest(validStandardManifest);
+      const result = loadManifest(tempDir);
+      expect(result.engines).toBeUndefined();
     });
 
     it('should strip top-level skills field (not part of schema)', () => {

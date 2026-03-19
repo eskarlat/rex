@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS installed_extensions (
 
 CREATE TABLE IF NOT EXISTS scheduled_tasks (
   id TEXT PRIMARY KEY,
-  extension_name TEXT NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'manual',
   project_path TEXT,
   cron TEXT NOT NULL,
   command TEXT NOT NULL,

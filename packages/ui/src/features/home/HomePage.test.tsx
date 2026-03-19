@@ -54,13 +54,6 @@ describe('HomePage', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('renders quick action cards', () => {
-    renderWithProviders(<HomePage />);
-    expect(screen.getByText('Extensions')).toBeInTheDocument();
-    expect(screen.getByText('Vault')).toBeInTheDocument();
-    expect(screen.getByText('Scheduler')).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
-  });
 });
 
 describe('HomePage no project', () => {

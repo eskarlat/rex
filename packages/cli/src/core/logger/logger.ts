@@ -1,26 +1,42 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import pino from 'pino';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  source: string;
-  message: string;
-  data?: unknown;
-}
-
-const LEVEL_PRIORITY: Record<LogLevel, number> = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3,
-};
-
 const RETENTION_DAYS = 7;
 
+function getLogFileName(): string {
+  const date = new Date().toISOString().slice(0, 10);
+  return `renre-kit-${date}.log`;
+}
+
+function cleanOldLogs(logDir: string): void {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - RETENTION_DAYS);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  let files: string[];
+  try {
+    files = fs.readdirSync(logDir);
+  } catch {
+    return;
+  }
+
+  for (const file of files) {
+    const match = /^renre-kit-(\d{4}-\d{2}-\d{2})\.log$/.exec(file);
+    if (match && match[1]! < cutoffStr) {
+      try {
+        fs.unlinkSync(path.join(logDir, file));
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+  }
+}
+
 export class Logger {
+  private pinoLogger: pino.Logger;
   private level: LogLevel = 'info';
   private logDir: string;
   private consoleEnabled = true;
@@ -28,11 +44,32 @@ export class Logger {
   constructor(logDir: string) {
     this.logDir = logDir;
     fs.mkdirSync(logDir, { recursive: true });
-    this.cleanOldLogs();
+    cleanOldLogs(logDir);
+
+    this.pinoLogger = this.createPinoInstance();
+  }
+
+  private createPinoInstance(): pino.Logger {
+    const filePath = path.join(this.logDir, getLogFileName());
+    const fileStream = pino.destination({ dest: filePath, append: true, sync: true });
+
+    return pino(
+      {
+        level: this.level,
+        timestamp: pino.stdTimeFunctions.isoTime,
+        formatters: {
+          level(label: string) {
+            return { level: label };
+          },
+        },
+      },
+      fileStream,
+    );
   }
 
   setLevel(level: LogLevel): void {
     this.level = level;
+    this.pinoLogger.level = level;
   }
 
   getLevel(): LogLevel {
@@ -65,32 +102,16 @@ export class Logger {
     message: string,
     data?: unknown,
   ): void {
-    if (LEVEL_PRIORITY[level] < LEVEL_PRIORITY[this.level]) {
-      return;
-    }
-
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      source,
-      message,
-    };
+    const entry: Record<string, unknown> = { source };
     if (data !== undefined) {
       entry.data = data;
     }
 
-    const line = JSON.stringify(entry) + '\n';
-    const filePath = path.join(this.logDir, this.getLogFileName());
-    fs.appendFileSync(filePath, line, 'utf-8');
+    this.pinoLogger[level](entry, message);
 
     if (this.consoleEnabled) {
       this.writeToConsole(level, source, message);
     }
-  }
-
-  private getLogFileName(): string {
-    const date = new Date().toISOString().slice(0, 10);
-    return `renre-kit-${date}.log`;
   }
 
   private writeToConsole(
@@ -112,26 +133,6 @@ export class Logger {
         // eslint-disable-next-line no-console
         console.log(`${prefix} ${message}`);
         break;
-    }
-  }
-
-  private cleanOldLogs(): void {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - RETENTION_DAYS);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
-
-    let files: string[];
-    try {
-      files = fs.readdirSync(this.logDir);
-    } catch {
-      return;
-    }
-
-    for (const file of files) {
-      const match = /^renre-kit-(\d{4}-\d{2}-\d{2})\.log$/.exec(file);
-      if (match && match[1]! < cutoffStr) {
-        fs.unlinkSync(path.join(this.logDir, file));
-      }
     }
   }
 }

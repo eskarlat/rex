@@ -6,6 +6,7 @@ import { getDb } from '../../../core/database/database.js';
 import { listInstalled, activate } from '../../extensions/manager/extension-manager.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
 import { ProjectAlreadyInitializedError } from '../../../core/types/errors.types.js';
+import { deployCoreSkills } from '../../skills/core-skills-deployer.js';
 
 interface InitOptions {
   projectPath: string;
@@ -58,6 +59,8 @@ export async function handleInit(options: InitOptions): Promise<void> {
     }
     throw err;
   }
+
+  deployCoreSkills(options.projectPath);
 
   for (const extName of selectedExtensions) {
     const ext = installed.find((e) => e.name === extName);

@@ -39,13 +39,13 @@ export async function sync(
   config: RegistryConfig,
 ): Promise<void> {
   const regDir = getRegistryPath(registryName);
-  const git = simpleGit();
 
   if (fs.existsSync(regDir)) {
+    const git = simpleGit(regDir);
     await git.pull();
   } else {
     fs.mkdirSync(regDir, { recursive: true });
-    await git.clone(config.url, regDir);
+    await simpleGit().clone(config.url, regDir);
   }
 
   updateTimestamp(regDir);
@@ -141,6 +141,44 @@ export function resolve(
   }
 
   return null;
+}
+
+export interface SearchOptions {
+  query?: string;
+  type?: 'standard' | 'mcp';
+  tag?: string;
+}
+
+export function searchAvailable(
+  configs: RegistryConfig[],
+  options: SearchOptions,
+): RegistryEntry[] {
+  const all = listAvailable(configs);
+  const queryLower = options.query?.toLowerCase();
+
+  return all.filter((entry) => {
+    if (queryLower) {
+      const matchesName = entry.name.toLowerCase().includes(queryLower);
+      const matchesDesc = entry.description.toLowerCase().includes(queryLower);
+      if (!matchesName && !matchesDesc) {
+        return false;
+      }
+    }
+
+    if (options.type && entry.type !== options.type) {
+      return false;
+    }
+
+    if (options.tag) {
+      const tagLower = options.tag.toLowerCase();
+      const hasTags = entry.tags?.some((t) => t.toLowerCase() === tagLower);
+      if (!hasTags) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 }
 
 function isLocalPath(source: string): boolean {

@@ -7,6 +7,11 @@ import {
 } from '@tanstack/react-query';
 import { fetchApi } from '@/core/api/client';
 
+export interface ExtensionPanel {
+  id: string;
+  title: string;
+}
+
 export interface Extension {
   name: string;
   version: string;
@@ -15,6 +20,9 @@ export interface Extension {
   status: 'active' | 'installed' | 'available';
   author?: string;
   tags?: string[];
+  hasConfig?: boolean;
+  title?: string;
+  panels?: ExtensionPanel[];
 }
 
 export interface MarketplaceResult {
@@ -51,14 +59,14 @@ export function useInstallExtension(): UseMutationResult<
 export function useActivateExtension(): UseMutationResult<
   void,
   Error,
-  string
+  { name: string; version: string }
 > {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: (name: string) =>
+  return useMutation<void, Error, { name: string; version: string }>({
+    mutationFn: (data: { name: string; version: string }) =>
       fetchApi<void>('/api/extensions/activate', {
         method: 'POST',
-        body: { name },
+        body: data,
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['marketplace'] });

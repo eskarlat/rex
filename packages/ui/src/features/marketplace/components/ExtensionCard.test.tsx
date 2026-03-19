@@ -103,7 +103,7 @@ describe('ExtensionCard', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Activate' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Deactivate' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Uninstall' })).not.toBeInTheDocument();
   });
 
   it('clicking Install calls install.mutate', async () => {
@@ -114,7 +114,7 @@ describe('ExtensionCard', () => {
   });
 
   // Installed status
-  it('shows Activate and Remove buttons for installed extensions', () => {
+  it('shows Activate and Uninstall buttons for installed extensions', () => {
     renderWithProviders(
       <ExtensionCard
         extension={{ ...baseExtension, status: 'installed' }}
@@ -124,7 +124,7 @@ describe('ExtensionCard', () => {
       screen.getByRole('button', { name: 'Activate' })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Remove' })
+      screen.getByRole('button', { name: 'Uninstall' })
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Install' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Deactivate' })).not.toBeInTheDocument();
@@ -138,17 +138,17 @@ describe('ExtensionCard', () => {
       />
     );
     await user.click(screen.getByRole('button', { name: 'Activate' }));
-    expect(mockActivateMutate).toHaveBeenCalledWith('test-ext');
+    expect(mockActivateMutate).toHaveBeenCalledWith({ name: 'test-ext', version: '1.0.0' });
   });
 
-  it('clicking Remove calls remove.mutate', async () => {
+  it('clicking Uninstall calls remove.mutate', async () => {
     const user = userEvent.setup();
     renderWithProviders(
       <ExtensionCard
         extension={{ ...baseExtension, status: 'installed' }}
       />
     );
-    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    await user.click(screen.getByRole('button', { name: 'Uninstall' }));
     expect(mockRemoveMutate).toHaveBeenCalledWith('test-ext');
   });
 
@@ -164,7 +164,32 @@ describe('ExtensionCard', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Install' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Activate' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Uninstall' })).not.toBeInTheDocument();
+  });
+
+  it('renders tag badges when tags are provided', () => {
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, tags: ['example', 'utility'] }}
+      />
+    );
+    expect(screen.getByText('example')).toBeInTheDocument();
+    expect(screen.getByText('utility')).toBeInTheDocument();
+  });
+
+  it('does not render tag section when tags are empty', () => {
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, tags: [] }}
+      />
+    );
+    expect(screen.queryByText('example')).not.toBeInTheDocument();
+  });
+
+  it('does not render tag section when tags are undefined', () => {
+    renderWithProviders(<ExtensionCard extension={baseExtension} />);
+    // No tag badges should be rendered - the card should still render fine
+    expect(screen.getByText('test-ext')).toBeInTheDocument();
   });
 
   it('clicking Deactivate calls deactivate.mutate', async () => {

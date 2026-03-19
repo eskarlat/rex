@@ -11,11 +11,6 @@ export interface UiPanel {
   entry: string;
 }
 
-export interface HookConfig {
-  onInit?: string;
-  onDestroy?: string;
-}
-
 export interface McpConfig {
   transport: 'stdio' | 'sse';
   command?: string;
@@ -46,8 +41,14 @@ export interface AgentAssets {
   context?: string[];
 }
 
+export interface EngineConstraints {
+  'renre-kit'?: string;
+  'extension-sdk'?: string;
+}
+
 export interface ExtensionManifest {
   name: string;
+  title?: string;
   version: string;
   description: string;
   icon?: string;
@@ -55,12 +56,13 @@ export interface ExtensionManifest {
   type: ExtensionType;
   commands: Record<string, ExtensionCommand>;
   mcp?: McpConfig;
+  main?: string;
   config?: {
     schema: Record<string, ConfigSchemaField>;
   };
-  hooks?: HookConfig;
   ui?: {
     panels: UiPanel[];
   };
+  engines?: EngineConstraints;
   agent?: AgentAssets;
 }

@@ -99,4 +99,59 @@ describe('logs websocket plugin', () => {
     });
     expect(response.statusCode).toBeDefined();
   });
+
+  it('returns log entries from file via /api/logs/entries', async () => {
+    const logFile = getLogFilePath();
+    const dir = path.dirname(logFile);
+    fs.mkdirSync(dir, { recursive: true });
+    const logLine = JSON.stringify({ level: 'info', msg: 'test log', time: '2024-01-01T00:00:00Z' });
+    fs.writeFileSync(logFile, logLine + '\n');
+
+    const response = await app.inject({ method: 'GET', url: '/api/logs/entries' });
+    expect(response.statusCode).toBe(200);
+    const entries = response.json();
+    expect(entries).toEqual(expect.any(Array));
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries[0]).toHaveProperty('msg', 'test log');
+
+    fs.unlinkSync(logFile);
+  });
+
+  it('handles malformed JSON lines in /api/logs/entries', async () => {
+    const logFile = getLogFilePath();
+    const dir = path.dirname(logFile);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(logFile, 'not valid json\n');
+
+    const response = await app.inject({ method: 'GET', url: '/api/logs/entries' });
+    expect(response.statusCode).toBe(200);
+    const entries = response.json();
+    expect(entries[0]).toHaveProperty('msg', 'not valid json');
+    expect(entries[0]).toHaveProperty('level', 'info');
+
+    fs.unlinkSync(logFile);
+  });
+
+  it('returns empty array when log file does not exist for /api/logs/entries', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/logs/entries' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([]);
+  });
+
+  it('registers the /api/logs/console/entries endpoint', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/logs/console/entries',
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual(expect.any(Array));
+  });
+
+  it('registers the /api/logs/console websocket endpoint', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/logs/console',
+    });
+    expect(response.statusCode).toBeDefined();
+  });
 });

@@ -226,12 +226,12 @@ packages/cli/
 
 **Important:** The CLI core does NOT have a standalone `skill-deployer.ts`. Per the architecture, each extension uses its **lifecycle hooks** (`onInit`, `onDestroy`) to copy/remove files from the project:
 
-- **onInit hook:** Extension copies `skills/SKILL.md` to `.agent/skills/{extensionName}/SKILL.md`, and copies `agent/` subdirectories (prompts, agents, workflows, context) to `.agent/{type}/{extensionName}/`
-- **onDestroy hook:** Extension removes its files from `.agent/`
+- **onInit hook:** Extension copies `skills/SKILL.md` to `.agents/skills/{extensionName}/SKILL.md`, and copies `agent/` subdirectories (prompts, agents, workflows, context) to `.agents/{type}/{extensionName}/`
+- **onDestroy hook:** Extension removes its files from `.agents/`
 
 The `ext:activate` command triggers the extension's `onInit` hook. The `ext:deactivate` command triggers the `onDestroy` hook. The core provides utility functions in `shared/fs-helpers.ts` that hooks can use, but the deployment logic lives in the extension hooks themselves.
 
-The `capabilities` command scans `.agent/skills/*/SKILL.md` and concatenates them — it reads what hooks have already deployed.
+The `capabilities` command scans `.agents/skills/*/SKILL.md` and concatenates them — it reads what hooks have already deployed.
 
 ### Task Breakdown (Phase 1) — TDD Order
 

@@ -6,6 +6,9 @@ import { loadManifest } from '../manifest/manifest-loader.js';
 import type { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getExtensionConfigMappings } from '../../config/config-manager.js';
 import { hasEntry } from '../../vault/vault-manager.js';
+import { getLogger } from '../../../core/logger/index.js';
+import { checkEngineCompat } from '../engine/engine-compat.js';
+import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
 
 export interface InstalledExtension {
   name: string;
@@ -45,17 +48,18 @@ function writePluginsJson(projectPath: string, plugins: PluginsJson): void {
 
 async function runHook(
   extensionDir: string,
-  hookPath: string,
+  mainPath: string,
+  hookName: string,
   projectDir: string,
 ): Promise<void> {
-  const fullPath = path.resolve(extensionDir, hookPath);
+  const fullPath = path.resolve(extensionDir, mainPath);
   if (!fs.existsSync(fullPath)) {
     return;
   }
   try {
     const mod: unknown = await import(fullPath);
     const modRecord = mod as Record<string, unknown>;
-    const hookFn = modRecord.default ?? mod;
+    const hookFn = modRecord[hookName];
     if (typeof hookFn === 'function') {
       await (hookFn as (ctx: { projectDir: string }) => Promise<void>)({ projectDir });
     }
@@ -75,6 +79,7 @@ export function install(
     'INSERT OR REPLACE INTO installed_extensions (name, version, registry_source, type, installed_at) VALUES (?, ?, ?, ?, datetime(\'now\'))',
   );
   stmt.run(name, version, registrySource, type);
+  getLogger().info('extension-manager', `Installed ${name}@${version}`, { registrySource, type });
 }
 
 export function remove(
@@ -114,6 +119,14 @@ export async function activate(
   bus?: EventBus,
 ): Promise<string[]> {
   const manifest = loadManifest(extensionDir);
+
+  const compat = checkEngineCompat(manifest, CLI_VERSION, SDK_VERSION);
+  if (!compat.compatible) {
+    for (const issue of compat.issues) {
+      getLogger().warn('extension-manager', issue);
+    }
+  }
+
   const plugins = readPluginsJson(projectPath);
 
   plugins[name] = version;
@@ -121,9 +134,11 @@ export async function activate(
 
   const missingKeys = validateVaultKeys(name);
 
-  if (manifest.hooks?.onInit) {
-    await runHook(extensionDir, manifest.hooks.onInit, projectPath);
+  if (manifest.main) {
+    await runHook(extensionDir, manifest.main, 'onInit', projectPath);
   }
+
+  getLogger().info('extension-manager', `Activated ${name}@${version}`, { projectPath });
 
   if (bus) {
     void bus.emit('ext:activate', {
@@ -145,13 +160,15 @@ export async function deactivate(
 ): Promise<void> {
   const manifest = loadManifest(extensionDir);
 
-  if (manifest.hooks?.onDestroy) {
-    await runHook(extensionDir, manifest.hooks.onDestroy, projectPath);
+  if (manifest.main) {
+    await runHook(extensionDir, manifest.main, 'onDestroy', projectPath);
   }
 
   const plugins = readPluginsJson(projectPath);
   delete plugins[name];
   writePluginsJson(projectPath, plugins);
+
+  getLogger().info('extension-manager', `Deactivated ${name}`, { projectPath });
 
   if (bus) {
     void bus.emit('ext:deactivate', {

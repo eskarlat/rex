@@ -4,8 +4,12 @@ import {
   saveGlobalConfig,
   resolveExtensionConfig,
   setExtensionConfig,
+  getLogger,
+  getActivated,
+  getExtensionDir,
+  loadManifest,
 } from '@renre-kit/cli/lib';
-import type { GlobalConfig, ConfigMapping, ConfigSchemaField } from '@renre-kit/cli/lib';
+import type { GlobalConfig, ConfigMapping, ConfigSchemaField, LogLevel } from '@renre-kit/cli/lib';
 
 interface ExtensionNameParams {
   name: string;
@@ -16,9 +20,6 @@ interface SetExtConfigBody {
   mapping: ConfigMapping;
 }
 
-interface ResolveExtConfigBody {
-  schema?: Record<string, ConfigSchemaField>;
-}
 
 const settingsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   fastify.get('/api/settings', () => {
@@ -29,15 +30,43 @@ const settingsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, 
   fastify.put('/api/settings', (request: FastifyRequest) => {
     const body = request.body as GlobalConfig;
     saveGlobalConfig(body);
+
+    // Apply log level change immediately
+    const logLevels = body.settings.logLevels;
+    if (Array.isArray(logLevels) && logLevels.length > 0) {
+      const hierarchy: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+      const minLevel = hierarchy.find((l) => (logLevels as string[]).includes(l));
+      if (minLevel) {
+        getLogger().setLevel(minLevel);
+      }
+    }
+
     return { ok: true };
   });
 
-  fastify.get('/api/settings/extensions/:name', (request: FastifyRequest) => {
+  fastify.get('/api/settings/extensions/:name', (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as ExtensionNameParams;
-    const body = request.query as ResolveExtConfigBody;
-    const schema = body.schema ?? {};
-    const resolved = resolveExtensionConfig(params.name, schema, request.projectPath);
-    return resolved;
+    const projectPath = request.projectPath ?? fastify.activeProjectPath;
+
+    // Load manifest to get the config schema
+    const plugins = projectPath ? getActivated(projectPath) : {};
+    const version = plugins[params.name];
+    if (!version) {
+      reply.code(404);
+      return { error: `Extension '${params.name}' is not activated` };
+    }
+
+    const extDir = getExtensionDir(params.name, version);
+    let schema: Record<string, ConfigSchemaField> = {};
+    try {
+      const manifest = loadManifest(extDir);
+      schema = manifest.config?.schema ?? {};
+    } catch {
+      // no schema
+    }
+
+    const values = resolveExtensionConfig(params.name, schema, projectPath);
+    return { schema, values };
   });
 
   fastify.put('/api/settings/extensions/:name', (request: FastifyRequest, reply: FastifyReply) => {

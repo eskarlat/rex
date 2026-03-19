@@ -1,7 +1,9 @@
-import { initDatabase, GLOBAL_DIR } from '@renre-kit/cli/lib';
+import { initDatabase, GLOBAL_DIR, getLogger, loadGlobalConfig } from '@renre-kit/cli/lib';
+import type { LogLevel } from '@renre-kit/cli/lib';
 import { createServer } from './server.js';
 import { SchedulerRunner } from './features/scheduler/scheduler-runner.js';
 import { preventSleep } from './core/utils/sleep-prevention.js';
+import { installConsoleCapture } from './core/utils/console-capture.js';
 
 export const SERVER_VERSION = '0.0.1';
 export { createServer } from './server.js';
@@ -9,6 +11,9 @@ export { createServer } from './server.js';
 const DEFAULT_PORT = 4200;
 
 async function main(): Promise<void> {
+  // Capture console output for the server console log stream
+  installConsoleCapture();
+
   // Initialize the database
   initDatabase(GLOBAL_DIR);
 
@@ -39,8 +44,13 @@ async function main(): Promise<void> {
   const host = lanMode ? '0.0.0.0' : '127.0.0.1';
   await server.listen({ port, host });
 
-  // eslint-disable-next-line no-console
-  console.log(`RenreKit Dashboard v${SERVER_VERSION} running on http://${host}:${port}`);
+  const log = getLogger();
+  const { settings } = loadGlobalConfig();
+  const savedLevel = settings.logLevel;
+  if (typeof savedLevel === 'string' && ['debug', 'info', 'warn', 'error'].includes(savedLevel)) {
+    log.setLevel(savedLevel as LogLevel);
+  }
+  log.info('server', `Dashboard v${SERVER_VERSION} started`, { host, port, lanMode });
 }
 
 void main();
