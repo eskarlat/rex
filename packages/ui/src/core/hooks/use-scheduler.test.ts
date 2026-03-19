@@ -101,7 +101,7 @@ describe('useCreateTask', () => {
 describe('useUpdateTask', () => {
   it('sends PUT request with enabled and cron fields', async () => {
     mockFetchApi.mockResolvedValueOnce(undefined);
-    const input = { id: 5, enabled: false, cron: '*/5 * * * *' };
+    const input = { id: '5', enabled: 0, cron: '*/5 * * * *' };
 
     const { result } = renderHook(() => useUpdateTask(), {
       wrapper: createWrapper(),
@@ -114,7 +114,7 @@ describe('useUpdateTask', () => {
     await waitFor(() =>
       expect(mockFetchApi).toHaveBeenCalledWith('/api/scheduler/5', {
         method: 'PUT',
-        body: { enabled: false, cron: '*/5 * * * *' },
+        body: { enabled: 0, cron: '*/5 * * * *' },
       })
     );
   });
@@ -129,7 +129,7 @@ describe('useDeleteTask', () => {
     });
 
     act(() => {
-      result.current.mutate(3);
+      result.current.mutate('3');
     });
 
     await waitFor(() =>
@@ -149,7 +149,7 @@ describe('useTriggerTask', () => {
     });
 
     act(() => {
-      result.current.mutate(7);
+      result.current.mutate('7');
     });
 
     await waitFor(() =>
@@ -174,7 +174,7 @@ describe('useTaskHistory', () => {
     ];
     mockFetchApi.mockResolvedValueOnce(data);
 
-    const { result } = renderHook(() => useTaskHistory(2), {
+    const { result } = renderHook(() => useTaskHistory('2'), {
       wrapper: createWrapper(),
     });
 
@@ -183,17 +183,8 @@ describe('useTaskHistory', () => {
     expect(mockFetchApi).toHaveBeenCalledWith('/api/scheduler/2/history');
   });
 
-  it('does not fetch when id is 0', () => {
-    const { result } = renderHook(() => useTaskHistory(0), {
-      wrapper: createWrapper(),
-    });
-
-    expect(result.current.isFetching).toBe(false);
-    expect(mockFetchApi).not.toHaveBeenCalled();
-  });
-
-  it('does not fetch when id is negative', () => {
-    const { result } = renderHook(() => useTaskHistory(-1), {
+  it('does not fetch when id is empty string', () => {
+    const { result } = renderHook(() => useTaskHistory(''), {
       wrapper: createWrapper(),
     });
 

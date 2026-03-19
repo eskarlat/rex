@@ -67,6 +67,26 @@ describe('useStorage', () => {
     expect(result.current[0]).toBe('new-value');
   });
 
+  it('does not update state after unmount', async () => {
+    let resolveGet!: (value: string | null) => void;
+    vi.mocked(mockSDK.storage.get).mockImplementation(
+      () => new Promise((resolve) => { resolveGet = resolve; }),
+    );
+
+    const { result, unmount } = renderHook(() => useStorage('my-key'), { wrapper });
+
+    // Unmount before the get resolves
+    unmount();
+
+    // Resolve after unmount — should not throw or update state
+    await act(async () => {
+      resolveGet('late-value');
+    });
+
+    // State should still be null (the cancelled flag prevents update)
+    expect(result.current[0]).toBeNull();
+  });
+
   it('returns null when storage has no value', async () => {
     vi.mocked(mockSDK.storage.get).mockResolvedValue(null);
 

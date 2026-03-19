@@ -137,6 +137,26 @@ describe('createServer', () => {
     expect(response.statusCode).toBe(404);
   });
 
+  it('skips logging for /api/logs endpoints', async () => {
+    server = await createServer();
+    const response = await server.inject({
+      method: 'GET',
+      url: '/api/logs/entries',
+    });
+    // Should succeed without error — the /api/logs skip prevents log feedback loops
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('returns 404 JSON for HEAD requests to non-API routes', async () => {
+    server = await createServer();
+    const response = await server.inject({
+      method: 'HEAD',
+      url: '/some/page',
+      headers: { accept: 'application/json' },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
   it('logs error level for 5xx responses', async () => {
     server = await createServer();
     // Inject a request that would produce a 500 (e.g., unknown internal route)

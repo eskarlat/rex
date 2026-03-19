@@ -13,14 +13,16 @@ vi.mock('@/core/hooks/use-scheduler', () => ({
   useScheduledTasks: () => ({
     data: [
       {
-        id: 1,
+        id: '1',
         name: 'Sync repos',
-        extension_name: 'git-sync',
+        type: 'git-sync',
+        project_path: null,
         command: 'sync',
         cron: '*/5 * * * *',
-        enabled: true,
-        last_run: '2024-01-01T12:00:00Z',
-        next_run: '2024-01-01T12:05:00Z',
+        enabled: 1,
+        last_run_at: '2024-01-01T12:00:00Z',
+        last_status: null,
+        next_run_at: '2024-01-01T12:05:00Z',
         created_at: '2024-01-01T00:00:00Z',
       },
     ],
@@ -66,7 +68,7 @@ describe('ScheduledTasksPage', () => {
     expect(screen.getByText('Sync repos')).toBeInTheDocument();
   });
 
-  it('shows extension name', () => {
+  it('shows extension type badge', () => {
     renderWithProviders(<ScheduledTasksPage />);
     expect(screen.getByText('git-sync')).toBeInTheDocument();
   });
@@ -88,8 +90,8 @@ describe('ScheduledTasksPage', () => {
 
   it('renders table headers', () => {
     renderWithProviders(<ScheduledTasksPage />);
-    expect(screen.getByText('Name')).toBeInTheDocument();
-    expect(screen.getByText('Extension')).toBeInTheDocument();
+    expect(screen.getByText('Task Name')).toBeInTheDocument();
+    expect(screen.getByText('Command')).toBeInTheDocument();
     expect(screen.getByText('Cron')).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Last Run')).toBeInTheDocument();
@@ -106,11 +108,10 @@ describe('ScheduledTasksPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('dialog contains all four input fields', async () => {
+  it('dialog contains all three input fields', async () => {
     renderWithProviders(<ScheduledTasksPage />);
     await userEvent.click(screen.getByText('Create Task'));
-    expect(screen.getByLabelText('Name')).toBeInTheDocument();
-    expect(screen.getByLabelText('Extension')).toBeInTheDocument();
+    expect(screen.getByLabelText('Task Name')).toBeInTheDocument();
     expect(screen.getByLabelText('Command')).toBeInTheDocument();
     expect(screen.getByLabelText('Cron Expression')).toBeInTheDocument();
   });
@@ -125,8 +126,7 @@ describe('ScheduledTasksPage', () => {
   it('Create button is disabled when only some fields are filled', async () => {
     renderWithProviders(<ScheduledTasksPage />);
     await userEvent.click(screen.getByText('Create Task'));
-    await userEvent.type(screen.getByLabelText('Name'), 'My Task');
-    await userEvent.type(screen.getByLabelText('Extension'), 'my-ext');
+    await userEvent.type(screen.getByLabelText('Task Name'), 'my-ext');
     // command and cron are still empty
     const createButton = screen.getByRole('button', { name: 'Create' });
     expect(createButton).toBeDisabled();
@@ -135,8 +135,7 @@ describe('ScheduledTasksPage', () => {
   it('Create button is enabled when all fields are filled', async () => {
     renderWithProviders(<ScheduledTasksPage />);
     await userEvent.click(screen.getByText('Create Task'));
-    await userEvent.type(screen.getByLabelText('Name'), 'My Task');
-    await userEvent.type(screen.getByLabelText('Extension'), 'my-ext');
+    await userEvent.type(screen.getByLabelText('Task Name'), 'my-ext');
     await userEvent.type(screen.getByLabelText('Command'), 'run');
     await userEvent.type(screen.getByLabelText('Cron Expression'), '0 * * * *');
     const createButton = screen.getByRole('button', { name: 'Create' });
@@ -146,8 +145,7 @@ describe('ScheduledTasksPage', () => {
   it('submits the form with correct data when Create is clicked', async () => {
     renderWithProviders(<ScheduledTasksPage />);
     await userEvent.click(screen.getByText('Create Task'));
-    await userEvent.type(screen.getByLabelText('Name'), 'Backup DB');
-    await userEvent.type(screen.getByLabelText('Extension'), 'db-tools');
+    await userEvent.type(screen.getByLabelText('Task Name'), 'db-tools');
     await userEvent.type(screen.getByLabelText('Command'), 'backup');
     await userEvent.type(
       screen.getByLabelText('Cron Expression'),
@@ -156,7 +154,6 @@ describe('ScheduledTasksPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create' }));
     expect(mockCreateMutate).toHaveBeenCalledWith(
       {
-        name: 'Backup DB',
         extension_name: 'db-tools',
         command: 'backup',
         cron: '0 2 * * *',

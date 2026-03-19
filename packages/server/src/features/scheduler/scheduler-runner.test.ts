@@ -94,6 +94,43 @@ describe('SchedulerRunner', () => {
     expect(mockPrepare).toHaveBeenCalled();
   });
 
+  it('handles invalid cron expression during task execution', async () => {
+    const { Cron } = await import('croner');
+    const dueTasks = [
+      { id: 2, name: 'bad-cron', command: 'echo ok', cron: 'invalid', enabled: 1, next_run_at: '2024-01-01T00:00:00Z' },
+    ];
+
+    mockPrepare.mockReturnValueOnce({ all: () => dueTasks });
+    // execFileSync succeeds
+    vi.mocked(execFileSync).mockReturnValueOnce('ok');
+    // Cron throws on invalid expression for next run computation
+    vi.mocked(Cron).mockImplementationOnce(() => {
+      throw new Error('Invalid cron');
+    });
+    mockPrepare.mockReturnValueOnce({ run: vi.fn() });
+    mockPrepare.mockReturnValueOnce({ run: vi.fn() });
+
+    runner.tick();
+
+    expect(mockPrepare).toHaveBeenCalled();
+  });
+
+  it('initializes next runs and skips invalid cron expressions', async () => {
+    const { Cron } = await import('croner');
+    const tasks = [
+      { id: 3, name: 'bad-cron', command: 'cmd', cron: 'invalid', enabled: 1, next_run_at: null },
+    ];
+
+    mockPrepare.mockReturnValueOnce({ all: () => tasks });
+    vi.mocked(Cron).mockImplementationOnce(() => {
+      throw new Error('Invalid cron');
+    });
+
+    runner.initializeNextRuns();
+    // Should not crash; prepare called only for SELECT, not for UPDATE
+    expect(mockPrepare).toHaveBeenCalledTimes(1);
+  });
+
   it('handles empty due tasks', () => {
     mockPrepare.mockReturnValue({ all: () => [] });
 
@@ -122,5 +159,17 @@ describe('parseCommandString', () => {
 
   it('handles single quotes', () => {
     expect(parseCommandString("echo 'hello world'")).toEqual(['echo', 'hello world']);
+  });
+
+  it('handles escaped characters with backslash', () => {
+    expect(parseCommandString('echo hello\\ world')).toEqual(['echo', 'hello world']);
+  });
+
+  it('handles backslash inside double quotes', () => {
+    expect(parseCommandString('echo "hello\\nworld"')).toEqual(['echo', 'hellonworld']);
+  });
+
+  it('returns empty array for empty input', () => {
+    expect(parseCommandString('')).toEqual([]);
   });
 });

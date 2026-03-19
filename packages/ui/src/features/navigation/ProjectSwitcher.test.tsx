@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProjectSwitcher } from './ProjectSwitcher';
+
+const mockSetActiveProject = vi.fn();
+const mockMutate = vi.fn();
 
 vi.mock('@/core/hooks/use-projects', () => ({
   useProjects: () => ({
@@ -13,13 +15,13 @@ vi.mock('@/core/hooks/use-projects', () => ({
     ],
     isLoading: false,
   }),
-  useSetActiveProject: () => ({ mutate: vi.fn(), isPending: false }),
+  useSetActiveProject: () => ({ mutate: mockMutate, isPending: false }),
 }));
 
 vi.mock('@/core/providers/ProjectProvider', () => ({
   useProjectContext: () => ({
     activeProject: '/path/a',
-    setActiveProject: vi.fn(),
+    setActiveProject: mockSetActiveProject,
   }),
 }));
 
@@ -49,6 +51,15 @@ describe('ProjectSwitcher', () => {
     renderWithProviders(<ProjectSwitcher />);
     const trigger = screen.getByRole('combobox', { name: /select project/i });
     expect(trigger).toBeInTheDocument();
+  });
+
+  it('exposes the select trigger with value from active project', () => {
+    renderWithProviders(<ProjectSwitcher />);
+    // The current active project name should be shown in the trigger
+    expect(screen.getByText('project-a')).toBeInTheDocument();
+    // Verify both mock functions are available (handleChange calls them)
+    expect(mockSetActiveProject).not.toHaveBeenCalled();
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 });
 

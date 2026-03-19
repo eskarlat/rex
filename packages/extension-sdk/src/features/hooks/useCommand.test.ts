@@ -81,6 +81,19 @@ describe('useCommand', () => {
     expect(result.current.isRunning).toBe(false);
   });
 
+  it('run wraps non-Error thrown values into Error', async () => {
+    vi.mocked(mockSDK.exec.run).mockRejectedValue('string error');
+
+    const { result } = renderHook(() => useCommand(), { wrapper });
+
+    await act(async () => {
+      await result.current.run('bad-command');
+    });
+
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe('string error');
+  });
+
   it('isRunning toggles during execution', async () => {
     let resolveRun!: (value: CommandResult) => void;
     vi.mocked(mockSDK.exec.run).mockImplementation(
