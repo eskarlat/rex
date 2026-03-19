@@ -177,6 +177,25 @@ No normalization via `path.resolve()` / `path.normalize()`. Attacker could pass 
 - **`globalThis.confirm`** used in `sdk.ts:99` for `ui.confirm()` — this won't work in non-browser environments (SSR, testing). Consider making it injectable.
 - **No SDK versioning strategy**: The SDK is published but there's no documented compatibility matrix between SDK versions and CLI versions.
 - **Missing `tsconfig.build.json`**: Inconsistent with other packages that all have this variant.
+- **UI handlers require implicit setup**: Dashboard must call `setToastHandler()` / `setNavigateHandler()` before panels can use toast/navigate. This coupling isn't documented.
+- **`ProjectContext.name` nullable before refresh**: Extensions must call `sdk.project.refresh()` before accessing project metadata — implicit requirement.
+- **No retry logic in hooks**: `useStorage`, `useCommand`, etc. fail immediately on transient network errors. Extension authors must implement their own retry.
+- **DataTable limited**: Converts all non-string values to JSON strings; no custom cell renderer support.
+- **No SDK documentation**: No README, getting-started guide, or panel development tutorial exists. Developers must read source code.
+
+### Scaffolding Tool (`create-renre-extension`)
+
+- Two templates (standard + MCP) with proper manifest, tsconfig, entry points, and SKILL.md stubs
+- Lifecycle hooks (`onInit`/`onDestroy`) pre-generated in scaffolded code
+- Well-tested scaffolding (file creation, manifest structure, engine versions)
+- **Gap**: No UI panel scaffolding for standard extensions — authors must manually add panels
+- **Gap**: No README generated for scaffolded extensions
+
+### Reference Extensions
+
+- `hello-world` demonstrates multiple panels (command execution, storage, scheduler), vault config hints, and agent asset deployment — good breadth
+- `echo-mcp` shows clean JSON-RPC stdio server with tool call handling
+- **Missing**: No reference for MCP SSE transport, bidirectional MCP + UI, error recovery patterns, or multi-skill layout
 
 ---
 
