@@ -23,6 +23,7 @@ import {
   searchAvailable,
   ensureSynced,
   installExtension,
+  resolveRegistryIcon,
 } from './registry-manager.js';
 import type { RegistryConfig } from '../../core/types/index.js';
 import * as registryCache from './registry-cache.js';
@@ -186,7 +187,35 @@ describe('registry-manager', () => {
         latestVersion: '1.2.0',
         type: 'standard',
         registryName: 'reg1',
+        engines: undefined,
       });
+    });
+
+    it('passes engines field through when present in registry entry', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
+      fs.mkdirSync(regDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(regDir, 'extensions.json'),
+        JSON.stringify({
+          extensions: [
+            {
+              name: 'my-ext',
+              gitUrl: 'https://github.com/user/my-ext.git',
+              latestVersion: '1.2.0',
+              type: 'standard',
+              description: 'A test extension',
+              icon: '',
+              author: 'test',
+              engines: { 'renre-kit': '>=1.0.0', 'extension-sdk': '>=0.5.0' },
+            },
+          ],
+        }),
+      );
+
+      const result = resolve('my-ext', configs);
+      expect(result).not.toBeNull();
+      expect(result!.engines).toEqual({ 'renre-kit': '>=1.0.0', 'extension-sdk': '>=0.5.0' });
     });
 
     it('resolves from highest priority registry first', () => {
@@ -218,6 +247,53 @@ describe('registry-manager', () => {
       const result = resolve('shared-ext', configs);
       expect(result).not.toBeNull();
       expect(result!.registryName).toBe('high');
+    });
+  });
+
+  describe('resolveRegistryIcon', () => {
+    it('returns icon path when icon exists in registry', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
+      const iconsDir = path.join(regDir, 'icons');
+      fs.mkdirSync(iconsDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(regDir, 'extensions.json'),
+        JSON.stringify({
+          extensions: [{
+            name: 'my-ext', description: '', gitUrl: '', latestVersion: '1.0.0',
+            type: 'standard', icon: 'icons/my-ext.svg', author: 'test',
+          }],
+        }),
+      );
+      fs.writeFileSync(path.join(iconsDir, 'my-ext.svg'), '<svg></svg>');
+
+      const result = resolveRegistryIcon('my-ext', configs);
+      expect(result).not.toBeNull();
+      expect(result).toContain('my-ext.svg');
+    });
+
+    it('returns null when extension has no icon field', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const regDir = path.join(tmpDir, 'registries', 'reg1', '.renre-kit');
+      fs.mkdirSync(regDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(regDir, 'extensions.json'),
+        JSON.stringify({
+          extensions: [{
+            name: 'my-ext', description: '', gitUrl: '', latestVersion: '1.0.0',
+            type: 'standard', icon: '', author: 'test',
+          }],
+        }),
+      );
+
+      const result = resolveRegistryIcon('my-ext', configs);
+      expect(result).toBeNull();
+    });
+
+    it('returns null when extension not in any registry', () => {
+      const configs = [makeConfig('reg1', 'https://git.example.com/r1.git', 1)];
+      const result = resolveRegistryIcon('nonexistent', configs);
+      expect(result).toBeNull();
     });
   });
 

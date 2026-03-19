@@ -28,6 +28,10 @@ const mockInstallExtension = vi.fn();
 const mockGetExtensionDir = vi.fn();
 const mockLoadManifest = vi.fn();
 const mockCheckEngineCompat = vi.fn();
+const mockCheckEngineConstraints = vi.fn();
+const mockResolveRegistryIcon = vi.fn();
+const mockReadUpdateCache = vi.fn();
+const mockRefreshUpdateCache = vi.fn();
 const mockDb = {};
 
 vi.mock('@renre-kit/cli/lib', () => ({
@@ -47,6 +51,10 @@ vi.mock('@renre-kit/cli/lib', () => ({
   installExtension: (...args: unknown[]) => mockInstallExtension(...args),
   getExtensionDir: (...args: unknown[]) => mockGetExtensionDir(...args),
   checkEngineCompat: (...args: unknown[]) => mockCheckEngineCompat(...args),
+  checkEngineConstraints: (...args: unknown[]) => mockCheckEngineConstraints(...args),
+  readUpdateCache: () => mockReadUpdateCache(),
+  refreshUpdateCache: (...args: unknown[]) => mockRefreshUpdateCache(...args),
+  resolveRegistryIcon: (...args: unknown[]) => mockResolveRegistryIcon(...args),
   CLI_VERSION: '0.0.1',
   SDK_VERSION: '0.0.1',
 }));
@@ -61,6 +69,11 @@ describe('extensions routes', () => {
     mockGetDb.mockReturnValue(mockDb);
     mockLoadGlobalConfig.mockReturnValue({ registries: [] });
     mockCheckEngineCompat.mockReturnValue({ compatible: true, issues: [] });
+    mockCheckEngineConstraints.mockReturnValue({ compatible: true, issues: [] });
+    mockReadUpdateCache.mockReturnValue(null);
+    mockRefreshUpdateCache.mockReturnValue(undefined);
+    mockEnsureSynced.mockResolvedValue(undefined);
+    mockResolveRegistryIcon.mockReturnValue(null);
     app = Fastify();
     await app.register(projectScope);
     await app.register(extensionsRoutes);
@@ -135,6 +148,7 @@ describe('extensions routes', () => {
         icon: 'star',
         tags: [],
         status: 'available',
+        hasIcon: false,
       });
     });
 
@@ -696,6 +710,278 @@ describe('extensions routes', () => {
       expect(response.statusCode).toBe(200);
       const body = response.json();
       expect(body.active[0].widgets).toEqual([]);
+    });
+  });
+
+  describe('marketplace update info', () => {
+    it('includes updateAvailable and engineCompatible fields for active extensions', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockReadUpdateCache.mockReturnValue({
+        checkedAt: '2026-01-01T00:00:00Z',
+        updates: [{
+          name: 'ext1', installedVersion: '1.0.0', availableVersion: '2.0.0',
+          engineCompatible: true, engineIssues: [], registryName: 'default',
+        }],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active[0].updateAvailable).toBe('2.0.0');
+      expect(body.active[0].engineCompatible).toBe(true);
+    });
+
+    it('includes updateAvailable for installed-only extensions', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({});
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockReadUpdateCache.mockReturnValue({
+        checkedAt: '2026-01-01T00:00:00Z',
+        updates: [{
+          name: 'ext1', installedVersion: '1.0.0', availableVersion: '2.0.0',
+          engineCompatible: false, engineIssues: ['Requires renre-kit >=5.0.0'], registryName: 'default',
+        }],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.installed[0].updateAvailable).toBe('2.0.0');
+      expect(body.installed[0].engineCompatible).toBe(false);
+    });
+
+    it('returns null updateAvailable when no cache exists', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockReadUpdateCache.mockReturnValue(null);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active[0].updateAvailable).toBeNull();
+      expect(body.active[0].engineCompatible).toBe(true);
+    });
+  });
+
+  describe('GET /api/updates', () => {
+    it('returns update cache when available', async () => {
+      mockReadUpdateCache.mockReturnValue({
+        checkedAt: '2026-01-01T00:00:00Z',
+        updates: [{
+          name: 'ext1', installedVersion: '1.0.0', availableVersion: '2.0.0',
+          engineCompatible: true, engineIssues: [], registryName: 'default',
+        }],
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/updates',
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.checkedAt).toBe('2026-01-01T00:00:00Z');
+      expect(body.updates).toHaveLength(1);
+    });
+
+    it('returns empty updates when no cache exists', async () => {
+      mockReadUpdateCache.mockReturnValue(null);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/updates',
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.checkedAt).toBeNull();
+      expect(body.updates).toEqual([]);
+    });
+  });
+
+  describe('GET /api/extensions/:name/icon', () => {
+    it('serves icon when manifest has icon path and file exists', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'ext1', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        icon: 'icon.svg',
+      });
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue('<svg></svg>');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/icon',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('image/svg+xml');
+    });
+
+    it('falls back to registry icon for available extensions', async () => {
+      mockListInstalled.mockReturnValue([]);
+      mockGetActivated.mockReturnValue({});
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockResolveRegistryIcon.mockReturnValue('/path/to/registries/default/.renre-kit/icons/ext1.svg');
+      vi.mocked(readFileSync).mockReturnValue('<svg>registry icon</svg>');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/icon',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('image/svg+xml');
+    });
+
+    it('returns 404 when no icon found anywhere', async () => {
+      mockListInstalled.mockReturnValue([]);
+      mockGetActivated.mockReturnValue({});
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockResolveRegistryIcon.mockReturnValue(null);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/nonexistent/icon',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe('POST /api/extensions/update', () => {
+    it('updates an installed extension', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockResolveExtension.mockReturnValue({
+        name: 'ext1', gitUrl: 'https://github.com/test/ext1.git',
+        latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+      });
+      mockInstallExtension.mockResolvedValue('/path/to/ext1@2.0.0');
+      mockGetActivated.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/update',
+        payload: { name: 'ext1' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.name).toBe('ext1');
+      expect(body.oldVersion).toBe('1.0.0');
+      expect(body.newVersion).toBe('2.0.0');
+      expect(mockRefreshUpdateCache).toHaveBeenCalled();
+    });
+
+    it('returns 404 when extension is not installed', async () => {
+      mockListInstalled.mockReturnValue([]);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/update',
+        payload: { name: 'nonexistent' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('returns 409 when engine is incompatible and no force', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockResolveExtension.mockReturnValue({
+        name: 'ext1', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        engines: { 'renre-kit': '>=5.0.0' },
+      });
+      mockCheckEngineConstraints.mockReturnValue({
+        compatible: false,
+        issues: ['Requires renre-kit >=5.0.0'],
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/update',
+        payload: { name: 'ext1' },
+      });
+      expect(response.statusCode).toBe(409);
+      expect(response.json().issues).toHaveLength(1);
+    });
+
+    it('allows update with force despite engine incompatibility', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockResolveExtension.mockReturnValue({
+        name: 'ext1', gitUrl: 'https://github.com/test/ext1.git',
+        latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        engines: { 'renre-kit': '>=5.0.0' },
+      });
+      mockCheckEngineConstraints.mockReturnValue({
+        compatible: false,
+        issues: ['Requires renre-kit >=5.0.0'],
+      });
+      mockInstallExtension.mockResolvedValue('/path/to/ext1@2.0.0');
+      mockGetActivated.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/update',
+        payload: { name: 'ext1', force: true },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().newVersion).toBe('2.0.0');
+    });
+
+    it('returns 400 when name is missing', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/update',
+        payload: {},
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('returns already up to date when version is not newer', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '2.0.0', type: 'standard' }]);
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockResolveExtension.mockReturnValue({
+        name: 'ext1', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/update',
+        payload: { name: 'ext1' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().message).toBe('Already up to date');
+      expect(mockInstallExtension).not.toHaveBeenCalled();
     });
   });
 

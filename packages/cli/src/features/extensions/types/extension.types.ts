@@ -61,6 +61,8 @@ export interface EngineConstraints {
   'extension-sdk': string;
 }
 
+export type PartialEngineConstraints = Partial<EngineConstraints>;
+
 export interface ExtensionManifest {
   name: string;
   title?: string;

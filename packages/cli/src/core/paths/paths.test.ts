@@ -10,6 +10,7 @@ import {
   CONFIG_PATH,
   LOGS_DIR,
   SERVER_PID_PATH,
+  UPDATE_CACHE_PATH,
   PROJECT_DIR,
   PLUGINS_JSON,
   MANIFEST_JSON,
@@ -64,6 +65,10 @@ describe('paths', () => {
 
     it('should define SERVER_PID_PATH inside GLOBAL_DIR', () => {
       expect(SERVER_PID_PATH).toBe(path.join(expectedGlobalDir, 'server.pid'));
+    });
+
+    it('should define UPDATE_CACHE_PATH inside GLOBAL_DIR', () => {
+      expect(UPDATE_CACHE_PATH).toBe(path.join(expectedGlobalDir, 'update-cache.json'));
     });
   });
 

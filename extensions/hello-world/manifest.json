@@ -3,7 +3,7 @@
   "title": "Hello World",
   "version": "1.0.0",
   "description": "A simple hello world extension for RenreKit",
-  "icon": "wave",
+  "icon": "icon.svg",
   "type": "standard",
   "engines": {
     "renre-kit": ">=0.0.1",

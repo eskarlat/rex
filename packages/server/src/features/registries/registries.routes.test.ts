@@ -6,12 +6,16 @@ const mockLoadGlobalConfig = vi.fn();
 const mockSaveGlobalConfig = vi.fn();
 const mockSync = vi.fn();
 const mockListRegistries = vi.fn();
+const mockRefreshUpdateCache = vi.fn();
+const mockGetDb = vi.fn().mockReturnValue({});
 
 vi.mock('@renre-kit/cli/lib', () => ({
   loadGlobalConfig: () => mockLoadGlobalConfig(),
   saveGlobalConfig: (...args: unknown[]) => mockSaveGlobalConfig(...args),
   sync: (...args: unknown[]) => mockSync(...args),
   listRegistries: (...args: unknown[]) => mockListRegistries(...args),
+  refreshUpdateCache: (...args: unknown[]) => mockRefreshUpdateCache(...args),
+  getDb: () => mockGetDb(),
 }));
 
 const { default: registriesRoutes } = await import('./registries.routes.js');
@@ -133,6 +137,7 @@ describe('registries routes', () => {
       });
       expect(response.statusCode).toBe(200);
       expect(mockSync).toHaveBeenCalledWith('default', registry);
+      expect(mockRefreshUpdateCache).toHaveBeenCalled();
     });
 
     it('returns 404 when registry not found', async () => {

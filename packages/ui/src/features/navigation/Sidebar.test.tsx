@@ -89,6 +89,21 @@ describe('Sidebar', () => {
     expect(screen.getByText('echo-mcp')).toBeInTheDocument();
   });
 
+  it('shows extension icon when hasIcon is true', () => {
+    mockMarketplace.mockReturnValue({
+      data: {
+        active: [
+          { name: 'hello-world', version: '1.0.0', type: 'standard', status: 'active', hasIcon: true },
+        ],
+        installed: [],
+        available: [],
+      },
+    });
+    renderWithProviders(<Sidebar />);
+    const img = screen.getByAltText('');
+    expect(img).toHaveAttribute('src', '/api/extensions/hello-world/icon');
+  });
+
   it('hides extensions section when none are active', () => {
     mockMarketplace.mockReturnValue({
       data: { active: [], installed: [], available: [] },

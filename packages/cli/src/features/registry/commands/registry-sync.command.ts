@@ -1,6 +1,8 @@
 import * as clack from '@clack/prompts';
 import type { RegistryConfig } from '../../../core/types/index.js';
 import { syncAll } from '../registry-manager.js';
+import { refreshUpdateCache } from '../../extensions/update-cache/update-cache.js';
+import { getDb } from '../../../core/database/database.js';
 
 interface RegistrySyncOptions {
   configs: RegistryConfig[];
@@ -20,4 +22,6 @@ export async function handleRegistrySync(options: RegistrySyncOptions): Promise<
       clack.log.warn(`Failed to sync: ${error}`);
     }
   }
+
+  refreshUpdateCache(getDb(), options.configs);
 }

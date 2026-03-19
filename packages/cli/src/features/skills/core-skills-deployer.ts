@@ -89,11 +89,12 @@ renre-kit ext:config <name>
 \`\`\`
 
 ### renre-kit ext:update [name]
-Update extension(s) to the latest version from the registry.
+Update extension(s) to the latest version from the registry. If the new version has incompatible engine constraints, the update is blocked unless \`--force\` is used.
 
 \`\`\`
 renre-kit ext:update [name]
 renre-kit ext:update --all
+renre-kit ext:update <name> --force
 \`\`\`
 
 ### renre-kit ext:outdated

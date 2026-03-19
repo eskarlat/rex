@@ -87,8 +87,20 @@ function SidebarHeader({ collapsed, onToggle }: SidebarHeaderProps) {
 }
 
 interface ExtensionNavProps {
-  extensions: Array<{ name: string; title?: string }>;
+  extensions: Array<{ name: string; title?: string; hasIcon?: boolean }>;
   collapsed: boolean;
+}
+
+function ExtensionIconComponent({ name, hasIcon }: { name: string; hasIcon?: boolean }) {
+  if (!hasIcon) return <Puzzle className="h-4 w-4 shrink-0" />;
+
+  return (
+    <img
+      src={`/api/extensions/${encodeURIComponent(name)}/icon`}
+      alt=""
+      className="h-4 w-4 shrink-0 rounded object-contain"
+    />
+  );
 }
 
 function ExtensionNav({ extensions, collapsed }: ExtensionNavProps) {
@@ -102,16 +114,36 @@ function ExtensionNav({ extensions, collapsed }: ExtensionNavProps) {
         </p>
       )}
       <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-0')}>
-        {extensions.map((ext) => (
-          <SidebarNavLink
-            key={ext.name}
-            to={`/extensions/${ext.name}`}
-            end={false}
-            icon={Puzzle}
-            label={ext.title ?? ext.name}
-            collapsed={collapsed}
-          />
-        ))}
+        {extensions.map((ext) => {
+          const label = ext.title ?? ext.name;
+          const link = (
+            <NavLink
+              key={ext.name}
+              to={`/extensions/${ext.name}`}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center rounded-md text-sm font-medium transition-colors',
+                  collapsed ? 'h-9 w-9 justify-center' : 'gap-3 px-3 py-2',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )
+              }
+            >
+              <ExtensionIconComponent name={ext.name} hasIcon={ext.hasIcon} />
+              {!collapsed && label}
+            </NavLink>
+          );
+
+          if (!collapsed) return <div key={ext.name}>{link}</div>;
+
+          return (
+            <Tooltip key={ext.name}>
+              <TooltipTrigger asChild>{link}</TooltipTrigger>
+              <TooltipContent side="right">{label}</TooltipContent>
+            </Tooltip>
+          );
+        })}
       </nav>
     </>
   );

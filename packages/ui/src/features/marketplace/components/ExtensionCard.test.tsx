@@ -10,6 +10,7 @@ const mockInstallMutate = vi.fn();
 const mockActivateMutate = vi.fn();
 const mockDeactivateMutate = vi.fn();
 const mockRemoveMutate = vi.fn();
+const mockUpdateMutate = vi.fn();
 
 vi.mock('@/core/hooks/use-extensions', () => ({
   useInstallExtension: () => ({
@@ -26,6 +27,10 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   }),
   useRemoveExtension: () => ({
     mutate: mockRemoveMutate,
+    isPending: false,
+  }),
+  useUpdateExtension: () => ({
+    mutate: mockUpdateMutate,
     isPending: false,
   }),
 }));
@@ -203,5 +208,80 @@ describe('ExtensionCard', () => {
       screen.getByRole('button', { name: 'Deactivate' })
     );
     expect(mockDeactivateMutate).toHaveBeenCalledWith('test-ext');
+  });
+
+  // Icon
+  it('renders icon when hasIcon is true', () => {
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, status: 'active', hasIcon: true }}
+      />
+    );
+    const img = screen.getByAltText('test-ext icon');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('src', '/api/extensions/test-ext/icon');
+  });
+
+  it('renders default puzzle icon when hasIcon is false', () => {
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, status: 'active', hasIcon: false }}
+      />
+    );
+    expect(screen.queryByAltText('test-ext icon')).not.toBeInTheDocument();
+    expect(screen.getByTestId('default-icon')).toBeInTheDocument();
+  });
+
+  // Update badge and button
+  it('shows update available badge for active extension with update', () => {
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, status: 'active', updateAvailable: '2.0.0', engineCompatible: true }}
+      />
+    );
+    expect(screen.getByText('2.0.0 available')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
+  });
+
+  it('shows incompatible badge and Force Update button when engine is incompatible', () => {
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, status: 'active', updateAvailable: '2.0.0', engineCompatible: false }}
+      />
+    );
+    expect(screen.getByText('2.0.0 (incompatible)')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Force Update' })).toBeInTheDocument();
+  });
+
+  it('does not show update badge when no update available', () => {
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, status: 'active', updateAvailable: null }}
+      />
+    );
+    expect(screen.queryByText(/available/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Update' })).not.toBeInTheDocument();
+  });
+
+  it('clicking Update calls update.mutate without force', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, status: 'installed', updateAvailable: '2.0.0', engineCompatible: true }}
+      />
+    );
+    await user.click(screen.getByRole('button', { name: 'Update' }));
+    expect(mockUpdateMutate).toHaveBeenCalledWith({ name: 'test-ext' });
+  });
+
+  it('clicking Force Update calls update.mutate with force', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ExtensionCard
+        extension={{ ...baseExtension, status: 'installed', updateAvailable: '2.0.0', engineCompatible: false }}
+      />
+    );
+    await user.click(screen.getByRole('button', { name: 'Force Update' }));
+    expect(mockUpdateMutate).toHaveBeenCalledWith({ name: 'test-ext', force: true });
   });
 });

@@ -4,6 +4,8 @@ import {
   saveGlobalConfig,
   sync,
   listRegistries,
+  refreshUpdateCache,
+  getDb,
 } from '@renre-kit/cli/lib';
 import type { RegistryConfig } from '@renre-kit/cli/lib';
 
@@ -81,6 +83,7 @@ const registriesRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: `Registry '${params.name}' not found` };
     }
     await sync(params.name, registry);
+    refreshUpdateCache(getDb(), config.registries);
     return { ok: true };
   });
 

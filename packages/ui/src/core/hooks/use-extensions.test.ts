@@ -13,6 +13,7 @@ import {
   useInstallExtension,
   useActivateExtension,
   useDeactivateExtension,
+  useUpdateExtension,
   useRemoveExtension,
 } from './use-extensions';
 
@@ -131,6 +132,46 @@ describe('useDeactivateExtension', () => {
       expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/deactivate', {
         method: 'POST',
         body: { name: 'my-extension' },
+      }),
+    );
+  });
+});
+
+describe('useUpdateExtension', () => {
+  it('calls fetchApi with POST to update endpoint', async () => {
+    mockFetchApi.mockResolvedValueOnce(undefined);
+
+    const { result } = renderHook(() => useUpdateExtension(), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.mutate({ name: 'my-extension' });
+    });
+
+    await waitFor(() =>
+      expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/update', {
+        method: 'POST',
+        body: { name: 'my-extension' },
+      }),
+    );
+  });
+
+  it('passes force flag when provided', async () => {
+    mockFetchApi.mockResolvedValueOnce(undefined);
+
+    const { result } = renderHook(() => useUpdateExtension(), {
+      wrapper: createWrapper(),
+    });
+
+    act(() => {
+      result.current.mutate({ name: 'my-extension', force: true });
+    });
+
+    await waitFor(() =>
+      expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/update', {
+        method: 'POST',
+        body: { name: 'my-extension', force: true },
       }),
     );
   });

@@ -310,10 +310,16 @@ importers:
       fastify-plugin:
         specifier: ^5.1.0
         version: 5.1.0
+      semver:
+        specifier: ^7.6.0
+        version: 7.7.4
     devDependencies:
       '@types/node':
         specifier: ^20.17.0
         version: 20.19.37
+      '@types/semver':
+        specifier: ^7.5.0
+        version: 7.7.1
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.18.0
         version: 8.57.1(@typescript-eslint/parser@8.57.1(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
