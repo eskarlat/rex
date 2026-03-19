@@ -33,6 +33,7 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   useActivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
   useDeactivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveExtension: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateExtension: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -111,6 +112,7 @@ describe('MarketplacePage with tags and available extensions', () => {
       useActivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
       useDeactivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
       useRemoveExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useUpdateExtension: () => ({ mutate: vi.fn(), isPending: false }),
     }));
 
     const { MarketplacePage: TagPage } = await import('./MarketplacePage');
@@ -162,6 +164,7 @@ describe('MarketplacePage loading', () => {
       useActivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
       useDeactivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
       useRemoveExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useUpdateExtension: () => ({ mutate: vi.fn(), isPending: false }),
     }));
 
     const { MarketplacePage: LoadingPage } = await import('./MarketplacePage');
