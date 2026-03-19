@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { simpleGit } from 'simple-git';
 import type { RegistryConfig, RegistryEntry } from '../../core/types/index.js';
@@ -23,12 +24,12 @@ export interface ResolvedExtension {
 }
 
 function getRegistriesDir(): string {
-  const home = process.env['RENRE_KIT_HOME'] ?? path.join(process.env['HOME'] ?? '', '.renre-kit');
+  const home = process.env['RENRE_KIT_HOME'] ?? path.join(os.homedir(), '.renre-kit');
   return path.join(home, 'registries');
 }
 
 function getExtensionsDir(): string {
-  const home = process.env['RENRE_KIT_HOME'] ?? path.join(process.env['HOME'] ?? '', '.renre-kit');
+  const home = process.env['RENRE_KIT_HOME'] ?? path.join(os.homedir(), '.renre-kit');
   return path.join(home, 'extensions');
 }
 

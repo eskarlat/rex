@@ -1,4 +1,5 @@
 import os from 'node:os';
+import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
@@ -50,7 +51,7 @@ function getHardwareUUIDLinux(): string | undefined {
 
 function getHardwareUUIDWindows(): string | undefined {
   try {
-    const wmicPath = `${process.env['SYSTEMROOT'] ?? 'C:\\Windows'}\\System32\\wbem\\wmic.exe`;
+    const wmicPath = path.join(process.env['SYSTEMROOT'] ?? 'C:\\Windows', 'System32', 'wbem', 'wmic.exe');
     const output = execFileSync(
       wmicPath,
       ['csproduct', 'get', 'UUID'],

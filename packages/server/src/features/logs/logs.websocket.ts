@@ -38,7 +38,7 @@ export function readNewLines(filePath: string, offset: number): ReadResult {
   fs.closeSync(fd);
 
   const content = buffer.toString('utf-8');
-  const lines = content.split('\n').filter((line) => line.length > 0);
+  const lines = content.split(/\r?\n/).filter((line) => line.length > 0);
 
   return { lines, newOffset: stat.size };
 }
@@ -58,7 +58,7 @@ const logsWebsocket: FastifyPluginCallback = (fastify: FastifyInstance, _opts, d
       return [];
     }
     const content = fs.readFileSync(logFile, 'utf-8');
-    const lines = content.split('\n').filter((line) => line.length > 0);
+    const lines = content.split(/\r?\n/).filter((line) => line.length > 0);
     return lines.slice(-MAX_INITIAL_LINES).map((line) => {
       try {
         return JSON.parse(line) as Record<string, unknown>;
