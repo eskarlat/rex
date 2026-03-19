@@ -79,13 +79,25 @@ The 0o600 permissions are good, but the key is still a plaintext file. On macOS,
 
 **Vault reads/writes not atomic** (`vault-manager.ts:94-104`): `readJsonSync` → modify → `writeJsonSync` has a TOCTOU window. Two concurrent vault operations could lose data. Use a file lock or SQLite for the vault store.
 
+**Vault key re-read from disk on every operation** (`vault-manager.ts:36-45`): `deriveKey()` reads the key file on every encrypt/decrypt call. Should cache in memory with proper lifecycle.
+
 **`readPluginsJson` does unchecked JSON.parse** (`extension-manager.ts:37`): If `plugins.json` is corrupted, this throws an unhandled error. Wrap in try-catch with recovery.
+
+**Activate writes plugins.json before hook execution** (`extension-manager.ts:130-139`): If `onInit` hook fails, `plugins.json` already records the extension as active — leaving the project in an inconsistent state. Should write after successful hook.
 
 **`installExtension` does `git clone` with user-provided version tag** (`registry-manager.ts:205`):
 ```typescript
 await git.clone(gitUrl, extDir, ['--branch', `v${version}`, '--depth', '1']);
 ```
 The `version` parameter should be validated to prevent injection of arbitrary git flags (e.g., `--upload-pack`). Validate it matches a semver pattern.
+
+**JSON-RPC error responses not checked** (`connection-manager.ts:99-100`): When MCP response contains an `error` field, `response.result` is undefined but the code returns it without checking. Should throw `ExtensionError` on JSON-RPC errors.
+
+**MCP stdio transport has no buffer size limit** (`mcp-stdio-transport.ts`): A malicious/buggy MCP server sending partial lines indefinitely will grow the buffer without bound. Add a maximum buffer size.
+
+**Silent migration failures** (`database.ts:60`): `runMigrations()` catches all errors without logging. If the migrations directory is missing, failures are silently ignored.
+
+**HOME env fallback creates bad paths** (`registry-manager.ts:24`): `process.env['HOME'] ?? ''` then `path.join('', '.renre-kit')` resolves to `.renre-kit` relative to cwd if HOME is unset.
 
 ---
 
@@ -241,25 +253,31 @@ No normalization via `path.resolve()` / `path.normalize()`. Attacker could pass 
 | 3 | Restrict CORS to localhost/whitelist | `packages/server/src/server.ts` | Small |
 | 4 | Validate/normalize project path header | `packages/server/src/core/middleware/project-scope.ts` | Small |
 | 5 | Validate git clone version parameter | `packages/cli/src/features/registry/registry-manager.ts` | Small |
+| 6 | Handle JSON-RPC error responses in connection manager | `packages/cli/src/features/extensions/mcp/connection-manager.ts` | Small |
 
 ### Should Fix (Reliability/DX)
 
 | # | Issue | Location | Effort |
 |---|-------|----------|--------|
-| 6 | Add CI/CD pipeline (GitHub Actions) | `.github/workflows/` | Medium |
-| 7 | Log extension hook failures instead of swallowing | `packages/cli/src/features/extensions/manager/extension-manager.ts` | Small |
-| 8 | Make vault writes atomic (file lock or SQLite) | `packages/cli/src/features/vault/vault-manager.ts` | Medium |
-| 9 | Parallelize registry sync | `packages/cli/src/features/registry/registry-manager.ts` | Small |
-| 10 | Add health check endpoint | `packages/server/` | Small |
+| 7 | Add CI/CD pipeline (GitHub Actions) | `.github/workflows/` | Medium |
+| 8 | Log extension hook failures instead of swallowing | `packages/cli/src/features/extensions/manager/extension-manager.ts` | Small |
+| 9 | Fix activate: write plugins.json after hook, not before | `packages/cli/src/features/extensions/manager/extension-manager.ts` | Small |
+| 10 | Make vault writes atomic (file lock or SQLite) | `packages/cli/src/features/vault/vault-manager.ts` | Medium |
+| 11 | Add buffer size limit to MCP stdio transport | `packages/cli/src/features/extensions/mcp/mcp-stdio-transport.ts` | Small |
+| 12 | Cache vault key in memory instead of re-reading from disk | `packages/cli/src/features/vault/vault-manager.ts` | Small |
+| 13 | Parallelize registry sync with Promise.allSettled | `packages/cli/src/features/registry/registry-manager.ts` | Small |
+| 14 | Log migration failures in database init | `packages/cli/src/core/database/database.ts` | Small |
+| 15 | Add health check endpoint | `packages/server/` | Small |
 
 ### Nice to Have (Polish)
 
 | # | Issue | Location | Effort |
 |---|-------|----------|--------|
-| 11 | API versioning (`/api/v1/`) | `packages/server/` | Medium |
-| 12 | Request audit logging | `packages/server/` | Small |
-| 13 | Add more reference extensions | `extensions/` | Medium |
-| 14 | SDK version compatibility matrix | `packages/extension-sdk/` | Small |
+| 16 | API versioning (`/api/v1/`) | `packages/server/` | Medium |
+| 17 | Request audit logging | `packages/server/` | Small |
+| 18 | Add SDK documentation (README, panel dev guide) | `packages/extension-sdk/` | Medium |
+| 19 | Add more reference extensions (SSE, multi-skill) | `extensions/` | Medium |
+| 20 | SDK version compatibility matrix | `packages/extension-sdk/` | Small |
 | 15 | Accessibility improvements (ARIA labels) | `packages/ui/` | Small |
 
 ---
