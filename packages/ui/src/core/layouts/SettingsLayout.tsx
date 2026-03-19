@@ -24,13 +24,13 @@ export function SettingsLayout() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Settings</h1>
         <p className="text-muted-foreground">
           Manage your RenreKit configuration.
         </p>
       </div>
-      <div className="flex gap-8">
-        <nav className="w-48 space-y-1">
+      <div className="flex flex-col gap-4 md:flex-row md:gap-8">
+        <nav className="flex gap-1 overflow-x-auto md:w-48 md:flex-col md:gap-0 md:space-y-1">
           {settingsLinks.map((link) => (
             <NavLink
               key={link.to}

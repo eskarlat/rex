@@ -90,6 +90,7 @@ export function RegistriesPage() {
         </>
       }
     >
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -148,6 +149,7 @@ export function RegistriesPage() {
           )}
         </TableBody>
       </Table>
+      </div>
     </ResourcePage>
   );
 }

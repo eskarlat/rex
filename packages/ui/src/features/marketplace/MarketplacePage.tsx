@@ -13,7 +13,7 @@ export function MarketplacePage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Marketplace</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Marketplace</h1>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }, (_, i) => (
             <Skeleton key={i} className="h-48" />
@@ -26,7 +26,7 @@ export function MarketplacePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Marketplace</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Marketplace</h1>
         <p className="text-muted-foreground">
           Browse, install, and manage extensions.
         </p>

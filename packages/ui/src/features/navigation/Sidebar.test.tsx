@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { MobileSidebarProvider } from '@/core/providers/MobileSidebarProvider';
 import { Sidebar } from './Sidebar';
 
 vi.mock('@/core/hooks/use-projects', () => ({
@@ -32,9 +33,11 @@ function renderWithProviders(ui: React.ReactElement) {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <MemoryRouter>{ui}</MemoryRouter>
-      </TooltipProvider>
+      <MobileSidebarProvider>
+        <TooltipProvider>
+          <MemoryRouter>{ui}</MemoryRouter>
+        </TooltipProvider>
+      </MobileSidebarProvider>
     </QueryClientProvider>
   );
 }

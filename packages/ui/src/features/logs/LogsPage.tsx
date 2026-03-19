@@ -157,12 +157,12 @@ function ExtensionLogsTab() {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Search logs..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
         <Select value={levelFilter} onValueChange={setLevelFilter}>
           <SelectTrigger className="w-32">
@@ -249,12 +249,12 @@ function ServerConsoleTab() {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Search console output..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
         <Button
           variant="outline"
@@ -323,9 +323,9 @@ function ServerConsoleTab() {
 export function LogsPage() {
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logs</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Logs</h1>
           <p className="text-muted-foreground">
             Real-time log stream from the dashboard server
           </p>

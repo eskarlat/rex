@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Clock, Settings, Puzzle, ScrollText, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProjectSwitcher } from './ProjectSwitcher';
@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMarketplace } from '@/core/hooks/use-extensions';
+import { useMobileSidebar } from '@/core/providers/MobileSidebarProvider';
 
 const navLinks = [
   { to: '/', icon: Home, label: 'Home', end: true },
@@ -25,13 +26,15 @@ interface SidebarNavLinkProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   collapsed: boolean;
+  onClick?: () => void;
 }
 
-function SidebarNavLink({ to, end, icon: Icon, label, collapsed }: SidebarNavLinkProps) {
+function SidebarNavLink({ to, end, icon: Icon, label, collapsed, onClick }: SidebarNavLinkProps) {
   const link = (
     <NavLink
       to={to}
       end={end}
+      onClick={onClick}
       className={({ isActive }) =>
         cn(
           'flex items-center rounded-md text-sm font-medium transition-colors',
@@ -57,71 +60,149 @@ function SidebarNavLink({ to, end, icon: Icon, label, collapsed }: SidebarNavLin
   );
 }
 
+function SidebarHeader({
+  isCompact,
+  onToggle,
+  toggleLabel,
+  showExpand,
+}: {
+  isCompact: boolean;
+  onToggle: () => void;
+  toggleLabel: string;
+  showExpand: boolean;
+}) {
+  return (
+    <div className={cn('flex h-14 items-center', isCompact ? 'justify-center px-0' : 'justify-between px-3')}>
+      {!isCompact && <span className="px-1 text-lg font-bold">RenreKit</span>}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="h-9 w-9 text-muted-foreground"
+            aria-label={toggleLabel}
+          >
+            {showExpand ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">{toggleLabel}</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+interface ExtensionInfo {
+  name: string;
+  title?: string;
+}
+
+function SidebarExtensions({
+  extensions,
+  isCompact,
+  onClick,
+}: {
+  extensions: ExtensionInfo[];
+  isCompact: boolean;
+  onClick?: () => void;
+}) {
+  if (extensions.length === 0) return null;
+
+  return (
+    <>
+      <Separator className="my-3" />
+      {!isCompact && (
+        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Extensions
+        </p>
+      )}
+      <nav className={cn('space-y-1', isCompact ? 'flex flex-col items-center' : 'px-0')}>
+        {extensions.map((ext) => (
+          <SidebarNavLink
+            key={ext.name}
+            to={`/extensions/${ext.name}`}
+            end={false}
+            icon={Puzzle}
+            label={ext.title ?? ext.name}
+            collapsed={isCompact}
+            onClick={onClick}
+          />
+        ))}
+      </nav>
+    </>
+  );
+}
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { data: marketplace } = useMarketplace();
   const activeExtensions = marketplace?.active ?? [];
+  const { isOpen, close } = useMobileSidebar();
+  const location = useLocation();
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    close();
+  }, [location.pathname, close]);
+
+  // On mobile, always show expanded; on desktop, respect collapsed state
+  const isCompact = collapsed && !isOpen;
+  const mobileCloseHandler = isOpen ? close : undefined;
+
+  function handleToggle() {
+    if (isOpen) {
+      close();
+    } else {
+      setCollapsed((prev) => !prev);
+    }
+  }
+
+  function getToggleLabel(): string {
+    if (isOpen) return 'Close menu';
+    if (collapsed) return 'Expand sidebar';
+    return 'Collapse sidebar';
+  }
+  const toggleLabel = getToggleLabel();
 
   return (
-    <aside className={cn('flex h-full flex-col border-r bg-muted/40 transition-all', collapsed ? 'w-14' : 'w-60')}>
-      <div className={cn('flex h-14 items-center', collapsed ? 'justify-center px-0' : 'justify-between px-3')}>
-        {!collapsed && <span className="px-1 text-lg font-bold">RenreKit</span>}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCollapsed((prev) => !prev)}
-              className="h-9 w-9 text-muted-foreground"
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          </TooltipContent>
-        </Tooltip>
-      </div>
+    <aside
+      className={cn(
+        'flex h-full flex-col border-r bg-muted/40 transition-all',
+        // Desktop: normal sidebar behavior
+        'hidden md:flex',
+        isCompact ? 'md:w-14' : 'md:w-60',
+        // Mobile: fixed overlay when open
+        isOpen && 'fixed inset-y-0 left-0 z-50 flex w-60'
+      )}
+    >
+      <SidebarHeader
+        isCompact={isCompact}
+        onToggle={handleToggle}
+        toggleLabel={toggleLabel}
+        showExpand={isCompact}
+      />
       <Separator />
       <ScrollArea className="flex-1 py-4">
-        <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-2')}>
+        <nav className={cn('space-y-1', isCompact ? 'flex flex-col items-center' : 'px-2')}>
           {navLinks.map((link) => (
-            <SidebarNavLink key={link.to} {...link} collapsed={collapsed} />
+            <SidebarNavLink key={link.to} {...link} collapsed={isCompact} onClick={mobileCloseHandler} />
           ))}
         </nav>
 
-        {activeExtensions.length > 0 && (
-          <>
-            <Separator className="my-3" />
-            {!collapsed && (
-              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Extensions
-              </p>
-            )}
-            <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-0')}>
-              {activeExtensions.map((ext) => (
-                <SidebarNavLink
-                  key={ext.name}
-                  to={`/extensions/${ext.name}`}
-                  end={false}
-                  icon={Puzzle}
-                  label={ext.title ?? ext.name}
-                  collapsed={collapsed}
-                />
-              ))}
-            </nav>
-          </>
-        )}
+        <SidebarExtensions
+          extensions={activeExtensions}
+          isCompact={isCompact}
+          onClick={mobileCloseHandler}
+        />
       </ScrollArea>
       <Separator />
-      <nav className={cn('space-y-1 py-2', collapsed ? 'flex flex-col items-center' : 'px-2')}>
+      <nav className={cn('space-y-1 py-2', isCompact ? 'flex flex-col items-center' : 'px-2')}>
         {bottomLinks.map((link) => (
-          <SidebarNavLink key={link.to} {...link} collapsed={collapsed} />
+          <SidebarNavLink key={link.to} {...link} collapsed={isCompact} onClick={mobileCloseHandler} />
         ))}
       </nav>
       <Separator />
-      {!collapsed && (
+      {!isCompact && (
         <div className="p-3">
           <ProjectSwitcher />
         </div>

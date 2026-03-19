@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MobileSidebarProvider } from '@/core/providers/MobileSidebarProvider';
 import { Toolbar } from './Toolbar';
 
 const mockMarketplace = vi.fn();
@@ -14,11 +15,13 @@ function renderToolbar(route = '/') {
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[route]}>
-        <Toolbar />
-      </MemoryRouter>
-    </QueryClientProvider>
+    <MobileSidebarProvider>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[route]}>
+          <Toolbar />
+        </MemoryRouter>
+      </QueryClientProvider>
+    </MobileSidebarProvider>
   );
 }
 
@@ -77,13 +80,15 @@ describe('Toolbar', () => {
       defaultOptions: { queries: { retry: false } },
     });
     render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/settings/extensions/my-ext']}>
-          <Routes>
-            <Route path="/settings/extensions/:name" element={<Toolbar />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+      <MobileSidebarProvider>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/settings/extensions/my-ext']}>
+            <Routes>
+              <Route path="/settings/extensions/:name" element={<Toolbar />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </MobileSidebarProvider>,
     );
     expect(screen.getByText('Settings')).toBeInTheDocument();
     expect(screen.getByText('my-ext')).toBeInTheDocument();
@@ -97,13 +102,15 @@ describe('Toolbar', () => {
       defaultOptions: { queries: { retry: false } },
     });
     render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/extensions/hello-world']}>
-          <Routes>
-            <Route path="/extensions/:name" element={<Toolbar />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+      <MobileSidebarProvider>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/extensions/hello-world']}>
+            <Routes>
+              <Route path="/extensions/:name" element={<Toolbar />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </MobileSidebarProvider>,
     );
     expect(screen.getByText('hello-world')).toBeInTheDocument();
   });
@@ -126,13 +133,15 @@ describe('Toolbar', () => {
       defaultOptions: { queries: { retry: false } },
     });
     render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/extensions/my-ext/settings']}>
-          <Routes>
-            <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+      <MobileSidebarProvider>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/extensions/my-ext/settings']}>
+            <Routes>
+              <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </MobileSidebarProvider>,
     );
     expect(screen.getByText('My Extension')).toBeInTheDocument();
     expect(screen.getByText('Settings Panel')).toBeInTheDocument();
@@ -146,13 +155,15 @@ describe('Toolbar', () => {
       defaultOptions: { queries: { retry: false } },
     });
     render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={['/extensions/my-ext/unknown']}>
-          <Routes>
-            <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
+      <MobileSidebarProvider>
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/extensions/my-ext/unknown']}>
+            <Routes>
+              <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      </MobileSidebarProvider>,
     );
     expect(screen.getByText('my-ext')).toBeInTheDocument();
     expect(screen.getByText('unknown')).toBeInTheDocument();

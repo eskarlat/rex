@@ -49,7 +49,7 @@ export function ResourcePage({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
         <Skeleton className="h-64 w-full" />
       </div>
     );
@@ -57,9 +57,9 @@ export function ResourcePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
           <p className="text-muted-foreground">{description}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={onDialogOpenChange}>

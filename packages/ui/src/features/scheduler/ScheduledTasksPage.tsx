@@ -87,6 +87,7 @@ export function ScheduledTasksPage(): React.ReactElement {
         </>
       }
     >
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -107,6 +108,7 @@ export function ScheduledTasksPage(): React.ReactElement {
           )}
         </TableBody>
       </Table>
+      </div>
     </ResourcePage>
   );
 }
