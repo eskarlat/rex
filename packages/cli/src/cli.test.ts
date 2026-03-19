@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock infrastructure
@@ -11,23 +12,23 @@ vi.mock('./core/event-bus/event-bus.js', () => ({
   EventBus: vi.fn().mockImplementation(() => ({})),
 }));
 vi.mock('./core/paths/paths.js', () => ({
-  GLOBAL_DIR: '/mock/global',
-  DB_PATH: '/mock/global/db.sqlite',
-  EXTENSIONS_DIR: '/mock/global/extensions',
-  REGISTRIES_DIR: '/mock/global/registries',
-  VAULT_PATH: '/mock/global/vault.json',
-  CONFIG_PATH: '/mock/global/config.json',
-  LOGS_DIR: '/mock/global/logs',
-  SERVER_PID_PATH: '/mock/global/server.pid',
+  GLOBAL_DIR: path.join('/mock', 'global'),
+  DB_PATH: path.join('/mock', 'global', 'db.sqlite'),
+  EXTENSIONS_DIR: path.join('/mock', 'global', 'extensions'),
+  REGISTRIES_DIR: path.join('/mock', 'global', 'registries'),
+  VAULT_PATH: path.join('/mock', 'global', 'vault.json'),
+  CONFIG_PATH: path.join('/mock', 'global', 'config.json'),
+  LOGS_DIR: path.join('/mock', 'global', 'logs'),
+  SERVER_PID_PATH: path.join('/mock', 'global', 'server.pid'),
   PROJECT_DIR: '.renre-kit',
   PLUGINS_JSON: 'plugins.json',
   MANIFEST_JSON: 'manifest.json',
-  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
-  getManifestPath: vi.fn().mockImplementation((p: string) => `${p}/.renre-kit/manifest.json`),
-  getProjectDir: vi.fn().mockImplementation((p: string) => `${p}/.renre-kit`),
-  getPluginsPath: vi.fn().mockImplementation((p: string) => `${p}/.renre-kit/plugins.json`),
-  getSkillsDir: vi.fn().mockImplementation((p: string) => `${p}/.agents/skills`),
-  getAgentDir: vi.fn().mockImplementation((p: string, t: string) => `${p}/.agents/${t}`),
+  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => path.join('/mock', 'extensions', `${name}@${version}`)),
+  getManifestPath: vi.fn().mockImplementation((p: string) => path.join(p, '.renre-kit', 'manifest.json')),
+  getProjectDir: vi.fn().mockImplementation((p: string) => path.join(p, '.renre-kit')),
+  getPluginsPath: vi.fn().mockImplementation((p: string) => path.join(p, '.renre-kit', 'plugins.json')),
+  getSkillsDir: vi.fn().mockImplementation((p: string) => path.join(p, '.agents', 'skills')),
+  getAgentDir: vi.fn().mockImplementation((p: string, t: string) => path.join(p, '.agents', t)),
 }));
 vi.mock('./shared/fs-helpers.js', () => ({
   pathExistsSync: vi.fn().mockReturnValue(true),

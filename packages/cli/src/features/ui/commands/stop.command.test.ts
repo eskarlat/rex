@@ -76,7 +76,7 @@ describe('stop command', () => {
 
     handleStop();
 
-    expect(killSpy).toHaveBeenCalledWith(12345, 'SIGTERM');
+    expect(killSpy).toHaveBeenCalledWith(12345);
     expect(mockLogSuccess).toHaveBeenCalledWith(
       expect.stringContaining('12345'),
     );

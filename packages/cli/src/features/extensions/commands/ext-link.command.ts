@@ -47,7 +47,7 @@ export async function handleExtLink(options: ExtLinkOptions): Promise<void> {
 
   // Create parent dir and symlink
   fs.mkdirSync(path.dirname(linkPath), { recursive: true });
-  fs.symlinkSync(absolutePath, linkPath);
+  fs.symlinkSync(absolutePath, linkPath, process.platform === 'win32' ? 'junction' : undefined);
 
   const db = getDb();
   install(manifest.name, LINK_VERSION, 'local', manifest.type, db);

@@ -10,7 +10,7 @@ import { getLogger } from '../../../core/logger/index.js';
 import { checkEngineCompat } from '../engine/engine-compat.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
-import { PROJECT_DIR, MANIFEST_JSON } from '../../../core/paths/paths.js';
+import { PROJECT_DIR, MANIFEST_JSON, PLUGINS_JSON } from '../../../core/paths/paths.js';
 
 export interface InstalledExtension {
   name: string;
@@ -28,10 +28,8 @@ export interface ExtensionStatus {
   activatedVersion: string | null;
 }
 
-const PLUGINS_JSON_PATH = '.renre-kit/plugins.json';
-
 function readPluginsJson(projectPath: string): PluginsJson {
-  const filePath = path.join(projectPath, PLUGINS_JSON_PATH);
+  const filePath = path.join(projectPath, PROJECT_DIR, PLUGINS_JSON);
   if (!fs.existsSync(filePath)) {
     return {};
   }
@@ -40,7 +38,7 @@ function readPluginsJson(projectPath: string): PluginsJson {
 }
 
 function writePluginsJson(projectPath: string, plugins: PluginsJson): void {
-  const filePath = path.join(projectPath, PLUGINS_JSON_PATH);
+  const filePath = path.join(projectPath, PROJECT_DIR, PLUGINS_JSON);
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });

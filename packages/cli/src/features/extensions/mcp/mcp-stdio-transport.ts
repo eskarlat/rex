@@ -54,7 +54,7 @@ export function sendRequest(
 
     const onData = (chunk: Buffer): void => {
       proc.buffer += chunk.toString();
-      const lines = proc.buffer.split('\n');
+      const lines = proc.buffer.split(/\r?\n/);
       proc.buffer = lines.pop() ?? '';
 
       for (const line of lines) {
@@ -121,15 +121,20 @@ const KILL_TIMEOUT_MS = 5000;
 
 export function killProcess(proc: McpStdioProcess): Promise<void> {
   return new Promise((resolve) => {
-    proc.process.once('close', () => {
-      clearTimeout(killTimer);
-      resolve();
-    });
+    proc.process.once('close', () => resolve());
 
-    proc.process.kill('SIGTERM');
+    // On Windows, process.kill() uses TerminateProcess (unconditional hard kill),
+    // so no SIGTERM/SIGKILL escalation is needed.
+    if (process.platform === 'win32') {
+      proc.process.kill();
+    } else {
+      proc.process.kill('SIGTERM');
 
-    const killTimer = setTimeout(() => {
-      proc.process.kill('SIGKILL');
-    }, KILL_TIMEOUT_MS);
+      // Escalate to SIGKILL if the process doesn't exit within the timeout
+      const killTimer = setTimeout(() => {
+        proc.process.kill('SIGKILL');
+      }, KILL_TIMEOUT_MS);
+      proc.process.once('close', () => clearTimeout(killTimer));
+    }
   });
 }

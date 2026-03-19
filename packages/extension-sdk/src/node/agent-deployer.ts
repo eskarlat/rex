@@ -46,13 +46,15 @@ function readManifestName(extensionDir: string): Manifest {
  * Skips prefixing if the name is already prefixed with the extension name.
  */
 function transformFrontmatterName(content: string, extName: string): string {
-  const fmEnd = content.indexOf('\n---', 4);
-  if (!content.startsWith('---\n') || fmEnd === -1) {
+  const firstLineBreak = content.startsWith('---\r\n') ? '\r\n' : '\n';
+  const fmEnd = content.indexOf(`${firstLineBreak}---`, 3 + firstLineBreak.length);
+  if ((!content.startsWith('---\n') && !content.startsWith('---\r\n')) || fmEnd === -1) {
     return content;
   }
 
-  const frontmatter = content.substring(4, fmEnd);
-  const lines = frontmatter.split('\n');
+  const headerLen = 3 + firstLineBreak.length; // '---' + linebreak
+  const frontmatter = content.substring(headerLen, fmEnd);
+  const lines = frontmatter.split(/\r?\n/);
   let transformed = false;
 
   const updatedLines = lines.map((line) => {
@@ -72,7 +74,7 @@ function transformFrontmatterName(content: string, extName: string): string {
     return content;
   }
 
-  return `---\n${updatedLines.join('\n')}${content.substring(fmEnd)}`;
+  return `---${firstLineBreak}${updatedLines.join(firstLineBreak)}${content.substring(fmEnd)}`;
 }
 
 /**
