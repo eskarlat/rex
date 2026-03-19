@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SKILLS_SUBDIR = path.join('.agents', 'skills');
+const DEFAULT_AGENT_DIR = '.agents';
 const SKILL_FILE = 'SKILL.md';
 
 /**
@@ -39,8 +39,8 @@ function collectSkillFiles(
   return sections;
 }
 
-export function aggregateSkills(projectPath: string): string {
-  const skillsDir = path.join(projectPath, SKILLS_SUBDIR);
+export function aggregateSkills(projectPath: string, agentDir = DEFAULT_AGENT_DIR): string {
+  const skillsDir = path.join(projectPath, agentDir, 'skills');
 
   if (!fs.existsSync(skillsDir)) {
     return 'No skills found.';

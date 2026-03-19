@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import BetterSqlite3 from 'better-sqlite3';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { initDatabase, getDb, closeDatabase } from './database.js';
+import { initDatabase, getDb, closeDatabase, runMigrations } from './database.js';
 import type Database from 'better-sqlite3';
 
 describe('database', () => {
@@ -143,5 +144,133 @@ describe('database', () => {
   it('should throw if getDb is called before init', () => {
     closeDatabase();
     expect(() => getDb()).toThrow('Database not initialized');
+  });
+});
+
+describe('runMigrations', () => {
+  let tmpDir: string;
+  let migrationsDir: string;
+  let testDb: Database.Database;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renre-kit-migration-test-'));
+    migrationsDir = path.join(tmpDir, 'migrations');
+    fs.mkdirSync(migrationsDir);
+
+    const dbPath = path.join(tmpDir, 'test.sqlite');
+    testDb = new BetterSqlite3(dbPath);
+    testDb.pragma('journal_mode = WAL');
+    testDb.exec(`
+      CREATE TABLE IF NOT EXISTS _migrations (
+        name TEXT PRIMARY KEY,
+        applied_at TEXT NOT NULL
+      )
+    `);
+  });
+
+  afterEach(() => {
+    testDb.close();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('should create backup when pending migrations exist', () => {
+    fs.writeFileSync(
+      path.join(migrationsDir, '001-test.sql'),
+      'CREATE TABLE test_table (id INTEGER PRIMARY KEY);',
+    );
+
+    runMigrations(testDb, migrationsDir);
+
+    const backupPath = `${testDb.name}.bak`;
+    expect(fs.existsSync(backupPath)).toBe(true);
+  });
+
+  it('should not create backup when no migrations are pending', () => {
+    fs.writeFileSync(
+      path.join(migrationsDir, '001-test.sql'),
+      'CREATE TABLE test_table (id INTEGER PRIMARY KEY);',
+    );
+
+    runMigrations(testDb, migrationsDir);
+
+    // Remove backup from first run
+    const backupPath = `${testDb.name}.bak`;
+    fs.unlinkSync(backupPath);
+
+    // Run again — no pending migrations
+    runMigrations(testDb, migrationsDir);
+    expect(fs.existsSync(backupPath)).toBe(false);
+  });
+
+  it('should rollback failed migration and not record it', () => {
+    // First migration succeeds
+    fs.writeFileSync(
+      path.join(migrationsDir, '001-good.sql'),
+      'CREATE TABLE good_table (id INTEGER PRIMARY KEY);',
+    );
+    runMigrations(testDb, migrationsDir);
+
+    // Second migration has invalid SQL
+    fs.writeFileSync(
+      path.join(migrationsDir, '002-bad.sql'),
+      'INVALID SQL STATEMENT;',
+    );
+
+    expect(() => runMigrations(testDb, migrationsDir)).toThrow(/Migration "002-bad.sql" failed/);
+
+    // Verify 002-bad is NOT recorded in _migrations
+    const rows = testDb.prepare('SELECT name FROM _migrations').all() as Array<{
+      name: string;
+    }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.name).toBe('001-good.sql');
+  });
+
+  it('should include backup path in error message on failure', () => {
+    fs.writeFileSync(
+      path.join(migrationsDir, '001-bad.sql'),
+      'INVALID SQL;',
+    );
+
+    const backupPath = `${testDb.name}.bak`;
+    expect(() => runMigrations(testDb, migrationsDir)).toThrow(
+      `Pre-migration backup available at: ${backupPath}`,
+    );
+  });
+
+  it('should apply multiple pending migrations in order', () => {
+    fs.writeFileSync(
+      path.join(migrationsDir, '001-first.sql'),
+      'CREATE TABLE first_table (id INTEGER PRIMARY KEY);',
+    );
+    fs.writeFileSync(
+      path.join(migrationsDir, '002-second.sql'),
+      'CREATE TABLE second_table (id INTEGER PRIMARY KEY);',
+    );
+
+    runMigrations(testDb, migrationsDir);
+
+    const rows = testDb.prepare('SELECT name FROM _migrations ORDER BY name').all() as Array<{
+      name: string;
+    }>;
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.name).toBe('001-first.sql');
+    expect(rows[1]?.name).toBe('002-second.sql');
+
+    // Verify tables exist
+    const tables = testDb
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_table'")
+      .all() as Array<{ name: string }>;
+    expect(tables).toHaveLength(2);
+  });
+
+  it('should handle empty migrations directory gracefully', () => {
+    expect(() => runMigrations(testDb, migrationsDir)).not.toThrow();
+    const rows = testDb.prepare('SELECT name FROM _migrations').all();
+    expect(rows).toHaveLength(0);
+  });
+
+  it('should handle non-existent migrations directory gracefully', () => {
+    expect(() => runMigrations(testDb, '/nonexistent/path')).not.toThrow();
   });
 });

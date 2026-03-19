@@ -20,6 +20,7 @@ import {
   AGENTS_DIR,
   WORKFLOWS_DIR,
   CONTEXT_DIR,
+  HOOKS_DIR,
   getProjectDir,
   getPluginsPath,
   getManifestPath,
@@ -108,6 +109,10 @@ describe('paths', () => {
     it('should define CONTEXT_DIR', () => {
       expect(CONTEXT_DIR).toBe('context');
     });
+
+    it('should define HOOKS_DIR', () => {
+      expect(HOOKS_DIR).toBe('hooks');
+    });
   });
 
   describe('helper functions', () => {
@@ -135,24 +140,27 @@ describe('paths', () => {
       );
     });
 
-    it('getSkillsDir returns skills dir for extension in project', () => {
-      expect(getSkillsDir('/my/project', 'my-ext')).toBe(
-        path.join('/my/project', '.agents', 'skills', 'my-ext'),
+    it('getSkillsDir returns skills dir in project', () => {
+      expect(getSkillsDir('/my/project')).toBe(
+        path.join('/my/project', '.agents', 'skills'),
       );
     });
 
-    it('getAgentDir returns agent type dir for extension in project', () => {
-      expect(getAgentDir('/my/project', 'prompts', 'my-ext')).toBe(
-        path.join('/my/project', '.agents', 'prompts', 'my-ext'),
+    it('getAgentDir returns agent type dir in project', () => {
+      expect(getAgentDir('/my/project', 'prompts')).toBe(
+        path.join('/my/project', '.agents', 'prompts'),
       );
-      expect(getAgentDir('/my/project', 'agents', 'my-ext')).toBe(
-        path.join('/my/project', '.agents', 'agents', 'my-ext'),
+      expect(getAgentDir('/my/project', 'agents')).toBe(
+        path.join('/my/project', '.agents', 'agents'),
       );
-      expect(getAgentDir('/my/project', 'workflows', 'my-ext')).toBe(
-        path.join('/my/project', '.agents', 'workflows', 'my-ext'),
+      expect(getAgentDir('/my/project', 'workflows')).toBe(
+        path.join('/my/project', '.agents', 'workflows'),
       );
-      expect(getAgentDir('/my/project', 'context', 'my-ext')).toBe(
-        path.join('/my/project', '.agents', 'context', 'my-ext'),
+      expect(getAgentDir('/my/project', 'context')).toBe(
+        path.join('/my/project', '.agents', 'context'),
+      );
+      expect(getAgentDir('/my/project', 'hooks')).toBe(
+        path.join('/my/project', '.agents', 'hooks'),
       );
     });
   });

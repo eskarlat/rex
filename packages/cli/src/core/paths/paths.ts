@@ -24,6 +24,7 @@ export const PROMPTS_DIR = 'prompts';
 export const AGENTS_DIR = 'agents';
 export const WORKFLOWS_DIR = 'workflows';
 export const CONTEXT_DIR = 'context';
+export const HOOKS_DIR = 'hooks';
 
 // Helper functions
 export function getProjectDir(projectPath: string): string {
@@ -42,17 +43,10 @@ export function getExtensionDir(name: string, version: string): string {
   return path.join(EXTENSIONS_DIR, `${name}@${version}`);
 }
 
-export function getSkillsDir(
-  projectPath: string,
-  extensionName: string,
-): string {
-  return path.join(projectPath, AGENT_DIR, SKILLS_DIR, extensionName);
+export function getSkillsDir(projectPath: string): string {
+  return path.join(projectPath, AGENT_DIR, SKILLS_DIR);
 }
 
-export function getAgentDir(
-  projectPath: string,
-  type: string,
-  extensionName: string,
-): string {
-  return path.join(projectPath, AGENT_DIR, type, extensionName);
+export function getAgentDir(projectPath: string, type: string): string {
+  return path.join(projectPath, AGENT_DIR, type);
 }

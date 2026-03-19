@@ -88,6 +88,7 @@ const agentAssetsSchema = z.object({
   agents: z.array(z.string()).optional(),
   workflows: z.array(z.string()).optional(),
   context: z.array(z.string()).optional(),
+  hooks: z.array(z.string()).optional(),
 });
 
 const extensionManifestSchema = z
@@ -113,12 +114,10 @@ const extensionManifestSchema = z
         widgets: z.array(uiWidgetSchema).default([]),
       })
       .optional(),
-    engines: z
-      .object({
-        'renre-kit': z.string().optional(),
-        'extension-sdk': z.string().optional(),
-      })
-      .optional(),
+    engines: z.object({
+      'renre-kit': z.string(),
+      'extension-sdk': z.string(),
+    }),
     agent: agentAssetsSchema.optional(),
   })
   .refine(

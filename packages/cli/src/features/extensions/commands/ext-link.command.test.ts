@@ -76,6 +76,7 @@ describe('ext-link command', () => {
         description: 'Test',
         type: 'standard',
         commands: {},
+        engines: { 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' },
       }),
     );
 
@@ -105,6 +106,7 @@ describe('ext-link command', () => {
         description: 'Test',
         type: 'standard',
         commands: {},
+        engines: { 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' },
       }),
     );
 

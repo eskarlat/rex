@@ -38,8 +38,8 @@ describe('agent-deployer', () => {
   };
 
   describe('deployAgentAssets', () => {
-    it('should deploy skill files to .agents/skills/{skill}/SKILL.md', () => {
-      writeExtFile('skills/greet/SKILL.md', '# Greet Skill');
+    it('should deploy skill to .agents/skills/{ext}:{skill}/SKILL.md', () => {
+      writeExtFile('skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet Skill');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -49,14 +49,15 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir);
 
-      const deployed = join(projectDir, '.agents', 'skills', 'greet', 'SKILL.md');
+      const deployed = join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md');
       expect(existsSync(deployed)).toBe(true);
-      expect(readFileSync(deployed, 'utf-8')).toBe('# Greet Skill');
+      const content = readFileSync(deployed, 'utf-8');
+      expect(content).toContain('name: test-ext.greet');
     });
 
-    it('should deploy multiple skills', () => {
-      writeExtFile('skills/greet/SKILL.md', '# Greet');
-      writeExtFile('skills/info/SKILL.md', '# Info');
+    it('should deploy multiple skills with prefixed folder names', () => {
+      writeExtFile('skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet');
+      writeExtFile('skills/info/SKILL.md', '---\nname: info\n---\n# Info');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -69,12 +70,16 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir);
 
-      expect(existsSync(join(projectDir, '.agents', 'skills', 'greet', 'SKILL.md'))).toBe(true);
-      expect(existsSync(join(projectDir, '.agents', 'skills', 'info', 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md'))).toBe(
+        true,
+      );
+      expect(existsSync(join(projectDir, '.agents', 'skills', 'test-ext.info', 'SKILL.md'))).toBe(
+        true,
+      );
     });
 
-    it('should deploy prompt files to .agents/prompts/{ext}/', () => {
-      writeExtFile('agent/prompts/style.prompt.md', '# Style');
+    it('should deploy prompt files flat with ext prefix', () => {
+      writeExtFile('agent/prompts/style.prompt.md', '---\nname: style\n---\n# Style');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -84,12 +89,13 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir);
 
-      const deployed = join(projectDir, '.agents', 'prompts', 'test-ext', 'style.prompt.md');
+      const deployed = join(projectDir, '.agents', 'prompts', 'test-ext.style.prompt.md');
       expect(existsSync(deployed)).toBe(true);
-      expect(readFileSync(deployed, 'utf-8')).toBe('# Style');
+      const content = readFileSync(deployed, 'utf-8');
+      expect(content).toContain('name: test-ext.style');
     });
 
-    it('should deploy context files to .agents/context/{ext}/', () => {
+    it('should deploy context files flat with ext prefix', () => {
       writeExtFile('agent/context/docs.context.md', '# Docs');
       writeManifest({
         ...baseManifest,
@@ -100,12 +106,12 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir);
 
-      const deployed = join(projectDir, '.agents', 'context', 'test-ext', 'docs.context.md');
+      const deployed = join(projectDir, '.agents', 'context', 'test-ext.docs.context.md');
       expect(existsSync(deployed)).toBe(true);
     });
 
-    it('should deploy agent files to .agents/agents/{ext}/', () => {
-      writeExtFile('agent/agents/researcher.agent.md', '# Researcher');
+    it('should deploy agent files flat with ext prefix', () => {
+      writeExtFile('agent/agents/researcher.agent.md', '---\nname: researcher\n---\n# Researcher');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -115,11 +121,13 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir);
 
-      const deployed = join(projectDir, '.agents', 'agents', 'test-ext', 'researcher.agent.md');
+      const deployed = join(projectDir, '.agents', 'agents', 'test-ext.researcher.agent.md');
       expect(existsSync(deployed)).toBe(true);
+      const content = readFileSync(deployed, 'utf-8');
+      expect(content).toContain('name: test-ext.researcher');
     });
 
-    it('should deploy workflow files to .agents/workflows/{ext}/', () => {
+    it('should deploy workflow files flat with ext prefix', () => {
       writeExtFile('agent/workflows/deploy.workflow.md', '# Deploy');
       writeManifest({
         ...baseManifest,
@@ -130,39 +138,32 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir);
 
-      const deployed = join(projectDir, '.agents', 'workflows', 'test-ext', 'deploy.workflow.md');
+      const deployed = join(projectDir, '.agents', 'workflows', 'test-ext.deploy.workflow.md');
       expect(existsSync(deployed)).toBe(true);
     });
 
-    it('should preserve subdirectory structure to prevent collisions', () => {
-      writeExtFile('agent/context/api/docs.context.md', '# API Docs');
-      writeExtFile('agent/context/guides/docs.context.md', '# Guide Docs');
+    it('should deploy hook files flat with ext prefix', () => {
+      writeExtFile('agent/hooks/session.json', '{"hooks":{}}');
       writeManifest({
         ...baseManifest,
         agent: {
-          context: [
-            'agent/context/api/docs.context.md',
-            'agent/context/guides/docs.context.md',
-          ],
+          hooks: ['agent/hooks/session.json'],
         },
       });
 
       deployAgentAssets(extensionDir, projectDir);
 
-      const apiDocs = join(projectDir, '.agents', 'context', 'test-ext', 'api', 'docs.context.md');
-      const guideDocs = join(projectDir, '.agents', 'context', 'test-ext', 'guides', 'docs.context.md');
-      expect(existsSync(apiDocs)).toBe(true);
-      expect(existsSync(guideDocs)).toBe(true);
-      expect(readFileSync(apiDocs, 'utf-8')).toBe('# API Docs');
-      expect(readFileSync(guideDocs, 'utf-8')).toBe('# Guide Docs');
+      const deployed = join(projectDir, '.agents', 'hooks', 'test-ext.session.json');
+      expect(existsSync(deployed)).toBe(true);
     });
 
     it('should deploy all asset types together', () => {
-      writeExtFile('agent/skills/greet/SKILL.md', '# Greet');
-      writeExtFile('agent/prompts/style.prompt.md', '# Style');
+      writeExtFile('agent/skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet');
+      writeExtFile('agent/prompts/style.prompt.md', '---\nname: style\n---\n# Style');
       writeExtFile('agent/context/docs.context.md', '# Docs');
-      writeExtFile('agent/agents/researcher.agent.md', '# Researcher');
+      writeExtFile('agent/agents/researcher.agent.md', '---\nname: researcher\n---\n# Researcher');
       writeExtFile('agent/workflows/deploy.workflow.md', '# Deploy');
+      writeExtFile('agent/hooks/session.json', '{}');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -171,16 +172,135 @@ describe('agent-deployer', () => {
           context: ['agent/context/docs.context.md'],
           agents: ['agent/agents/researcher.agent.md'],
           workflows: ['agent/workflows/deploy.workflow.md'],
+          hooks: ['agent/hooks/session.json'],
         },
       });
 
       deployAgentAssets(extensionDir, projectDir);
 
-      expect(existsSync(join(projectDir, '.agents', 'skills', 'greet', 'SKILL.md'))).toBe(true);
-      expect(existsSync(join(projectDir, '.agents', 'prompts', 'test-ext', 'style.prompt.md'))).toBe(true);
-      expect(existsSync(join(projectDir, '.agents', 'context', 'test-ext', 'docs.context.md'))).toBe(true);
-      expect(existsSync(join(projectDir, '.agents', 'agents', 'test-ext', 'researcher.agent.md'))).toBe(true);
-      expect(existsSync(join(projectDir, '.agents', 'workflows', 'test-ext', 'deploy.workflow.md'))).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md')),
+      ).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.agents', 'prompts', 'test-ext.style.prompt.md')),
+      ).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.agents', 'context', 'test-ext.docs.context.md')),
+      ).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.agents', 'agents', 'test-ext.researcher.agent.md')),
+      ).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.agents', 'workflows', 'test-ext.deploy.workflow.md')),
+      ).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.agents', 'hooks', 'test-ext.session.json')),
+      ).toBe(true);
+    });
+
+    it('should transform frontmatter name in skills', () => {
+      writeExtFile(
+        'skills/greet/SKILL.md',
+        '---\nname: greet\ndescription: Greets\n---\n# Greet',
+      );
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      const content = readFileSync(
+        join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md'),
+        'utf-8',
+      );
+      expect(content).toContain('name: test-ext.greet');
+      expect(content).toContain('description: Greets');
+      expect(content).not.toMatch(/^name: greet$/m);
+    });
+
+    it('should transform frontmatter name in prompts', () => {
+      writeExtFile(
+        'agent/prompts/style.prompt.md',
+        '---\nname: style\ndescription: Style guide\n---\n# Style',
+      );
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          prompts: ['agent/prompts/style.prompt.md'],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      const content = readFileSync(
+        join(projectDir, '.agents', 'prompts', 'test-ext.style.prompt.md'),
+        'utf-8',
+      );
+      expect(content).toContain('name: test-ext.style');
+    });
+
+    it('should transform frontmatter name in agents', () => {
+      writeExtFile(
+        'agent/agents/researcher.agent.md',
+        '---\nname: researcher\n---\n# Researcher',
+      );
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          agents: ['agent/agents/researcher.agent.md'],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      const content = readFileSync(
+        join(projectDir, '.agents', 'agents', 'test-ext.researcher.agent.md'),
+        'utf-8',
+      );
+      expect(content).toContain('name: test-ext.researcher');
+    });
+
+    it('should not transform content without frontmatter', () => {
+      writeExtFile('agent/context/docs.context.md', '# Just some docs\nNo frontmatter here');
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          context: ['agent/context/docs.context.md'],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      const content = readFileSync(
+        join(projectDir, '.agents', 'context', 'test-ext.docs.context.md'),
+        'utf-8',
+      );
+      expect(content).toBe('# Just some docs\nNo frontmatter here');
+    });
+
+    it('should not double-prefix if name is already prefixed', () => {
+      writeExtFile(
+        'skills/greet/SKILL.md',
+        '---\nname: test-ext.greet\n---\n# Greet',
+      );
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir);
+
+      const content = readFileSync(
+        join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md'),
+        'utf-8',
+      );
+      expect(content).toContain('name: test-ext.greet');
+      expect(content).not.toContain('name: test-ext.test-ext.greet');
     });
 
     it('should skip missing source files without error', () => {
@@ -205,10 +325,32 @@ describe('agent-deployer', () => {
     it('should throw when manifest.json is missing', () => {
       expect(() => deployAgentAssets(extensionDir, projectDir)).toThrow(/manifest\.json/);
     });
+
+    it('should deploy to custom agent directory when specified', () => {
+      writeExtFile('skills/greet/SKILL.md', '---\nname: greet\n---\n# Greet');
+      writeExtFile('agent/prompts/style.prompt.md', '---\nname: style\n---\n# Style');
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          prompts: ['agent/prompts/style.prompt.md'],
+        },
+      });
+
+      deployAgentAssets(extensionDir, projectDir, '.github');
+
+      expect(
+        existsSync(join(projectDir, '.github', 'skills', 'test-ext.greet', 'SKILL.md')),
+      ).toBe(true);
+      expect(
+        existsSync(join(projectDir, '.github', 'prompts', 'test-ext.style.prompt.md')),
+      ).toBe(true);
+      expect(existsSync(join(projectDir, '.agents'))).toBe(false);
+    });
   });
 
   describe('cleanupAgentAssets', () => {
-    it('should remove skill directories by skill name and other categories by extension name', () => {
+    it('should remove prefixed skill directories', () => {
       writeManifest({
         ...baseManifest,
         agent: {
@@ -216,44 +358,110 @@ describe('agent-deployer', () => {
         },
       });
       const agentDir = join(projectDir, '.agents');
-      mkdirSync(join(agentDir, 'skills', 'greet'), { recursive: true });
-      mkdirSync(join(agentDir, 'prompts', 'test-ext'), { recursive: true });
-      mkdirSync(join(agentDir, 'context', 'test-ext'), { recursive: true });
-      writeFileSync(join(agentDir, 'skills', 'greet', 'SKILL.md'), '# Greet');
-      writeFileSync(join(agentDir, 'prompts', 'test-ext', 'style.md'), '# Style');
+      mkdirSync(join(agentDir, 'skills', 'test-ext.greet'), { recursive: true });
+      writeFileSync(join(agentDir, 'skills', 'test-ext.greet', 'SKILL.md'), '# Greet');
 
       cleanupAgentAssets(extensionDir, projectDir);
 
-      expect(existsSync(join(agentDir, 'skills', 'greet'))).toBe(false);
-      expect(existsSync(join(agentDir, 'prompts', 'test-ext'))).toBe(false);
-      expect(existsSync(join(agentDir, 'context', 'test-ext'))).toBe(false);
+      expect(existsSync(join(agentDir, 'skills', 'test-ext.greet'))).toBe(false);
     });
 
-    it('should not remove other extensions skill directories', () => {
+    it('should remove prefixed files for non-skill categories', () => {
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          prompts: ['agent/prompts/style.prompt.md'],
+          context: ['agent/context/docs.context.md'],
+        },
+      });
+      const agentDir = join(projectDir, '.agents');
+      mkdirSync(join(agentDir, 'prompts'), { recursive: true });
+      mkdirSync(join(agentDir, 'context'), { recursive: true });
+      writeFileSync(join(agentDir, 'prompts', 'test-ext.style.prompt.md'), '# Style');
+      writeFileSync(join(agentDir, 'context', 'test-ext.docs.context.md'), '# Docs');
+
+      cleanupAgentAssets(extensionDir, projectDir);
+
+      expect(existsSync(join(agentDir, 'prompts', 'test-ext.style.prompt.md'))).toBe(false);
+      expect(existsSync(join(agentDir, 'context', 'test-ext.docs.context.md'))).toBe(false);
+    });
+
+    it('should remove hook files during cleanup', () => {
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          hooks: ['agent/hooks/session.json'],
+        },
+      });
+      const agentDir = join(projectDir, '.agents');
+      mkdirSync(join(agentDir, 'hooks'), { recursive: true });
+      writeFileSync(join(agentDir, 'hooks', 'test-ext.session.json'), '{}');
+
+      cleanupAgentAssets(extensionDir, projectDir);
+
+      expect(existsSync(join(agentDir, 'hooks', 'test-ext.session.json'))).toBe(false);
+    });
+
+    it('should not remove other extensions files', () => {
       writeManifest({
         ...baseManifest,
         agent: {
           skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          prompts: ['agent/prompts/style.prompt.md'],
         },
       });
       const agentDir = join(projectDir, '.agents');
-      mkdirSync(join(agentDir, 'skills', 'greet'), { recursive: true });
-      mkdirSync(join(agentDir, 'skills', 'other-skill'), { recursive: true });
-      writeFileSync(join(agentDir, 'skills', 'other-skill', 'SKILL.md'), '# Other');
+      mkdirSync(join(agentDir, 'skills', 'test-ext.greet'), { recursive: true });
+      mkdirSync(join(agentDir, 'skills', 'other-ext.hello'), { recursive: true });
+      mkdirSync(join(agentDir, 'prompts'), { recursive: true });
+      writeFileSync(join(agentDir, 'skills', 'other-ext.hello', 'SKILL.md'), '# Other');
+      writeFileSync(join(agentDir, 'prompts', 'other-ext.other.prompt.md'), '# Other');
 
       cleanupAgentAssets(extensionDir, projectDir);
 
-      expect(existsSync(join(agentDir, 'skills', 'greet'))).toBe(false);
-      expect(existsSync(join(agentDir, 'skills', 'other-skill', 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(agentDir, 'skills', 'test-ext.greet'))).toBe(false);
+      expect(existsSync(join(agentDir, 'skills', 'other-ext.hello', 'SKILL.md'))).toBe(true);
+      expect(existsSync(join(agentDir, 'prompts', 'other-ext.other.prompt.md'))).toBe(true);
     });
 
-    it('should not error when .agent directory does not exist', () => {
+    it('should handle cleanup when deployed files are already missing', () => {
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          prompts: ['agent/prompts/style.prompt.md'],
+        },
+      });
+
+      expect(() => cleanupAgentAssets(extensionDir, projectDir)).not.toThrow();
+    });
+
+    it('should not error when .agents directory does not exist', () => {
       writeManifest(baseManifest);
       expect(() => cleanupAgentAssets(extensionDir, projectDir)).not.toThrow();
     });
 
     it('should throw when manifest.json is missing', () => {
       expect(() => cleanupAgentAssets(extensionDir, projectDir)).toThrow(/manifest\.json/);
+    });
+
+    it('should cleanup from custom agent directory when specified', () => {
+      writeManifest({
+        ...baseManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          prompts: ['agent/prompts/style.prompt.md'],
+        },
+      });
+      const agentDir = join(projectDir, '.github');
+      mkdirSync(join(agentDir, 'skills', 'test-ext.greet'), { recursive: true });
+      mkdirSync(join(agentDir, 'prompts'), { recursive: true });
+      writeFileSync(join(agentDir, 'skills', 'test-ext.greet', 'SKILL.md'), '# Greet');
+      writeFileSync(join(agentDir, 'prompts', 'test-ext.style.prompt.md'), '# Style');
+
+      cleanupAgentAssets(extensionDir, projectDir, '.github');
+
+      expect(existsSync(join(agentDir, 'skills', 'test-ext.greet'))).toBe(false);
+      expect(existsSync(join(agentDir, 'prompts', 'test-ext.style.prompt.md'))).toBe(false);
     });
   });
 });

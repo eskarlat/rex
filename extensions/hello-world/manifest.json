@@ -71,6 +71,7 @@
       { "name": "info", "path": "agent/skills/info/SKILL.md" }
     ],
     "prompts": ["agent/prompts/greeting-style.prompt.md"],
-    "context": ["agent/context/extension-docs.context.md"]
+    "context": ["agent/context/extension-docs.context.md"],
+    "hooks": ["agent/hooks/greeting-hooks.json"]
   }
 }

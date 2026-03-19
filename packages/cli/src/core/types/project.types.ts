@@ -10,6 +10,7 @@ export interface ProjectManifest {
   name: string;
   version: string;
   created_at: string;
+  agentDir?: string;
   extensionConfigs?: Record<string, Record<string, import('./config.types.js').ConfigMapping>>;
 }
 

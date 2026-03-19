@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { ExtensionManifest } from '../types/extension.types.js';
 import { checkEngineCompat } from './engine-compat.js';
 
-function makeManifest(engines?: ExtensionManifest['engines']): ExtensionManifest {
+function makeManifest(engines: ExtensionManifest['engines']): ExtensionManifest {
   return {
     name: 'test-ext',
     version: '1.0.0',
@@ -13,22 +13,12 @@ function makeManifest(engines?: ExtensionManifest['engines']): ExtensionManifest
   };
 }
 
+const defaultEngines = { 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' };
+
 describe('checkEngineCompat', () => {
-  it('returns compatible when no engines field', () => {
-    const result = checkEngineCompat(makeManifest(), '0.0.1', '0.0.1');
-    expect(result.compatible).toBe(true);
-    expect(result.issues).toEqual([]);
-  });
-
-  it('returns compatible when engines is empty object', () => {
-    const result = checkEngineCompat(makeManifest({}), '0.0.1', '0.0.1');
-    expect(result.compatible).toBe(true);
-    expect(result.issues).toEqual([]);
-  });
-
   it('returns compatible when versions satisfy constraints', () => {
     const result = checkEngineCompat(
-      makeManifest({ 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' }),
+      makeManifest(defaultEngines),
       '1.0.0',
       '1.0.0',
     );
@@ -38,7 +28,7 @@ describe('checkEngineCompat', () => {
 
   it('returns incompatible when core version is below minimum', () => {
     const result = checkEngineCompat(
-      makeManifest({ 'renre-kit': '>=2.0.0' }),
+      makeManifest({ 'renre-kit': '>=2.0.0', 'extension-sdk': '>=0.0.1' }),
       '1.0.0',
       '1.0.0',
     );
@@ -50,7 +40,7 @@ describe('checkEngineCompat', () => {
 
   it('returns incompatible when sdk version is below minimum', () => {
     const result = checkEngineCompat(
-      makeManifest({ 'extension-sdk': '>=2.0.0' }),
+      makeManifest({ 'renre-kit': '>=0.0.1', 'extension-sdk': '>=2.0.0' }),
       '1.0.0',
       '1.0.0',
     );
@@ -61,7 +51,7 @@ describe('checkEngineCompat', () => {
 
   it('returns compatible on exact boundary match', () => {
     const result = checkEngineCompat(
-      makeManifest({ 'renre-kit': '>=1.0.0' }),
+      makeManifest({ 'renre-kit': '>=1.0.0', 'extension-sdk': '>=0.0.1' }),
       '1.0.0',
       '0.0.1',
     );
@@ -81,16 +71,16 @@ describe('checkEngineCompat', () => {
 
   it('handles major version boundary correctly', () => {
     const result = checkEngineCompat(
-      makeManifest({ 'renre-kit': '>=2.0.0' }),
+      makeManifest({ 'renre-kit': '>=2.0.0', 'extension-sdk': '>=0.0.1' }),
       '1.99.99',
       '0.0.1',
     );
     expect(result.compatible).toBe(false);
   });
 
-  it('compatible when only one engine specified and it matches', () => {
+  it('compatible when constraints match exactly', () => {
     const result = checkEngineCompat(
-      makeManifest({ 'renre-kit': '>=0.0.1' }),
+      makeManifest({ 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' }),
       '0.0.1',
       '0.0.1',
     );

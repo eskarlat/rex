@@ -11,8 +11,23 @@ vi.mock('./core/event-bus/event-bus.js', () => ({
   EventBus: vi.fn().mockImplementation(() => ({})),
 }));
 vi.mock('./core/paths/paths.js', () => ({
+  GLOBAL_DIR: '/mock/global',
+  DB_PATH: '/mock/global/db.sqlite',
+  EXTENSIONS_DIR: '/mock/global/extensions',
+  REGISTRIES_DIR: '/mock/global/registries',
+  VAULT_PATH: '/mock/global/vault.json',
+  CONFIG_PATH: '/mock/global/config.json',
+  LOGS_DIR: '/mock/global/logs',
+  SERVER_PID_PATH: '/mock/global/server.pid',
+  PROJECT_DIR: '.renre-kit',
+  PLUGINS_JSON: 'plugins.json',
+  MANIFEST_JSON: 'manifest.json',
   getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
   getManifestPath: vi.fn().mockImplementation((p: string) => `${p}/.renre-kit/manifest.json`),
+  getProjectDir: vi.fn().mockImplementation((p: string) => `${p}/.renre-kit`),
+  getPluginsPath: vi.fn().mockImplementation((p: string) => `${p}/.renre-kit/plugins.json`),
+  getSkillsDir: vi.fn().mockImplementation((p: string) => `${p}/.agents/skills`),
+  getAgentDir: vi.fn().mockImplementation((p: string, t: string) => `${p}/.agents/${t}`),
 }));
 vi.mock('./shared/fs-helpers.js', () => ({
   pathExistsSync: vi.fn().mockReturnValue(true),
@@ -106,6 +121,9 @@ vi.mock('./features/registry/commands/registry-search.command.js', () => ({
 }));
 vi.mock('./features/skills/commands/capabilities.command.js', () => ({
   handleCapabilities: vi.fn(),
+}));
+vi.mock('./features/doctor/commands/doctor.command.js', () => ({
+  handleDoctor: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./features/vault/commands/vault-set.command.js', () => ({
   handleVaultSet: vi.fn().mockResolvedValue(undefined),

@@ -26,6 +26,12 @@ vi.mock('../../extensions/manager/extension-manager.js', () => ({
 
 vi.mock('../../../core/paths/paths.js', () => ({
   getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
+  getManifestPath: vi.fn().mockReturnValue('/tmp/test/.renre-kit/manifest.json'),
+}));
+
+vi.mock('../../../shared/fs-helpers.js', () => ({
+  pathExistsSync: vi.fn().mockReturnValue(false),
+  readJsonSync: vi.fn().mockReturnValue({}),
 }));
 
 import * as clack from '@clack/prompts';

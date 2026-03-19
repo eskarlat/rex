@@ -253,11 +253,11 @@ renre-kit capabilities
 `;
 
 /**
- * Deploys the built-in RenreKit CLI skill to the project's `.agents/skills/` directory.
+ * Deploys the built-in RenreKit CLI skill to the project's agent skills directory.
  * Called during `renre-kit init` so that agents always have access to CLI documentation.
  */
-export function deployCoreSkills(projectPath: string): void {
-  const skillPath = join(projectPath, '.agents', 'skills', CORE_SKILL_NAME, 'SKILL.md');
+export function deployCoreSkills(projectPath: string, agentDir = '.agents'): void {
+  const skillPath = join(projectPath, agentDir, 'skills', CORE_SKILL_NAME, 'SKILL.md');
   mkdirSync(dirname(skillPath), { recursive: true });
   writeFileSync(skillPath, CORE_SKILL_CONTENT, 'utf-8');
 }
@@ -266,8 +266,8 @@ export function deployCoreSkills(projectPath: string): void {
  * Removes the built-in RenreKit CLI skill from the project's `.agents/skills/` directory.
  * Called during `renre-kit destroy`.
  */
-export function cleanupCoreSkills(projectPath: string): void {
-  const coreDir = join(projectPath, '.agents', 'skills', CORE_SKILL_NAME);
+export function cleanupCoreSkills(projectPath: string, agentDir = '.agents'): void {
+  const coreDir = join(projectPath, agentDir, 'skills', CORE_SKILL_NAME);
   if (existsSync(coreDir)) {
     rmSync(coreDir, { recursive: true, force: true });
   }

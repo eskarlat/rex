@@ -71,6 +71,14 @@ describe('core-skills-deployer', () => {
       deployCoreSkills(tmpDir);
       expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'cli'))).toBe(true);
     });
+
+    it('deploys to custom agent directory when specified', () => {
+      deployCoreSkills(tmpDir, '.github');
+
+      const skillPath = path.join(tmpDir, '.github', 'skills', 'cli', 'SKILL.md');
+      expect(fs.existsSync(skillPath)).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, '.agents'))).toBe(false);
+    });
   });
 
   describe('cleanupCoreSkills', () => {

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "renre-kit hello-world:greet"
+      }
+    ]
+  }
+}

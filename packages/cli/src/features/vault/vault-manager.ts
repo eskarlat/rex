@@ -8,6 +8,8 @@ import {
   writeJsonSync,
   ensureDirSync,
 } from '../../shared/fs-helpers.js';
+import { migrateFile, getSchemaVersion } from '../../shared/schema-migration.js';
+import { vaultMigrations } from './migrations/index.js';
 import {
   ExtensionError,
   ErrorCode,
@@ -29,6 +31,11 @@ export interface VaultListEntry {
   value: string;
   secret: boolean;
   tags: string[];
+}
+
+interface VaultFileData {
+  schemaVersion: number;
+  entries: Record<string, VaultEntry>;
 }
 
 type VaultData = Record<string, VaultEntry>;
@@ -95,12 +102,26 @@ function readVault(): VaultData {
   if (!pathExistsSync(VAULT_PATH)) {
     return {};
   }
-  return readJsonSync<VaultData>(VAULT_PATH);
+  const raw = readJsonSync<Record<string, unknown>>(VAULT_PATH);
+  const version = getSchemaVersion(raw);
+
+  if (version === 0) {
+    // v0 format: flat Record<string, VaultEntry> — migrate to envelope
+    const migrated = migrateFile(VAULT_PATH, raw, vaultMigrations) as unknown as VaultFileData;
+    return migrated.entries;
+  }
+
+  // v1+ format: { schemaVersion, entries }
+  return (raw as unknown as VaultFileData).entries;
 }
 
 function writeVault(data: VaultData): void {
   ensureDirSync(GLOBAL_DIR);
-  writeJsonSync(VAULT_PATH, data);
+  const envelope: VaultFileData = {
+    schemaVersion: 1,
+    entries: data,
+  };
+  writeJsonSync(VAULT_PATH, envelope);
 }
 
 export function setEntry(

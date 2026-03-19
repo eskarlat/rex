@@ -8,6 +8,20 @@ vi.mock('../../shared/fs-helpers.js', () => ({
   ensureDirSync: vi.fn(),
 }));
 
+vi.mock('../../shared/schema-migration.js', () => ({
+  migrateFile: vi.fn((_path: string, data: Record<string, unknown>) => {
+    // Simulate v0-to-v1 migration: wrap flat entries in envelope
+    if (typeof data['schemaVersion'] !== 'number') {
+      const { ...entries } = data;
+      return { schemaVersion: 1, entries };
+    }
+    return data;
+  }),
+  getSchemaVersion: vi.fn((data: Record<string, unknown>) =>
+    typeof data['schemaVersion'] === 'number' ? data['schemaVersion'] : 0,
+  ),
+}));
+
 vi.mock('../../core/paths/paths.js', () => ({
   VAULT_PATH: '/tmp/test-vault.json',
   GLOBAL_DIR: '/tmp/test-global',
@@ -52,11 +66,14 @@ describe('vault-manager', () => {
       expect(writeJsonSync).toHaveBeenCalledWith(
         '/tmp/test-vault.json',
         expect.objectContaining({
-          api_url: {
-            value: 'https://example.com',
-            secret: false,
-            tags: ['http'],
-          },
+          schemaVersion: 1,
+          entries: expect.objectContaining({
+            api_url: {
+              value: 'https://example.com',
+              secret: false,
+              tags: ['http'],
+            },
+          }),
         }),
       );
     });
@@ -71,8 +88,8 @@ describe('vault-manager', () => {
 
       expect(ensureDirSync).toHaveBeenCalled();
       const call = vi.mocked(writeJsonSync).mock.calls[0];
-      const written = call?.[1] as Record<string, { value: string; secret: boolean; tags: string[] }>;
-      const entry = written['api_token'];
+      const written = call?.[1] as { entries: Record<string, { value: string; secret: boolean; tags: string[] }> };
+      const entry = written.entries['api_token'];
       expect(entry).toBeDefined();
       expect(entry?.secret).toBe(true);
       expect(entry?.tags).toEqual(['jira']);
@@ -87,16 +104,19 @@ describe('vault-manager', () => {
         await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
-        existing_key: { value: 'existing', secret: false, tags: [] },
+        schemaVersion: 1,
+        entries: {
+          existing_key: { value: 'existing', secret: false, tags: [] },
+        },
       });
 
       const { setEntry } = await import('./vault-manager.js');
       setEntry('new_key', 'new_value', false);
 
       const call = vi.mocked(writeJsonSync).mock.calls[0];
-      const written = call?.[1] as Record<string, unknown>;
-      expect(written['existing_key']).toBeDefined();
-      expect(written['new_key']).toBeDefined();
+      const written = call?.[1] as { entries: Record<string, unknown> };
+      expect(written.entries['existing_key']).toBeDefined();
+      expect(written.entries['new_key']).toBeDefined();
     });
   });
 
@@ -106,7 +126,10 @@ describe('vault-manager', () => {
         await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
-        api_url: { value: 'https://example.com', secret: false, tags: [] },
+        schemaVersion: 1,
+        entries: {
+          api_url: { value: 'https://example.com', secret: false, tags: [] },
+        },
       });
 
       const { getEntry } = await import('./vault-manager.js');
@@ -127,9 +150,9 @@ describe('vault-manager', () => {
       const { setEntry, getEntry } = await import('./vault-manager.js');
       setEntry('secret_key', 'my-secret-value', true);
 
-      // Grab what was written
+      // Grab what was written (now in envelope format)
       const call = vi.mocked(writeJsonSync).mock.calls[0];
-      const written = call?.[1] as Record<string, { value: string; secret: boolean; tags: string[] }>;
+      const written = call?.[1] as Record<string, unknown>;
 
       // Now mock reading that back
       vi.mocked(pathExistsSync).mockReturnValue(true);
@@ -145,7 +168,10 @@ describe('vault-manager', () => {
       const { pathExistsSync, readJsonSync } =
         await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
-      vi.mocked(readJsonSync).mockReturnValue({});
+      vi.mocked(readJsonSync).mockReturnValue({
+        schemaVersion: 1,
+        entries: {},
+      });
 
       const { getEntry } = await import('./vault-manager.js');
       expect(getEntry('missing')).toBeUndefined();
@@ -166,8 +192,11 @@ describe('vault-manager', () => {
         await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
-        to_remove: { value: 'x', secret: false, tags: [] },
-        to_keep: { value: 'y', secret: false, tags: [] },
+        schemaVersion: 1,
+        entries: {
+          to_remove: { value: 'x', secret: false, tags: [] },
+          to_keep: { value: 'y', secret: false, tags: [] },
+        },
       });
 
       const { removeEntry } = await import('./vault-manager.js');
@@ -175,16 +204,19 @@ describe('vault-manager', () => {
       expect(removed).toBe(true);
 
       const call = vi.mocked(writeJsonSync).mock.calls[0];
-      const written = call?.[1] as Record<string, unknown>;
-      expect(written['to_remove']).toBeUndefined();
-      expect(written['to_keep']).toBeDefined();
+      const written = call?.[1] as { entries: Record<string, unknown> };
+      expect(written.entries['to_remove']).toBeUndefined();
+      expect(written.entries['to_keep']).toBeDefined();
     });
 
     it('should return false when key does not exist', async () => {
       const { pathExistsSync, readJsonSync } =
         await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
-      vi.mocked(readJsonSync).mockReturnValue({});
+      vi.mocked(readJsonSync).mockReturnValue({
+        schemaVersion: 1,
+        entries: {},
+      });
 
       const { removeEntry } = await import('./vault-manager.js');
       expect(removeEntry('missing')).toBe(false);
@@ -201,7 +233,7 @@ describe('vault-manager', () => {
       const { setEntry, listEntries } = await import('./vault-manager.js');
       setEntry('url', 'https://api.com', false, ['http']);
 
-      // After first write, mock reading back the written data
+      // After first write, mock reading back the written data (envelope format)
       const firstCall = vi.mocked(writeJsonSync).mock.calls[0];
       const firstWritten = firstCall?.[1] as Record<string, unknown>;
       vi.mocked(pathExistsSync).mockReturnValue(true);
@@ -209,7 +241,7 @@ describe('vault-manager', () => {
 
       setEntry('token', 'secret123', true, ['auth']);
 
-      // Read back the cumulative vault
+      // Read back the cumulative vault (envelope format)
       const lastCall = vi.mocked(writeJsonSync).mock.calls.at(-1);
       const written = lastCall?.[1] as Record<string, unknown>;
       vi.mocked(readJsonSync).mockReturnValue(written);
@@ -259,7 +291,10 @@ describe('vault-manager', () => {
         await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
-        url: { value: 'https://api.com', secret: false, tags: [] },
+        schemaVersion: 1,
+        entries: {
+          url: { value: 'https://api.com', secret: false, tags: [] },
+        },
       });
 
       const { getDecryptedValue } = await import('./vault-manager.js');
@@ -313,7 +348,10 @@ describe('vault-manager', () => {
         await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
-        bad_key: { value: 'not-valid-encrypted-data', secret: true, tags: [] },
+        schemaVersion: 1,
+        entries: {
+          bad_key: { value: 'not-valid-encrypted-data', secret: true, tags: [] },
+        },
       });
 
       const { getEntry } = await import('./vault-manager.js');

@@ -1,4 +1,5 @@
 export interface GlobalConfig {
+  schemaVersion: number;
   registries: RegistryConfig[];
   settings: Record<string, unknown>;
   extensionConfigs: Record<string, Record<string, ConfigMapping>>;

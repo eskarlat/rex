@@ -19,6 +19,7 @@ import { handleRegistryAdd } from './features/registry/commands/registry-add.com
 import { handleRegistryRemove } from './features/registry/commands/registry-remove.command.js';
 import { handleRegistrySearch } from './features/registry/commands/registry-search.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
+import { handleDoctor } from './features/doctor/commands/doctor.command.js';
 import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
 import { handleVaultList } from './features/vault/commands/vault-list.command.js';
 import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
@@ -515,6 +516,16 @@ export function createProgram(): Command {
     .action(() => {
       const projectPath = requireProject();
       handleCapabilities({ projectPath });
+    });
+
+  program
+    .command('doctor')
+    .description('Run diagnostic checks on the RenreKit installation')
+    .action(async (): Promise<void> => {
+      const projectPath = detectProject();
+      const getActivatedFn = (): Record<string, string> =>
+        projectPath ? getActivated(projectPath) : {};
+      await handleDoctor(projectPath, getActivatedFn);
     });
 
   // Dynamic extension commands: load from activated extensions' manifests

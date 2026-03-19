@@ -9,6 +9,10 @@ This directory contains all Architecture Decision Records (ADRs) for the RenreKi
 | [ADR-001](core/ADR-001-microkernel-architecture.md) | Microkernel (Plugin Architecture) pattern | Accepted |
 | [ADR-002](core/ADR-002-sqlite-project-registry.md) | SQLite for project registry | Accepted |
 | [ADR-003](core/ADR-003-technology-stack.md) | Node.js/TypeScript with Commander.js and @clack/prompts | Accepted |
+| [ADR-004](core/ADR-004-schema-versioning-migration.md) | Schema versioning & file migration framework | Proposed |
+| [ADR-005](core/ADR-005-build-time-version-constants.md) | Build-time version constants | Proposed |
+| [ADR-006](core/ADR-006-resilient-database-migrations.md) | Resilient database migrations | Proposed |
+| [ADR-007](core/ADR-007-doctor-diagnostic-command.md) | Doctor diagnostic command | Proposed |
 
 ## Extensions
 
@@ -21,6 +25,9 @@ This directory contains all Architecture Decision Records (ADRs) for the RenreKi
 | [ADR-005](extensions/ADR-005-bundled-mcp-servers.md) | MCP servers bundled inside extensions | Accepted |
 | [ADR-006](extensions/ADR-006-exact-version-pinning.md) | Exact version pinning (Terraform-style) | Accepted |
 | [ADR-007](extensions/ADR-007-pr-based-publishing.md) | PR-based publishing workflow | Accepted |
+| [ADR-008](extensions/ADR-008-single-main-entry-point.md) | Single main entry point for extension hooks | Accepted |
+| [ADR-009](extensions/ADR-009-engine-version-compatibility.md) | Engine-based version compatibility | Accepted |
+| [ADR-010](extensions/ADR-010-mandatory-engine-constraints.md) | Mandatory engine constraints | Proposed |
 
 ## Vault
 
@@ -38,6 +45,7 @@ This directory contains all Architecture Decision Records (ADRs) for the RenreKi
 | [ADR-003](dashboard/ADR-003-pin-based-lan-auth.md) | 4-digit PIN for LAN authentication | Accepted |
 | [ADR-004](dashboard/ADR-004-sleep-prevention.md) | Sleep prevention while dashboard runs | Accepted |
 | [ADR-005](dashboard/ADR-005-settings-sub-sidebar.md) | Settings page with sub-sidebar navigation | Accepted |
+| [ADR-006](dashboard/ADR-006-extension-widget-dashboard.md) | Extension widget dashboard | Accepted |
 
 ## SDK
 

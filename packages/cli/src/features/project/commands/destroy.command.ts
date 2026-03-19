@@ -4,6 +4,9 @@ import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getActivated, deactivate } from '../../extensions/manager/extension-manager.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
 import { cleanupCoreSkills } from '../../skills/core-skills-deployer.js';
+import { getManifestPath } from '../../../core/paths/paths.js';
+import { pathExistsSync, readJsonSync } from '../../../shared/fs-helpers.js';
+import type { ProjectManifest } from '../../../core/types/project.types.js';
 
 interface DestroyOptions {
   projectPath: string;
@@ -39,7 +42,11 @@ export async function handleDestroy(options: DestroyOptions): Promise<void> {
     }
   }
 
-  cleanupCoreSkills(options.projectPath);
+  const manifestPath = getManifestPath(options.projectPath);
+  const agentDir = pathExistsSync(manifestPath)
+    ? readJsonSync<ProjectManifest>(manifestPath).agentDir
+    : undefined;
+  cleanupCoreSkills(options.projectPath, agentDir);
 
   const bus = new EventBus();
   const pm = new ProjectManager(bus);
