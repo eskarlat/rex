@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, relative } from 'node:path';
 import semver from 'semver';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
 import {
@@ -132,7 +132,9 @@ function findExtensionIcon(
     try {
       const manifest = loadManifest(extDir);
       if (!manifest.icon) continue;
-      const iconPath = join(extDir, manifest.icon);
+      const iconPath = resolve(extDir, manifest.icon);
+      const rel = relative(extDir, iconPath);
+      if (rel.startsWith('..') || resolve(iconPath) !== iconPath) continue;
       if (!existsSync(iconPath)) continue;
       const ext = iconPath.substring(iconPath.lastIndexOf('.'));
       const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
@@ -234,19 +236,29 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       });
 
     const installedNames = new Set(installed.map((ext) => ext.name));
-    const available = listAvailableExtensions(registries)
-      .filter((entry) => !installedNames.has(entry.name))
-      .map((entry) => ({
-        name: entry.name,
-        description: entry.description,
-        version: entry.latestVersion,
-        type: entry.type,
-        author: entry.author,
-        icon: entry.icon,
-        tags: entry.tags ?? [],
-        status: 'available' as const,
-        hasIcon: !!resolveRegistryIcon(entry.name, registries),
-      }));
+    const availableEntries = listAvailableExtensions(registries)
+      .filter((entry) => !installedNames.has(entry.name));
+
+    // Pre-compute icon availability in a single pass instead of per-entry FS lookups
+    const extensionsWithIcons = new Set<string>();
+    for (const entry of availableEntries) {
+      if (entry.icon) {
+        const iconPath = resolveRegistryIcon(entry.name, registries);
+        if (iconPath) extensionsWithIcons.add(entry.name);
+      }
+    }
+
+    const available = availableEntries.map((entry) => ({
+      name: entry.name,
+      description: entry.description,
+      version: entry.latestVersion,
+      type: entry.type,
+      author: entry.author,
+      icon: entry.icon,
+      tags: entry.tags ?? [],
+      status: 'available' as const,
+      hasIcon: extensionsWithIcons.has(entry.name),
+    }));
 
     return {
       active,

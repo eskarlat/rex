@@ -32,6 +32,7 @@ function SidebarNavLink({ to, end, icon: Icon, label, collapsed }: SidebarNavLin
     <NavLink
       to={to}
       end={end}
+      aria-label={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
           'flex items-center rounded-md text-sm font-medium transition-colors',
@@ -120,6 +121,7 @@ function ExtensionNav({ extensions, collapsed }: ExtensionNavProps) {
             <NavLink
               key={ext.name}
               to={`/extensions/${ext.name}`}
+              aria-label={collapsed ? label : undefined}
               className={({ isActive }) =>
                 cn(
                   'flex items-center rounded-md text-sm font-medium transition-colors',

@@ -100,7 +100,9 @@ export function resolveRegistryIcon(
     const entries = readExtensionsJson(regDir);
     const found = entries.find((e) => e.name === extensionName);
     if (found?.icon) {
-      const iconPath = path.join(regDir, '.renre-kit', found.icon);
+      const iconsBase = path.join(regDir, '.renre-kit');
+      const iconPath = path.resolve(iconsBase, found.icon);
+      if (!iconPath.startsWith(iconsBase + path.sep) && iconPath !== iconsBase) continue;
       if (fs.existsSync(iconPath)) return iconPath;
     }
   }

@@ -1,5 +1,7 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import semver from 'semver';
 import type Database from 'better-sqlite3';
 import type { RegistryConfig } from '../../../core/types/index.js';
@@ -10,7 +12,7 @@ import { checkEngineConstraints } from '../engine/engine-compat.js';
 import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
 
 function getCachePath(): string {
-  const home = process.env['RENRE_KIT_HOME'] ?? path.join(process.env['HOME'] ?? '', '.renre-kit');
+  const home = process.env['RENRE_KIT_HOME'] ?? path.join(os.homedir(), '.renre-kit');
   return path.join(home, 'update-cache.json');
 }
 
@@ -53,15 +55,16 @@ export function writeUpdateCache(updates: UpdateInfo[]): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(getCachePath(), JSON.stringify(cache, null, 2));
+  const tmpPath = path.join(dir, `.update-cache-${randomUUID()}.tmp`);
+  fs.writeFileSync(tmpPath, JSON.stringify(cache, null, 2));
+  fs.renameSync(tmpPath, getCachePath());
 }
 
 export function readUpdateCache(): UpdateCache | null {
-  const cachePath = getCachePath();
-  if (!fs.existsSync(cachePath)) return null;
+  if (!fs.existsSync(getCachePath())) return null;
 
   try {
-    const raw = fs.readFileSync(cachePath, 'utf-8');
+    const raw = fs.readFileSync(getCachePath(), 'utf-8');
     return JSON.parse(raw) as UpdateCache;
   } catch {
     return null;
