@@ -12,16 +12,39 @@ vi.mock('@/core/hooks/use-dashboard-layout', () => ({
 
 vi.mock('@/core/hooks/use-extensions', () => ({
   useMarketplace: () => ({
-    data: { active: [], installed: [], available: [] },
+    data: {
+      active: [
+        {
+          name: 'ext',
+          widgets: [
+            { id: 'w1', title: 'Widget 1', defaultSize: { w: 4, h: 2 }, minSize: { w: 2, h: 1 }, maxSize: { w: 6, h: 4 } },
+            { id: 'w2', title: 'Widget 2', defaultSize: { w: 4, h: 2 } },
+          ],
+        },
+      ],
+      installed: [],
+      available: [],
+    },
     isLoading: false,
   }),
 }));
 
 vi.mock('./WidgetCard', () => ({
-  WidgetCard: ({ id, title, onRemove }: { id: string; title: string; onRemove: () => void }) => (
+  WidgetCard: ({ id, title, onRemove, onResize, size, constraints }: {
+    id: string;
+    title: string;
+    onRemove: () => void;
+    onResize: (newSize: { w: number; h: number }) => void;
+    size: { w: number; h: number };
+    constraints?: { minSize?: { w: number; h: number }; maxSize?: { w: number; h: number } };
+  }) => (
     <div data-testid={`widget-card-${id}`}>
       <span>{title}</span>
+      <span data-testid={`size-${id}`}>{size.w}x{size.h}</span>
+      {constraints?.minSize && <span data-testid={`min-${id}`}>{constraints.minSize.w}x{constraints.minSize.h}</span>}
+      {constraints?.maxSize && <span data-testid={`max-${id}`}>{constraints.maxSize.w}x{constraints.maxSize.h}</span>}
       <button data-testid={`remove-${id}`} onClick={onRemove}>Remove</button>
+      <button data-testid={`resize-${id}`} onClick={() => onResize({ w: 5, h: 3 })}>Resize</button>
     </div>
   ),
 }));
@@ -110,5 +133,48 @@ describe('WidgetGrid', () => {
         { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
       ],
     });
+  });
+
+  it('resize callback updates widget size and saves', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    fireEvent.click(screen.getByTestId('resize-ext:w1'));
+    expect(mockMutate).toHaveBeenCalledWith({
+      widgets: [
+        { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 5, h: 3 } },
+      ],
+    });
+  });
+
+  it('passes constraints from marketplace for widgets with minSize/maxSize', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    expect(screen.getByTestId('min-ext:w1')).toHaveTextContent('2x1');
+    expect(screen.getByTestId('max-ext:w1')).toHaveTextContent('6x4');
+  });
+
+  it('does not pass constraints for widgets without minSize/maxSize', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    expect(screen.queryByTestId('min-ext:w2')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('max-ext:w2')).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -13,16 +13,36 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardLayout, useSaveDashboardLayout } from '@/core/hooks/use-dashboard-layout';
 import type { DashboardLayout, WidgetPlacement } from '@/core/hooks/use-dashboard-layout';
+import { useMarketplace } from '@/core/hooks/use-extensions';
 import { WidgetCard } from './WidgetCard';
 import { WidgetPicker } from './WidgetPicker';
 
+interface WidgetConstraintsMap {
+  [compositeId: string]: {
+    minSize?: { w: number; h: number };
+    maxSize?: { w: number; h: number };
+  };
+}
+
 export function WidgetGrid() {
   const { data: layout } = useDashboardLayout();
+  const { data: marketplace } = useMarketplace();
   const saveMutation = useSaveDashboardLayout();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const widgets = layout?.widgets ?? [];
   const addedWidgetIds = new Set(widgets.map((w) => w.id));
+
+  const constraintsMap = useMemo<WidgetConstraintsMap>(() => {
+    const map: WidgetConstraintsMap = {};
+    for (const ext of marketplace?.active ?? []) {
+      for (const w of ext.widgets ?? []) {
+        const key = `${ext.name}:${w.id}`;
+        map[key] = { minSize: w.minSize, maxSize: w.maxSize };
+      }
+    }
+    return map;
+  }, [marketplace]);
 
   const saveLayout = useCallback(
     (updated: DashboardLayout) => {
@@ -48,6 +68,16 @@ export function WidgetGrid() {
     (widgetId: string) => {
       const filtered = widgets.filter((w) => w.id !== widgetId);
       saveLayout({ widgets: filtered });
+    },
+    [widgets, saveLayout],
+  );
+
+  const handleResize = useCallback(
+    (widgetId: string, newSize: { w: number; h: number }) => {
+      const updated = widgets.map((w) =>
+        w.id === widgetId ? { ...w, size: newSize } : w,
+      );
+      saveLayout({ widgets: updated });
     },
     [widgets, saveLayout],
   );
@@ -93,7 +123,9 @@ export function WidgetGrid() {
                   widgetId={w.widgetId}
                   title={w.widgetId}
                   size={w.size}
+                  constraints={constraintsMap[w.id]}
                   onRemove={() => handleRemove(w.id)}
+                  onResize={(newSize) => handleResize(w.id, newSize)}
                 />
               ))}
             </div>
