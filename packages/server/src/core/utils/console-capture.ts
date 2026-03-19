@@ -13,12 +13,7 @@ const buffer: ConsoleEntry[] = [];
 const listeners = new Set<ConsoleListener>();
 let installed = false;
 
-function push(level: string, args: unknown[]): void {
-  const msg = args
-    .map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
-    .join(' ');
-  const entry: ConsoleEntry = { level, msg, time: new Date().toISOString() };
-
+function addEntry(entry: ConsoleEntry): void {
   if (buffer.length >= MAX_BUFFER_SIZE) {
     buffer.splice(0, buffer.length - MAX_BUFFER_SIZE + 1);
   }
@@ -27,6 +22,13 @@ function push(level: string, args: unknown[]): void {
   for (const fn of listeners) {
     fn(entry);
   }
+}
+
+function push(level: string, args: unknown[]): void {
+  const msg = args
+    .map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
+    .join(' ');
+  addEntry({ level, msg, time: new Date().toISOString() });
 }
 
 export function installConsoleCapture(): void {
@@ -57,16 +59,7 @@ export function installConsoleCapture(): void {
 }
 
 export function pushConsoleEntry(level: string, msg: string): void {
-  const entry: ConsoleEntry = { level, msg, time: new Date().toISOString() };
-
-  if (buffer.length >= MAX_BUFFER_SIZE) {
-    buffer.splice(0, buffer.length - MAX_BUFFER_SIZE + 1);
-  }
-  buffer.push(entry);
-
-  for (const fn of listeners) {
-    fn(entry);
-  }
+  addEntry({ level, msg, time: new Date().toISOString() });
 }
 
 export function getConsoleEntries(): ConsoleEntry[] {

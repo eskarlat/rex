@@ -9,7 +9,9 @@
     "**/coverage/**",
     "**/.turbo/**",
     "**/e2e/**",
-    "**/components/ui/**"
+    "**/components/ui/**",
+    "**/plan/**",
+    "**/docs/plans/**"
   ],
   "absolute": true,
   "gitignore": true

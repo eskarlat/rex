@@ -40,6 +40,8 @@ export { aggregateSkills } from './features/skills/capabilities-aggregator.js';
 // Shared utilities
 export { pathExistsSync, readJsonSync, writeJsonSync, ensureDirSync, removeDirSync, copyDirSync } from './shared/fs-helpers.js';
 export { interpolate } from './shared/interpolation.js';
+export { executeTaskCommand } from './shared/task-execution.js';
+export type { TaskExecResult } from './shared/task-execution.js';
 
 // Types
 export type { ProjectRecord, ProjectManifest, PluginsJson } from './core/types/project.types.js';

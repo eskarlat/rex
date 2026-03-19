@@ -8,94 +8,23 @@ export interface LogMessage {
   data?: Record<string, unknown>;
 }
 
-interface LogSocketResult {
-  messages: LogMessage[];
-  connected: boolean;
-  connect: () => void;
-  disconnect: () => void;
-  clear: () => void;
-  setInitial: (entries: LogMessage[]) => void;
-}
-
-export function useLogSocket(): LogSocketResult {
-  const [messages, setMessages] = useState<LogMessage[]>([]);
-  const [connected, setConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-
-  const connect = useCallback(() => {
-    if (wsRef.current) return;
-
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/api/logs`);
-
-    ws.onopen = () => {
-      setConnected(true);
-    };
-
-    ws.onmessage = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(String(event.data)) as LogMessage;
-        setMessages((prev) => [...prev.slice(-999), data]);
-      } catch {
-        /* ignore malformed messages */
-      }
-    };
-
-    ws.onclose = () => {
-      setConnected(false);
-      wsRef.current = null;
-    };
-
-    ws.onerror = () => {
-      ws.close();
-    };
-
-    wsRef.current = ws;
-  }, []);
-
-  const disconnect = useCallback(() => {
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-  }, []);
-
-  const clear = useCallback(() => {
-    setMessages([]);
-  }, []);
-
-  const setInitial = useCallback((entries: LogMessage[]) => {
-    setMessages(entries.slice(-1000));
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, []);
-
-  return { messages, connected, connect, disconnect, clear, setInitial };
-}
-
 export interface ConsoleMessage {
   level: string;
   msg: string;
   time: string;
 }
 
-interface ConsoleSocketResult {
-  messages: ConsoleMessage[];
+interface SocketStreamResult<T> {
+  messages: T[];
   connected: boolean;
   connect: () => void;
   disconnect: () => void;
   clear: () => void;
-  setInitial: (entries: ConsoleMessage[]) => void;
+  setInitial: (entries: T[]) => void;
 }
 
-export function useConsoleSocket(): ConsoleSocketResult {
-  const [messages, setMessages] = useState<ConsoleMessage[]>([]);
+function useSocketStream<T>(wsPath: string): SocketStreamResult<T> {
+  const [messages, setMessages] = useState<T[]>([]);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -103,7 +32,7 @@ export function useConsoleSocket(): ConsoleSocketResult {
     if (wsRef.current) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/api/logs/console`);
+    const ws = new WebSocket(`${protocol}//${window.location.host}${wsPath}`);
 
     ws.onopen = () => {
       setConnected(true);
@@ -111,7 +40,7 @@ export function useConsoleSocket(): ConsoleSocketResult {
 
     ws.onmessage = (event: MessageEvent) => {
       try {
-        const data = JSON.parse(String(event.data)) as ConsoleMessage;
+        const data = JSON.parse(String(event.data)) as T;
         setMessages((prev) => [...prev.slice(-999), data]);
       } catch {
         /* ignore malformed messages */
@@ -128,7 +57,7 @@ export function useConsoleSocket(): ConsoleSocketResult {
     };
 
     wsRef.current = ws;
-  }, []);
+  }, [wsPath]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -141,7 +70,7 @@ export function useConsoleSocket(): ConsoleSocketResult {
     setMessages([]);
   }, []);
 
-  const setInitial = useCallback((entries: ConsoleMessage[]) => {
+  const setInitial = useCallback((entries: T[]) => {
     setMessages(entries.slice(-1000));
   }, []);
 
@@ -154,4 +83,12 @@ export function useConsoleSocket(): ConsoleSocketResult {
   }, []);
 
   return { messages, connected, connect, disconnect, clear, setInitial };
+}
+
+export function useLogSocket(): SocketStreamResult<LogMessage> {
+  return useSocketStream<LogMessage>('/api/logs');
+}
+
+export function useConsoleSocket(): SocketStreamResult<ConsoleMessage> {
+  return useSocketStream<ConsoleMessage>('/api/logs/console');
 }

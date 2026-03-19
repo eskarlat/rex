@@ -7,13 +7,18 @@ import {
 } from '@tanstack/react-query';
 import { fetchApi } from '@/core/api/client';
 
+/** Position coordinates for a widget on the dashboard grid */
+export interface WidgetPosition { x: number; y: number }
+/** Dimensions for a widget on the dashboard grid */
+export interface WidgetDimensions { w: number; h: number }
+
 /** UI-side widget placement — mirrors server-side DashboardLayout shape */
 export interface WidgetPlacement {
   id: string;
   extensionName: string;
   widgetId: string;
-  position: { x: number; y: number };
-  size: { w: number; h: number };
+  position: WidgetPosition;
+  size: WidgetDimensions;
 }
 
 export interface DashboardLayout { widgets: WidgetPlacement[] }
