@@ -1,9 +1,12 @@
 import { defineConfig } from '@playwright/test';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const E2E_HOME = mkdtempSync(join(tmpdir(), 'renre-e2e-'));
+
+// Write E2E_HOME to a file so test workers can read it
+writeFileSync(join(__dirname, '.e2e-home'), E2E_HOME);
 
 export default defineConfig({
   testDir: './e2e',

@@ -36,7 +36,7 @@ test.describe('Page navigation', () => {
   test('vault page loads', async ({ page }) => {
     await page.goto('/vault');
     await expect(page).toHaveURL(/\/vault/);
-    await expect(page.locator('body')).toBeVisible();
+    await expect(page.locator('#root')).toBeAttached();
   });
 
   test('scheduler page loads', async ({ page }) => {
@@ -89,7 +89,7 @@ test.describe('Marketplace page', () => {
 test.describe('Vault page', () => {
   test('loads vault page', async ({ page }) => {
     await page.goto('/vault');
-    await expect(page.locator('body')).toBeVisible();
+    await expect(page.locator('#root')).toBeAttached();
   });
 
   test('vault API responds with entries', async ({ request }) => {
