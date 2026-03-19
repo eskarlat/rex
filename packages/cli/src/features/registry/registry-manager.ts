@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { simpleGit } from 'simple-git';
 import type { RegistryConfig, RegistryEntry } from '../../core/types/index.js';
+import type { PartialEngineConstraints } from '../extensions/types/extension.types.js';
 import { isStale as checkStale, updateTimestamp, getLastFetched } from './registry-cache.js';
 
 export interface RegistryStatus {
@@ -18,6 +19,7 @@ export interface ResolvedExtension {
   latestVersion: string;
   type: string;
   registryName: string;
+  engines?: PartialEngineConstraints;
 }
 
 function getRegistriesDir(): string {
@@ -87,6 +89,25 @@ function readExtensionsJson(regDir: string): RegistryEntry[] {
   return data.extensions;
 }
 
+export function resolveRegistryIcon(
+  extensionName: string,
+  configs: RegistryConfig[],
+): string | null {
+  const sorted = [...configs].sort((a, b) => a.priority - b.priority);
+
+  for (const config of sorted) {
+    const regDir = getRegistryPath(config.name);
+    const entries = readExtensionsJson(regDir);
+    const found = entries.find((e) => e.name === extensionName);
+    if (found?.icon) {
+      const iconPath = path.join(regDir, '.renre-kit', found.icon);
+      if (fs.existsSync(iconPath)) return iconPath;
+    }
+  }
+
+  return null;
+}
+
 export async function ensureSynced(configs: RegistryConfig[]): Promise<void> {
   for (const config of configs) {
     const regDir = getRegistryPath(config.name);
@@ -136,6 +157,7 @@ export function resolve(
         latestVersion: found.latestVersion,
         type: found.type,
         registryName: config.name,
+        engines: found.engines,
       };
     }
   }

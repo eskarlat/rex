@@ -32,6 +32,9 @@ export interface Extension {
   title?: string;
   panels?: ExtensionPanel[];
   widgets?: ExtensionWidget[];
+  updateAvailable?: string | null;
+  engineCompatible?: boolean;
+  hasIcon?: boolean;
 }
 
 export interface MarketplaceResult {
@@ -94,6 +97,24 @@ export function useDeactivateExtension(): UseMutationResult<
       fetchApi<void>('/api/extensions/deactivate', {
         method: 'POST',
         body: { name },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+    },
+  });
+}
+
+export function useUpdateExtension(): UseMutationResult<
+  void,
+  Error,
+  { name: string; force?: boolean }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { name: string; force?: boolean }>({
+    mutationFn: (data: { name: string; force?: boolean }) =>
+      fetchApi<void>('/api/extensions/update', {
+        method: 'POST',
+        body: data,
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['marketplace'] });

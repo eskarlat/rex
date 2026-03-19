@@ -16,7 +16,7 @@ export { ProjectManager } from './core/project/project-manager.js';
 // Extension system
 export { install, remove, listInstalled, activate, deactivate, getActivated, status, validateVaultKeys } from './features/extensions/manager/extension-manager.js';
 export { loadManifest } from './features/extensions/manifest/manifest-loader.js';
-export { checkEngineCompat } from './features/extensions/engine/engine-compat.js';
+export { checkEngineCompat, checkEngineConstraints } from './features/extensions/engine/engine-compat.js';
 export type { CompatResult } from './features/extensions/engine/engine-compat.js';
 export { ConnectionManager } from './features/extensions/mcp/connection-manager.js';
 export { loadCommandHandler, executeCommand } from './features/extensions/runtime/standard-runtime.js';
@@ -28,7 +28,7 @@ export { setEntry, getEntry, removeEntry, listEntries, getDecryptedValue, hasEnt
 export { loadGlobalConfig, saveGlobalConfig, setExtensionConfig, getExtensionConfigMappings, resolveExtensionConfig, getReferencingExtensions } from './features/config/config-manager.js';
 
 // Registry
-export { sync, syncAll, ensureSynced, list as listRegistries, resolve as resolveExtension, listAvailable as listAvailableExtensions, searchAvailable as searchAvailableExtensions, installExtension } from './features/registry/registry-manager.js';
+export { sync, syncAll, ensureSynced, list as listRegistries, resolve as resolveExtension, listAvailable as listAvailableExtensions, searchAvailable as searchAvailableExtensions, installExtension, resolveRegistryIcon } from './features/registry/registry-manager.js';
 export type { SearchOptions } from './features/registry/registry-manager.js';
 
 // Dashboard
@@ -43,10 +43,14 @@ export { interpolate } from './shared/interpolation.js';
 export { executeTaskCommand } from './shared/task-execution.js';
 export type { TaskExecResult } from './shared/task-execution.js';
 
+// Update cache
+export { readUpdateCache, refreshUpdateCache } from './features/extensions/update-cache/update-cache.js';
+export type { UpdateCache, UpdateInfo } from './features/extensions/types/update-cache.types.js';
+
 // Types
 export type { ProjectRecord, ProjectManifest, PluginsJson } from './core/types/project.types.js';
 export type { GlobalConfig, RegistryConfig, RegistryEntry, ConfigMapping, ConfigSchemaField } from './core/types/config.types.js';
 export type { EventType, EventPayload } from './core/types/events.types.js';
 export type { ExecutionContext } from './core/types/context.types.js';
-export type { ExtensionManifest, ExtensionCommand, EngineConstraints, UiWidget, WidgetSize } from './features/extensions/types/extension.types.js';
+export type { ExtensionManifest, ExtensionCommand, EngineConstraints, PartialEngineConstraints, UiWidget, WidgetSize } from './features/extensions/types/extension.types.js';
 export type { DashboardLayout, WidgetPlacement } from './core/types/dashboard.types.js';

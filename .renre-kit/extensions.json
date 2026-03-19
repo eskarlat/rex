@@ -6,7 +6,7 @@
       "gitUrl": "./extensions/hello-world",
       "latestVersion": "1.0.0",
       "type": "standard",
-      "icon": "wave",
+      "icon": "icons/hello-world.svg",
       "author": "eskarlat",
       "tags": ["example", "greeting"]
     },
@@ -16,7 +16,7 @@
       "gitUrl": "./extensions/echo-mcp",
       "latestVersion": "1.0.0",
       "type": "mcp",
-      "icon": "repeat",
+      "icon": "icons/echo-mcp.svg",
       "author": "eskarlat",
       "tags": ["example", "mcp"]
     }

@@ -414,11 +414,13 @@ export function createProgram(): Command {
     .command('ext:update [name]')
     .description('Update an extension to the latest version')
     .option('--all', 'Update all extensions')
-    .action(async (name: string | undefined, opts: { all?: boolean }) => {
+    .option('--force', 'Force update even if engine is incompatible')
+    .action(async (name: string | undefined, opts: { all?: boolean; force?: boolean }) => {
       const { registries } = loadGlobalConfig();
       await handleExtUpdate({
         name,
         all: !!opts.all,
+        force: !!opts.force,
         registryConfigs: registries,
         projectPath: detectProject() ?? process.cwd(),
         db: getDb(),

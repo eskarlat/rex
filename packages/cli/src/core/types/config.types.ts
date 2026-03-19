@@ -1,3 +1,5 @@
+import type { PartialEngineConstraints } from '../../features/extensions/types/extension.types.js';
+
 export interface GlobalConfig {
   schemaVersion: number;
   registries: RegistryConfig[];
@@ -21,6 +23,7 @@ export interface RegistryEntry {
   icon: string;
   author: string;
   tags?: string[];
+  engines?: PartialEngineConstraints;
 }
 
 export interface ConfigMapping {

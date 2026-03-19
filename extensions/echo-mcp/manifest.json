@@ -3,7 +3,7 @@
   "title": "Echo MCP",
   "version": "1.0.0",
   "description": "An echo MCP extension for RenreKit — echoes back any message via JSON-RPC",
-  "icon": "repeat",
+  "icon": "icon.svg",
   "type": "mcp",
   "engines": {
     "renre-kit": ">=0.0.1",

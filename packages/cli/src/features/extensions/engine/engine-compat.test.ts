@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { ExtensionManifest } from '../types/extension.types.js';
-import { checkEngineCompat } from './engine-compat.js';
+import { checkEngineCompat, checkEngineConstraints } from './engine-compat.js';
 
 function makeManifest(engines: ExtensionManifest['engines']): ExtensionManifest {
   return {
@@ -118,5 +118,83 @@ describe('checkEngineCompat', () => {
     );
     expect(result.compatible).toBe(false);
     expect(result.issues).toHaveLength(2);
+  });
+});
+
+describe('checkEngineConstraints', () => {
+  it('returns compatible when engines is undefined', () => {
+    const result = checkEngineConstraints(undefined, '1.0.0', '1.0.0');
+    expect(result.compatible).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('returns compatible when engines is empty object', () => {
+    const result = checkEngineConstraints({}, '1.0.0', '1.0.0');
+    expect(result.compatible).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('returns incompatible when only renre-kit specified and fails', () => {
+    const result = checkEngineConstraints(
+      { 'renre-kit': '>=2.0.0' },
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toContain('renre-kit');
+  });
+
+  it('returns incompatible when only extension-sdk specified and fails', () => {
+    const result = checkEngineConstraints(
+      { 'extension-sdk': '>=2.0.0' },
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toContain('extension-sdk');
+  });
+
+  it('reports both issues when both engines fail', () => {
+    const result = checkEngineConstraints(
+      { 'renre-kit': '>=5.0.0', 'extension-sdk': '>=3.0.0' },
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(2);
+  });
+
+  it('returns compatible on boundary match', () => {
+    const result = checkEngineConstraints(
+      { 'renre-kit': '>=1.0.0', 'extension-sdk': '>=0.5.0' },
+      '1.0.0',
+      '0.5.0',
+    );
+    expect(result.compatible).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('returns issue for invalid renre-kit range', () => {
+    const result = checkEngineConstraints(
+      { 'renre-kit': 'not-a-range' },
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toContain('Invalid renre-kit engine constraint');
+  });
+
+  it('returns issue for invalid extension-sdk range', () => {
+    const result = checkEngineConstraints(
+      { 'extension-sdk': '%%%' },
+      '1.0.0',
+      '1.0.0',
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toContain('Invalid extension-sdk engine constraint');
   });
 });

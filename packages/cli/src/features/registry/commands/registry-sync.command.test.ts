@@ -9,9 +9,18 @@ vi.mock('../registry-manager.js', () => ({
   syncAll: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('../../extensions/update-cache/update-cache.js', () => ({
+  refreshUpdateCache: vi.fn(),
+}));
+
+vi.mock('../../../core/database/database.js', () => ({
+  getDb: vi.fn().mockReturnValue({}),
+}));
+
 import * as clack from '@clack/prompts';
 import { handleRegistrySync } from './registry-sync.command.js';
 import * as registryManager from '../registry-manager.js';
+import { refreshUpdateCache } from '../../extensions/update-cache/update-cache.js';
 
 describe('registry-sync command', () => {
   beforeEach(() => {
@@ -25,6 +34,14 @@ describe('registry-sync command', () => {
 
     expect(registryManager.syncAll).toHaveBeenCalled();
     expect(clack.log.success).toHaveBeenCalled();
+  });
+
+  it('refreshes update cache after sync', async () => {
+    await handleRegistrySync({
+      configs: [{ name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 }],
+    });
+
+    expect(refreshUpdateCache).toHaveBeenCalled();
   });
 
   it('reports per-registry sync failures', async () => {
