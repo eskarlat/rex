@@ -57,6 +57,66 @@ function SidebarNavLink({ to, end, icon: Icon, label, collapsed }: SidebarNavLin
   );
 }
 
+interface SidebarHeaderProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+function SidebarHeader({ collapsed, onToggle }: SidebarHeaderProps) {
+  return (
+    <div className={cn('flex h-14 items-center', collapsed ? 'justify-center px-0' : 'justify-between px-3')}>
+      {!collapsed && <span className="px-1 text-lg font-bold">RenreKit</span>}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggle}
+            className="h-9 w-9 text-muted-foreground"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          {collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+interface ExtensionNavProps {
+  extensions: Array<{ name: string; title?: string }>;
+  collapsed: boolean;
+}
+
+function ExtensionNav({ extensions, collapsed }: ExtensionNavProps) {
+  if (extensions.length === 0) return null;
+  return (
+    <>
+      <Separator className="my-3" />
+      {!collapsed && (
+        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Extensions
+        </p>
+      )}
+      <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-0')}>
+        {extensions.map((ext) => (
+          <SidebarNavLink
+            key={ext.name}
+            to={`/extensions/${ext.name}`}
+            end={false}
+            icon={Puzzle}
+            label={ext.title ?? ext.name}
+            collapsed={collapsed}
+          />
+        ))}
+      </nav>
+    </>
+  );
+}
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { data: marketplace } = useMarketplace();
@@ -64,25 +124,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn('flex h-full flex-col border-r bg-muted/40 transition-all', collapsed ? 'w-14' : 'w-60')}>
-      <div className={cn('flex h-14 items-center', collapsed ? 'justify-center px-0' : 'justify-between px-3')}>
-        {!collapsed && <span className="px-1 text-lg font-bold">RenreKit</span>}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setCollapsed((prev) => !prev)}
-              className="h-9 w-9 text-muted-foreground"
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            {collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          </TooltipContent>
-        </Tooltip>
-      </div>
+      <SidebarHeader collapsed={collapsed} onToggle={() => setCollapsed((prev) => !prev)} />
       <Separator />
       <ScrollArea className="flex-1 py-4">
         <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-2')}>
@@ -90,29 +132,7 @@ export function Sidebar() {
             <SidebarNavLink key={link.to} {...link} collapsed={collapsed} />
           ))}
         </nav>
-
-        {activeExtensions.length > 0 && (
-          <>
-            <Separator className="my-3" />
-            {!collapsed && (
-              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Extensions
-              </p>
-            )}
-            <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-0')}>
-              {activeExtensions.map((ext) => (
-                <SidebarNavLink
-                  key={ext.name}
-                  to={`/extensions/${ext.name}`}
-                  end={false}
-                  icon={Puzzle}
-                  label={ext.title ?? ext.name}
-                  collapsed={collapsed}
-                />
-              ))}
-            </nav>
-          </>
-        )}
+        <ExtensionNav extensions={activeExtensions} collapsed={collapsed} />
       </ScrollArea>
       <Separator />
       <nav className={cn('space-y-1 py-2', collapsed ? 'flex flex-col items-center' : 'px-2')}>

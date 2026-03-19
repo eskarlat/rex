@@ -8,6 +8,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMarketplace } from '@/core/hooks/use-extensions';
 import { useProjectContext } from '@/core/providers/ProjectProvider';
+import { WidgetGrid } from '@/features/dashboard/components/WidgetGrid';
 
 export function HomePage() {
   const { activeProject } = useProjectContext();
@@ -43,6 +44,8 @@ export function HomePage() {
           </CardContent>
         </Card>
       </div>
+
+      <WidgetGrid />
     </div>
   );
 }

@@ -359,12 +359,12 @@ export function createProgram(): Command {
       const cacheTTL = parseInt(opts.cacheTtl, 10);
 
       if (!Number.isFinite(priority) || priority < 0) {
-        console.error('Error: --priority must be a non-negative integer');
+        process.stderr.write('Error: --priority must be a non-negative integer\n');
         process.exitCode = 1;
         return;
       }
       if (!Number.isFinite(cacheTTL) || cacheTTL < 0) {
-        console.error('Error: --cache-ttl must be a non-negative integer');
+        process.stderr.write('Error: --cache-ttl must be a non-negative integer\n');
         process.exitCode = 1;
         return;
       }

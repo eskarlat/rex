@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- This module intentionally patches console methods for capture */
 export interface ConsoleEntry {
   level: string;
   msg: string;

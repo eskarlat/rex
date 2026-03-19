@@ -421,5 +421,132 @@ describe('manifest-loader', () => {
       const result = loadManifest(tempDir);
       expect((result as Record<string, unknown>)['skills']).toBeUndefined();
     });
+
+    // --- Widget support ---
+
+    it('should load manifest with widgets array', () => {
+      writeManifest({
+        ...validStandardManifest,
+        ui: {
+          panels: [{ id: 'p1', title: 'Panel', entry: 'dist/panel.js' }],
+          widgets: [
+            {
+              id: 'status-widget',
+              title: 'Status',
+              entry: 'dist/status-widget.js',
+              defaultSize: { w: 4, h: 2 },
+            },
+          ],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.ui?.widgets).toHaveLength(1);
+      expect(result.ui?.widgets?.[0]?.id).toBe('status-widget');
+      expect(result.ui?.widgets?.[0]?.title).toBe('Status');
+      expect(result.ui?.widgets?.[0]?.entry).toBe('dist/status-widget.js');
+      expect(result.ui?.widgets?.[0]?.defaultSize).toEqual({ w: 4, h: 2 });
+    });
+
+    it('should accept widget with all size fields', () => {
+      writeManifest({
+        ...validStandardManifest,
+        ui: {
+          panels: [],
+          widgets: [
+            {
+              id: 'full-widget',
+              title: 'Full',
+              entry: 'dist/full.js',
+              defaultSize: { w: 4, h: 2 },
+              minSize: { w: 2, h: 1 },
+              maxSize: { w: 8, h: 4 },
+            },
+          ],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.ui?.widgets?.[0]?.minSize).toEqual({ w: 2, h: 1 });
+      expect(result.ui?.widgets?.[0]?.maxSize).toEqual({ w: 8, h: 4 });
+    });
+
+    it('should accept widget with only required fields', () => {
+      writeManifest({
+        ...validStandardManifest,
+        ui: {
+          panels: [],
+          widgets: [
+            {
+              id: 'minimal',
+              title: 'Minimal',
+              entry: 'dist/minimal.js',
+              defaultSize: { w: 3, h: 2 },
+            },
+          ],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.ui?.widgets?.[0]?.minSize).toBeUndefined();
+      expect(result.ui?.widgets?.[0]?.maxSize).toBeUndefined();
+    });
+
+    it('should reject widget missing defaultSize', () => {
+      writeManifest({
+        ...validStandardManifest,
+        ui: {
+          panels: [],
+          widgets: [
+            {
+              id: 'bad-widget',
+              title: 'Bad',
+              entry: 'dist/bad.js',
+            },
+          ],
+        },
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should accept empty widgets array', () => {
+      writeManifest({
+        ...validStandardManifest,
+        ui: {
+          panels: [{ id: 'p1', title: 'Panel', entry: 'dist/panel.js' }],
+          widgets: [],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.ui?.widgets).toHaveLength(0);
+    });
+
+    it('should accept manifest with panels but no widgets', () => {
+      writeManifest({
+        ...validStandardManifest,
+        ui: {
+          panels: [{ id: 'p1', title: 'Panel', entry: 'dist/panel.js' }],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.ui?.panels).toHaveLength(1);
+      expect(result.ui?.widgets).toEqual([]);
+    });
+
+    it('should accept manifest with widgets but no panels', () => {
+      writeManifest({
+        ...validStandardManifest,
+        ui: {
+          widgets: [
+            {
+              id: 'w1',
+              title: 'Widget',
+              entry: 'dist/w.js',
+              defaultSize: { w: 4, h: 2 },
+            },
+          ],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.ui?.panels).toEqual([]);
+      expect(result.ui?.widgets).toHaveLength(1);
+    });
   });
 });

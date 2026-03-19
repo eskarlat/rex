@@ -12,6 +12,14 @@ export interface ExtensionPanel {
   title: string;
 }
 
+export interface ExtensionWidget {
+  id: string;
+  title: string;
+  defaultSize: { w: number; h: number };
+  minSize?: { w: number; h: number };
+  maxSize?: { w: number; h: number };
+}
+
 export interface Extension {
   name: string;
   version: string;
@@ -23,6 +31,7 @@ export interface Extension {
   hasConfig?: boolean;
   title?: string;
   panels?: ExtensionPanel[];
+  widgets?: ExtensionWidget[];
 }
 
 export interface MarketplaceResult {

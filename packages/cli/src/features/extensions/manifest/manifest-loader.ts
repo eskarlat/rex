@@ -18,6 +18,20 @@ const uiPanelSchema = z.object({
   entry: z.string(),
 });
 
+const widgetSizeSchema = z.object({
+  w: z.number(),
+  h: z.number(),
+});
+
+const uiWidgetSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  entry: z.string(),
+  defaultSize: widgetSizeSchema,
+  minSize: widgetSizeSchema.optional(),
+  maxSize: widgetSizeSchema.optional(),
+});
+
 const mcpConfigSchema = z.object({
   transport: z.enum(['stdio', 'sse']),
   command: z.string().optional(),
@@ -67,7 +81,8 @@ const extensionManifestSchema = z
       .optional(),
     ui: z
       .object({
-        panels: z.array(uiPanelSchema),
+        panels: z.array(uiPanelSchema).default([]),
+        widgets: z.array(uiWidgetSchema).default([]),
       })
       .optional(),
     engines: z

@@ -23,6 +23,16 @@ const LEVEL_COLORS: Record<string, string> = {
   error: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
+const consoleLevelColors: Record<string, string> = {
+  error: 'text-red-400',
+  warn: 'text-yellow-400',
+  debug: 'text-zinc-500',
+};
+
+function consoleColorForLevel(level: string): string {
+  return consoleLevelColors[level] ?? 'text-green-400';
+}
+
 function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleTimeString();
@@ -293,10 +303,7 @@ function ServerConsoleTab() {
                 </span>
                 <span className={cn(
                   'shrink-0 text-xs w-12',
-                  entry.level === 'error' ? 'text-red-400' :
-                  entry.level === 'warn' ? 'text-yellow-400' :
-                  entry.level === 'debug' ? 'text-zinc-500' :
-                  'text-green-400',
+                  consoleColorForLevel(entry.level),
                 )}>
                   {entry.level}
                 </span>

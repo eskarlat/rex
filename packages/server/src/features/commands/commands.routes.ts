@@ -74,6 +74,34 @@ async function executeMcpTool(
   return { output, exitCode: 0 };
 }
 
+async function executeResolvedCommand(
+  connectionManager: ConnectionManager,
+  resolved: ResolvedCommand,
+  projectPath: string,
+  body: RunBody,
+  reply: FastifyReply,
+): Promise<unknown> {
+  const { extName, cmdName, extDir, manifest } = resolved;
+  const args = body.args ?? {};
+  const configSchema = manifest.config?.schema ?? {};
+  const resolvedConfig = resolveExtensionConfig(extName, configSchema, projectPath);
+
+  const cmdDef = manifest.commands[cmdName];
+  if (cmdDef) {
+    getLogger().info('commands', `Executing ${body.command}`, { type: 'standard', handler: cmdDef.handler });
+    const handler = await loadCommandHandler(extDir, cmdDef.handler);
+    return executeCommand(handler, { projectName: '', projectPath, args, config: resolvedConfig });
+  }
+
+  if (manifest.type === 'mcp' && manifest.mcp) {
+    getLogger().info('commands', `Executing ${body.command}`, { type: 'mcp', tool: cmdName });
+    return executeMcpTool(connectionManager, extName, cmdName, extDir, manifest, projectPath, args);
+  }
+
+  reply.code(404);
+  return { error: `Command '${cmdName}' not found in extension '${extName}'` };
+}
+
 const commandsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   const connectionManager = new ConnectionManager();
 
@@ -96,28 +124,7 @@ const commandsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, 
       return { error: resolution.value.error };
     }
 
-    const { extName, cmdName, extDir, manifest } = resolution.value;
-    const args = body.args ?? {};
-
-    const configSchema = manifest.config?.schema ?? {};
-    const resolvedConfig = resolveExtensionConfig(extName, configSchema, projectPath);
-
-    // Declared commands: file-based handlers
-    const cmdDef = manifest.commands[cmdName];
-    if (cmdDef) {
-      getLogger().info('commands', `Executing ${body.command}`, { type: 'standard', handler: cmdDef.handler });
-      const handler = await loadCommandHandler(extDir, cmdDef.handler);
-      return executeCommand(handler, { projectName: '', projectPath, args, config: resolvedConfig });
-    }
-
-    // MCP extensions: forward to MCP server
-    if (manifest.type === 'mcp' && manifest.mcp) {
-      getLogger().info('commands', `Executing ${body.command}`, { type: 'mcp', tool: cmdName });
-      return executeMcpTool(connectionManager, extName, cmdName, extDir, manifest, projectPath, args);
-    }
-
-    reply.code(404);
-    return { error: `Command '${cmdName}' not found in extension '${extName}'` };
+    return executeResolvedCommand(connectionManager, resolution.value, projectPath, body, reply);
   });
 
   done();

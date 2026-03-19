@@ -31,6 +31,9 @@ export { loadGlobalConfig, saveGlobalConfig, setExtensionConfig, getExtensionCon
 export { sync, syncAll, ensureSynced, list as listRegistries, resolve as resolveExtension, listAvailable as listAvailableExtensions, searchAvailable as searchAvailableExtensions, installExtension } from './features/registry/registry-manager.js';
 export type { SearchOptions } from './features/registry/registry-manager.js';
 
+// Dashboard
+export { getDashboardLayout, saveDashboardLayout } from './features/dashboard/dashboard-layout.js';
+
 // Skills
 export { aggregateSkills } from './features/skills/capabilities-aggregator.js';
 
@@ -43,4 +46,5 @@ export type { ProjectRecord, ProjectManifest, PluginsJson } from './core/types/p
 export type { GlobalConfig, RegistryConfig, RegistryEntry, ConfigMapping, ConfigSchemaField } from './core/types/config.types.js';
 export type { EventType, EventPayload } from './core/types/events.types.js';
 export type { ExecutionContext } from './core/types/context.types.js';
-export type { ExtensionManifest, ExtensionCommand, EngineConstraints } from './features/extensions/types/extension.types.js';
+export type { ExtensionManifest, ExtensionCommand, EngineConstraints, UiWidget, WidgetSize } from './features/extensions/types/extension.types.js';
+export type { DashboardLayout, WidgetPlacement } from './core/types/dashboard.types.js';

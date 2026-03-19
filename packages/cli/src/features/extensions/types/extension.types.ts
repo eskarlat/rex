@@ -11,6 +11,20 @@ export interface UiPanel {
   entry: string;
 }
 
+export interface WidgetSize {
+  w: number;
+  h: number;
+}
+
+export interface UiWidget {
+  id: string;
+  title: string;
+  entry: string;
+  defaultSize: WidgetSize;
+  minSize?: WidgetSize;
+  maxSize?: WidgetSize;
+}
+
 export interface McpConfig {
   transport: 'stdio' | 'sse';
   command?: string;
@@ -62,6 +76,7 @@ export interface ExtensionManifest {
   };
   ui?: {
     panels: UiPanel[];
+    widgets: UiWidget[];
   };
   engines?: EngineConstraints;
   agent?: AgentAssets;

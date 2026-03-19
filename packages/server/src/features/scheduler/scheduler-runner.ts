@@ -58,10 +58,7 @@ interface CharResult {
   inDouble: boolean;
 }
 
-function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: boolean): CharResult {
-  if (escaped) {
-    return { action: 'append', escaped: false, inSingle, inDouble };
-  }
+function handleEscapeChar(ch: string, inSingle: boolean, inDouble: boolean): CharResult | null {
   if (ch === '\\' && !inSingle) {
     return { action: 'skip', escaped: true, inSingle, inDouble };
   }
@@ -71,6 +68,15 @@ function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: 
   if (ch === '"' && !inSingle) {
     return { action: 'skip', escaped: false, inSingle, inDouble: !inDouble };
   }
+  return null;
+}
+
+function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: boolean): CharResult {
+  if (escaped) {
+    return { action: 'append', escaped: false, inSingle, inDouble };
+  }
+  const escapeResult = handleEscapeChar(ch, inSingle, inDouble);
+  if (escapeResult) return escapeResult;
   if (/\s/.test(ch) && !inSingle && !inDouble) {
     return { action: 'split', escaped: false, inSingle, inDouble };
   }

@@ -44,6 +44,14 @@ function generateId(): string {
   return `${Date.now()}-${hex}`;
 }
 
+function resolveTaskName(body: CreateTaskBody): string | undefined {
+  return body.name ?? body.extension_name;
+}
+
+function resolveTaskType(body: CreateTaskBody): string {
+  return body.type ?? (body.extension_name ? 'extension' : 'manual');
+}
+
 const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   fastify.get('/api/scheduler', () => {
     const db = getDb();
@@ -52,8 +60,8 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
 
   fastify.post('/api/scheduler', (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as CreateTaskBody;
-    const name = body.name ?? body.extension_name;
-    const type = body.type ?? (body.extension_name ? 'extension' : 'manual');
+    const name = resolveTaskName(body);
+    const type = resolveTaskType(body);
     if (!name || !body.command || !body.cron) {
       reply.code(400);
       return { error: 'name, command, and cron are required' };
