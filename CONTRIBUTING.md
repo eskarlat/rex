@@ -6,7 +6,7 @@ Thank you for your interest in contributing to RenreKit! This guide will help yo
 
 ```bash
 # Clone the repository
-git clone https://github.com/eskarlat/rex.git
+git clone https://github.com/example-org/renre-kit.git
 cd rex
 
 # Install dependencies
@@ -115,7 +115,7 @@ The local registry at `registry/extensions.json` lists the reference extensions.
 
 ## Reporting Issues
 
-Open an issue at https://github.com/eskarlat/rex/issues with:
+Open an issue at https://github.com/example-org/renre-kit/issues with:
 - Steps to reproduce
 - Expected vs actual behavior
 - Node.js and OS version
