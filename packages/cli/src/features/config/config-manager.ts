@@ -8,6 +8,8 @@ import {
   writeJsonSync,
   ensureDirSync,
 } from '../../shared/fs-helpers.js';
+import { migrateFile } from '../../shared/schema-migration.js';
+import { configMigrations } from './migrations/index.js';
 import { getDecryptedValue } from '../vault/vault-manager.js';
 
 export const DEFAULT_REGISTRY: RegistryConfig = {
@@ -18,6 +20,7 @@ export const DEFAULT_REGISTRY: RegistryConfig = {
 };
 
 const DEFAULT_CONFIG: GlobalConfig = {
+  schemaVersion: 1,
   registries: [DEFAULT_REGISTRY],
   settings: {},
   extensionConfigs: {},
@@ -27,11 +30,12 @@ export function loadGlobalConfig(): GlobalConfig {
   if (!pathExistsSync(CONFIG_PATH)) {
     return { ...DEFAULT_CONFIG, extensionConfigs: {} };
   }
-  const stored = readJsonSync<Partial<GlobalConfig>>(CONFIG_PATH);
+  const stored = readJsonSync<Record<string, unknown>>(CONFIG_PATH);
+  const migrated = migrateFile(CONFIG_PATH, stored, configMigrations) as Partial<GlobalConfig>;
   return {
     ...DEFAULT_CONFIG,
-    ...stored,
-    extensionConfigs: stored.extensionConfigs ?? {},
+    ...migrated,
+    extensionConfigs: migrated.extensionConfigs ?? {},
   };
 }
 

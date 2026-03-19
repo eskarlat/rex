@@ -1,6 +1,6 @@
 // RenreKit Extension SDK — Entry point
 
-export const SDK_VERSION = '0.0.1';
+export { SDK_VERSION } from './version.js';
 
 // Core types
 export type {

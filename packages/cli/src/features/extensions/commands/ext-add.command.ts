@@ -40,8 +40,9 @@ export async function handleExtAdd(options: ExtAddOptions): Promise<void> {
   const compat = checkEngineCompat(manifest, CLI_VERSION, SDK_VERSION);
   if (!compat.compatible) {
     for (const issue of compat.issues) {
-      clack.log.warn(issue);
+      clack.log.error(issue);
     }
+    return;
   }
 
   if (options.projectPath) {

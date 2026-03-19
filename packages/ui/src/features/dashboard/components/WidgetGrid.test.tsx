@@ -177,4 +177,18 @@ describe('WidgetGrid', () => {
     expect(screen.queryByTestId('min-ext:w2')).not.toBeInTheDocument();
     expect(screen.queryByTestId('max-ext:w2')).not.toBeInTheDocument();
   });
+
+  it('hides widgets from deactivated extensions', () => {
+    vi.mocked(useDashboardLayout).mockReturnValue({
+      data: {
+        widgets: [
+          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          { id: 'deactivated-ext:w1', extensionName: 'deactivated-ext', widgetId: 'w1', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+        ],
+      },
+    } as ReturnType<typeof useDashboardLayout>);
+    renderGrid();
+    expect(screen.getByTestId('widget-card-ext:w1')).toBeInTheDocument();
+    expect(screen.queryByTestId('widget-card-deactivated-ext:w1')).not.toBeInTheDocument();
+  });
 });

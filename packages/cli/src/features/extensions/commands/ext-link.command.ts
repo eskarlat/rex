@@ -33,8 +33,9 @@ export async function handleExtLink(options: ExtLinkOptions): Promise<void> {
   const compat = checkEngineCompat(manifest, CLI_VERSION, SDK_VERSION);
   if (!compat.compatible) {
     for (const issue of compat.issues) {
-      clack.log.warn(issue);
+      clack.log.error(issue);
     }
+    return;
   }
 
   const linkPath = getExtensionDir(manifest.name, LINK_VERSION);

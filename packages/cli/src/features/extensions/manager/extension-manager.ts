@@ -1,14 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type Database from 'better-sqlite3';
-import type { PluginsJson } from '../../../core/types/index.js';
+import type { PluginsJson, ProjectManifest } from '../../../core/types/index.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import type { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getExtensionConfigMappings } from '../../config/config-manager.js';
 import { hasEntry } from '../../vault/vault-manager.js';
 import { getLogger } from '../../../core/logger/index.js';
 import { checkEngineCompat } from '../engine/engine-compat.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
+import { PROJECT_DIR, MANIFEST_JSON } from '../../../core/paths/paths.js';
 
 export interface InstalledExtension {
   name: string;
@@ -46,6 +48,18 @@ function writePluginsJson(projectPath: string, plugins: PluginsJson): void {
   fs.writeFileSync(filePath, JSON.stringify(plugins, null, 2));
 }
 
+function resolveAgentDir(projectDir: string): string {
+  const manifestPath = path.join(projectDir, PROJECT_DIR, MANIFEST_JSON);
+  if (fs.existsSync(manifestPath)) {
+    const raw = fs.readFileSync(manifestPath, 'utf-8');
+    const manifest = JSON.parse(raw) as ProjectManifest;
+    if (manifest.agentDir) {
+      return manifest.agentDir;
+    }
+  }
+  return '.agents';
+}
+
 async function runHook(
   extensionDir: string,
   mainPath: string,
@@ -57,11 +71,15 @@ async function runHook(
     return;
   }
   try {
+    const agentDir = resolveAgentDir(projectDir);
     const mod: unknown = await import(fullPath);
     const modRecord = mod as Record<string, unknown>;
     const hookFn = modRecord[hookName];
     if (typeof hookFn === 'function') {
-      await (hookFn as (ctx: { projectDir: string }) => Promise<void>)({ projectDir });
+      await (hookFn as (ctx: { projectDir: string; agentDir: string }) => Promise<void>)({
+        projectDir,
+        agentDir,
+      });
     }
   } catch {
     // Hook execution failures are non-fatal during activate/deactivate
@@ -122,9 +140,11 @@ export async function activate(
 
   const compat = checkEngineCompat(manifest, CLI_VERSION, SDK_VERSION);
   if (!compat.compatible) {
-    for (const issue of compat.issues) {
-      getLogger().warn('extension-manager', issue);
-    }
+    throw new ExtensionError(
+      name,
+      ErrorCode.ENGINE_INCOMPATIBLE,
+      `Engine incompatibility: ${compat.issues.join('; ')}`,
+    );
   }
 
   const plugins = readPluginsJson(projectPath);

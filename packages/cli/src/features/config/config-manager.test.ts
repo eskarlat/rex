@@ -7,6 +7,13 @@ vi.mock('../../shared/fs-helpers.js', () => ({
   ensureDirSync: vi.fn(),
 }));
 
+vi.mock('../../shared/schema-migration.js', () => ({
+  migrateFile: vi.fn((_path: string, data: Record<string, unknown>) => data),
+  getSchemaVersion: vi.fn((data: Record<string, unknown>) =>
+    typeof data['schemaVersion'] === 'number' ? data['schemaVersion'] : 0,
+  ),
+}));
+
 vi.mock('../../core/paths/paths.js', () => ({
   CONFIG_PATH: '/tmp/test-config.json',
   GLOBAL_DIR: '/tmp/test-global',
@@ -60,6 +67,7 @@ describe('config-manager', () => {
       const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
+        schemaVersion: 1,
         registries: [{ name: 'default', url: 'https://example.com', priority: 0, cacheTTL: 3600 }],
         settings: { theme: 'dark' },
         extensionConfigs: {
@@ -73,6 +81,26 @@ describe('config-manager', () => {
       expect(config.registries).toHaveLength(1);
       expect(config.extensionConfigs['jira']).toBeDefined();
     });
+
+    it('should call migrateFile when loading config', async () => {
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
+      const { migrateFile } = await import('../../shared/schema-migration.js');
+      vi.mocked(pathExistsSync).mockReturnValue(true);
+      vi.mocked(readJsonSync).mockReturnValue({
+        registries: [],
+        settings: {},
+        extensionConfigs: {},
+      });
+
+      const { loadGlobalConfig } = await import('./config-manager.js');
+      loadGlobalConfig();
+
+      expect(migrateFile).toHaveBeenCalledWith(
+        '/tmp/test-config.json',
+        expect.any(Object),
+        expect.any(Array),
+      );
+    });
   });
 
   describe('saveGlobalConfig', () => {
@@ -81,6 +109,7 @@ describe('config-manager', () => {
 
       const { saveGlobalConfig } = await import('./config-manager.js');
       saveGlobalConfig({
+        schemaVersion: 1,
         registries: [],
         settings: {},
         extensionConfigs: {

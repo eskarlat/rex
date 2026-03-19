@@ -53,11 +53,12 @@ export interface AgentAssets {
   agents?: string[];
   workflows?: string[];
   context?: string[];
+  hooks?: string[];
 }
 
 export interface EngineConstraints {
-  'renre-kit'?: string;
-  'extension-sdk'?: string;
+  'renre-kit': string;
+  'extension-sdk': string;
 }
 
 export interface ExtensionManifest {
@@ -78,6 +79,6 @@ export interface ExtensionManifest {
     panels: UiPanel[];
     widgets: UiWidget[];
   };
-  engines?: EngineConstraints;
+  engines: EngineConstraints;
   agent?: AgentAssets;
 }

@@ -1,5 +1,13 @@
-import { readFileSync, existsSync, mkdirSync, copyFileSync, rmSync } from 'node:fs';
-import { join, dirname, relative } from 'node:path';
+import {
+  readFileSync,
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  unlinkSync,
+  copyFileSync,
+} from 'node:fs';
+import { join, dirname, basename } from 'node:path';
 
 interface SkillRef {
   name: string;
@@ -12,12 +20,16 @@ interface AgentAssets {
   agents?: string[];
   workflows?: string[];
   context?: string[];
+  hooks?: string[];
 }
 
 interface Manifest {
   name: string;
   agent?: AgentAssets;
 }
+
+/** Categories whose files may contain a YAML frontmatter `name` field to prefix. */
+const FRONTMATTER_CATEGORIES = new Set(['prompts', 'agents']);
 
 function readManifestName(extensionDir: string): Manifest {
   const manifestPath = join(extensionDir, 'manifest.json');
@@ -28,12 +40,64 @@ function readManifestName(extensionDir: string): Manifest {
   return JSON.parse(raw) as Manifest;
 }
 
-function copyFile(src: string, dest: string): void {
+/**
+ * Prefixes the `name` field in YAML frontmatter with `{extName}:`.
+ * If no frontmatter or no `name` field exists, returns content unchanged.
+ * Skips prefixing if the name is already prefixed with the extension name.
+ */
+function transformFrontmatterName(content: string, extName: string): string {
+  const fmEnd = content.indexOf('\n---', 4);
+  if (!content.startsWith('---\n') || fmEnd === -1) {
+    return content;
+  }
+
+  const frontmatter = content.substring(4, fmEnd);
+  const lines = frontmatter.split('\n');
+  let transformed = false;
+
+  const updatedLines = lines.map((line) => {
+    const namePrefix = 'name:';
+    if (!line.startsWith(namePrefix)) {
+      return line;
+    }
+    const value = line.substring(namePrefix.length).trim();
+    if (value.startsWith(`${extName}.`)) {
+      return line;
+    }
+    transformed = true;
+    return `name: ${extName}.${value}`;
+  });
+
+  if (!transformed) {
+    return content;
+  }
+
+  return `---\n${updatedLines.join('\n')}${content.substring(fmEnd)}`;
+}
+
+/**
+ * Deploys a file with optional frontmatter name transformation.
+ * For categories in FRONTMATTER_CATEGORIES (and skills), the `name` field
+ * in YAML frontmatter gets prefixed with `{extName}:`.
+ */
+function deployFile(
+  src: string,
+  dest: string,
+  extName: string,
+  transformName: boolean,
+): void {
   if (!existsSync(src)) {
     return;
   }
   mkdirSync(dirname(dest), { recursive: true });
-  copyFileSync(src, dest);
+
+  if (transformName) {
+    const content = readFileSync(src, 'utf-8');
+    const transformed = transformFrontmatterName(content, extName);
+    writeFileSync(dest, transformed);
+  } else {
+    copyFileSync(src, dest);
+  }
 }
 
 function removeDir(dir: string): void {
@@ -42,78 +106,70 @@ function removeDir(dir: string): void {
   }
 }
 
-/**
- * Computes the relative path within a category directory.
- * Given a manifest path like "agent/prompts/api/style.prompt.md",
- * extracts the portion after "agent/{category}/" → "api/style.prompt.md".
- * This preserves subdirectory structure to prevent basename collisions.
- */
-function getCategoryRelativePath(filePath: string, category: string): string {
-  const categoryPrefix = `agent/${category}/`;
-  const idx = filePath.indexOf(categoryPrefix);
-  if (idx >= 0) {
-    return filePath.substring(idx + categoryPrefix.length);
+function removeFile(filePath: string): void {
+  if (existsSync(filePath)) {
+    unlinkSync(filePath);
   }
-  // Fallback: use path relative to first "agent/" occurrence
-  const agentIdx = filePath.indexOf('agent/');
-  if (agentIdx >= 0) {
-    const afterAgent = filePath.substring(agentIdx + 6);
-    // Strip category prefix if present (e.g., "prompts/file.md" → "file.md")
-    const slashIdx = afterAgent.indexOf('/');
-    if (slashIdx >= 0) {
-      return afterAgent.substring(slashIdx + 1);
-    }
-    return afterAgent;
-  }
-  // Last resort: just the filename
-  return relative('.', filePath).split('/').pop() ?? filePath;
 }
 
 /**
- * Deploys agent assets (skills, prompts, agents, workflows, context)
+ * Gets the basename of a file from a manifest path.
+ * e.g., "agent/prompts/style.prompt.md" → "style.prompt.md"
+ */
+function getFileBasename(filePath: string): string {
+  return basename(filePath);
+}
+
+/**
+ * Deploys agent assets (skills, prompts, agents, workflows, context, hooks)
  * from an extension directory to the project's `.agents/` directory.
  *
- * Skills are deployed to `.agents/skills/{skillName}/SKILL.md`.
- * Other assets preserve their relative path structure within the category:
- *   `.agents/{category}/{ext}/{relativePath}`
+ * All filenames are prefixed with `{extensionName}.` for uniqueness.
+ * Skills: `.agents/skills/{ext}.{skill}/SKILL.md`
+ * Others: `.agents/{category}/{ext}.{basename}`
  *
- * File naming conventions:
- *   - Skills: `SKILL.md` (in named folder)
- *   - Prompts: `*.prompt.md`
- *   - Agents: `*.agent.md`
- *   - Workflows: `*.workflow.md`
- *   - Context: `*.context.md`
+ * Files in skills, prompts, and agents categories have their frontmatter
+ * `name` field prefixed with `{extensionName}.`.
  */
-export function deployAgentAssets(extensionDir: string, projectDir: string): void {
+export function deployAgentAssets(
+  extensionDir: string,
+  projectDir: string,
+  agentDirName = '.agents',
+): void {
   const manifest = readManifestName(extensionDir);
   const agent = manifest.agent;
   if (!agent) {
     return;
   }
 
-  const agentDir = join(projectDir, '.agents');
+  const agentDir = join(projectDir, agentDirName);
   const extName = manifest.name;
 
   if (agent.skills) {
     for (const skill of agent.skills) {
-      copyFile(
+      deployFile(
         join(extensionDir, skill.path),
-        join(agentDir, 'skills', skill.name, 'SKILL.md'),
+        join(agentDir, 'skills', `${extName}.${skill.name}`, 'SKILL.md'),
+        extName,
+        true,
       );
     }
   }
 
-  const fileArrayCategories = ['prompts', 'agents', 'workflows', 'context'] as const;
+  const fileArrayCategories = ['prompts', 'agents', 'workflows', 'context', 'hooks'] as const;
   for (const category of fileArrayCategories) {
     const paths = agent[category];
     if (!paths) {
       continue;
     }
+    const shouldTransform = FRONTMATTER_CATEGORIES.has(category);
     for (const filePath of paths) {
-      const relativePath = getCategoryRelativePath(filePath, category);
-      copyFile(
+      const fileName = getFileBasename(filePath);
+      deployFile(
         join(extensionDir, filePath),
-        join(agentDir, category, extName, relativePath),
+        join(agentDir, category, `${extName}.${fileName}`),
+        extName,
+        shouldTransform,
       );
     }
   }
@@ -122,18 +178,30 @@ export function deployAgentAssets(extensionDir: string, projectDir: string): voi
 /**
  * Removes all agent assets deployed by an extension from the project's `.agents/` directory.
  */
-export function cleanupAgentAssets(extensionDir: string, projectDir: string): void {
+export function cleanupAgentAssets(
+  extensionDir: string,
+  projectDir: string,
+  agentDirName = '.agents',
+): void {
   const manifest = readManifestName(extensionDir);
-  const agentDir = join(projectDir, '.agents');
+  const agentDir = join(projectDir, agentDirName);
+  const extName = manifest.name;
 
   if (manifest.agent?.skills) {
     for (const skill of manifest.agent.skills) {
-      removeDir(join(agentDir, 'skills', skill.name));
+      removeDir(join(agentDir, 'skills', `${extName}.${skill.name}`));
     }
   }
 
-  const nonSkillCategories = ['prompts', 'agents', 'workflows', 'context'] as const;
-  for (const category of nonSkillCategories) {
-    removeDir(join(agentDir, category, manifest.name));
+  const fileArrayCategories = ['prompts', 'agents', 'workflows', 'context', 'hooks'] as const;
+  for (const category of fileArrayCategories) {
+    const paths = manifest.agent?.[category];
+    if (!paths) {
+      continue;
+    }
+    for (const filePath of paths) {
+      const fileName = getFileBasename(filePath);
+      removeFile(join(agentDir, category, `${extName}.${fileName}`));
+    }
   }
 }

@@ -6,7 +6,9 @@ vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
   outro: vi.fn(),
   text: vi.fn(),
+  select: vi.fn(),
   multiselect: vi.fn(),
+  confirm: vi.fn().mockResolvedValue(false),
   isCancel: vi.fn().mockReturnValue(false),
   cancel: vi.fn(),
   log: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), success: vi.fn() },
@@ -29,6 +31,12 @@ vi.mock('../../../core/database/database.js', () => ({
 vi.mock('../../extensions/manager/extension-manager.js', () => ({
   listInstalled: vi.fn().mockReturnValue([]),
   activate: vi.fn().mockResolvedValue(undefined),
+  getActivated: vi.fn().mockReturnValue({}),
+}));
+
+const mockHandleDoctor = vi.fn().mockResolvedValue(undefined);
+vi.mock('../../doctor/commands/doctor.command.js', () => ({
+  handleDoctor: (...args: unknown[]) => mockHandleDoctor(...args),
 }));
 
 vi.mock('../../../core/paths/paths.js', () => ({
@@ -46,15 +54,17 @@ describe('init command', () => {
     vi.mocked(clack.isCancel).mockReturnValue(false);
   });
 
-  it('prompts for project name and calls projectManager.init', async () => {
+  it('prompts for project name and agent dir, then calls projectManager.init', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue('.github');
     vi.mocked(clack.multiselect).mockResolvedValue([]);
 
     await handleInit({ projectPath: '/tmp/test', force: false });
 
     expect(clack.intro).toHaveBeenCalled();
     expect(clack.text).toHaveBeenCalled();
-    expect(mockInit).toHaveBeenCalledWith('my-project', '/tmp/test');
+    expect(clack.select).toHaveBeenCalled();
+    expect(mockInit).toHaveBeenCalledWith('my-project', '/tmp/test', '.github');
     expect(clack.outro).toHaveBeenCalled();
   });
 
@@ -70,6 +80,7 @@ describe('init command', () => {
 
   it('skips multiselect when no extensions installed', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue('.github');
     vi.mocked(extensionManager.listInstalled).mockReturnValue([]);
 
     await handleInit({ projectPath: '/tmp/test', force: false });
@@ -80,6 +91,7 @@ describe('init command', () => {
 
   it('shows multiselect when extensions are installed', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue('.github');
     vi.mocked(extensionManager.listInstalled).mockReturnValue([
       { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
     ]);
@@ -95,12 +107,14 @@ describe('init command', () => {
 
   it('handles cancel on multiselect', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue('.github');
     vi.mocked(extensionManager.listInstalled).mockReturnValue([
       { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
     ]);
     vi.mocked(clack.multiselect).mockResolvedValue(Symbol('cancel'));
     vi.mocked(clack.isCancel)
       .mockReturnValueOnce(false) // text check
+      .mockReturnValueOnce(false) // select check
       .mockReturnValueOnce(true); // multiselect check
 
     await handleInit({ projectPath: '/tmp/test', force: false });
@@ -111,6 +125,7 @@ describe('init command', () => {
 
   it('shows warning when project is already initialized', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue('.github');
     mockInit.mockImplementationOnce(() => {
       throw new ProjectAlreadyInitializedError('/tmp/test');
     });
@@ -124,6 +139,7 @@ describe('init command', () => {
 
   it('re-throws non-init errors from projectManager.init', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue('.github');
     mockInit.mockImplementationOnce(() => {
       throw new Error('Database is locked');
     });
@@ -131,8 +147,22 @@ describe('init command', () => {
     await expect(handleInit({ projectPath: '/tmp/test', force: false })).rejects.toThrow('Database is locked');
   });
 
+  it('handles cancel on agent dir select', async () => {
+    vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue(Symbol('cancel'));
+    vi.mocked(clack.isCancel)
+      .mockReturnValueOnce(false) // text check
+      .mockReturnValueOnce(true); // select check
+
+    await handleInit({ projectPath: '/tmp/test', force: false });
+
+    expect(clack.cancel).toHaveBeenCalled();
+    expect(mockInit).not.toHaveBeenCalled();
+  });
+
   it('activates multiple selected extensions', async () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
+    vi.mocked(clack.select).mockResolvedValue('.agents');
     vi.mocked(extensionManager.listInstalled).mockReturnValue([
       { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
       { name: 'ext-b', version: '2.0.0', registry_source: 'default', installed_at: '', type: 'mcp' },
@@ -142,5 +172,47 @@ describe('init command', () => {
     await handleInit({ projectPath: '/tmp/test', force: false });
 
     expect(extensionManager.activate).toHaveBeenCalledTimes(2);
+  });
+
+  describe('post-init doctor prompt', () => {
+    it('runs doctor when user accepts', async () => {
+      vi.mocked(clack.text).mockResolvedValue('my-project');
+      vi.mocked(clack.select).mockResolvedValue('.github');
+      vi.mocked(clack.confirm).mockResolvedValue(true);
+
+      await handleInit({ projectPath: '/tmp/test', force: false });
+
+      expect(clack.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('diagnostic') }),
+      );
+      expect(mockHandleDoctor).toHaveBeenCalledWith(
+        '/tmp/test',
+        expect.any(Function),
+      );
+    });
+
+    it('skips doctor when user declines', async () => {
+      vi.mocked(clack.text).mockResolvedValue('my-project');
+      vi.mocked(clack.select).mockResolvedValue('.github');
+      vi.mocked(clack.confirm).mockResolvedValue(false);
+
+      await handleInit({ projectPath: '/tmp/test', force: false });
+
+      expect(mockHandleDoctor).not.toHaveBeenCalled();
+    });
+
+    it('skips doctor when user cancels confirm', async () => {
+      vi.mocked(clack.text).mockResolvedValue('my-project');
+      vi.mocked(clack.select).mockResolvedValue('.github');
+      const cancelSymbol = Symbol('cancel');
+      vi.mocked(clack.confirm).mockResolvedValue(cancelSymbol);
+      vi.mocked(clack.isCancel).mockImplementation(
+        (val) => val === cancelSymbol,
+      );
+
+      await handleInit({ projectPath: '/tmp/test', force: false });
+
+      expect(mockHandleDoctor).not.toHaveBeenCalled();
+    });
   });
 });

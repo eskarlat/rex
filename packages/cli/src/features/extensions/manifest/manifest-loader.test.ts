@@ -23,6 +23,11 @@ describe('manifest-loader', () => {
     );
   }
 
+  const validEngines = {
+    'renre-kit': '>=0.0.1',
+    'extension-sdk': '>=0.0.1',
+  };
+
   const validStandardManifest = {
     name: 'test-extension',
     version: '1.0.0',
@@ -31,6 +36,7 @@ describe('manifest-loader', () => {
     commands: {
       hello: { handler: 'commands/hello.js', description: 'Say hello' },
     },
+    engines: validEngines,
   };
 
   const validMcpManifest = {
@@ -46,6 +52,7 @@ describe('manifest-loader', () => {
       command: 'node',
       args: ['server.js'],
     },
+    engines: validEngines,
   };
 
   describe('loadManifest', () => {
@@ -128,6 +135,7 @@ describe('manifest-loader', () => {
           url: 'http://localhost:3000/${config.endpoint}',
           headers: { Authorization: 'Bearer ${config.token}' },
         },
+        engines: validEngines,
       });
       const result = loadManifest(tempDir);
       expect(result.mcp?.transport).toBe('sse');
@@ -237,6 +245,7 @@ describe('manifest-loader', () => {
         description: 'No commands',
         type: 'standard',
         commands: {},
+        engines: validEngines,
       });
       const result = loadManifest(tempDir);
       expect(Object.keys(result.commands)).toHaveLength(0);
@@ -361,56 +370,51 @@ describe('manifest-loader', () => {
       expect(() => loadManifest(tempDir)).toThrow();
     });
 
-    // --- Engine constraints support ---
+    // --- Engine constraints support (mandatory - ADR-010) ---
 
     it('should load manifest with both engine constraints', () => {
       writeManifest({
         ...validStandardManifest,
         engines: {
-          'renre-kit': '>=0.0.1',
-          'extension-sdk': '>=0.0.1',
+          'renre-kit': '>=1.0.0',
+          'extension-sdk': '>=0.5.0',
         },
       });
       const result = loadManifest(tempDir);
       expect(result.engines).toEqual({
-        'renre-kit': '>=0.0.1',
-        'extension-sdk': '>=0.0.1',
+        'renre-kit': '>=1.0.0',
+        'extension-sdk': '>=0.5.0',
       });
     });
 
-    it('should load manifest with only renre-kit engine constraint', () => {
+    it('should reject manifest without engines field', () => {
+      const { engines: _ignored, ...noEngines } = validStandardManifest;
+      writeManifest(noEngines);
+      expect(() => loadManifest(tempDir)).toThrow();
+    });
+
+    it('should reject manifest with only renre-kit engine constraint', () => {
       writeManifest({
         ...validStandardManifest,
         engines: { 'renre-kit': '>=1.0.0' },
       });
-      const result = loadManifest(tempDir);
-      expect(result.engines?.['renre-kit']).toBe('>=1.0.0');
-      expect(result.engines?.['extension-sdk']).toBeUndefined();
+      expect(() => loadManifest(tempDir)).toThrow();
     });
 
-    it('should load manifest with only extension-sdk engine constraint', () => {
+    it('should reject manifest with only extension-sdk engine constraint', () => {
       writeManifest({
         ...validStandardManifest,
         engines: { 'extension-sdk': '>=0.5.0' },
       });
-      const result = loadManifest(tempDir);
-      expect(result.engines?.['extension-sdk']).toBe('>=0.5.0');
-      expect(result.engines?.['renre-kit']).toBeUndefined();
+      expect(() => loadManifest(tempDir)).toThrow();
     });
 
-    it('should load manifest with empty engines object', () => {
+    it('should reject manifest with empty engines object', () => {
       writeManifest({
         ...validStandardManifest,
         engines: {},
       });
-      const result = loadManifest(tempDir);
-      expect(result.engines).toEqual({});
-    });
-
-    it('should accept manifest without engines (optional)', () => {
-      writeManifest(validStandardManifest);
-      const result = loadManifest(tempDir);
-      expect(result.engines).toBeUndefined();
+      expect(() => loadManifest(tempDir)).toThrow();
     });
 
     it('should strip top-level skills field (not part of schema)', () => {
@@ -547,6 +551,52 @@ describe('manifest-loader', () => {
       const result = loadManifest(tempDir);
       expect(result.ui?.panels).toEqual([]);
       expect(result.ui?.widgets).toHaveLength(1);
+    });
+
+    // --- Agent hooks support ---
+
+    it('should accept agent with hooks array', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          hooks: ['agent/hooks/session.json'],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent?.hooks).toHaveLength(1);
+      expect(result.agent?.hooks?.[0]).toBe('agent/hooks/session.json');
+    });
+
+    it('should accept agent with empty hooks array', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: { hooks: [] },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent?.hooks).toEqual([]);
+    });
+
+    it('should accept hooks alongside other agent assets', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
+          hooks: ['agent/hooks/session.json'],
+        },
+      });
+      const result = loadManifest(tempDir);
+      expect(result.agent?.skills).toHaveLength(1);
+      expect(result.agent?.hooks).toHaveLength(1);
+    });
+
+    it('should reject hooks as a non-array value', () => {
+      writeManifest({
+        ...validStandardManifest,
+        agent: {
+          hooks: 'agent/hooks/session.json',
+        },
+      });
+      expect(() => loadManifest(tempDir)).toThrow();
     });
   });
 });

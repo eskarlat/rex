@@ -1,12 +1,12 @@
 import BetterSqlite3 from 'better-sqlite3';
 import type Database from 'better-sqlite3';
-import fs from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 let db: Database.Database | null = null;
 
 export function initDatabase(baseDir: string): Database.Database {
-  fs.mkdirSync(baseDir, { recursive: true });
+  mkdirSync(baseDir, { recursive: true });
   const dbPath = path.join(baseDir, 'db.sqlite');
   db = new BetterSqlite3(dbPath);
 
@@ -20,7 +20,8 @@ export function initDatabase(baseDir: string): Database.Database {
     )
   `);
 
-  runMigrations(db);
+  const migrationsDir = findMigrationsDir();
+  runMigrations(db, migrationsDir);
   return db;
 }
 
@@ -38,23 +39,20 @@ export function closeDatabase(): void {
   }
 }
 
-function findMigrationsDir(): string {
+export function findMigrationsDir(): string {
   // In source: import.meta.dirname = src/core/database → ../../../migrations
   // In bundle: import.meta.dirname = dist → ../migrations
   const fromSource = path.resolve(import.meta.dirname, '..', '..', '..', 'migrations');
-  if (fs.existsSync(fromSource)) {
+  if (existsSync(fromSource)) {
     return fromSource;
   }
   return path.resolve(import.meta.dirname, '..', 'migrations');
 }
 
-function runMigrations(database: Database.Database): void {
-  const migrationsDir = findMigrationsDir();
-
+export function runMigrations(database: Database.Database, migrationsDir: string): void {
   let files: string[];
   try {
-    files = fs
-      .readdirSync(migrationsDir)
+    files = readdirSync(migrationsDir)
       .filter((f) => f.endsWith('.sql'))
       .sort((a, b) => a.localeCompare(b));
   } catch {
@@ -69,14 +67,37 @@ function runMigrations(database: Database.Database): void {
     ).map((r) => r.name),
   );
 
-  for (const file of files) {
-    if (applied.has(file)) {
-      continue;
+  const pending = files.filter((f) => !applied.has(f));
+  if (pending.length === 0) return;
+
+  // Backup before running pending migrations (skip for :memory: databases)
+  const dbPath = database.name;
+  const backupPath = `${dbPath}.bak`;
+  if (dbPath !== ':memory:' && dbPath !== '') {
+    try {
+      copyFileSync(dbPath, backupPath);
+    } catch {
+      // Backup failure should not block migrations
     }
-    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
-    database.exec(sql);
-    database
-      .prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)')
-      .run(file, new Date().toISOString());
+  }
+
+  for (const file of pending) {
+    const sql = readFileSync(path.join(migrationsDir, file), 'utf-8');
+    try {
+      const migrate = database.transaction(() => {
+        database.exec(sql);
+        database
+          .prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)')
+          .run(file, new Date().toISOString());
+      });
+      migrate();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Migration "${file}" failed: ${message}. ` +
+          `Database has been rolled back. ` +
+          `Pre-migration backup available at: ${backupPath}`,
+      );
+    }
   }
 }

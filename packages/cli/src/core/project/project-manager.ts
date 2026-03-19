@@ -17,7 +17,7 @@ export class ProjectManager {
     this.bus = bus;
   }
 
-  init(name: string, projectPath: string): ProjectRecord {
+  init(name: string, projectPath: string, agentDir?: string): ProjectRecord {
     const projectDir = path.join(projectPath, PROJECT_DIR);
 
     if (fs.existsSync(path.join(projectDir, MANIFEST_JSON))) {
@@ -32,6 +32,7 @@ export class ProjectManager {
       name,
       version: '1.0.0',
       created_at: now,
+      ...(agentDir ? { agentDir } : {}),
     };
     fs.writeFileSync(
       path.join(projectDir, MANIFEST_JSON),

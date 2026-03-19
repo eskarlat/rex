@@ -3,6 +3,7 @@ import { deployAgentAssets, cleanupAgentAssets } from '@renre-kit/extension-sdk/
 
 interface HookContext {
   projectDir: string;
+  agentDir: string;
 }
 
 function getExtensionDir(): string {
@@ -10,9 +11,9 @@ function getExtensionDir(): string {
 }
 
 export function onInit(context: HookContext): void {
-  deployAgentAssets(getExtensionDir(), context.projectDir);
+  deployAgentAssets(getExtensionDir(), context.projectDir, context.agentDir);
 }
 
 export function onDestroy(context: HookContext): void {
-  cleanupAgentAssets(getExtensionDir(), context.projectDir);
+  cleanupAgentAssets(getExtensionDir(), context.projectDir, context.agentDir);
 }

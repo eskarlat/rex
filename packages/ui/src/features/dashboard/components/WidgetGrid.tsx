@@ -30,21 +30,28 @@ export function WidgetGrid() {
   const saveMutation = useSaveDashboardLayout();
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const widgets = layout?.widgets ?? [];
-  const addedWidgetIds = new Set(widgets.map((w) => w.id));
+  const allWidgets = layout?.widgets ?? [];
 
-  const { constraintsMap, titleMap } = useMemo(() => {
+  const { constraintsMap, titleMap, activeExtensionNames } = useMemo(() => {
     const constraints: WidgetConstraintsMap = {};
     const titles: Record<string, string> = {};
+    const names = new Set<string>();
     for (const ext of marketplace?.active ?? []) {
+      names.add(ext.name);
       for (const w of ext.widgets ?? []) {
         const key = `${ext.name}:${w.id}`;
         constraints[key] = { minSize: w.minSize, maxSize: w.maxSize };
         titles[key] = w.title;
       }
     }
-    return { constraintsMap: constraints, titleMap: titles };
+    return { constraintsMap: constraints, titleMap: titles, activeExtensionNames: names };
   }, [marketplace]);
+
+  const widgets = useMemo(
+    () => allWidgets.filter((w) => activeExtensionNames.has(w.extensionName)),
+    [allWidgets, activeExtensionNames],
+  );
+  const addedWidgetIds = new Set(widgets.map((w) => w.id));
 
   const saveLayout = useCallback(
     (updated: DashboardLayout) => {

@@ -3,17 +3,27 @@ import path from 'node:path';
 import { ProjectManager } from '../../../core/project/project-manager.js';
 import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getDb } from '../../../core/database/database.js';
-import { listInstalled, activate } from '../../extensions/manager/extension-manager.js';
+import { listInstalled, activate, getActivated } from '../../extensions/manager/extension-manager.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
 import { ProjectAlreadyInitializedError } from '../../../core/types/errors.types.js';
 import { deployCoreSkills } from '../../skills/core-skills-deployer.js';
+import { handleDoctor } from '../../doctor/commands/doctor.command.js';
 
 interface InitOptions {
   projectPath: string;
   force: boolean;
 }
 
+const LOGO = `
+  ____                      _  ___ _
+ |  _ \\ ___ _ __  _ __ ___| |/ (_) |_
+ | |_) / _ \\ '_ \\| '__/ _ \\ ' /| | __|
+ |  _ <  __/ | | | | |  __/ . \\| | |_
+ |_| \\_\\___|_| |_|_|  \\___|_|\\_\\_|\\__|
+`;
+
 export async function handleInit(options: InitOptions): Promise<void> {
+  process.stdout.write(LOGO);
   clack.intro('Initialize RenreKit project');
 
   const defaultName = path.basename(options.projectPath);
@@ -24,6 +34,20 @@ export async function handleInit(options: InitOptions): Promise<void> {
   });
 
   if (clack.isCancel(name)) {
+    clack.cancel('Init cancelled.');
+    return;
+  }
+
+  const agentDir = await clack.select({
+    message: 'Agent assets directory',
+    options: [
+      { value: '.github', label: '.github' },
+      { value: '.agents', label: '.agents' },
+    ],
+    initialValue: '.github',
+  });
+
+  if (clack.isCancel(agentDir)) {
     clack.cancel('Init cancelled.');
     return;
   }
@@ -50,7 +74,7 @@ export async function handleInit(options: InitOptions): Promise<void> {
   }
 
   try {
-    pm.init(name, options.projectPath);
+    pm.init(name, options.projectPath, agentDir);
   } catch (err: unknown) {
     if (err instanceof ProjectAlreadyInitializedError) {
       clack.log.warn(err.message);
@@ -60,7 +84,7 @@ export async function handleInit(options: InitOptions): Promise<void> {
     throw err;
   }
 
-  deployCoreSkills(options.projectPath);
+  deployCoreSkills(options.projectPath, agentDir);
 
   for (const extName of selectedExtensions) {
     const ext = installed.find((e) => e.name === extName);
@@ -70,4 +94,17 @@ export async function handleInit(options: InitOptions): Promise<void> {
   }
 
   clack.outro('Project initialized!');
+
+  await promptDoctor(options.projectPath);
+}
+
+async function promptDoctor(projectPath: string): Promise<void> {
+  const runDoctor = await clack.confirm({
+    message: 'Run diagnostic checks?',
+  });
+
+  if (!clack.isCancel(runDoctor) && runDoctor) {
+    const getActivatedFn = (): Record<string, string> => getActivated(projectPath);
+    await handleDoctor(projectPath, getActivatedFn);
+  }
 }

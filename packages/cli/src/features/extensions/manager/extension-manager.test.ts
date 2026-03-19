@@ -26,6 +26,8 @@ import {
 import { getExtensionConfigMappings } from '../../config/config-manager.js';
 import { hasEntry } from '../../vault/vault-manager.js';
 
+const validEngines = { 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' };
+
 describe('extension-manager', () => {
   let db: Database.Database;
   let tmpDir: string;
@@ -111,6 +113,7 @@ describe('extension-manager', () => {
           description: 'Test',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
@@ -135,6 +138,7 @@ describe('extension-manager', () => {
           description: 'Test',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
@@ -156,6 +160,7 @@ describe('extension-manager', () => {
           type: 'standard',
           commands: {},
           main: './nonexistent-hook.js',
+          engines: validEngines,
         }),
       );
 
@@ -164,7 +169,7 @@ describe('extension-manager', () => {
       ).resolves.toBeDefined();
     });
 
-    it('runs onInit hook from main entry point', async () => {
+    it('runs onInit hook from main entry point', { timeout: 10_000 }, async () => {
       const extDir = path.join(tmpDir, 'ext-hook@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
@@ -176,6 +181,7 @@ describe('extension-manager', () => {
           type: 'standard',
           commands: {},
           main: './entry.mjs',
+          engines: validEngines,
         }),
       );
       fs.writeFileSync(
@@ -200,6 +206,7 @@ describe('extension-manager', () => {
           description: 'No main entry',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
@@ -219,6 +226,7 @@ describe('extension-manager', () => {
           description: 'Test',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
@@ -251,6 +259,7 @@ describe('extension-manager', () => {
           type: 'mcp',
           commands: {},
           mcp: { transport: 'stdio', command: 'node', args: ['index.js'] },
+          engines: validEngines,
         }),
       );
 
@@ -261,7 +270,7 @@ describe('extension-manager', () => {
       expect(plugins['new-ext']).toBe('2.0.0');
     });
 
-    it('logs warning on engine mismatch but still succeeds', async () => {
+    it('throws on engine mismatch', async () => {
       const extDir = path.join(tmpDir, 'ext-engine@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
@@ -272,29 +281,20 @@ describe('extension-manager', () => {
           description: 'Test engine compat',
           type: 'standard',
           commands: {},
-          engines: { 'renre-kit': '>=99.0.0' },
+          engines: { 'renre-kit': '>=99.0.0', 'extension-sdk': '>=0.0.1' },
         }),
       );
 
-      const { getLogger } = await import('../../../core/logger/index.js');
-      const warnSpy = vi.spyOn(getLogger(), 'warn');
+      await expect(
+        activate('ext-engine', '1.0.0', projectDir, extDir),
+      ).rejects.toThrow(/ENGINE_INCOMPATIBLE|Engine incompatibility/);
 
-      const missingKeys = await activate('ext-engine', '1.0.0', projectDir, extDir);
-
-      expect(warnSpy).toHaveBeenCalledWith(
-        'extension-manager',
-        expect.stringContaining('renre-kit'),
-      );
-      // Activation still succeeds (pre-1.0 = warn only)
-      expect(missingKeys).toBeDefined();
+      // Activation should NOT have written plugins.json
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
-      const plugins = JSON.parse(fs.readFileSync(pluginsPath, 'utf-8'));
-      expect(plugins['ext-engine']).toBe('1.0.0');
-
-      warnSpy.mockRestore();
+      expect(fs.existsSync(pluginsPath)).toBe(false);
     });
 
-    it('does not warn when engines are compatible', async () => {
+    it('does not throw when engines are compatible', async () => {
       const extDir = path.join(tmpDir, 'ext-compat@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
       fs.writeFileSync(
@@ -309,17 +309,9 @@ describe('extension-manager', () => {
         }),
       );
 
-      const { getLogger } = await import('../../../core/logger/index.js');
-      const warnSpy = vi.spyOn(getLogger(), 'warn');
-
-      await activate('ext-compat', '1.0.0', projectDir, extDir);
-
-      expect(warnSpy).not.toHaveBeenCalledWith(
-        'extension-manager',
-        expect.stringContaining('requires'),
-      );
-
-      warnSpy.mockRestore();
+      await expect(
+        activate('ext-compat', '1.0.0', projectDir, extDir),
+      ).resolves.toBeDefined();
     });
 
     it('does not auto-deploy assets — extensions manage via hooks', async () => {
@@ -334,6 +326,7 @@ describe('extension-manager', () => {
           description: 'No auto deploy',
           type: 'standard',
           commands: {},
+          engines: validEngines,
           agent: {
             skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
             prompts: ['agent/prompts/default.md'],
@@ -367,6 +360,7 @@ describe('extension-manager', () => {
           description: 'Test',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
@@ -391,6 +385,7 @@ describe('extension-manager', () => {
           description: 'Test',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
@@ -423,6 +418,7 @@ describe('extension-manager', () => {
           description: 'Manual cleanup',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
@@ -444,6 +440,7 @@ describe('extension-manager', () => {
           description: 'Test',
           type: 'standard',
           commands: {},
+          engines: validEngines,
         }),
       );
 
