@@ -121,21 +121,20 @@ const KILL_TIMEOUT_MS = 5000;
 
 export function killProcess(proc: McpStdioProcess): Promise<void> {
   return new Promise((resolve) => {
-    proc.process.once('close', () => {
-      clearTimeout(killTimer);
-      resolve();
-    });
+    proc.process.once('close', () => resolve());
 
-    // On Windows, SIGTERM is not supported and process.kill uses TerminateProcess
-    // which is an unconditional hard kill, so no escalation timeout is needed.
+    // On Windows, process.kill() uses TerminateProcess (unconditional hard kill),
+    // so no SIGTERM/SIGKILL escalation is needed.
     if (process.platform === 'win32') {
       proc.process.kill();
     } else {
       proc.process.kill('SIGTERM');
-    }
 
-    const killTimer = setTimeout(() => {
-      proc.process.kill('SIGKILL');
-    }, KILL_TIMEOUT_MS);
+      // Escalate to SIGKILL if the process doesn't exit within the timeout
+      const killTimer = setTimeout(() => {
+        proc.process.kill('SIGKILL');
+      }, KILL_TIMEOUT_MS);
+      proc.process.once('close', () => clearTimeout(killTimer));
+    }
   });
 }

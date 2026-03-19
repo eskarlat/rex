@@ -74,7 +74,7 @@ function transformFrontmatterName(content: string, extName: string): string {
     return content;
   }
 
-  return `---\n${updatedLines.join('\n')}${content.substring(fmEnd)}`;
+  return `---${firstLineBreak}${updatedLines.join(firstLineBreak)}${content.substring(fmEnd)}`;
 }
 
 /**
