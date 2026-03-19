@@ -198,7 +198,7 @@ describe('LogsPage', () => {
       { level: 'info', msg: 'bad date', time: 'not-a-date' },
     ];
     renderPage();
-    // formatTime returns the original string for invalid dates (NaN check)
+    // formatTime calls toLocaleTimeString() which returns "Invalid Date" for bad input
     expect(screen.getByText('bad date')).toBeInTheDocument();
   });
 

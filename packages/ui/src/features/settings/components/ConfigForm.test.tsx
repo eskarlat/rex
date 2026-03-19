@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigForm } from './ConfigForm';
@@ -129,7 +129,7 @@ describe('ConfigForm', () => {
     const vaultButtons = screen.getAllByTitle('Select from vault');
     await userEvent.click(vaultButtons[vaultButtons.length - 1]!);
 
-    expect(screen.getByText('Suggested:')).toBeInTheDocument();
+    expect(screen.getByText(/Suggested:/)).toBeInTheDocument();
     // my.secret appears both as hint button and vault entry
     expect(screen.getAllByText('my.secret').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('other.key')).toBeInTheDocument();
@@ -140,10 +140,10 @@ describe('ConfigForm', () => {
     const vaultButtons = screen.getAllByTitle('Select from vault');
     await userEvent.click(vaultButtons[vaultButtons.length - 1]!);
 
-    // Click the suggested hint button (which has the same key)
-    const suggestedButton = screen.getByText('Suggested:').querySelector('button');
-    expect(suggestedButton).toBeTruthy();
-    await userEvent.click(suggestedButton!);
+    // Click the suggested hint button within the "Suggested:" paragraph
+    const suggestedParagraph = screen.getByText(/Suggested:/);
+    const hintButton = within(suggestedParagraph).getByRole('button');
+    await userEvent.click(hintButton);
 
     // Submit form to verify vault ref was set
     await userEvent.click(screen.getByText('Save'));
