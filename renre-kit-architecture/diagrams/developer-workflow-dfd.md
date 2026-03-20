@@ -19,19 +19,27 @@ flowchart TD
     D --> F[Score 5 Dimensions]
     E --> F
     F --> G{Total Score}
-    G --> |0–3| H[Quick Fix Workflow]
+    G --> |0| SKIP[Skip Workflow — Just Do It]
+    G --> |1–3| H[Quick Fix Workflow]
     G --> |4–7| I[Bug Fix Workflow]
     G --> |8–15| J[Complex Task Workflow]
-    H --> K[Create Plan Directory]
-    I --> K
-    J --> K
-    K --> L[Write PLAN.md with Classification]
+    H --> ANN[Announce Tier & Score to User]
+    I --> ANN
+    J --> ANN
+    ANN --> BR{Ask User: Create Workflow Branch?}
+    BR --> |Yes| K1[Create Plan Directory + Git Branch]
+    BR --> |No, use current branch| K2[Create Plan Directory]
+    K1 --> L[Write PLAN.md with Classification]
+    K2 --> L
     L --> M[Begin DAG Execution]
 
     style A fill:#e8f5e9,stroke:#2e7d32
+    style SKIP fill:#f5f5f5,stroke:#9e9e9e
     style H fill:#e3f2fd,stroke:#1565c0
     style I fill:#fff3e0,stroke:#e65100
     style J fill:#fce4ec,stroke:#c62828
+    style ANN fill:#e8f5e9,stroke:#2e7d32
+    style BR fill:#fff3e0,stroke:#e65100
 ```
 
 ---
