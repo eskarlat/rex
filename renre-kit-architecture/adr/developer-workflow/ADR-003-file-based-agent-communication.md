@@ -80,6 +80,31 @@ Every agent output file follows this structure:
 {Unresolved items that need attention from other agents or the user}
 ```
 
+### Source File Ownership During Parallel Implementation
+
+When multiple implementer agents work in parallel, they may need to modify source files in the codebase (not just plan files). Without coordination, two agents could make conflicting edits to the same source file.
+
+The `implementation/module-breakdown.md` produced by the architect agent must include an **explicit file ownership table**:
+
+```markdown
+## File Ownership
+
+| Module | Agent | Owned Files | Shared (read-only) |
+|--------|-------|------------|-------------------|
+| Auth layer | Implementer A | src/features/auth/*.ts | src/core/types.ts |
+| API endpoints | Implementer B | src/features/api/*.ts | src/core/types.ts |
+| UI components | Implementer C | src/ui/panels/*.tsx | src/core/types.ts |
+```
+
+**Rules:**
+
+1. Each source file is **owned by at most one agent** during a parallel implementation phase
+2. Agents may **read** any file but only **write** to files they own
+3. Files that multiple modules need to modify (e.g., shared types, index files) are marked as **shared** and deferred to the integration phase, where the orchestrator applies changes sequentially
+4. If the module breakdown cannot cleanly partition file ownership, the orchestrator should **reduce parallelism** (e.g., run 2 agents instead of 3) or switch to sequential implementation for the conflicting modules
+
+**Limitation:** This is a SKILL.md instruction, not a filesystem lock. The LLM may not follow it perfectly. The integration phase should check for conflicting changes and flag them.
+
 ### Merge Protocol
 
 At each merge point in the DAG, the orchestrator:

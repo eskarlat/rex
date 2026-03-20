@@ -32,6 +32,22 @@ Implement a **multi-dimensional scoring classifier** embedded in the orchestrato
 | 4–7 | Bug Fix | `workflow-bug-fix` |
 | 8–15 | Complex Task | `workflow-complex` |
 
+### Dimension Floor Rules
+
+Because all dimensions are weighted equally, a single high-scoring dimension can be masked by low scores elsewhere. To prevent dangerous underclassification, the following **floor rules** override the sum-based tier mapping:
+
+| Condition | Minimum Tier | Rationale |
+|-----------|-------------|-----------|
+| Any single dimension ≥ 3 | Bug Fix | A score-3 in any dimension signals non-trivial complexity that quick-fix ceremony cannot safely address |
+| Risk Level ≥ 2 **and** Uncertainty ≥ 2 | Complex Task | High risk combined with unknowns demands full research phase |
+| Dependency Depth = 3 (breaking changes) | Complex Task | Breaking changes require architecture review regardless of other dimensions |
+
+Floor rules are evaluated **after** summing scores. If the floor pushes the tier higher than the sum suggests, the classification output records both: `Tier: Bug Fix (score: 3/15, floor rule: Risk ≥ 3)`.
+
+### User Override
+
+The user may specify a tier explicitly in the task description (e.g., "treat this as a complex task"). User-specified tiers **always** take precedence over both the score and floor rules. The classification output records: `Tier: Complex Task (user-specified, calculated score: 4/15)`.
+
 ### Reclassification Protocol
 
 The orchestrator monitors for **escalation signals** during execution:
@@ -73,7 +89,7 @@ The classifier writes its assessment to `PLAN.md` header:
 
 - **Scoring is heuristic** — LLMs may score dimensions inconsistently across sessions; the same task could land in different tiers
 - **Reclassification disrupts flow** — migrating from one tier to another mid-workflow adds complexity to the orchestrator skill
-- **Dimension weights are equal** — a high-risk single-file change (score 3 in risk, 0 in files = total 3) routes to quick fix, which may underweight the risk dimension
+- **Dimension weights are equal** — mitigated by floor rules (see above) but the scoring remains a heuristic; edge cases may still land in unexpected tiers
 
 ## Alternatives Considered
 

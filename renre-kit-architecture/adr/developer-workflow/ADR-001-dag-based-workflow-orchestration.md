@@ -38,6 +38,37 @@ Adopt a **full DAG-based orchestration model** for all workflow tiers. Every tas
 | **Merge** | Reads all parallel outputs, produces synthesis | Merged findings, Integration check |
 | **Gate** | Blocks progression until criteria are met | Validation pass, Plan approval |
 
+### Abort and Failure Handling
+
+Since the DAG is prompt-driven (no runtime engine), failure handling is expressed as **SKILL.md instructions** that guide the orchestrator's behavior. These are best-effort conventions, not enforced constraints.
+
+**Abort conditions** — the orchestrator should stop the workflow and report to the user when:
+
+- Research phase concludes that the task is **infeasible** (e.g., required API doesn't exist, architectural constraint prevents the change)
+- Validation fails **3 consecutive times** on the same issue (suggests the approach is fundamentally wrong, not a fixable error)
+- The user explicitly requests cancellation
+
+**On abort**, the orchestrator:
+
+1. Updates `PLAN.md` with an `## Aborted` section explaining the reason
+2. Writes `implementation/progress.md` with status `aborted` and last completed phase
+3. Still generates `RETROSPECTIVE.md` — aborted workflows produce valuable learnings
+4. Reports the abort reason and any partial findings to the user
+
+**Validation retry budget** — gate nodes (validation, gap analysis) should retry at most **3 times** before escalating to the user. The SKILL.md instructs: "If validation fails 3 times on the same category of error, stop and ask the user whether to continue, change approach, or abort."
+
+### Resume Protocol
+
+Workflows may be interrupted (session timeout, user closes terminal, context window exhaustion). The plan directory enables resume:
+
+1. Orchestrator reads `implementation/progress.md` to find the last entry with status `complete`
+2. Identifies the corresponding DAG node
+3. Reads all existing output files in the plan directory to reconstruct context
+4. Resumes from the **next node** after the last completed one
+5. Updates `PLAN.md` with a `## Resumed` entry noting the interruption point
+
+**Limitation:** Resume quality depends on how well the new LLM session can reconstruct intent from the plan files. The SKILL.md instructs the orchestrator to write progress entries with enough context for a fresh session to understand the state.
+
 ### Agent-to-Node Mapping
 
 | Tier | Max Parallel Agents | Total Agents (across all phases) |

@@ -179,6 +179,25 @@ Auto-generated at workflow completion:
 - Tests added/modified: {N}
 ```
 
+### Staleness Detection
+
+Learnings reference specific files, modules, and patterns that may change over time. Stale learnings are worse than no learnings — they mislead the orchestrator.
+
+**Timestamped entries** — each learning in `LEARNINGS.md` includes an inline timestamp and source:
+
+```markdown
+- [2025-03-15, auth-refactor] Auth module has circular deps — always import from facade.ts
+- [2025-04-02, add-oauth] OAuth tasks are consistently underclassified — bump Domain Knowledge by 1
+```
+
+**Staleness signals** — during the research phase, the orchestrator should check project learnings against current codebase state:
+
+1. **File references** — if a learning mentions a file path that no longer exists, flag it as potentially stale
+2. **Age** — learnings older than 50 workflows without reconfirmation are candidates for review
+3. **Contradiction** — if a new retrospective contradicts an existing learning, the newer insight wins; the old one is removed or updated with a note
+
+**Limitation:** Staleness detection is best-effort. The orchestrator reads LEARNINGS.md and applies judgment — there's no automated file-existence checker. The SKILL.md instructs: "Before relying on a project learning, verify that referenced files and patterns still exist in the codebase. If a learning appears outdated, skip it and note the staleness in the retrospective so it gets pruned."
+
 ### Memory Pruning
 
 To prevent unbounded growth, each layer is pruned independently:
