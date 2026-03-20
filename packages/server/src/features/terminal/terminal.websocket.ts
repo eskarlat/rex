@@ -41,7 +41,9 @@ function resolveShell(): string {
 function isValidProjectPath(p: string): boolean {
   if (!isAbsolute(p)) return false;
   const normalized = normalize(p);
-  return normalized === p || normalized === p.replace(/\/+$/, '');
+  if (normalized === p) return true;
+  // Allow a single trailing slash difference after normalization
+  return p.endsWith('/') && normalized === p.slice(0, -1);
 }
 
 function resolveCwd(projectPath: string | undefined): string {
