@@ -292,9 +292,9 @@ export default function BrowserDevtoolsPanel({ sdk, extensionName }: Partial<Pan
       {consoleLogs.length > 0 && (
         <Panel title="Console Output">
           <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
-            {consoleLogs.map((log) => (
+            {consoleLogs.map((log, index) => (
               <div
-                key={log.timestamp}
+                key={`${log.timestamp}-${index}`}
                 className="flex items-start gap-2 text-xs font-mono text-muted-foreground"
               >
                 <span className="text-[10px] opacity-50 shrink-0">
