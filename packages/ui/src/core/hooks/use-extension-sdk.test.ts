@@ -7,12 +7,20 @@ import { MemoryRouter } from 'react-router-dom';
 const mockDestroy = vi.fn();
 const mockSetToastHandler = vi.fn();
 const mockSetNavigateHandler = vi.fn();
+const mockSetOpenHandler = vi.fn();
+const mockSetCloseHandler = vi.fn();
+const mockSetSendHandler = vi.fn();
 
 vi.mock('@renre-kit/extension-sdk', () => ({
   RenreKitSDKImpl: vi.fn().mockImplementation(() => ({
     ui: {
       setToastHandler: mockSetToastHandler,
       setNavigateHandler: mockSetNavigateHandler,
+    },
+    terminal: {
+      setOpenHandler: mockSetOpenHandler,
+      setCloseHandler: mockSetCloseHandler,
+      setSendHandler: mockSetSendHandler,
     },
     destroy: mockDestroy,
   })),
@@ -24,6 +32,18 @@ vi.mock('@/core/providers/ProjectProvider', () => ({
 
 vi.mock('@/core/hooks/use-toast', () => ({
   showToast: vi.fn(),
+}));
+
+vi.mock('@/features/terminal/use-terminal', () => ({
+  useTerminal: () => ({
+    isOpen: false,
+    open: vi.fn(),
+    close: vi.fn(),
+    toggle: vi.fn(),
+    send: vi.fn(),
+    registerSender: vi.fn(),
+    unregisterSender: vi.fn(),
+  }),
 }));
 
 import { useExtensionSDK } from './use-extension-sdk';
@@ -48,5 +68,12 @@ describe('useExtensionSDK', () => {
     const { unmount } = renderHook(() => useExtensionSDK('my-ext'), { wrapper });
     unmount();
     expect(mockDestroy).toHaveBeenCalled();
+  });
+
+  it('wires terminal handlers', () => {
+    renderHook(() => useExtensionSDK('my-ext'), { wrapper });
+    expect(mockSetOpenHandler).toHaveBeenCalled();
+    expect(mockSetCloseHandler).toHaveBeenCalled();
+    expect(mockSetSendHandler).toHaveBeenCalled();
   });
 });
