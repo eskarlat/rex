@@ -216,7 +216,8 @@ sequenceDiagram
     participant I3 as Implementer C
     participant RV as Reviewer
     participant FS as .renre-kit/plan/
-    participant M as .renre-kit/memory/
+    participant GM as ~/.renre-kit/memory/ (Global)
+    participant PM as .renre-kit/memory/ (Project)
     participant V as Validation Suite
 
     Note over O,I3: Implementation Phase (3 parallel agents)
@@ -265,13 +266,13 @@ sequenceDiagram
         RV-->>O: All gaps addressed
     end
 
-    Note over O,M: Retrospective Phase
+    Note over O,GM: Retrospective Phase (Two-Layer Memory)
     O->>FS: Generate RETROSPECTIVE.md (detailed)
-    O->>M: Archive to retrospectives/
-    O->>M: Update LEARNINGS.md
-    O->>M: Create/update patterns/ entries
-    O->>M: Create/update pitfalls/ entries
-    O->>M: Increment workflow counter
+    O->>O: Classify each insight as global or project
+    O->>GM: Archive retro to retrospectives/{project}--{name}.retro.md
+    O->>GM: Update global LEARNINGS.md (workflow insights)
+    O->>PM: Archive retro to retrospectives/{name}.retro.md
+    O->>PM: Update project LEARNINGS.md (codebase insights)
 ```
 
 ---
@@ -305,46 +306,78 @@ sequenceDiagram
 
 ---
 
-## 6. Knowledge Memory Update Sequence
+## 6. Two-Layer Knowledge Memory Update Sequence
 
-Detailed flow of how retrospective insights are extracted and stored.
+How retrospective insights are classified, routed to global or project memory, and pruned.
 
 ```mermaid
 sequenceDiagram
     participant O as Orchestrator
     participant FS as .renre-kit/plan/{name}/
-    participant M as .renre-kit/memory/
+    participant GM as ~/.renre-kit/memory/ (Global)
+    participant PM as .renre-kit/memory/ (Project)
 
     Note over O: Workflow Complete
     O->>O: Compile workflow metrics
     O->>O: Analyze what went well / wrong
     O->>FS: Write RETROSPECTIVE.md
 
-    Note over O,M: Archive & Extract
-    O->>M: Copy to retrospectives/{name}.retro.md
-    O->>M: Read existing LEARNINGS.md
-    O->>O: Extract actionable insights from retrospective
-    O->>O: Deduplicate against existing learnings
-    O->>M: Append new insights to LEARNINGS.md
+    Note over O: Classify Insights
+    O->>O: For each insight: workflow process? → Global
+    O->>O: For each insight: general dev technique? → Global
+    O->>O: For each insight: codebase-specific? → Project
+    O->>O: For each insight: tech stack config? → Project
+    O->>O: Ambiguous insights → Both layers
 
-    alt New Pattern Discovered
-        O->>M: Write patterns/{pattern-name}.md
+    Note over O,GM: Global Memory Update
+    O->>GM: Archive to retrospectives/{project}--{name}.retro.md
+    O->>GM: Read existing LEARNINGS.md
+    O->>O: Deduplicate global insights
+    O->>GM: Merge workflow insights into LEARNINGS.md
+
+    alt New Workflow Pattern
+        O->>GM: Write patterns/{pattern-name}.md
     end
 
-    alt New Pitfall Identified
-        O->>M: Write pitfalls/{pitfall-name}.md
+    alt New General Pitfall
+        O->>GM: Write pitfalls/{pitfall-name}.md
     end
 
-    Note over O,M: Pruning Check
-    O->>M: Count retrospectives/
-    alt Count > 50
-        O->>O: Summarize oldest retrospectives into LEARNINGS.md
-        O->>M: Remove oldest retrospectives
+    Note over O,PM: Project Memory Update
+    O->>PM: Archive to retrospectives/{name}.retro.md
+    O->>PM: Read existing LEARNINGS.md
+    O->>O: Deduplicate project insights
+    O->>PM: Merge codebase insights into LEARNINGS.md
+
+    alt New Project Pattern
+        O->>PM: Write patterns/{pattern-name}.md
     end
 
-    O->>M: Check LEARNINGS.md line count
+    alt New Project Pitfall
+        O->>PM: Write pitfalls/{pitfall-name}.md
+    end
+
+    Note over O,GM: Global Pruning
+    O->>GM: Count retrospectives/
+    alt Count > 100
+        O->>O: Summarize oldest into LEARNINGS.md
+        O->>GM: Remove oldest retrospectives
+    end
+    O->>GM: Check LEARNINGS.md line count
     alt Lines > 500
         O->>O: Consolidate overlapping insights
-        O->>M: Write consolidated LEARNINGS.md
+        O->>GM: Write consolidated LEARNINGS.md
+    end
+
+    Note over O,PM: Project Pruning
+    O->>PM: Count retrospectives/
+    alt Count > 30
+        O->>O: Summarize oldest into LEARNINGS.md
+        O->>PM: Remove oldest retrospectives
+    end
+    O->>PM: Check LEARNINGS.md line count
+    alt Lines > 300
+        O->>O: Consolidate overlapping insights
+        O->>PM: Write consolidated LEARNINGS.md
     end
 ```

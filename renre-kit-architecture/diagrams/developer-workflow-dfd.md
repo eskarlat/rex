@@ -150,47 +150,68 @@ flowchart TD
 
 ---
 
-## 4. Knowledge Memory Flow
+## 4. Two-Layer Knowledge Memory Flow
 
-How retrospective insights flow from completed workflows into memory and back into future workflows.
+How retrospective insights are classified and routed to global (workflow) or project (codebase) memory, then consumed by future workflows.
 
 ```mermaid
 flowchart TD
     subgraph CurrentWorkflow["Current Workflow"]
         W1[Execute DAG Phases]
         W2[Generate RETROSPECTIVE.md]
+        W3{Classify Each Insight}
     end
 
-    subgraph MemorySystem[".renre-kit/memory/"]
-        M1[retrospectives/]
-        M2[LEARNINGS.md]
-        M3[patterns/]
-        M4[pitfalls/]
+    subgraph GlobalMemory["~/.renre-kit/memory/ (Global)"]
+        G1[LEARNINGS.md — Workflow Knowledge]
+        G2[patterns/ — Reusable Workflow Patterns]
+        G3[pitfalls/ — General Pitfalls]
+        G4[retrospectives/ — All Projects Archive]
+    end
+
+    subgraph ProjectMemory[".renre-kit/memory/ (Project)"]
+        P1[LEARNINGS.md — Codebase Knowledge]
+        P2[patterns/ — Project Patterns]
+        P3[pitfalls/ — Project Pitfalls]
+        P4[retrospectives/ — Project Archive]
     end
 
     subgraph FutureWorkflow["Future Workflow"]
         F1[Classification Phase]
         F2[Research Phase]
         F3[Planning Phase]
-        F4[Validation Phase]
+        F4[Implementation Phase]
+        F5[Validation Phase]
     end
 
     W1 --> W2
-    W2 --> |Archive| M1
-    W2 --> |Extract insights| M2
-    W2 --> |Discover patterns| M3
-    W2 --> |Identify pitfalls| M4
+    W2 --> W3
+    W3 --> |Workflow process insights| G1
+    W3 --> |General dev techniques| G2
+    W3 --> |Workflow pitfalls| G3
+    W3 --> |Archive retro| G4
+    W3 --> |Codebase-specific insights| P1
+    W3 --> |Project patterns| P2
+    W3 --> |Project pitfalls| P3
+    W3 --> |Archive retro| P4
 
-    M2 --> |Classification Insights| F1
-    M2 --> |Research Patterns| F2
-    M3 --> |Proven approaches| F2
-    M4 --> |Known dead ends| F2
-    M2 --> |Implementation Patterns| F3
-    M2 --> |Validation Insights| F4
+    G1 --> |Classification calibration| F1
+    G1 --> |Agent coordination tips| F2
+    G2 --> |Proven research approaches| F2
+    G3 --> |Known dead ends| F2
+    G1 --> |Implementation strategies| F3
+
+    P1 --> |Architecture knowledge| F2
+    P1 --> |Codebase quirks| F3
+    P2 --> |Project conventions| F3
+    P3 --> |Project-specific traps| F4
+    P1 --> |Tech stack config| F5
+    G1 --> |Validation patterns| F5
 
     style CurrentWorkflow fill:#e8f5e9,stroke:#2e7d32
-    style MemorySystem fill:#f3e5f5,stroke:#6a1b9a
-    style FutureWorkflow fill:#e3f2fd,stroke:#1565c0
+    style GlobalMemory fill:#f3e5f5,stroke:#6a1b9a
+    style ProjectMemory fill:#e3f2fd,stroke:#1565c0
+    style FutureWorkflow fill:#fff3e0,stroke:#e65100
 ```
 
 ---
