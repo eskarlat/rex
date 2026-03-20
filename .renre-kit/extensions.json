@@ -7,18 +7,58 @@
       "latestVersion": "1.0.0",
       "type": "standard",
       "icon": "icons/hello-world.svg",
-      "author": "eskarlat",
+      "author": "yskarlat",
       "tags": ["example", "greeting"]
     },
     {
-      "name": "echo-mcp",
-      "description": "An echo MCP extension — echoes back any message via JSON-RPC",
-      "gitUrl": "./extensions/echo-mcp",
+      "name": "atlassian-mcp",
+      "description": "Jira and Confluence integration via MCP — 72 tools for issues, pages, sprints, and more",
+      "gitUrl": "./extensions/atlassian-mcp",
       "latestVersion": "1.0.0",
       "type": "mcp",
-      "icon": "icons/echo-mcp.svg",
-      "author": "eskarlat",
-      "tags": ["example", "mcp"]
+      "icon": "icons/atlassian.svg",
+      "author": "yskarlat",
+      "tags": ["atlassian", "jira", "confluence", "mcp"]
+    },
+    {
+      "name": "github-mcp",
+      "description": "GitHub integration via official MCP server",
+      "gitUrl": "./extensions/github-mcp",
+      "latestVersion": "1.0.0",
+      "type": "mcp",
+      "icon": "icons/github.svg",
+      "author": "yskarlat",
+      "tags": ["github", "git", "mcp"]
+    },
+    {
+      "name": "figma-mcp",
+      "description": "Figma design file tools via MCP server with SSE transport",
+      "gitUrl": "./extensions/figma-mcp",
+      "latestVersion": "1.0.0",
+      "type": "mcp",
+      "icon": "icons/figma.svg",
+      "author": "yskarlat",
+      "tags": ["figma", "design", "mcp"]
+    },
+    {
+      "name": "context7-mcp",
+      "description": "Library documentation lookup via Context7 MCP server",
+      "gitUrl": "./extensions/context7-mcp",
+      "latestVersion": "1.0.0",
+      "type": "mcp",
+      "icon": "icons/context7.svg",
+      "author": "yskarlat",
+      "tags": ["context7", "documentation", "mcp"]
+    },
+    {
+      "name": "miro-mcp",
+      "description": "Miro integration via MCP — 98 tools for boards, items, collaboration, and more",
+      "gitUrl": "./extensions/miro-mcp",
+      "latestVersion": "1.0.0",
+      "type": "mcp",
+      "icon": "icons/miro.svg",
+      "author": "yskarlat",
+      "tags": ["miro", "collaboration", "whiteboard", "mcp"]
     }
   ]
 }

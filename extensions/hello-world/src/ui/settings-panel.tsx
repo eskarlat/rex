@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Panel, FormField, CodeBlock } from '@renre-kit/extension-sdk/components';
-import type { RenreKitSDK } from '@renre-kit/extension-sdk';
+import type { PanelProps } from '@renre-kit/extension-sdk';
 
-interface PanelProps {
-  sdk?: RenreKitSDK;
-  extensionName?: string;
-  projectPath?: string | null;
-}
-
-export default function SettingsPanel({ sdk, extensionName }: PanelProps) {
+export default function SettingsPanel({ sdk, extensionName }: Partial<PanelProps>) {
   const extName = extensionName ?? 'hello-world';
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

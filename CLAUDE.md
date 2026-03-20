@@ -20,11 +20,12 @@ pnpm dev                  # Watch mode for all packages in parallel
 pnpm test                 # Run all Vitest tests
 pnpm test:coverage        # Run tests with 86% coverage enforcement (Istanbul)
 pnpm lint                 # ESLint across all packages
+pnpm lint:deadcode        # Knip dead code / unused exports / unused deps detection
 pnpm lint:duplication     # jscpd duplication detection (threshold 5)
 pnpm typecheck            # tsc --noEmit across all packages
 pnpm format               # Prettier format all files
 pnpm format:check         # Check formatting without writing
-pnpm validate             # Run ALL quality gates (lint + typecheck + coverage + duplication)
+pnpm validate             # Run ALL quality gates (lint + typecheck + coverage + duplication + deadcode)
 pnpm test:e2e             # Playwright E2E tests (spins up API on :4200 + UI on :4201)
 ```
 
@@ -87,11 +88,10 @@ The SDK (`@renre-kit/extension-sdk`) has three export subpaths:
 
 ### Reference Extensions
 
-`extensions/` at repo root contains two example extensions for testing and reference:
+`extensions/` at repo root contains one example extension for testing and reference:
 - **hello-world** — Standard type (in-process). Has agent assets (`agent/context/`, `agent/prompts/`, `agent/skills/`).
-- **echo-mcp** — MCP stdio type. Minimal MCP server in `src/server.ts` with manifest and agent skills.
 
-Both follow the build pattern: `tsc && node build-panel.js` (where `build-panel.js` uses the SDK's `buildPanel` to bundle React panels with esbuild).
+It follows the build pattern: `tsc && node build-panel.js` (where `build-panel.js` uses the SDK's `buildPanel` to bundle React panels with esbuild).
 
 ### Global vs Per-Project State
 

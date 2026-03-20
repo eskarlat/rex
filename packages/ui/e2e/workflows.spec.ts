@@ -87,11 +87,11 @@ test.describe('Cross-Page Workflows', () => {
 
     await page.goto('/marketplace');
     await page.getByRole('tab', { name: /installed/i }).click();
-    await expect(page.getByText('echo-mcp')).toBeVisible();
+    await expect(page.getByText('weather-mcp')).toBeVisible();
 
     await page.getByRole('button', { name: 'Activate' }).click();
     await page.waitForTimeout(500);
-    expect(activateBody).toContain('echo-mcp');
+    expect(activateBody).toContain('weather-mcp');
   });
 
   test('remove installed extension from marketplace', async ({ page }) => {

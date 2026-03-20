@@ -137,9 +137,9 @@ The `manifest.json` is the single source of truth for your extension's configura
 
 ```json
 {
-  "name": "echo-mcp",
+  "name": "my-mcp-ext",
   "version": "1.0.0",
-  "description": "Echo MCP extension",
+  "description": "My MCP extension",
   "type": "mcp",
   "engines": {
     "renre-kit": ">=0.0.1",
@@ -160,7 +160,7 @@ The `manifest.json` is the single source of truth for your extension's configura
 }
 ```
 
-MCP tools are defined in the server, not in the manifest. The CLI forwards any `echo-mcp:<tool>` call to the MCP server automatically. You can optionally declare local file-based commands in `commands` for utilities that don't need the MCP server (e.g., `status`, `config`).
+MCP tools are defined in the server, not in the manifest. The CLI forwards any `my-mcp-ext:<tool>` call to the MCP server automatically. You can optionally declare local file-based commands in `commands` for utilities that don't need the MCP server (e.g., `status`, `config`).
 
 ## Three Interaction Modes
 
@@ -361,7 +361,7 @@ rl.on('line', (line: string) => {
 });
 ```
 
-The CLI forwards `renre-kit echo-mcp:echo "hello"` to the MCP server as a JSON-RPC call with method `echo`. No manifest declarations needed for MCP tools — the server is the source of truth.
+The CLI forwards `renre-kit my-mcp-ext:echo "hello"` to the MCP server as a JSON-RPC call with method `echo`. No manifest declarations needed for MCP tools — the server is the source of truth.
 
 You can also add **local commands** alongside MCP tools for utilities that don't need the server:
 
@@ -537,9 +537,8 @@ renre-kit ext:add my-extension
 
 ## Reference Extensions
 
-Two reference extensions ship with the repository under `extensions/`:
+One reference extension ships with the repository under `extensions/`:
 
 - **hello-world** — Standard extension with commands, UI panel, lifecycle hooks, and agent assets. Demonstrates all three interaction modes.
-- **echo-mcp** — MCP extension with a stdio JSON-RPC server, a local status command, UI panel, and agent skills.
 
-Study these as templates for building your own extensions.
+Study it as a template for building your own extensions.

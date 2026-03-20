@@ -1,13 +1,7 @@
 import { useState } from 'react';
-import type { RenreKitSDK } from '@renre-kit/extension-sdk';
+import type { PanelProps } from '@renre-kit/extension-sdk';
 
-interface WidgetProps {
-  sdk?: RenreKitSDK;
-  extensionName?: string;
-  projectPath?: string | null;
-}
-
-export default function StatusWidget({ sdk, extensionName }: WidgetProps) {
+export default function StatusWidget({ sdk, extensionName }: Partial<PanelProps>) {
   const [output, setOutput] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const extName = extensionName ?? 'hello-world';

@@ -38,6 +38,7 @@ import { loadManifest } from './features/extensions/manifest/manifest-loader.js'
 import { loadCommandHandler, executeCommand } from './features/extensions/runtime/standard-runtime.js';
 import { getManifestPath } from './core/paths/paths.js';
 import { pathExistsSync, readJsonSync } from './shared/fs-helpers.js';
+import { parseCliArgs } from './shared/cli-args.js';
 import type { ProjectManifest } from './core/types/project.types.js';
 import { CLI_VERSION } from './core/version.js';
 
@@ -157,9 +158,10 @@ function registerExtensionCommands(
         const tool = input.substring(colonIdx + 1);
         const entry = mcpExtensions.get(extName);
         if (entry && tool) {
-          const args = process.argv.slice(3);
+          const rawArgs = process.argv.slice(3);
+          const parsedArgs = parseCliArgs(rawArgs);
           connectionManager.getConnection(extName, entry.mcpConfig, entry.resolvedConfig, entry.extDir);
-          connectionManager.executeToolCall(extName, tool, { _positional: args }).then(
+          connectionManager.executeToolCall(extName, tool, parsedArgs).then(
             (result) => {
               if (result !== undefined) {
                 process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));

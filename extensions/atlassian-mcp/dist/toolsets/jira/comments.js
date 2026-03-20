@@ -1,0 +1,73 @@
+import { textResult, errorResult } from '../types.js';
+export function createCommentsToolset(client) {
+    return {
+        name: 'jira_comments',
+        tools: [
+            {
+                name: 'jira_add_comment',
+                description: 'Add a comment to a Jira issue.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        issueKey: { type: 'string', description: 'Issue key' },
+                        body: { type: 'string', description: 'Comment text' },
+                    },
+                    required: ['issueKey', 'body'],
+                },
+            },
+            {
+                name: 'jira_edit_comment',
+                description: 'Edit an existing comment on a Jira issue.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        issueKey: { type: 'string', description: 'Issue key' },
+                        commentId: { type: 'string', description: 'Comment ID' },
+                        body: { type: 'string', description: 'Updated comment text' },
+                    },
+                    required: ['issueKey', 'commentId', 'body'],
+                },
+            },
+        ],
+        handlers: {
+            jira_add_comment: async (args) => {
+                try {
+                    const adfBody = {
+                        type: 'doc',
+                        version: 1,
+                        content: [
+                            {
+                                type: 'paragraph',
+                                content: [{ type: 'text', text: args['body'] }],
+                            },
+                        ],
+                    };
+                    const data = await client.addComment(args['issueKey'], adfBody);
+                    return textResult(data);
+                }
+                catch (err) {
+                    return errorResult(err instanceof Error ? err.message : String(err));
+                }
+            },
+            jira_edit_comment: async (args) => {
+                try {
+                    const adfBody = {
+                        type: 'doc',
+                        version: 1,
+                        content: [
+                            {
+                                type: 'paragraph',
+                                content: [{ type: 'text', text: args['body'] }],
+                            },
+                        ],
+                    };
+                    const data = await client.editComment(args['issueKey'], args['commentId'], adfBody);
+                    return textResult(data);
+                }
+                catch (err) {
+                    return errorResult(err instanceof Error ? err.message : String(err));
+                }
+            },
+        },
+    };
+}

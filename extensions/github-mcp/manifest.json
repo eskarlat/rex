@@ -1,0 +1,65 @@
+{
+  "name": "github-mcp",
+  "title": "GitHub",
+  "version": "1.0.0",
+  "description": "GitHub integration via official MCP server",
+  "icon": "icon.svg",
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show GitHub MCP server status and available tools"
+    }
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"],
+    "env": {
+      "GITHUB_PERSONAL_ACCESS_TOKEN": "${config.githubToken}",
+      "GITHUB_HOST": "${config.githubHost}"
+    }
+  },
+  "config": {
+    "schema": {
+      "githubToken": {
+        "type": "string",
+        "description": "GitHub personal access token for API authentication",
+        "secret": true,
+        "vaultHint": "github-token"
+      },
+      "githubHost": {
+        "type": "string",
+        "description": "GitHub Enterprise host (e.g., github.mycompany.com). Leave empty for github.com",
+        "secret": false
+      }
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "github-panel",
+        "title": "GitHub",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "github-status",
+        "title": "GitHub Status",
+        "entry": "dist/status-widget.js",
+        "defaultSize": { "w": 4, "h": 2 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "github", "path": "agent/skills/github" }
+    ]
+  }
+}

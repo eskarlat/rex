@@ -1,0 +1,26 @@
+{
+  "name": "figma-mcp",
+  "version": "1.0.0",
+  "description": "Figma design file tools via MCP server with SSE transport for RenreKit",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && node build-panel.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@renre-kit/extension-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "esbuild": "^0.21.0",
+    "jsdom": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vitest": "^2.1.0"
+  }
+}

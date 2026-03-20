@@ -14,7 +14,7 @@ interface UiAssetErrorBoundaryState {
   error: Error | null;
 }
 
-export class UiAssetErrorBoundary extends Component<
+class UiAssetErrorBoundary extends Component<
   UiAssetErrorBoundaryProps,
   UiAssetErrorBoundaryState
 > {

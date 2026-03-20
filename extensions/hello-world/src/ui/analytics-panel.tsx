@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Panel, DataTable, CodeBlock } from '@renre-kit/extension-sdk/components';
-import type { RenreKitSDK, ScheduledTask } from '@renre-kit/extension-sdk';
+import type { PanelProps, ScheduledTask } from '@renre-kit/extension-sdk';
 
-interface PanelProps {
-  sdk?: RenreKitSDK;
-  extensionName?: string;
-  projectPath?: string | null;
-}
-
-export default function AnalyticsPanel({ sdk, extensionName }: PanelProps) {
+export default function AnalyticsPanel({ sdk, extensionName }: Partial<PanelProps>) {
   const extName = extensionName ?? 'hello-world';
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [loading, setLoading] = useState(false);

@@ -14,43 +14,37 @@ import { RegistriesPage } from '@/features/settings/RegistriesPage';
 import { VaultSettingsPage } from '@/features/settings/VaultSettingsPage';
 import { ExtensionSettingsPage } from '@/features/settings/ExtensionSettingsPage';
 import { LogsPage } from '@/features/logs/LogsPage';
+import { AuthGate } from '@/features/auth/AuthGate';
 
 export function App() {
   return (
     <QueryProvider>
-      <ProjectProvider>
-        <ThemeProvider>
-          <TooltipProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route element={<DashboardLayout />}>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/marketplace" element={<MarketplacePage />} />
-                  <Route path="/scheduler" element={<ScheduledTasksPage />} />
-                  <Route path="/logs" element={<LogsPage />} />
-                  <Route
-                    path="/extensions/:name"
-                    element={<ExtensionPanelPage />}
-                  />
-                  <Route
-                    path="/extensions/:name/:panelId"
-                    element={<ExtensionPanelPage />}
-                  />
-                  <Route path="/settings" element={<SettingsLayout />}>
-                    <Route index element={<GeneralPage />} />
-                    <Route path="registries" element={<RegistriesPage />} />
-                    <Route path="vault" element={<VaultSettingsPage />} />
-                    <Route
-                      path="extensions/:name"
-                      element={<ExtensionSettingsPage />}
-                    />
+      <AuthGate>
+        <ProjectProvider>
+          <ThemeProvider>
+            <TooltipProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<DashboardLayout />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/marketplace" element={<MarketplacePage />} />
+                    <Route path="/scheduler" element={<ScheduledTasksPage />} />
+                    <Route path="/logs" element={<LogsPage />} />
+                    <Route path="/extensions/:name" element={<ExtensionPanelPage />} />
+                    <Route path="/extensions/:name/:panelId" element={<ExtensionPanelPage />} />
+                    <Route path="/settings" element={<SettingsLayout />}>
+                      <Route index element={<GeneralPage />} />
+                      <Route path="registries" element={<RegistriesPage />} />
+                      <Route path="vault" element={<VaultSettingsPage />} />
+                      <Route path="extensions/:name" element={<ExtensionSettingsPage />} />
+                    </Route>
                   </Route>
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </ThemeProvider>
-      </ProjectProvider>
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </ProjectProvider>
+      </AuthGate>
     </QueryProvider>
   );
 }

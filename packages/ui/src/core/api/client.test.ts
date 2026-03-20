@@ -4,6 +4,7 @@ import {
   ApiError,
   setActiveProjectPath,
   getActiveProjectPath,
+  onAuthFailure,
 } from './client';
 
 const mockFetch = vi.fn();
@@ -105,6 +106,74 @@ describe('fetchApi', () => {
     });
 
     await expect(fetchApi('/api/test')).rejects.toThrow(ApiError);
+  });
+});
+
+describe('onAuthFailure', () => {
+  it('notifies listeners on 401 response for non-auth paths', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onAuthFailure(listener);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      json: () => Promise.resolve({ error: 'PIN required' }),
+    });
+
+    await expect(fetchApi('/api/projects')).rejects.toThrow(ApiError);
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
+  });
+
+  it('does not notify listeners on 401 for auth paths', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onAuthFailure(listener);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      json: () => Promise.resolve({ error: 'Invalid PIN' }),
+    });
+
+    await expect(
+      fetchApi('/api/auth/pin', { method: 'POST', body: { pin: '0000' } }),
+    ).rejects.toThrow(ApiError);
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('does not notify listeners on non-401 errors', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onAuthFailure(listener);
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      json: () => Promise.resolve({ error: 'Server error' }),
+    });
+
+    await expect(fetchApi('/api/projects')).rejects.toThrow(ApiError);
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('removes listener on unsubscribe', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onAuthFailure(listener);
+    unsubscribe();
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      json: () => Promise.resolve({ error: 'PIN required' }),
+    });
+
+    await expect(fetchApi('/api/projects')).rejects.toThrow(ApiError);
+    expect(listener).not.toHaveBeenCalled();
   });
 });
 
