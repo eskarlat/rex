@@ -1,14 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Panel, FormField, CodeBlock, DataTable } from '@renre-kit/extension-sdk/components';
-import type { RenreKitSDK, ScheduledTask } from '@renre-kit/extension-sdk';
+import type { PanelProps, ScheduledTask } from '@renre-kit/extension-sdk';
 
-interface PanelProps {
-  sdk?: RenreKitSDK;
-  extensionName?: string;
-  projectPath?: string | null;
-}
-
-export default function HelloWorldPanel({ sdk, extensionName }: PanelProps) {
+export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelProps>) {
   const [greeting, setGreeting] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);

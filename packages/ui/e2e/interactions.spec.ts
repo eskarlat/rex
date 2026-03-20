@@ -59,7 +59,7 @@ test.describe('Marketplace Interactions', () => {
 
   test('switching between tabs preserves page', async ({ page }) => {
     await page.getByRole('tab', { name: /installed/i }).click();
-    await expect(page.getByText('echo-mcp')).toBeVisible();
+    await expect(page.getByText('weather-mcp')).toBeVisible();
 
     await page.getByRole('tab', { name: /available/i }).click();
     await expect(page.getByText('new-ext')).toBeVisible();

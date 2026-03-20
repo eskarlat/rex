@@ -362,7 +362,7 @@ describe('registry-manager', () => {
 
     const sampleEntries = [
       { name: 'hello-world', description: 'A simple hello extension', gitUrl: 'https://example.com/hw.git', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test', tags: ['example', 'greeting'] },
-      { name: 'echo-mcp', description: 'An echo MCP server', gitUrl: 'https://example.com/echo.git', latestVersion: '1.0.0', type: 'mcp', icon: '', author: 'test', tags: ['example', 'mcp'] },
+      { name: 'weather-mcp', description: 'A weather MCP server', gitUrl: 'https://example.com/weather.git', latestVersion: '1.0.0', type: 'mcp', icon: '', author: 'test', tags: ['example', 'mcp'] },
       { name: 'analytics', description: 'Track usage analytics', gitUrl: 'https://example.com/analytics.git', latestVersion: '2.0.0', type: 'standard', icon: '', author: 'test' },
     ];
 
@@ -397,7 +397,7 @@ describe('registry-manager', () => {
       const configs = setupRegistry(sampleEntries);
       const result = searchAvailable(configs, { type: 'mcp' });
       expect(result).toHaveLength(1);
-      expect(result[0]!.name).toBe('echo-mcp');
+      expect(result[0]!.name).toBe('weather-mcp');
     });
 
     it('filters by tag', () => {
@@ -421,9 +421,9 @@ describe('registry-manager', () => {
 
     it('combines query and type filters', () => {
       const configs = setupRegistry(sampleEntries);
-      const result = searchAvailable(configs, { query: 'echo', type: 'mcp' });
+      const result = searchAvailable(configs, { query: 'weather', type: 'mcp' });
       expect(result).toHaveLength(1);
-      expect(result[0]!.name).toBe('echo-mcp');
+      expect(result[0]!.name).toBe('weather-mcp');
     });
 
     it('returns empty when no matches', () => {

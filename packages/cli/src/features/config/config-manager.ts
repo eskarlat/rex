@@ -12,7 +12,7 @@ import { migrateFile } from '../../shared/schema-migration.js';
 import { configMigrations } from './migrations/index.js';
 import { getDecryptedValue } from '../vault/vault-manager.js';
 
-export const DEFAULT_REGISTRY: RegistryConfig = {
+const DEFAULT_REGISTRY: RegistryConfig = {
   name: 'default',
   url: 'https://github.com/eskarlat/rex.git',
   priority: 0,

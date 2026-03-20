@@ -7,7 +7,7 @@ Proposed (supersedes optionality in ADR-009)
 ADR-009 introduced the `engines` field in extension manifests for version compatibility checks. Both `engines` itself and its sub-keys (`renre-kit`, `extension-sdk`) were made **optional** to maintain backward compatibility with existing extensions.
 
 Since then, the project's position has changed:
-- **Pre-publish**: There are no third-party extensions in the wild. The only extensions are the two reference extensions (`hello-world`, `echo-mcp`) in the repo. There is no backward compatibility concern.
+- **Pre-publish**: There are no third-party extensions in the wild. The only reference extension (`hello-world`) is in the repo. There is no backward compatibility concern.
 - **Scaffolding already stamps engines**: `create-renre-extension` generates manifests with `engines` populated from the current CLI and SDK versions. New extensions already have the field.
 - **Optional engines undermine compatibility checks**: If `engines` is missing, `checkEngineCompat()` returns early with "compatible" — meaning the entire engine checking system can be silently bypassed by omitting a field. This defeats the purpose of ADR-009.
 - **ADR-005** (build-time version constants) will make accurate version values available. The scaffolding tool can stamp real versions instead of hardcoded strings.
@@ -96,7 +96,7 @@ This is safe because the constraints are minimum-only (`>=`). An extension decla
 
 ### 5. Update reference extensions
 
-Both `hello-world` and `echo-mcp` manifests already have `engines`. Verify they include both required keys with valid semver constraints.
+The `hello-world` manifest already has `engines`. Verify it includes both required keys with valid semver constraints.
 
 ### 6. Follow-up: Real versions in scaffolding
 
@@ -107,7 +107,7 @@ After ADR-005 (build-time version constants) is implemented, update `create-renr
 ### Positive
 - **No silent compatibility bypass**: Every extension must declare what it needs. The compatibility check always runs with real data.
 - **Cleaner code**: No optional chaining, no early returns, no "engines might be undefined" branches. The types enforce presence.
-- **Zero migration cost**: No third-party extensions exist yet. The two reference extensions already have the field.
+- **Zero migration cost**: No third-party extensions exist yet. The reference extension already has the field.
 - **Stronger guarantees for `renre doctor`** (ADR-007): The doctor command can rely on `engines` being present without null-checking.
 - **Better error messages**: Instead of "no engines field, skipping check", users get definitive pass/fail results.
 

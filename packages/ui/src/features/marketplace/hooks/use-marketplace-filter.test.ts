@@ -12,7 +12,7 @@ const marketplace: MarketplaceResult = {
   ],
   available: [
     { name: 'hello-world', version: '1.0.0', type: 'standard', status: 'available', description: 'A hello extension', tags: ['example', 'greeting'] },
-    { name: 'echo-mcp', version: '1.0.0', type: 'mcp-stdio', status: 'available', description: 'An echo server', tags: ['example', 'mcp'] },
+    { name: 'weather-mcp', version: '1.0.0', type: 'mcp-stdio', status: 'available', description: 'A weather server', tags: ['example', 'mcp'] },
     { name: 'analytics', version: '2.0.0', type: 'standard', status: 'available', description: 'Track usage' },
   ],
 };
@@ -55,7 +55,7 @@ describe('useMarketplaceFilter', () => {
 
   it('search query is case-insensitive', () => {
     const { result } = renderHook(() => useMarketplaceFilter(marketplace));
-    act(() => result.current.setSearchQuery('ECHO'));
+    act(() => result.current.setSearchQuery('WEATHER'));
     expect(result.current.filteredAvailable).toHaveLength(1);
   });
 
@@ -83,11 +83,11 @@ describe('useMarketplaceFilter', () => {
   it('combines search query and tag filter', () => {
     const { result } = renderHook(() => useMarketplaceFilter(marketplace));
     act(() => {
-      result.current.setSearchQuery('echo');
+      result.current.setSearchQuery('weather');
       result.current.setSelectedTag('example');
     });
     expect(result.current.filteredAvailable).toHaveLength(1);
-    expect(result.current.filteredAvailable[0]?.name).toBe('echo-mcp');
+    expect(result.current.filteredAvailable[0]?.name).toBe('weather-mcp');
   });
 
   it('handles undefined marketplace', () => {

@@ -1,0 +1,28 @@
+{
+  "name": "miro-mcp",
+  "version": "1.0.0",
+  "description": "Miro MCP extension for RenreKit — boards, items, and collaboration via MCP",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && node build-panel.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@renre-kit/extension-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "esbuild": "^0.21.0",
+    "jsdom": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vitest": "^3.0.0"
+  }
+}

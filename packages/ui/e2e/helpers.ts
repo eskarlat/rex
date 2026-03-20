@@ -40,10 +40,10 @@ export const mockMarketplace = {
   ],
   installed: [
     {
-      name: 'echo-mcp',
+      name: 'weather-mcp',
       version: '0.1.0',
       type: 'mcp-stdio',
-      description: 'Echo MCP server',
+      description: 'Weather MCP server',
       status: 'installed',
       author: 'renre',
       tags: ['mcp'],
@@ -91,7 +91,7 @@ export const mockScheduledTasks = [
   {
     id: 2,
     name: 'Hourly Check',
-    extension_name: 'echo-mcp',
+    extension_name: 'weather-mcp',
     command: 'check',
     cron: '0 * * * *',
     enabled: false,

@@ -50,7 +50,11 @@ Each extension can plug into **three interaction modes**:
 - **Node.js** 20 or higher
 - **pnpm** 9.15.4
 
-### Install & Run
+### Install
+
+> **Coming soon** — `npm i -g @renre-kit/cli`
+
+### Local Development
 
 ```bash
 # Clone the repo
@@ -62,6 +66,9 @@ pnpm install
 
 # Build everything
 pnpm build
+
+# Link the CLI globally
+pnpm --filter @renre-kit/cli link --global
 
 # Initialize a project
 renre-kit init
@@ -196,8 +203,7 @@ rex/
 │   ├── extension-sdk/          # SDK for extension authors
 │   └── create-renre-extension/ # Scaffolding tool
 ├── extensions/
-│   ├── hello-world/            # Reference: standard extension
-│   └── echo-mcp/              # Reference: MCP extension
+│   └── hello-world/            # Reference: standard extension
 └── renre-kit-architecture/     # Architecture docs & ADRs
 ```
 
@@ -332,6 +338,7 @@ pnpm test:e2e             # Playwright E2E tests
 pnpm test:cli             # CLI integration tests
 
 pnpm lint                 # ESLint
+pnpm lint:deadcode        # Dead code detection (Knip)
 pnpm lint:duplication     # Code duplication check (jscpd)
 pnpm typecheck            # TypeScript type checking
 pnpm format               # Prettier formatting

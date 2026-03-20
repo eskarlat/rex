@@ -18,7 +18,7 @@ test.describe('Scheduler Page', () => {
 
   test('shows task extension names', async ({ page }) => {
     await expect(page.getByText('hello-world')).toBeVisible();
-    await expect(page.getByText('echo-mcp')).toBeVisible();
+    await expect(page.getByText('weather-mcp')).toBeVisible();
   });
 
   test('shows cron expressions', async ({ page }) => {

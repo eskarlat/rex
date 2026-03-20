@@ -1,5 +1,4 @@
-const BASE_URL: string =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';
+const BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';
 
 let activeProjectPath: string | null = null;
 
@@ -11,11 +10,27 @@ export function getActiveProjectPath(): string | null {
   return activeProjectPath;
 }
 
+type AuthFailureListener = () => void;
+const authFailureListeners = new Set<AuthFailureListener>();
+
+export function onAuthFailure(listener: AuthFailureListener): () => void {
+  authFailureListeners.add(listener);
+  return () => {
+    authFailureListeners.delete(listener);
+  };
+}
+
+function notifyAuthFailure(): void {
+  for (const listener of authFailureListeners) {
+    listener();
+  }
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly statusText: string,
-    public readonly body: unknown
+    public readonly body: unknown,
   ) {
     super(`API Error ${status}: ${statusText}`);
     this.name = 'ApiError';
@@ -26,10 +41,7 @@ interface FetchApiOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
 }
 
-export async function fetchApi<T>(
-  path: string,
-  options: FetchApiOptions = {}
-): Promise<T> {
+export async function fetchApi<T>(path: string, options: FetchApiOptions = {}): Promise<T> {
   const { body, headers: customHeaders, ...rest } = options;
 
   const headers: Record<string, string> = {
@@ -55,7 +67,11 @@ export async function fetchApi<T>(
       // Response may not contain JSON - use null body
       errorBody = String(parseError);
     }
-    throw new ApiError(response.status, response.statusText, errorBody);
+    const error = new ApiError(response.status, response.statusText, errorBody);
+    if (response.status === 401 && !path.startsWith('/api/auth/')) {
+      notifyAuthFailure();
+    }
+    throw error;
   }
 
   if (response.status === 204) {

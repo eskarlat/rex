@@ -60,7 +60,7 @@ describe('Sidebar', () => {
       data: {
         active: [
           { name: 'hello-world', version: '1.0.0', type: 'standard', status: 'active' },
-          { name: 'echo-mcp', version: 'dev', type: 'mcp', status: 'active' },
+          { name: 'context7-mcp', version: 'dev', type: 'mcp', status: 'active' },
         ],
         installed: [],
         available: [],
@@ -69,7 +69,7 @@ describe('Sidebar', () => {
     renderWithProviders(<Sidebar />);
     expect(screen.getByText('Extensions')).toBeInTheDocument();
     expect(screen.getByText('hello-world')).toBeInTheDocument();
-    expect(screen.getByText('echo-mcp')).toBeInTheDocument();
+    expect(screen.getByText('context7-mcp')).toBeInTheDocument();
   });
 
   it('shows extension title when available instead of name', () => {
@@ -77,7 +77,7 @@ describe('Sidebar', () => {
       data: {
         active: [
           { name: 'hello-world', version: '1.0.0', type: 'standard', status: 'active', title: 'Hello World' },
-          { name: 'echo-mcp', version: 'dev', type: 'mcp', status: 'active' },
+          { name: 'context7-mcp', version: 'dev', type: 'mcp', status: 'active' },
         ],
         installed: [],
         available: [],
@@ -86,7 +86,7 @@ describe('Sidebar', () => {
     renderWithProviders(<Sidebar />);
     expect(screen.getByText('Hello World')).toBeInTheDocument();
     expect(screen.queryByText('hello-world')).not.toBeInTheDocument();
-    expect(screen.getByText('echo-mcp')).toBeInTheDocument();
+    expect(screen.getByText('context7-mcp')).toBeInTheDocument();
   });
 
   it('shows extension icon when hasIcon is true', () => {

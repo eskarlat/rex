@@ -1,0 +1,56 @@
+{
+  "name": "figma-mcp",
+  "title": "Figma",
+  "version": "1.0.0",
+  "description": "Figma design file tools via MCP server with SSE transport",
+  "icon": "icon.svg",
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show Figma MCP server status and connection info"
+    }
+  },
+  "mcp": {
+    "transport": "sse",
+    "url": "${config.serverUrl}"
+  },
+  "config": {
+    "schema": {
+      "serverUrl": {
+        "type": "string",
+        "description": "Figma MCP server SSE endpoint URL",
+        "secret": false,
+        "default": "http://localhost:3845/sse"
+      }
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "figma-panel",
+        "title": "Figma",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "figma-status",
+        "title": "Figma Status",
+        "entry": "dist/status-widget.js",
+        "defaultSize": { "w": 4, "h": 2 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "figma", "path": "agent/skills/figma" },
+      { "name": "code-connect", "path": "agent/skills/code-connect" }
+    ]
+  }
+}

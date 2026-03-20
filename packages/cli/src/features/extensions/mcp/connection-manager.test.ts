@@ -217,6 +217,49 @@ describe('connection-manager', () => {
     });
   });
 
+  describe('SSE config resolution', () => {
+    it('should interpolate config values into SSE url and headers', () => {
+      const sseWithConfig: McpConfig = {
+        transport: 'sse',
+        url: '${config.serverUrl}',
+        headers: {
+          Authorization: 'Bearer ${config.apiToken}',
+          'X-Custom': 'static-value',
+        },
+      };
+
+      const resolvedConfig = {
+        serverUrl: 'http://figma.local:3845/sse',
+        apiToken: 'my-secret-token',
+      };
+
+      manager.getConnection('ext-sse-cfg', sseWithConfig, resolvedConfig);
+
+      expect(connect).toHaveBeenCalledWith(
+        'http://figma.local:3845/sse',
+        {
+          Authorization: 'Bearer my-secret-token',
+          'X-Custom': 'static-value',
+        },
+      );
+    });
+
+    it('should pass raw url when no resolvedConfig provided', () => {
+      const sseRaw: McpConfig = {
+        transport: 'sse',
+        url: 'http://localhost:3000/mcp',
+        headers: {},
+      };
+
+      manager.getConnection('ext-sse-raw', sseRaw);
+
+      expect(connect).toHaveBeenCalledWith(
+        'http://localhost:3000/mcp',
+        {},
+      );
+    });
+  });
+
   describe('setMode', () => {
     it('should accept cli mode', () => {
       expect(() => manager.setMode('cli')).not.toThrow();

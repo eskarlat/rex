@@ -1,0 +1,59 @@
+{
+  "name": "miro-mcp",
+  "title": "Miro MCP",
+  "version": "1.0.0",
+  "description": "Miro integration via MCP — 98 tools for boards, items, collaboration, and more",
+  "icon": "icon.svg",
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show Miro MCP connection status and available tools"
+    }
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["dist/server.js"],
+    "env": {
+      "MIRO_ACCESS_TOKEN": "${config.accessToken}"
+    }
+  },
+  "config": {
+    "schema": {
+      "accessToken": {
+        "type": "string",
+        "description": "Miro access token (https://miro.com/app/settings/user-profile/apps)",
+        "secret": true,
+        "vaultHint": "miro-mcp.accessToken"
+      }
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "miro-panel",
+        "title": "Miro MCP",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "miro-status",
+        "title": "Miro Status",
+        "entry": "dist/status-widget.js",
+        "defaultSize": { "w": 4, "h": 2 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "miro", "path": "agent/skills/miro" }
+    ]
+  }
+}
