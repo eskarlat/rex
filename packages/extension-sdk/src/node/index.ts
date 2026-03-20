@@ -1,4 +1,4 @@
 // RenreKit Extension SDK — Node.js utilities for extension hooks
 
-export { deployAgentAssets, cleanupAgentAssets } from './agent-deployer.js';
 export { buildPanel } from './build-panel.js';
+export type { HookContext } from './types.js';

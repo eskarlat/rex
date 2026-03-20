@@ -276,29 +276,22 @@ Agent assets are deployed to the project's `.agents/` directory when the extensi
 
 ## Lifecycle Hooks
 
-The `main` entry point exports named functions that run during activation and deactivation:
+The `main` entry point exports named functions that run during activation and deactivation. The CLI injects an enriched `HookContext` containing `extensionDir`, `agentDir`, and SDK functions — so hooks never need to import the SDK at runtime:
 
 ```typescript
 // src/index.ts
-import path from 'node:path';
-import { deployAgentAssets, cleanupAgentAssets } from '@renre-kit/extension-sdk/node';
-
-interface HookContext {
-  projectDir: string;
-}
-
-function getExtensionDir(): string {
-  return path.resolve(import.meta.dirname, '..');
-}
+import type { HookContext } from '@renre-kit/extension-sdk/node';
 
 export function onInit(context: HookContext): void {
-  deployAgentAssets(getExtensionDir(), context.projectDir);
+  context.sdk.deployAgentAssets(context.extensionDir, context.projectDir, context.agentDir);
 }
 
 export function onDestroy(context: HookContext): void {
-  cleanupAgentAssets(getExtensionDir(), context.projectDir);
+  context.sdk.cleanupAgentAssets(context.extensionDir, context.projectDir, context.agentDir);
 }
 ```
+
+The `HookContext` type is a type-only import (erased at compile time), so extensions installed without `node_modules` still work correctly.
 
 | Hook | When | Typical use |
 |------|------|-------------|

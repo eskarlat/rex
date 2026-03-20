@@ -11,6 +11,8 @@ import { checkEngineCompat } from '../engine/engine-compat.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
 import { PROJECT_DIR, MANIFEST_JSON, PLUGINS_JSON } from '../../../core/paths/paths.js';
+import type { HookContext } from '@renre-kit/extension-sdk/node';
+import { deployAgentAssets, cleanupAgentAssets } from '../agent-deployer/agent-deployer.js';
 
 export interface InstalledExtension {
   name: string;
@@ -74,13 +76,18 @@ async function runHook(
     const modRecord = mod as Record<string, unknown>;
     const hookFn = modRecord[hookName];
     if (typeof hookFn === 'function') {
-      await (hookFn as (ctx: { projectDir: string; agentDir: string }) => Promise<void>)({
+      await (hookFn as (ctx: HookContext) => Promise<void>)({
         projectDir,
         agentDir,
+        extensionDir,
+        sdk: { deployAgentAssets, cleanupAgentAssets },
       });
     }
-  } catch {
-    // Hook execution failures are non-fatal during activate/deactivate
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    getLogger().warn('extension-manager', `Hook ${hookName} failed: ${message}`, {
+      extensionDir,
+    });
   }
 }
 
