@@ -51,6 +51,11 @@ vi.mock('./use-terminal', () => ({
   }),
 }));
 
+const mockGetActiveProjectPath = vi.fn<() => string | null>(() => null);
+vi.mock('@/core/api/client', () => ({
+  getActiveProjectPath: () => mockGetActiveProjectPath(),
+}));
+
 class MockWebSocket {
   static OPEN = 1;
   url: string;
@@ -167,12 +172,22 @@ describe('XtermPanel', () => {
     expect(mockTerminalDispose).toHaveBeenCalled();
   });
 
-  it('sends resize message on open with terminal dimensions', () => {
+  it('sends init message on open with terminal dimensions', () => {
     render(<XtermPanel />);
     triggerOpen();
 
     expect(mockWsInstance.send).toHaveBeenCalledWith(
-      JSON.stringify({ type: 'resize', cols: 80, rows: 24 }),
+      JSON.stringify({ type: 'init', cols: 80, rows: 24 }),
+    );
+  });
+
+  it('sends init message with project path when active', () => {
+    mockGetActiveProjectPath.mockReturnValue('/path/to/project');
+    render(<XtermPanel />);
+    triggerOpen();
+
+    expect(mockWsInstance.send).toHaveBeenCalledWith(
+      JSON.stringify({ type: 'init', projectPath: '/path/to/project', cols: 80, rows: 24 }),
     );
   });
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { getActiveProjectPath } from '@/core/api/client';
 import { useTerminal } from './use-terminal';
 import '@xterm/xterm/css/xterm.css';
 
@@ -9,9 +10,9 @@ function buildWsUrl(): string {
   return `${protocol}//${window.location.host}/api/terminal`;
 }
 
-function sendResize(ws: WebSocket, cols: number, rows: number): void {
+function sendJson(ws: WebSocket, data: Record<string, unknown>): void {
   if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+    ws.send(JSON.stringify(data));
   }
 }
 
@@ -49,12 +50,18 @@ export function XtermPanel() {
       fitAddon.fit();
     });
 
-    // Connect WebSocket — project path is resolved server-side via request.projectPath
     const ws = new WebSocket(buildWsUrl());
     wsRef.current = ws;
 
     ws.onopen = () => {
-      sendResize(ws, terminal.cols, terminal.rows);
+      // Send init message with project path so the server spawns the PTY in the right cwd
+      const projectPath = getActiveProjectPath();
+      sendJson(ws, {
+        type: 'init',
+        ...(projectPath ? { projectPath } : {}),
+        cols: terminal.cols,
+        rows: terminal.rows,
+      });
       registerSender((data: string) => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(data);
@@ -79,7 +86,7 @@ export function XtermPanel() {
 
     // Handle resize
     const resizeDisposable = terminal.onResize(({ cols, rows }) => {
-      sendResize(ws, cols, rows);
+      sendJson(ws, { type: 'resize', cols, rows });
     });
 
     // Observe container size changes
