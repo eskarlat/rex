@@ -20,6 +20,7 @@ import registriesRoutes from './features/registries/registries.routes.js';
 import schedulerRoutes from './features/scheduler/scheduler.routes.js';
 import dashboardRoutes from './features/dashboard/dashboard.routes.js';
 import logsWebsocket from './features/logs/logs.websocket.js';
+import terminalWebsocket from './features/terminal/terminal.websocket.js';
 
 export interface CreateServerOptions {
   lanMode?: boolean;
@@ -70,6 +71,7 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
   await fastify.register(schedulerRoutes);
   await fastify.register(dashboardRoutes);
   await fastify.register(logsWebsocket);
+  await fastify.register(terminalWebsocket);
 
   // Serve the built UI (SPA) if the dist directory exists
   const uiDistPath = resolveUiDist();

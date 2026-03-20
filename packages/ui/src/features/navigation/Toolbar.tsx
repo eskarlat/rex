@@ -1,7 +1,8 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { ChevronRight, Package } from 'lucide-react';
+import { ChevronRight, Package, TerminalSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMarketplace } from '@/core/hooks/use-extensions';
+import { useTerminal } from '@/features/terminal/use-terminal';
 
 interface Crumb {
   label: string;
@@ -84,6 +85,7 @@ function CrumbItem({ crumb, isLast }: { crumb: Crumb; isLast: boolean }) {
 
 export function Toolbar() {
   const crumbs = useBreadcrumbs();
+  const { isOpen, toggle } = useTerminal();
 
   return (
     <div className="flex h-14 items-center justify-between border-b px-6">
@@ -95,13 +97,29 @@ export function Toolbar() {
           </span>
         ))}
       </nav>
-      <Link
-        to="/marketplace"
-        className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      >
-        <Package className="h-4 w-4" />
-        Marketplace
-      </Link>
+      <div className="flex items-center gap-1">
+        <Link
+          to="/marketplace"
+          className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Package className="h-4 w-4" />
+          Marketplace
+        </Link>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={isOpen ? 'Close terminal' : 'Open terminal'}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+            isOpen
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <TerminalSquare className="h-4 w-4" />
+          Terminal
+        </button>
+      </div>
     </div>
   );
 }
