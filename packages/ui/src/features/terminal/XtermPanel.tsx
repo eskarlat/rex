@@ -1,17 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { getActiveProjectPath } from '@/core/api/client';
 import { useTerminal } from './use-terminal';
 import '@xterm/xterm/css/xterm.css';
 
-function buildWsUrl(projectPath: string | null): string {
+function buildWsUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const base = `${protocol}//${window.location.host}/api/terminal`;
-  if (projectPath) {
-    return `${base}?project=${encodeURIComponent(projectPath)}`;
-  }
-  return base;
+  return `${protocol}//${window.location.host}/api/terminal`;
 }
 
 function sendResize(ws: WebSocket, cols: number, rows: number): void {
@@ -54,9 +49,8 @@ export function XtermPanel() {
       fitAddon.fit();
     });
 
-    // Connect WebSocket
-    const projectPath = getActiveProjectPath();
-    const ws = new WebSocket(buildWsUrl(projectPath));
+    // Connect WebSocket — project path is resolved server-side via request.projectPath
+    const ws = new WebSocket(buildWsUrl());
     wsRef.current = ws;
 
     ws.onopen = () => {

@@ -47,9 +47,7 @@ const DEFAULT_ROWS = 24;
 
 const terminalWebsocket: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   fastify.get('/api/terminal', { websocket: true }, (socket: TerminalSocket, request) => {
-    const query = request.query as Record<string, string | undefined>;
-    const projectPath = query['project'] ?? request.projectPath;
-    const cwd = resolveCwd(projectPath);
+    const cwd = resolveCwd(request.projectPath);
     const shell = resolveShell();
 
     const ptyProcess = pty.spawn(shell, [], {

@@ -46,12 +46,12 @@ describe('terminal.websocket', () => {
     expect(routes).toContain('api/terminal');
   });
 
-  it('spawns PTY with project path from query param', async () => {
+  it('spawns PTY with default settings', async () => {
     const address = await app.listen({ port: 0 });
     const wsUrl = address.replace('http', 'ws');
 
     await new Promise<void>((resolve) => {
-      const ws = new WebSocket(`${wsUrl}/api/terminal?project=/test/project`);
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
       ws.onopen = () => {
         ws.close();
         resolve();
@@ -69,39 +69,9 @@ describe('terminal.websocket', () => {
       expect.any(String),
       [],
       expect.objectContaining({
-        cwd: '/test/project',
         cols: 80,
         rows: 24,
         name: 'xterm-256color',
-      }),
-    );
-  });
-
-  it('spawns PTY with project path from header when no query param', async () => {
-    const address = await app.listen({ port: 0 });
-    const wsUrl = address.replace('http', 'ws');
-
-    await new Promise<void>((resolve) => {
-      const ws = new WebSocket(`${wsUrl}/api/terminal`, {
-        headers: { 'x-renrekit-project': '/header/project' },
-      });
-      ws.onopen = () => {
-        ws.close();
-        resolve();
-      };
-      ws.onerror = () => {
-        ws.close();
-        resolve();
-      };
-    });
-
-    await new Promise((r) => setTimeout(r, 100));
-
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expect.any(String),
-      [],
-      expect.objectContaining({
-        cwd: '/header/project',
       }),
     );
   });

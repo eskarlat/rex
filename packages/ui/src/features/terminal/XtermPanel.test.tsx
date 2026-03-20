@@ -37,11 +37,6 @@ vi.mock('@xterm/addon-fit', () => {
   return { FitAddon: MockFitAddon };
 });
 
-const mockGetActiveProjectPath = vi.fn<[], string | null>().mockReturnValue('/test/project');
-vi.mock('@/core/api/client', () => ({
-  getActiveProjectPath: () => mockGetActiveProjectPath(),
-}));
-
 const mockRegisterSender = vi.fn();
 const mockUnregisterSender = vi.fn();
 vi.mock('./use-terminal', () => ({
@@ -82,7 +77,6 @@ function triggerOpen() {
 describe('XtermPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetActiveProjectPath.mockReturnValue('/test/project');
     const WsConstructor = vi.fn((url: string) => {
       mockWsInstance = new MockWebSocket(url);
       return mockWsInstance;
@@ -113,10 +107,10 @@ describe('XtermPanel', () => {
     expect(mockTerminalLoadAddon).toHaveBeenCalledOnce();
   });
 
-  it('connects WebSocket with project path', () => {
+  it('connects WebSocket to terminal endpoint', () => {
     render(<XtermPanel />);
     expect(WebSocket).toHaveBeenCalledWith(
-      expect.stringContaining('/api/terminal?project=%2Ftest%2Fproject'),
+      expect.stringMatching(/\/api\/terminal$/),
     );
   });
 
@@ -182,8 +176,7 @@ describe('XtermPanel', () => {
     );
   });
 
-  it('connects without project query param when no active project', () => {
-    mockGetActiveProjectPath.mockReturnValueOnce(null);
+  it('connects without query params', () => {
     render(<XtermPanel />);
     expect(WebSocket).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/terminal$/),
