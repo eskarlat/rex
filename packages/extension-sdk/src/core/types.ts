@@ -128,7 +128,14 @@ export interface SchedulerAPI {
   update(id: string, payload: UpdateTaskPayload): Promise<ScheduledTask>;
 }
 
-/** Main SDK interface — 6 capability groups */
+/** Terminal capability group */
+export interface TerminalAPI {
+  open(): void;
+  close(): void;
+  send(data: string): void;
+}
+
+/** Main SDK interface — 7 capability groups */
 export interface RenreKitSDK {
   readonly project: ProjectContextAPI;
   readonly exec: CommandExecutionAPI;
@@ -136,6 +143,7 @@ export interface RenreKitSDK {
   readonly ui: DashboardUIAPI;
   readonly events: EventsAPI;
   readonly scheduler: SchedulerAPI;
+  readonly terminal: TerminalAPI;
   destroy(): void;
 }
 
