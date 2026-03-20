@@ -1,0 +1,60 @@
+{
+  "name": "chrome-devtools-mcp",
+  "title": "Chrome DevTools",
+  "version": "1.0.0",
+  "description": "Chrome DevTools integration via official MCP server — browser automation, debugging, screenshots, and performance analysis",
+  "icon": "icon.svg",
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show Chrome DevTools MCP server status and available tools"
+    }
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "chrome-devtools-mcp@latest"]
+  },
+  "config": {
+    "schema": {
+      "slimMode": {
+        "type": "boolean",
+        "description": "Enable slim mode for basic browser tasks only (fewer tools, faster startup)",
+        "secret": false
+      },
+      "noUsageStatistics": {
+        "type": "boolean",
+        "description": "Opt out of Google usage statistics collection",
+        "secret": false
+      }
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "browser-panel",
+        "title": "Browser Control",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "browser-status",
+        "title": "Browser Status",
+        "entry": "dist/status-widget.js",
+        "defaultSize": { "w": 4, "h": 2 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "chrome-devtools", "path": "agent/skills/chrome-devtools" }
+    ]
+  }
+}
