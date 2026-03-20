@@ -20,6 +20,14 @@ vi.mock('./use-terminal', () => ({
   }),
 }));
 
+let mockActiveProject: string | null = null;
+vi.mock('@/core/providers/ProjectProvider', () => ({
+  useProjectContext: () => ({
+    activeProject: mockActiveProject,
+    setActiveProject: vi.fn(),
+  }),
+}));
+
 vi.mock('./XtermPanel', () => ({
   XtermPanel: () => <div data-testid="xterm-panel" />,
 }));
@@ -28,6 +36,7 @@ describe('TerminalDrawer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsOpen = false;
+    mockActiveProject = null;
   });
 
   it('renders with zero width when closed', () => {
@@ -144,5 +153,19 @@ describe('TerminalDrawer', () => {
     const { container } = render(<TerminalDrawer />);
     const drawer = container.firstElementChild as HTMLElement;
     expect(drawer.style.width).toBe('');
+  });
+
+  it('shows project name when project is active', () => {
+    mockIsOpen = true;
+    mockActiveProject = '/home/user/my-project';
+    render(<TerminalDrawer />);
+    expect(screen.getByText('my-project')).toBeInTheDocument();
+  });
+
+  it('shows Home when no project is active', () => {
+    mockIsOpen = true;
+    mockActiveProject = null;
+    render(<TerminalDrawer />);
+    expect(screen.getByText('Home')).toBeInTheDocument();
   });
 });

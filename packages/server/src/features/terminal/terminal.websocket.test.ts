@@ -31,6 +31,10 @@ function initMsg(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({ type: 'init', ...overrides });
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 describe('terminal.websocket', () => {
   let app: FastifyInstance;
 
@@ -71,7 +75,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
@@ -91,7 +95,6 @@ describe('terminal.websocket', () => {
     await new Promise<void>((resolve) => {
       const ws = new WebSocket(`${wsUrl}/api/terminal`);
       ws.onopen = () => {
-        // Send non-init messages only
         ws.send('ls -la');
         ws.send(JSON.stringify({ type: 'resize', cols: 120, rows: 40 }));
         setTimeout(() => {
@@ -105,7 +108,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
@@ -128,7 +131,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
@@ -158,7 +161,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
@@ -190,7 +193,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
@@ -218,13 +221,11 @@ describe('terminal.websocket', () => {
       };
       ws.onmessage = (event) => {
         received.push(String(event.data));
-        // Wait for PTY data (not init ack)
-        if (received.includes('hello from pty')) {
+        if (received.some((m) => m === 'hello from pty')) {
           ws.close();
           resolve();
         }
       };
-      // After init is processed, simulate PTY sending data
       setTimeout(() => {
         if (dataCallback) {
           dataCallback('hello from pty');
@@ -247,7 +248,6 @@ describe('terminal.websocket', () => {
       const ws = new WebSocket(`${wsUrl}/api/terminal`);
       ws.onopen = () => {
         ws.send(INIT_MSG);
-        // Send stdin after init is processed
         setTimeout(() => {
           ws.send('ls -la');
           setTimeout(() => {
@@ -262,7 +262,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
     expect(mockWrite).toHaveBeenCalledWith('ls -la');
   });
 
@@ -288,11 +288,11 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
     expect(mockResize).toHaveBeenCalledWith(120, 40);
   });
 
-  it('kills PTY on WebSocket close', async () => {
+  it('does NOT kill PTY on socket close (session persists)', async () => {
     const address = await app.listen({ port: 0 });
     const wsUrl = address.replace('http', 'ws');
 
@@ -313,34 +313,24 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
-    expect(mockKill).toHaveBeenCalled();
+    await wait(100);
+    // PTY should NOT be killed — session manager idle timer handles it
+    expect(mockKill).not.toHaveBeenCalled();
   });
 
-  it('closes WebSocket when PTY exits', async () => {
-    let exitCallback: (() => void) | undefined;
-    mockOnExit.mockImplementation((cb: () => void) => {
-      exitCallback = cb;
-    });
-
+  it('reconnect to same project reuses PTY (mockSpawn called once)', async () => {
     const address = await app.listen({ port: 0 });
     const wsUrl = address.replace('http', 'ws');
 
-    let closed = false;
+    // First connection
     await new Promise<void>((resolve) => {
       const ws = new WebSocket(`${wsUrl}/api/terminal`);
       ws.onopen = () => {
-        ws.send(INIT_MSG);
-        // Simulate PTY exit after init
+        ws.send(initMsg({ projectPath: '/tmp/same-project' }));
         setTimeout(() => {
-          if (exitCallback) {
-            exitCallback();
-          }
+          ws.close();
+          resolve();
         }, 100);
-      };
-      ws.onclose = () => {
-        closed = true;
-        resolve();
       };
       ws.onerror = () => {
         ws.close();
@@ -348,7 +338,216 @@ describe('terminal.websocket', () => {
       };
     });
 
-    expect(closed).toBe(true);
+    await wait(100);
+
+    // Second connection to same project
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/same-project' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await wait(100);
+
+    // Only spawned once — second connection reused the session
+    expect(mockSpawn).toHaveBeenCalledOnce();
+  });
+
+  it('sends session-info with status new on first connect', async () => {
+    const address = await app.listen({ port: 0 });
+    const wsUrl = address.replace('http', 'ws');
+
+    const received: string[] = [];
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/info-test' }));
+      };
+      ws.onmessage = (event) => {
+        received.push(String(event.data));
+        const parsed = JSON.parse(String(event.data)) as { type: string };
+        if (parsed.type === 'session-info') {
+          ws.close();
+          resolve();
+        }
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    expect(received).toContain(JSON.stringify({ type: 'session-info', status: 'new' }));
+  });
+
+  it('sends session-info with status reconnected on second connect', async () => {
+    const address = await app.listen({ port: 0 });
+    const wsUrl = address.replace('http', 'ws');
+
+    // First connection
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/reconnect-test' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await wait(100);
+
+    // Second connection
+    const received: string[] = [];
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/reconnect-test' }));
+      };
+      ws.onmessage = (event) => {
+        received.push(String(event.data));
+        const parsed = JSON.parse(String(event.data)) as { type: string };
+        if (parsed.type === 'session-info') {
+          ws.close();
+          resolve();
+        }
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    expect(received).toContain(JSON.stringify({ type: 'session-info', status: 'reconnected' }));
+  });
+
+  it('sends session-replay on reconnect', async () => {
+    let dataCallback: ((data: string) => void) | undefined;
+    mockOnData.mockImplementation((cb: (data: string) => void) => {
+      dataCallback = cb;
+    });
+
+    const address = await app.listen({ port: 0 });
+    const wsUrl = address.replace('http', 'ws');
+
+    // First connection — PTY produces some output
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/replay-test' }));
+        setTimeout(() => {
+          if (dataCallback) dataCallback('buffered output');
+          setTimeout(() => {
+            ws.close();
+            resolve();
+          }, 50);
+        }, 100);
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await wait(100);
+
+    // Second connection — should receive replay
+    const received: string[] = [];
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/replay-test' }));
+      };
+      ws.onmessage = (event) => {
+        received.push(String(event.data));
+        try {
+          const parsed = JSON.parse(String(event.data)) as { type: string };
+          if (parsed.type === 'session-replay') {
+            ws.close();
+            resolve();
+          }
+        } catch {
+          // Raw PTY data, ignore
+        }
+      };
+      setTimeout(() => {
+        // Timeout safety
+        ws.close();
+        resolve();
+      }, 2000);
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    const replayMsg = received.find((m) => {
+      try {
+        const p = JSON.parse(m) as { type: string };
+        return p.type === 'session-replay';
+      } catch {
+        return false;
+      }
+    });
+
+    expect(replayMsg).toBeDefined();
+    const parsed = JSON.parse(replayMsg!) as { type: string; data: string };
+    expect(parsed.data).toContain('buffered output');
+  });
+
+  it('different projects get different PTYs', async () => {
+    const address = await app.listen({ port: 0 });
+    const wsUrl = address.replace('http', 'ws');
+
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/project-a' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await wait(100);
+
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/project-b' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await wait(100);
+
+    expect(mockSpawn).toHaveBeenCalledTimes(2);
   });
 
   it('sends error message and closes socket when PTY spawn fails', async () => {
@@ -406,9 +605,54 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
     expect(mockResize).not.toHaveBeenCalled();
     expect(mockWrite).toHaveBeenCalledWith('not json at all');
     expect(mockWrite).toHaveBeenCalledWith(JSON.stringify({ type: 'other', data: 'stuff' }));
+  });
+
+  it('clean shutdown kills all sessions', async () => {
+    const address = await app.listen({ port: 0 });
+    const wsUrl = address.replace('http', 'ws');
+
+    // Open two connections to different projects
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/shutdown-a' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await wait(50);
+
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
+      ws.onopen = () => {
+        ws.send(initMsg({ projectPath: '/tmp/shutdown-b' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await wait(50);
+
+    // Close the app (triggers onClose hook → destroyAll)
+    await app.close();
+
+    expect(mockKill).toHaveBeenCalledTimes(2);
   });
 });

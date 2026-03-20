@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { getActiveProjectPath } from '@/core/api/client';
+import { useProjectContext } from '@/core/providers/ProjectProvider';
 import { useTerminal } from './use-terminal';
 import '@xterm/xterm/css/xterm.css';
 
@@ -16,13 +16,27 @@ function sendJson(ws: WebSocket, data: Record<string, unknown>): void {
   }
 }
 
+function tryParseJson(raw: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed as Record<string, unknown>;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function XtermPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const { registerSender, unregisterSender } = useTerminal();
+  const { activeProject } = useProjectContext();
 
+  // Effect 1: Create Terminal + FitAddon on mount, dispose on unmount
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -45,20 +59,41 @@ export function XtermPanel() {
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Fit after a frame so the container has dimensions
     requestAnimationFrame(() => {
       fitAddon.fit();
     });
 
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        fitAddon.fit();
+      });
+    });
+    resizeObserver.observe(container);
+    resizeObserverRef.current = resizeObserver;
+
+    return () => {
+      resizeObserver.disconnect();
+      terminal.dispose();
+      terminalRef.current = null;
+      fitAddonRef.current = null;
+      resizeObserverRef.current = null;
+    };
+  }, []);
+
+  // Effect 2: Connect WebSocket per project, reconnect on project change
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+
+    terminal.clear();
+    terminal.reset();
+
     const ws = new WebSocket(buildWsUrl());
-    wsRef.current = ws;
 
     ws.onopen = () => {
-      // Send init message with project path so the server spawns the PTY in the right cwd
-      const projectPath = getActiveProjectPath();
       sendJson(ws, {
         type: 'init',
-        ...(projectPath ? { projectPath } : {}),
+        ...(activeProject ? { projectPath: activeProject } : {}),
         cols: terminal.cols,
         rows: terminal.rows,
       });
@@ -70,45 +105,39 @@ export function XtermPanel() {
     };
 
     ws.onmessage = (event: MessageEvent) => {
-      terminal.write(String(event.data));
+      const raw = String(event.data);
+      const parsed = tryParseJson(raw);
+      if (parsed?.['type'] === 'session-replay') {
+        terminal.write(String(parsed['data']));
+        return;
+      }
+      if (parsed?.['type'] === 'session-info') {
+        return; // consume silently
+      }
+      terminal.write(raw);
     };
 
     ws.onclose = () => {
       terminal.write('\r\n\x1b[90m[Terminal session ended]\x1b[0m\r\n');
     };
 
-    // Send user input to PTY
     const dataDisposable = terminal.onData((data: string) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(data);
       }
     });
 
-    // Handle resize
     const resizeDisposable = terminal.onResize(({ cols, rows }) => {
       sendJson(ws, { type: 'resize', cols, rows });
     });
 
-    // Observe container size changes
-    const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
-        fitAddon.fit();
-      });
-    });
-    resizeObserver.observe(container);
-
     return () => {
       unregisterSender();
-      resizeObserver.disconnect();
       dataDisposable.dispose();
       resizeDisposable.dispose();
       ws.close();
-      terminal.dispose();
-      terminalRef.current = null;
-      wsRef.current = null;
-      fitAddonRef.current = null;
     };
-  }, [registerSender, unregisterSender]);
+  }, [activeProject, registerSender, unregisterSender]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }
