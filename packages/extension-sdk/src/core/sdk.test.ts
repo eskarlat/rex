@@ -326,6 +326,50 @@ describe('RenreKitSDKImpl', () => {
     });
   });
 
+  describe('terminal', () => {
+    it('does nothing when open is called without a handler', () => {
+      // Should not throw
+      sdk.terminal.open();
+    });
+
+    it('does nothing when close is called without a handler', () => {
+      // Should not throw
+      sdk.terminal.close();
+    });
+
+    it('does nothing when send is called without a handler', () => {
+      // Should not throw
+      sdk.terminal.send('ls\n');
+    });
+
+    it('calls registered open handler', () => {
+      const handler = vi.fn();
+      sdk.terminal.setOpenHandler(handler);
+
+      sdk.terminal.open();
+
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('calls registered close handler', () => {
+      const handler = vi.fn();
+      sdk.terminal.setCloseHandler(handler);
+
+      sdk.terminal.close();
+
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it('calls registered send handler with data', () => {
+      const handler = vi.fn();
+      sdk.terminal.setSendHandler(handler);
+
+      sdk.terminal.send('echo hello\n');
+
+      expect(handler).toHaveBeenCalledWith('echo hello\n');
+    });
+  });
+
   describe('destroy', () => {
     it('clears all event handlers', () => {
       const handler1 = vi.fn();

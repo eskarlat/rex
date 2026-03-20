@@ -8,6 +8,7 @@ import type {
   DashboardUIAPI,
   EventsAPI,
   SchedulerAPI,
+  TerminalAPI,
   SDKEventType,
   SDKEventHandler,
   SDKEventPayload,
@@ -20,6 +21,15 @@ type ToastCallback = (options: ToastOptions) => void;
 
 /** Callback type for navigation */
 type NavigateCallback = (path: string) => void;
+
+/** Callback type for terminal open */
+type TerminalOpenCallback = () => void;
+
+/** Callback type for terminal close */
+type TerminalCloseCallback = () => void;
+
+/** Callback type for terminal send */
+type TerminalSendCallback = (data: string) => void;
 
 /**
  * Creates the project context capability group.
@@ -169,8 +179,49 @@ function createSchedulerAPI(client: ApiClient): SchedulerAPI {
 }
 
 /**
+ * Creates the terminal capability group.
+ * Open, close, and send use registered callbacks from the dashboard host.
+ */
+function createTerminalAPI(): TerminalAPI & {
+  setOpenHandler: (handler: TerminalOpenCallback) => void;
+  setCloseHandler: (handler: TerminalCloseCallback) => void;
+  setSendHandler: (handler: TerminalSendCallback) => void;
+} {
+  let openHandler: TerminalOpenCallback | null = null;
+  let closeHandler: TerminalCloseCallback | null = null;
+  let sendHandler: TerminalSendCallback | null = null;
+
+  return {
+    open() {
+      if (openHandler) {
+        openHandler();
+      }
+    },
+    close() {
+      if (closeHandler) {
+        closeHandler();
+      }
+    },
+    send(data: string) {
+      if (sendHandler) {
+        sendHandler(data);
+      }
+    },
+    setOpenHandler(handler: TerminalOpenCallback) {
+      openHandler = handler;
+    },
+    setCloseHandler(handler: TerminalCloseCallback) {
+      closeHandler = handler;
+    },
+    setSendHandler(handler: TerminalSendCallback) {
+      sendHandler = handler;
+    },
+  };
+}
+
+/**
  * Concrete implementation of the RenreKitSDK interface.
- * Composes 6 capability groups backed by an ApiClient.
+ * Composes 7 capability groups backed by an ApiClient.
  */
 export class RenreKitSDKImpl implements RenreKitSDK {
   readonly project: ProjectContextAPI;
@@ -182,6 +233,11 @@ export class RenreKitSDKImpl implements RenreKitSDK {
   };
   readonly events: EventsAPI & { clearAll: () => void };
   readonly scheduler: SchedulerAPI;
+  readonly terminal: TerminalAPI & {
+    setOpenHandler: (handler: TerminalOpenCallback) => void;
+    setCloseHandler: (handler: TerminalCloseCallback) => void;
+    setSendHandler: (handler: TerminalSendCallback) => void;
+  };
 
   private readonly internalEvents: EventsAPI & { clearAll: () => void };
 
@@ -198,6 +254,7 @@ export class RenreKitSDKImpl implements RenreKitSDK {
     this.internalEvents = createEventsAPI();
     this.events = this.internalEvents;
     this.scheduler = createSchedulerAPI(client);
+    this.terminal = createTerminalAPI();
   }
 
   destroy(): void {
