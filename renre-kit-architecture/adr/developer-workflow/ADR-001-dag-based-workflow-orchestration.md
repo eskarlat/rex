@@ -40,34 +40,36 @@ Adopt a **full DAG-based orchestration model** for all workflow tiers. Every tas
 
 ### Abort and Failure Handling
 
-Since the DAG is prompt-driven (no runtime engine), failure handling is expressed as **SKILL.md instructions** that guide the orchestrator's behavior. These are best-effort conventions, not enforced constraints.
+Failure handling combines **CLI commands** (deterministic enforcement) with **SKILL.md instructions** (LLM judgment). The commands handle structural operations; the SKILL.md guides the decision of *when* to abort.
 
 **Abort conditions** — the orchestrator should stop the workflow and report to the user when:
 
 - Research phase concludes that the task is **infeasible** (e.g., required API doesn't exist, architectural constraint prevents the change)
-- Validation fails **3 consecutive times** on the same issue (suggests the approach is fundamentally wrong, not a fixable error)
+- `workflow:validate` returns `retry_count >= 3` — the command tracks this deterministically
 - The user explicitly requests cancellation
 
-**On abort**, the orchestrator:
+**On abort**, the SKILL.md instructs the orchestrator to call `workflow:abort --reason {reason}`, which:
 
-1. Updates `PLAN.md` with an `## Aborted` section explaining the reason
-2. Writes `implementation/progress.md` with status `aborted` and last completed phase
-3. Still generates `RETROSPECTIVE.md` — aborted workflows produce valuable learnings
-4. Reports the abort reason and any partial findings to the user
+1. Updates `PLAN.md` with an `## Aborted` section including the reason and timestamp
+2. Appends a final entry to `progress.md` with status `aborted` and last completed phase
+3. Returns a prompt to the orchestrator to generate `RETROSPECTIVE.md` — aborted workflows produce valuable learnings
+4. Reports the abort reason to the user
 
-**Validation retry budget** — gate nodes (validation, gap analysis) should retry at most **3 times** before escalating to the user. The SKILL.md instructs: "If validation fails 3 times on the same category of error, stop and ask the user whether to continue, change approach, or abort."
+**Validation retry budget** — the `workflow:validate` command runs the full suite (lint, typecheck, tests, duplication), appends results to `review/validation-report.md`, and tracks the retry count. When `retry_count >= 3` on the same failure category, the command returns `exitCode: 1` with `"retry limit reached"` in the output. The SKILL.md instructs: "If `workflow:validate` reports retry limit reached, stop and ask the user whether to continue, change approach, or abort."
 
 ### Resume Protocol
 
-Workflows may be interrupted (session timeout, user closes terminal, context window exhaustion). The plan directory enables resume:
+Workflows may be interrupted (session timeout, user closes terminal, context window exhaustion). The plan directory and CLI commands enable resume:
 
-1. Orchestrator reads `implementation/progress.md` to find the last entry with status `complete`
-2. Identifies the corresponding DAG node
-3. Reads all existing output files in the plan directory to reconstruct context
-4. Resumes from the **next node** after the last completed one
-5. Updates `PLAN.md` with a `## Resumed` entry noting the interruption point
+1. The `SessionStart` hook runs `workflow:context`, which detects active workflows automatically
+2. If an active workflow exists, the hook output includes: plan name, tier, last completed phase, next expected phase, and relevant memory context
+3. The SKILL.md instructs: "If you receive active workflow context at session start, resume that workflow from the indicated next phase"
+4. The orchestrator reads existing output files in the plan directory to reconstruct detailed context
+5. Calls `workflow:progress --phase {phase} --status resumed` to record the resumption
 
-**Limitation:** Resume quality depends on how well the new LLM session can reconstruct intent from the plan files. The SKILL.md instructs the orchestrator to write progress entries with enough context for a fresh session to understand the state.
+**Manual resume** — the user can also explicitly invoke `workflow:status` to see the state of all workflows, and the SKILL.md includes a `workflow:resume` instruction pattern.
+
+**Limitation:** Resume quality depends on how well the new LLM session can reconstruct intent from the plan files. The structured `progress.md` format and session hook provide the skeleton; the plan directory files provide the substance.
 
 ### Agent-to-Node Mapping
 
@@ -92,7 +94,7 @@ Workflows may be interrupted (session timeout, user closes terminal, context win
 - **Overhead for trivial tasks** — even quick fixes pay the cost of DAG classification and retrospective generation, though this is minimal (seconds)
 - **Merge complexity** — synthesizing parallel agent outputs requires careful prompt engineering to avoid losing findings or creating contradictions
 - **Coordination cost** — managing parallel agents through SKILL.md instructions relies on the host LLM correctly spawning and collecting agent results
-- **No runtime DAG engine** — the DAG is encoded in SKILL.md instructions rather than a formal execution engine, meaning the LLM must interpret and follow the graph faithfully
+- **No runtime DAG engine** — the DAG is encoded in SKILL.md instructions rather than a formal execution engine, meaning the LLM must interpret and follow the graph faithfully. CLI commands (ADR-005) enforce structural invariants but not traversal order
 
 ## Alternatives Considered
 
@@ -109,4 +111,6 @@ Use linear pipelines for quick fix and bug fix, DAG only for complex tasks. This
 - [ADR-002: Task Classification and Routing](ADR-002-task-classification-and-routing.md)
 - [ADR-003: File-Based Agent Communication Protocol](ADR-003-file-based-agent-communication.md)
 - [ADR-004: Retrospective Knowledge Memory](ADR-004-retrospective-knowledge-memory.md)
+- [ADR-005: Prompt-Based Orchestration Constraints](ADR-005-prompt-based-orchestration-constraints.md)
+- [ADR-006: Extension Manifest and Agent Asset Structure](ADR-006-extension-manifest-and-agent-assets.md)
 - [ADR-001: SKILL.md Convention](../llm-skills/ADR-001-skill-md-convention.md)

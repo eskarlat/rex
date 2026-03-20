@@ -41,8 +41,47 @@ Adopt a **file-based communication protocol** where agents read from and write t
 1. **Write isolation** — each agent writes only to its designated files; no agent overwrites another agent's output
 2. **Read freedom** — any agent can read any file in the plan directory to inform its work
 3. **Orchestrator as hub** — the orchestrator reads all outputs at merge points and writes synthesis documents (e.g., `merged-findings.md`)
-4. **Append-only progress** — `progress.md` is append-only; agents add entries but never remove or edit previous entries
+4. **Append-only progress** — `progress.md` is append-only; entries are added by the `workflow:progress` command, never edited or removed
 5. **Structured sections** — each output file follows a consistent markdown structure with `## Summary`, `## Findings`, `## Recommendations`, and `## Open Questions`
+
+### Progress File Format (Command-Managed)
+
+The `implementation/progress.md` file is read and written by the `workflow:progress` command (see ADR-005). Its structured format enables deterministic resume detection and status reporting:
+
+```markdown
+# Workflow Progress: {plan-name}
+
+## Entries
+
+### [2025-03-15T10:30:00Z] classify
+- **Status**: complete
+- **Phase**: classify
+- **Tier**: bug-fix (score: 6/15)
+- **Notes**: Classified as bug-fix based on 3 files affected, single domain, functional-shared risk
+
+### [2025-03-15T10:30:45Z] research
+- **Status**: complete
+- **Phase**: research
+- **Agents**: 3 (reproduce, root-cause, related-code)
+- **Notes**: All research agents completed; findings in research/
+
+### [2025-03-15T10:32:00Z] merge
+- **Status**: complete
+- **Phase**: merge
+- **Notes**: Synthesized 3 research outputs into merged-findings.md; no contradictions
+
+### [2025-03-15T10:33:00Z] implement
+- **Status**: in-progress
+- **Phase**: implement
+- **Notes**: Implementing fix based on plan approach A
+```
+
+**Key properties:**
+
+- Each entry has an ISO 8601 timestamp, phase name, and status (`complete`, `in-progress`, `aborted`, `resumed`)
+- The `workflow:status` command parses this to determine: last completed phase, current phase, whether the workflow is active/aborted/complete
+- The `workflow:context` session hook reads this to provide resume context at session start
+- The SKILL.md instructs the orchestrator to call `workflow:progress --phase {name} --status {status}` at each phase transition
 
 ### File Naming Convention
 
