@@ -200,6 +200,32 @@ The SKILL.md should be written for the **most capable host** (Claude Code with s
 
 **SKILL.md instruction:** "If you can spawn subagents, run research agents in parallel. If not, run them sequentially — the file protocol works the same either way. The DAG describes data dependencies, not a requirement for parallelism."
 
+### Mid-Workflow User Interaction
+
+When the orchestrator encounters decisions requiring human judgment, it uses the **host environment's native question tool** rather than a workflow-specific mechanism:
+
+| Host | Tool |
+|------|------|
+| Claude Code | `AskUserQuestion` |
+| Cline | `ask_followup_question` |
+| Cursor | Native chat response |
+| Generic | Plain text question in output |
+
+**Concrete triggers for asking the user**:
+- Research agents produce contradictory findings affecting the implementation approach
+- Classification is borderline between tiers and the user's intent is ambiguous
+- Validation fails at the retry limit (3x default) — present failures, ask how to proceed
+- Feasibility assessment is "needs-more-information" — ask the specific questions
+- Implementation requires a design choice not covered by existing patterns
+
+**Do not ask for**: routine phase transitions, file ownership assignments, which tests to run, or minor implementation details within the planned approach.
+
+The SKILL.md instruction:
+
+> "When you encounter a decision that requires user input — contradictory findings, ambiguous requirements, a choice between implementation approaches, or repeated validation failures — ask the user directly using your host's question mechanism. Do not guess. Do not pick arbitrarily. Present the options with context from your research and let the user decide."
+
+See [ADR-007: Developer Experience and Activation](ADR-007-developer-experience-and-activation.md) for the full interaction model.
+
 ### What This Design Cannot Guarantee
 
 Explicitly documenting non-guarantees prevents false expectations:
@@ -249,3 +275,4 @@ Don't document the limitations — write the SKILL.md as if the LLM will follow 
 - [ADR-003: File-Based Agent Communication Protocol](ADR-003-file-based-agent-communication.md) — file ownership rules referenced here
 - [ADR-004: Retrospective Knowledge Memory](ADR-004-retrospective-knowledge-memory.md) — staleness detection referenced here
 - [ADR-006: Extension Manifest and Agent Asset Structure](ADR-006-extension-manifest-and-agent-assets.md) — defines the full manifest, commands, hooks, and skill folder layout
+- [ADR-007: Developer Experience and Activation](ADR-007-developer-experience-and-activation.md) — activation threshold, announcement, user interaction, and concurrent workflows

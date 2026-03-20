@@ -139,6 +139,10 @@ This ADR defines the complete extension structure — manifest, commands, hooks,
 }
 ```
 
+### Concurrent Workflow Support
+
+Multiple workflows can be active simultaneously — each in its own plan directory (`.renre-kit/plan/{name}/`) and git branch (`workflow/{name}`). Commands that operate on a specific workflow accept an optional `--plan` flag; when omitted, they target the **most recently active** workflow (determined by the latest `in-progress` entry in `progress.md`). See [ADR-007](ADR-007-developer-experience-and-activation.md) for the full concurrent workflow design and `workflow:context` multi-workflow output format.
+
 ### Commands — Two Audiences
 
 Commands serve both the **LLM** (called via SKILL.md during workflow execution) and the **user** (called directly for management). The distinction is in how they're invoked, not how they're implemented:
@@ -185,7 +189,7 @@ Returns: confirmation with current progress summary.
 **`workflow:validate`** — runs validation and tracks retries:
 ```
 args: {
-  plan?: string,             # Plan name (defaults to active workflow)
+  plan?: string,             # Plan name (defaults to most recently active workflow)
 }
 ```
 Returns: pass/fail, failure details, retry count, whether retry limit was reached.
@@ -194,11 +198,20 @@ Returns: pass/fail, failure details, retry count, whether retry limit was reache
 ```
 args: {}                     # No args needed; reads project state automatically
 ```
-Returns: active workflow summary (if any), project LEARNINGS.md relevant sections, global classification insights.
+Returns: all active workflow summaries (if any), project LEARNINGS.md relevant sections, global classification insights. When multiple workflows are active, lists each with tier, phase, and branch. See ADR-007 for the multi-workflow context output format.
+
+**`workflow:status`** — shows workflow state:
+```
+args: {
+  plan?: string,             # Plan name (omit to list all workflows)
+}
+```
+Returns: when `--plan` specified, detailed status for that workflow; when omitted, summary list of all workflows (active, completed, aborted).
 
 **`workflow:abort`** — aborts the active workflow:
 ```
 args: {
+  plan?: string,             # Plan name (defaults to most recently active workflow)
   reason: string,            # "infeasible" | "retry-limit" | "user-cancelled" | custom string
 }
 ```
@@ -480,3 +493,4 @@ Package as an MCP (stdio) extension instead of standard. Would provide tool-call
 - [ADR-005: Prompt-Based Orchestration Constraints](ADR-005-prompt-based-orchestration-constraints.md) — enforcement tiers these commands fulfill
 - [ADR-001: SKILL.md Convention](../llm-skills/ADR-001-skill-md-convention.md) — skill folder conventions followed
 - [ADR-002: Two-Layer LLM Context](../llm-skills/ADR-002-two-layer-llm-context.md) — agent asset deployment model
+- [ADR-007: Developer Experience and Activation](ADR-007-developer-experience-and-activation.md) — activation threshold, concurrent workflow rules, and user interaction patterns

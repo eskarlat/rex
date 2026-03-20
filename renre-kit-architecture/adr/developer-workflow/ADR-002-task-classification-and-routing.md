@@ -44,6 +44,16 @@ Because all dimensions are weighted equally, a single high-scoring dimension can
 
 Floor rules are evaluated **after** summing scores. If the floor pushes the tier higher than the sum suggests, the classification output records both: `Tier: Bug Fix (score: 3/15, floor rule: Risk ≥ 3)`.
 
+### Activation Threshold: Score 0 Skips the Workflow
+
+When all five dimensions score 0 (total score = 0), the task is **trivially simple** — obvious fix, single file, no risk, no dependencies, no uncertainty. In this case, the workflow is **not activated at all**. The LLM makes the change directly without calling `workflow:init`, creating a plan directory, or starting a git branch.
+
+This threshold is a bright line: the moment *any* dimension scores 1 or higher, the workflow activates. Even a Quick Fix (score 1–3) benefits from tracked validation and a lightweight retrospective.
+
+**What score-0 tasks lose**: No plan directory, no git branch isolation, no retrospective, no learnings capture. This is acceptable because score-0 tasks have no lessons worth capturing — the fix was already obvious and contained.
+
+See [ADR-007: Developer Experience and Activation](ADR-007-developer-experience-and-activation.md) for the full activation flow.
+
 ### User Override
 
 The user may specify a tier explicitly in the task description (e.g., "treat this as a complex task"). User-specified tiers **always** take precedence over both the score and floor rules. The classification output records: `Tier: Complex Task (user-specified, calculated score: 4/15)`.
@@ -109,3 +119,4 @@ Require the user to explicitly choose quick fix / bug fix / complex. Eliminates 
 
 - [ADR-001: DAG-Based Workflow Orchestration](ADR-001-dag-based-workflow-orchestration.md)
 - [ADR-003: File-Based Agent Communication Protocol](ADR-003-file-based-agent-communication.md)
+- [ADR-007: Developer Experience and Activation](ADR-007-developer-experience-and-activation.md) — activation threshold and announcement rules
