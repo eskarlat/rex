@@ -162,14 +162,14 @@ flowchart TD
         W3{Classify Each Insight}
     end
 
-    subgraph GlobalMemory["~/.renre-kit/memory/ (Global)"]
+    subgraph GlobalMemory["~/.renre-kit/storage/renre-developer-workflow/memory/ (Global)"]
         G1[LEARNINGS.md — Workflow Knowledge]
         G2[patterns/ — Reusable Workflow Patterns]
         G3[pitfalls/ — General Pitfalls]
         G4[retrospectives/ — All Projects Archive]
     end
 
-    subgraph ProjectMemory[".renre-kit/memory/ (Project)"]
+    subgraph ProjectMemory[".renre-kit/storage/renre-developer-workflow/memory/ (Project)"]
         P1[LEARNINGS.md — Codebase Knowledge]
         P2[patterns/ — Project Patterns]
         P3[pitfalls/ — Project Pitfalls]

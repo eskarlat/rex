@@ -16,7 +16,7 @@ sequenceDiagram
     participant O as Orchestrator
     participant S as Scout Agent
     participant FS as .renre-kit/plan/
-    participant M as .renre-kit/memory/
+    participant M as Extension Memory
     participant V as Validation Suite
 
     U->>O: Task description
@@ -69,7 +69,7 @@ sequenceDiagram
     participant B as Agent B (Root Cause)
     participant C as Agent C (Related Code)
     participant FS as .renre-kit/plan/
-    participant M as .renre-kit/memory/
+    participant M as Extension Memory
     participant V as Validation Suite
 
     U->>O: Bug report / description
@@ -152,7 +152,7 @@ sequenceDiagram
     participant R3 as Scout (Deps)
     participant R4 as Architect
     participant FS as .renre-kit/plan/
-    participant M as .renre-kit/memory/
+    participant M as Extension Memory
     participant V as Validation Suite
 
     U->>O: Feature / complex task description
@@ -216,8 +216,8 @@ sequenceDiagram
     participant I3 as Implementer C
     participant RV as Reviewer
     participant FS as .renre-kit/plan/
-    participant GM as ~/.renre-kit/memory/ (Global)
-    participant PM as .renre-kit/memory/ (Project)
+    participant GM as Global Memory
+    participant PM as Project Memory
     participant V as Validation Suite
 
     Note over O,I3: Implementation Phase (3 parallel agents)
@@ -314,8 +314,8 @@ How retrospective insights are classified, routed to global or project memory, a
 sequenceDiagram
     participant O as Orchestrator
     participant FS as .renre-kit/plan/{name}/
-    participant GM as ~/.renre-kit/memory/ (Global)
-    participant PM as .renre-kit/memory/ (Project)
+    participant GM as Global Memory
+    participant PM as Project Memory
 
     Note over O: Workflow Complete
     O->>O: Compile workflow metrics

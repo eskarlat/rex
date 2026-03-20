@@ -14,12 +14,12 @@ Two categories of knowledge emerge from retrospectives: **workflow knowledge** (
 
 ## Decision
 
-Implement a **two-layer file-based knowledge memory** that separates workflow-level learnings (global) from project-specific knowledge (local). This mirrors RenreKit's existing state model where global state lives in `~/.renre-kit/` and project state lives in `.renre-kit/`.
+Implement a **two-layer file-based knowledge memory** that separates workflow-level learnings (global) from project-specific knowledge (local). Both layers are stored under the extension's own storage namespace, following RenreKit's existing `storage/<extension-name>/` convention at both global and project levels.
 
 ### Two-Layer Memory Architecture
 
 ```
-~/.renre-kit/memory/                          # Global — workflow knowledge
+~/.renre-kit/storage/renre-developer-workflow/memory/   # Global — workflow knowledge
 ├── LEARNINGS.md                              # Workflow-level insights (cross-project)
 ├── patterns/                                 # Reusable workflow patterns
 │   └── {pattern-name}.md
@@ -28,7 +28,7 @@ Implement a **two-layer file-based knowledge memory** that separates workflow-le
 └── retrospectives/                           # Archive of all retrospectives (all projects)
     └── {project}--{plan-name}.retro.md
 
-.renre-kit/memory/                            # Project — codebase knowledge
+.renre-kit/storage/renre-developer-workflow/memory/     # Project — codebase knowledge
 ├── LEARNINGS.md                              # Project-specific insights
 ├── patterns/                                 # Project-specific patterns
 │   └── {pattern-name}.md
@@ -42,8 +42,8 @@ Implement a **two-layer file-based knowledge memory** that separates workflow-le
 
 | Layer | Location | Content | Examples |
 |-------|----------|---------|---------|
-| **Global** | `~/.renre-kit/memory/` | Workflow orchestration learnings, classification calibration, agent coordination, general development practices | "Research agents produce better findings with explicit file paths", "OAuth tasks are consistently underclassified — bump Domain Knowledge by 1", "Always flag merge contradictions explicitly" |
-| **Project** | `.renre-kit/memory/` | Codebase patterns, architectural knowledge, tech stack specifics, project conventions, known quirks | "This project uses repository pattern for data access", "Auth module has circular deps — always import from the facade", "CSS modules need explicit typing in this project", "ESLint config disallows default exports" |
+| **Global** | `~/.renre-kit/storage/renre-developer-workflow/memory/` | Workflow orchestration learnings, classification calibration, agent coordination, general development practices | "Research agents produce better findings with explicit file paths", "OAuth tasks are consistently underclassified — bump Domain Knowledge by 1", "Always flag merge contradictions explicitly" |
+| **Project** | `.renre-kit/storage/renre-developer-workflow/memory/` | Codebase patterns, architectural knowledge, tech stack specifics, project conventions, known quirks | "This project uses repository pattern for data access", "Auth module has circular deps — always import from the facade", "CSS modules need explicit typing in this project", "ESLint config disallows default exports" |
 
 ### Classification Rules for Insight Routing
 
@@ -121,8 +121,8 @@ enabled; always handle potential undefined from array/object indexing"}
 
 1. **Workflow completes** → orchestrator generates `RETROSPECTIVE.md` in plan directory
 2. **Insights classified** → each insight is tagged as global or project-specific
-3. **Global insights** → archived to `~/.renre-kit/memory/retrospectives/{project}--{plan}.retro.md`, merged into global `LEARNINGS.md`
-4. **Project insights** → archived to `.renre-kit/memory/retrospectives/{plan}.retro.md`, merged into project `LEARNINGS.md`
+3. **Global insights** → archived to `~/.renre-kit/storage/renre-developer-workflow/memory/retrospectives/{project}--{plan}.retro.md`, merged into global `LEARNINGS.md`
+4. **Project insights** → archived to `.renre-kit/storage/renre-developer-workflow/memory/retrospectives/{plan}.retro.md`, merged into project `LEARNINGS.md`
 5. **Patterns/pitfalls** → routed to the appropriate layer's `patterns/` or `pitfalls/` directory
 
 ### Memory Consumption
@@ -183,20 +183,20 @@ Auto-generated at workflow completion:
 
 To prevent unbounded growth, each layer is pruned independently:
 
-**Global (`~/.renre-kit/memory/`):**
+**Global (`~/.renre-kit/storage/renre-developer-workflow/memory/`):**
 - `LEARNINGS.md` capped at ~500 lines; consolidate overlapping insights when exceeded
 - `retrospectives/` retains the last 100 retrospectives (across all projects); older ones summarized then removed
 - `patterns/` and `pitfalls/` reviewed every 20 workflows; outdated entries removed
 
-**Project (`.renre-kit/memory/`):**
+**Project (`.renre-kit/storage/renre-developer-workflow/memory/`):**
 - `LEARNINGS.md` capped at ~300 lines; consolidate when exceeded
 - `retrospectives/` retains the last 30 retrospectives; older ones summarized then removed
 - `patterns/` and `pitfalls/` reviewed every 10 workflows; outdated or contradicted entries removed
 
 ### Git Considerations
 
-- **Project memory** (`.renre-kit/memory/`) — should be committed to the repo so team members share codebase knowledge
-- **Global memory** (`~/.renre-kit/memory/`) — lives outside the repo; personal to the developer's machine
+- **Project memory** (`.renre-kit/storage/renre-developer-workflow/memory/`) — should be committed to the repo so team members share codebase knowledge
+- **Global memory** (`~/.renre-kit/storage/renre-developer-workflow/memory/`) — lives outside the repo; personal to the developer's machine
 
 ## Consequences
 
@@ -205,7 +205,7 @@ To prevent unbounded growth, each layer is pruned independently:
 - **Right knowledge in the right place** — workflow orchestration learnings benefit all projects; codebase knowledge stays where it's relevant
 - **Cross-project improvement** — global memory means a developer's 50th project benefits from all 49 previous projects' workflow learnings
 - **Team knowledge sharing** — project memory committed to git means the whole team benefits from codebase insights, not just the developer who discovered them
-- **Consistent with RenreKit model** — follows the established global (`~/.renre-kit/`) vs project (`.renre-kit/`) state split
+- **Consistent with RenreKit model** — follows the established `storage/<extension-name>/` convention at both global and project levels
 - **Self-correcting classification** — global scoring calibration improves across projects over time
 - **Transparent** — all memory is plain markdown files that developers can read, edit, or override at either layer
 
@@ -215,17 +215,17 @@ To prevent unbounded growth, each layer is pruned independently:
 - **Dual-layer complexity** — the orchestrator must read from and write to two locations instead of one, increasing the SKILL.md instruction complexity
 - **Global memory grows with projects** — a developer working across many diverse projects may accumulate contradictory global insights (e.g., "always use strict mode" vs insights from a legacy JS project)
 - **Cold start at both layers** — new developers have empty global memory; new projects have empty project memory. Both require 5–10 workflows to become valuable
-- **Storage across two locations** — debugging memory issues requires checking both `~/.renre-kit/memory/` and `.renre-kit/memory/`
+- **Storage across two locations** — debugging memory issues requires checking both `~/.renre-kit/storage/renre-developer-workflow/memory/` and `.renre-kit/storage/renre-developer-workflow/memory/`
 
 ## Alternatives Considered
 
 ### Project-Only Memory
 
-Store all learnings in `.renre-kit/memory/` per-project. Simpler implementation but loses workflow orchestration learnings when starting new projects. A developer who has mastered agent coordination on one project starts from scratch on the next. Rejected because workflow knowledge is genuinely transferable.
+Store all learnings in `.renre-kit/storage/renre-developer-workflow/memory/` per-project. Simpler implementation but loses workflow orchestration learnings when starting new projects. A developer who has mastered agent coordination on one project starts from scratch on the next. Rejected because workflow knowledge is genuinely transferable.
 
 ### Global-Only Memory
 
-Store all learnings in `~/.renre-kit/memory/` globally. Simpler implementation but mixes project-specific codebase quirks with general workflow insights. A TypeScript project's strict mode learnings pollute context for a Python project. Rejected because codebase knowledge is inherently project-scoped.
+Store all learnings in `~/.renre-kit/storage/renre-developer-workflow/memory/` globally. Simpler implementation but mixes project-specific codebase quirks with general workflow insights. A TypeScript project's strict mode learnings pollute context for a Python project. Rejected because codebase knowledge is inherently project-scoped.
 
 ### Database-Backed Memory
 
