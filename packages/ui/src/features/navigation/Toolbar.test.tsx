@@ -9,6 +9,20 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   useMarketplace: () => mockMarketplace(),
 }));
 
+const mockToggle = vi.fn();
+let mockIsTerminalOpen = false;
+vi.mock('@/features/terminal/use-terminal', () => ({
+  useTerminal: () => ({
+    isOpen: mockIsTerminalOpen,
+    open: vi.fn(),
+    close: vi.fn(),
+    toggle: mockToggle,
+    send: vi.fn(),
+    registerSender: vi.fn(),
+    unregisterSender: vi.fn(),
+  }),
+}));
+
 function renderToolbar(route = '/') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -156,5 +170,26 @@ describe('Toolbar', () => {
     );
     expect(screen.getByText('my-ext')).toBeInTheDocument();
     expect(screen.getByText('unknown')).toBeInTheDocument();
+  });
+
+  it('renders Terminal button', () => {
+    renderToolbar('/');
+    expect(screen.getByText('Terminal')).toBeInTheDocument();
+  });
+
+  it('renders Terminal button with active style when terminal is open', () => {
+    mockIsTerminalOpen = true;
+    renderToolbar('/');
+    const terminalButton = screen.getByLabelText('Close terminal');
+    expect(terminalButton).toBeInTheDocument();
+    mockIsTerminalOpen = false;
+  });
+
+  it('calls toggle when Terminal button is clicked', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    renderToolbar('/');
+    const terminalButton = screen.getByText('Terminal');
+    await userEvent.click(terminalButton);
+    expect(mockToggle).toHaveBeenCalledOnce();
   });
 });

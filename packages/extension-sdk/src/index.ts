@@ -22,6 +22,7 @@ export type {
   DashboardUIAPI,
   EventsAPI,
   SchedulerAPI,
+  TerminalAPI,
   RenreKitSDK,
 } from './core/types';
 
