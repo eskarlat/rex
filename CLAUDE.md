@@ -73,7 +73,7 @@ src/
 - **Extension types**: Standard (in-process `require()`), MCP stdio (child process JSON-RPC), MCP SSE (HTTP)
 - **Connection Manager**: Manages MCP server lifecycle — lazy start, 30s idle timeout, exponential backoff restart (max 3 retries)
 - **Database**: SQLite via better-sqlite3 (synchronous API). 4 tables: `projects`, `installed_extensions`, `scheduled_tasks`, `task_history`. Migration files in `migrations/001-initial-schema.sql`.
-- **Extension lifecycle**: Extensions export `onInit`/`onDestroy` named exports from their `main` entry point. These receive a `HookContext` with `projectDir` and `agentDir` and use the SDK's `deployAgentAssets`/`cleanupAgentAssets` to copy agent files into `.agents/`.
+- **Extension lifecycle**: Extensions export `onInit`/`onDestroy` named exports from their `main` entry point. These receive an enriched `HookContext` with `projectDir`, `agentDir`, `extensionDir`, and `sdk` (containing `deployAgentAssets`/`cleanupAgentAssets` injected by the CLI). Hooks use `context.sdk.*` instead of direct SDK imports, so extensions work without `node_modules`.
 - **Manifest validation**: Zod schemas validate manifests — `engines` field is mandatory, widget sizes have min/max/default refinements.
 - **Config resolution chain**: project override (`.renre-kit/manifest.json`) → global (`~/.renre-kit/config.json`) → schema defaults. Vault-mapped fields get decrypted via indirection.
 

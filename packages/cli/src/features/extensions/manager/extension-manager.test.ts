@@ -314,6 +314,82 @@ describe('extension-manager', () => {
       ).resolves.toBeDefined();
     });
 
+    it('passes enriched HookContext with sdk to onInit', { timeout: 10_000 }, async () => {
+      const extDir = path.join(tmpDir, 'ext-ctx@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-ctx',
+          version: '1.0.0',
+          description: 'Context test',
+          type: 'standard',
+          commands: {},
+          main: './ctx-entry.mjs',
+          engines: validEngines,
+        }),
+      );
+      fs.writeFileSync(
+        path.join(extDir, 'ctx-entry.mjs'),
+        `import fs from 'node:fs';
+import path from 'node:path';
+export function onInit(ctx) {
+  const info = {
+    hasExtensionDir: typeof ctx.extensionDir === 'string',
+    hasAgentDir: typeof ctx.agentDir === 'string',
+    hasDeployFn: typeof ctx.sdk.deployAgentAssets === 'function',
+    hasCleanupFn: typeof ctx.sdk.cleanupAgentAssets === 'function',
+  };
+  fs.writeFileSync(path.join(ctx.projectDir, '.ctx-check'), JSON.stringify(info));
+}`,
+      );
+
+      await activate('ext-ctx', '1.0.0', projectDir, extDir);
+
+      const ctxCheck = JSON.parse(
+        fs.readFileSync(path.join(projectDir, '.ctx-check'), 'utf-8'),
+      );
+      expect(ctxCheck).toEqual({
+        hasExtensionDir: true,
+        hasAgentDir: true,
+        hasDeployFn: true,
+        hasCleanupFn: true,
+      });
+    });
+
+    it('logs warning when hook fails', { timeout: 10_000 }, async () => {
+      const extDir = path.join(tmpDir, 'ext-fail@1.0.0');
+      fs.mkdirSync(extDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(extDir, 'manifest.json'),
+        JSON.stringify({
+          name: 'ext-fail',
+          version: '1.0.0',
+          description: 'Failing hook',
+          type: 'standard',
+          commands: {},
+          main: './fail-entry.mjs',
+          engines: validEngines,
+        }),
+      );
+      fs.writeFileSync(
+        path.join(extDir, 'fail-entry.mjs'),
+        `export function onInit() { throw new Error('hook boom'); }`,
+      );
+
+      const { getLogger } = await import('../../../core/logger/index.js');
+      const warnSpy = vi.spyOn(getLogger(), 'warn');
+
+      await activate('ext-fail', '1.0.0', projectDir, extDir);
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        'extension-manager',
+        expect.stringContaining('Hook onInit failed'),
+        expect.objectContaining({ extensionDir: extDir }),
+      );
+      warnSpy.mockRestore();
+    });
+
     it('does not auto-deploy assets — extensions manage via hooks', async () => {
       const extDir = path.join(tmpDir, 'no-deploy@1.0.0');
       fs.mkdirSync(path.join(extDir, 'skills', 'greet'), { recursive: true });

@@ -1,19 +1,9 @@
-import path from 'node:path';
-import { deployAgentAssets, cleanupAgentAssets } from '@renre-kit/extension-sdk/node';
-
-interface HookContext {
-  projectDir: string;
-  agentDir: string;
-}
-
-function getExtensionDir(): string {
-  return path.resolve(import.meta.dirname, '..');
-}
+import type { HookContext } from '@renre-kit/extension-sdk/node';
 
 export function onInit(context: HookContext): void {
-  deployAgentAssets(getExtensionDir(), context.projectDir, context.agentDir);
+  context.sdk.deployAgentAssets(context.extensionDir, context.projectDir, context.agentDir);
 }
 
 export function onDestroy(context: HookContext): void {
-  cleanupAgentAssets(getExtensionDir(), context.projectDir, context.agentDir);
+  context.sdk.cleanupAgentAssets(context.extensionDir, context.projectDir, context.agentDir);
 }
