@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement } from 'react';
 import type { ReactNode } from 'react';
@@ -68,5 +68,52 @@ describe('useTerminal', () => {
       result.current.toggle();
     });
     expect(result.current.isOpen).toBe(false);
+  });
+
+  it('send does nothing when no sender is registered', () => {
+    const { result } = renderHook(() => useTerminal(), {
+      wrapper: createWrapper(),
+    });
+
+    // Should not throw
+    act(() => {
+      result.current.send('echo hello');
+    });
+  });
+
+  it('send calls the registered sender', () => {
+    const { result } = renderHook(() => useTerminal(), {
+      wrapper: createWrapper(),
+    });
+
+    const sender = vi.fn();
+    act(() => {
+      result.current.registerSender(sender);
+    });
+
+    act(() => {
+      result.current.send('ls\n');
+    });
+
+    expect(sender).toHaveBeenCalledWith('ls\n');
+  });
+
+  it('unregisterSender stops send from calling the sender', () => {
+    const { result } = renderHook(() => useTerminal(), {
+      wrapper: createWrapper(),
+    });
+
+    const sender = vi.fn();
+    act(() => {
+      result.current.registerSender(sender);
+    });
+    act(() => {
+      result.current.unregisterSender();
+    });
+    act(() => {
+      result.current.send('ls\n');
+    });
+
+    expect(sender).not.toHaveBeenCalled();
   });
 });

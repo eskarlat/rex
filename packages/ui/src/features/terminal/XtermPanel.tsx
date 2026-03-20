@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { getActiveProjectPath } from '@/core/api/client';
+import { useTerminal } from './use-terminal';
 import '@xterm/xterm/css/xterm.css';
 
 function buildWsUrl(projectPath: string | null): string {
@@ -24,6 +25,7 @@ export function XtermPanel() {
   const terminalRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const { registerSender, unregisterSender } = useTerminal();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -59,6 +61,11 @@ export function XtermPanel() {
 
     ws.onopen = () => {
       sendResize(ws, terminal.cols, terminal.rows);
+      registerSender((data: string) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(data);
+        }
+      });
     };
 
     ws.onmessage = (event: MessageEvent) => {
@@ -90,6 +97,7 @@ export function XtermPanel() {
     resizeObserver.observe(container);
 
     return () => {
+      unregisterSender();
       resizeObserver.disconnect();
       dataDisposable.dispose();
       resizeDisposable.dispose();
@@ -99,7 +107,7 @@ export function XtermPanel() {
       wsRef.current = null;
       fitAddonRef.current = null;
     };
-  }, []);
+  }, [registerSender, unregisterSender]);
 
   return <div ref={containerRef} className="h-full w-full" />;
 }

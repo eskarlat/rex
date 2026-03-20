@@ -42,6 +42,20 @@ vi.mock('@/core/api/client', () => ({
   getActiveProjectPath: () => mockGetActiveProjectPath(),
 }));
 
+const mockRegisterSender = vi.fn();
+const mockUnregisterSender = vi.fn();
+vi.mock('./use-terminal', () => ({
+  useTerminal: () => ({
+    isOpen: true,
+    open: vi.fn(),
+    close: vi.fn(),
+    toggle: vi.fn(),
+    send: vi.fn(),
+    registerSender: mockRegisterSender,
+    unregisterSender: mockUnregisterSender,
+  }),
+}));
+
 class MockWebSocket {
   static OPEN = 1;
   url: string;
@@ -218,6 +232,31 @@ describe('XtermPanel', () => {
     });
 
     expect(mockWsInstance.send).not.toHaveBeenCalled();
+  });
+
+  it('registers sender on WebSocket open', () => {
+    render(<XtermPanel />);
+    triggerOpen();
+
+    expect(mockRegisterSender).toHaveBeenCalledOnce();
+    expect(typeof mockRegisterSender.mock.calls[0]![0]).toBe('function');
+  });
+
+  it('registered sender sends data through WebSocket', () => {
+    render(<XtermPanel />);
+    triggerOpen();
+
+    const sender = mockRegisterSender.mock.calls[0]![0] as (data: string) => void;
+    sender('echo test\n');
+
+    expect(mockWsInstance.send).toHaveBeenCalledWith('echo test\n');
+  });
+
+  it('unregisters sender on unmount', () => {
+    const { unmount } = render(<XtermPanel />);
+    unmount();
+
+    expect(mockUnregisterSender).toHaveBeenCalledOnce();
   });
 
   it('uses wss protocol for https pages', () => {

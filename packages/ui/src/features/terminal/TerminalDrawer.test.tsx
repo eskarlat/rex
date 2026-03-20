@@ -14,6 +14,9 @@ vi.mock('./use-terminal', () => ({
     open: mockOpen,
     close: mockClose,
     toggle: mockToggle,
+    send: vi.fn(),
+    registerSender: vi.fn(),
+    unregisterSender: vi.fn(),
   }),
 }));
 
