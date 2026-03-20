@@ -59,6 +59,16 @@
       "icon": "icons/miro.svg",
       "author": "yskarlat",
       "tags": ["miro", "collaboration", "whiteboard", "mcp"]
+    },
+    {
+      "name": "renre-devtools",
+      "description": "Browser automation and debugging via Puppeteer MCP server. Launch a headed browser, inspect tabs, take screenshots, execute JavaScript, and interact with web pages.",
+      "gitUrl": "./extensions/renre-devtools",
+      "latestVersion": "1.0.0",
+      "type": "mcp",
+      "icon": "icons/renre-devtools.svg",
+      "author": "yskarlat",
+      "tags": ["browser", "devtools", "puppeteer", "mcp"]
     }
   ]
 }

@@ -5432,7 +5432,7 @@ ${result}`, timestamp: Date.now() }
       ] }),
       evalResult && /* @__PURE__ */ jsx(CodeBlock, { code: evalResult })
     ] }) }),
-    consoleLogs.length > 0 && /* @__PURE__ */ jsx(Panel, { title: "Console Output", children: /* @__PURE__ */ jsx("div", { className: "flex flex-col gap-1 max-h-64 overflow-y-auto", children: consoleLogs.map((log) => /* @__PURE__ */ jsxs(
+    consoleLogs.length > 0 && /* @__PURE__ */ jsx(Panel, { title: "Console Output", children: /* @__PURE__ */ jsx("div", { className: "flex flex-col gap-1 max-h-64 overflow-y-auto", children: consoleLogs.map((log, index) => /* @__PURE__ */ jsxs(
       "div",
       {
         className: "flex items-start gap-2 text-xs font-mono text-muted-foreground",
@@ -5441,7 +5441,7 @@ ${result}`, timestamp: Date.now() }
           /* @__PURE__ */ jsx("pre", { className: "whitespace-pre-wrap break-all", children: log.text })
         ]
       },
-      log.timestamp
+      `${log.timestamp}-${index}`
     )) }) }),
     !browserRunning && !error && /* @__PURE__ */ jsx(
       EmptyState,

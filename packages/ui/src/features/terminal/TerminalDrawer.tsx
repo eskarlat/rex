@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useProjectContext } from '@/core/providers/ProjectProvider';
 import { useTerminal } from './use-terminal';
 import { XtermPanel } from './XtermPanel';
 
@@ -11,6 +12,7 @@ const DEFAULT_WIDTH = 480;
 
 export function TerminalDrawer() {
   const { isOpen, close } = useTerminal();
+  const { activeProject } = useProjectContext();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const dragging = useRef(false);
 
@@ -58,7 +60,12 @@ export function TerminalDrawer() {
             onMouseDown={onMouseDown}
           />
           <div className="flex h-10 shrink-0 items-center justify-between border-b px-3">
-            <span className="text-sm font-medium">Terminal</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Terminal</span>
+              <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                {activeProject?.split('/').pop() ?? 'Home'}
+              </span>
+            </div>
             <Button
               variant="ghost"
               size="icon"

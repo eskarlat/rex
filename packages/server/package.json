@@ -6,6 +6,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "postinstall": "node scripts/fix-pty-permissions.cjs",
     "build": "tsup",
     "dev": "tsx watch src/index.ts",
     "test": "vitest run",

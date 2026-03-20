@@ -6,6 +6,8 @@ const mockTerminalOpen = vi.fn();
 const mockTerminalWrite = vi.fn();
 const mockTerminalDispose = vi.fn();
 const mockTerminalLoadAddon = vi.fn();
+const mockTerminalClear = vi.fn();
+const mockTerminalReset = vi.fn();
 const mockOnData = vi.fn();
 const mockOnResize = vi.fn();
 const mockFit = vi.fn();
@@ -16,6 +18,8 @@ vi.mock('@xterm/xterm', () => {
     write = mockTerminalWrite;
     dispose = mockTerminalDispose;
     loadAddon = mockTerminalLoadAddon;
+    clear = mockTerminalClear;
+    reset = mockTerminalReset;
     cols = 80;
     rows = 24;
     onData(cb: (data: string) => void) {
@@ -51,6 +55,14 @@ vi.mock('./use-terminal', () => ({
   }),
 }));
 
+let mockActiveProject: string | null = null;
+vi.mock('@/core/providers/ProjectProvider', () => ({
+  useProjectContext: () => ({
+    activeProject: mockActiveProject,
+    setActiveProject: vi.fn(),
+  }),
+}));
+
 class MockWebSocket {
   static OPEN = 1;
   url: string;
@@ -66,22 +78,25 @@ class MockWebSocket {
   }
 }
 
-let mockWsInstance: MockWebSocket;
+let mockWsInstances: MockWebSocket[] = [];
 
-function triggerOpen() {
+function triggerOpen(instance?: MockWebSocket) {
+  const ws = instance ?? mockWsInstances[mockWsInstances.length - 1]!;
   act(() => {
-    mockWsInstance.onopen?.();
+    ws.onopen?.();
   });
 }
 
 describe('XtermPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockActiveProject = null;
+    mockWsInstances = [];
     const WsConstructor = vi.fn((url: string) => {
-      mockWsInstance = new MockWebSocket(url);
-      return mockWsInstance;
+      const instance = new MockWebSocket(url);
+      mockWsInstances.push(instance);
+      return instance;
     });
-    // Expose the static OPEN constant that the code checks
     Object.defineProperty(WsConstructor, 'OPEN', { value: 1 });
     vi.stubGlobal('WebSocket', WsConstructor);
   });
@@ -135,7 +150,7 @@ describe('XtermPanel', () => {
       dataCallback('hello');
     });
 
-    expect(mockWsInstance.send).toHaveBeenCalledWith('hello');
+    expect(mockWsInstances[0]!.send).toHaveBeenCalledWith('hello');
   });
 
   it('writes WebSocket messages to terminal', () => {
@@ -143,7 +158,7 @@ describe('XtermPanel', () => {
     triggerOpen();
 
     act(() => {
-      mockWsInstance.onmessage?.({ data: 'output from shell' });
+      mockWsInstances[0]!.onmessage?.({ data: 'output from shell' });
     });
 
     expect(mockTerminalWrite).toHaveBeenCalledWith('output from shell');
@@ -154,7 +169,7 @@ describe('XtermPanel', () => {
     triggerOpen();
 
     act(() => {
-      mockWsInstance.onclose?.();
+      mockWsInstances[0]!.onclose?.();
     });
 
     expect(mockTerminalWrite).toHaveBeenCalledWith(expect.stringContaining('Terminal session ended'));
@@ -163,16 +178,26 @@ describe('XtermPanel', () => {
   it('disposes terminal and closes WebSocket on unmount', () => {
     const { unmount } = render(<XtermPanel />);
     unmount();
-    expect(mockWsInstance.close).toHaveBeenCalled();
+    expect(mockWsInstances[0]!.close).toHaveBeenCalled();
     expect(mockTerminalDispose).toHaveBeenCalled();
   });
 
-  it('sends resize message on open with terminal dimensions', () => {
+  it('sends init message on open with terminal dimensions', () => {
     render(<XtermPanel />);
     triggerOpen();
 
-    expect(mockWsInstance.send).toHaveBeenCalledWith(
-      JSON.stringify({ type: 'resize', cols: 80, rows: 24 }),
+    expect(mockWsInstances[0]!.send).toHaveBeenCalledWith(
+      JSON.stringify({ type: 'init', cols: 80, rows: 24 }),
+    );
+  });
+
+  it('sends init message with project path when active', () => {
+    mockActiveProject = '/path/to/project';
+    render(<XtermPanel />);
+    triggerOpen();
+
+    expect(mockWsInstances[0]!.send).toHaveBeenCalledWith(
+      JSON.stringify({ type: 'init', projectPath: '/path/to/project', cols: 80, rows: 24 }),
     );
   });
 
@@ -185,46 +210,46 @@ describe('XtermPanel', () => {
 
   it('does not send data when WebSocket is not open', () => {
     render(<XtermPanel />);
-
-    // Set readyState to CLOSED before triggering data
-    mockWsInstance.readyState = 3;
+    mockWsInstances[0]!.readyState = 3;
 
     const dataCallback = mockOnData.mock.calls[0]![0] as (data: string) => void;
     act(() => {
       dataCallback('hello');
     });
 
-    expect(mockWsInstance.send).not.toHaveBeenCalled();
+    expect(mockWsInstances[0]!.send).not.toHaveBeenCalled();
   });
 
   it('sends resize when terminal.onResize fires', () => {
     render(<XtermPanel />);
     triggerOpen();
 
-    // Clear the initial resize sent on open
-    mockWsInstance.send.mockClear();
+    mockWsInstances[0]!.send.mockClear();
 
-    const resizeCallback = mockOnResize.mock.calls[0]![0] as (size: { cols: number; rows: number }) => void;
+    const resizeCallback = mockOnResize.mock.calls[0]![0] as (
+      size: { cols: number; rows: number },
+    ) => void;
     act(() => {
       resizeCallback({ cols: 120, rows: 40 });
     });
 
-    expect(mockWsInstance.send).toHaveBeenCalledWith(
+    expect(mockWsInstances[0]!.send).toHaveBeenCalledWith(
       JSON.stringify({ type: 'resize', cols: 120, rows: 40 }),
     );
   });
 
   it('does not send resize when WebSocket is not open', () => {
     render(<XtermPanel />);
+    mockWsInstances[0]!.readyState = 3;
 
-    mockWsInstance.readyState = 3;
-
-    const resizeCallback = mockOnResize.mock.calls[0]![0] as (size: { cols: number; rows: number }) => void;
+    const resizeCallback = mockOnResize.mock.calls[0]![0] as (
+      size: { cols: number; rows: number },
+    ) => void;
     act(() => {
       resizeCallback({ cols: 120, rows: 40 });
     });
 
-    expect(mockWsInstance.send).not.toHaveBeenCalled();
+    expect(mockWsInstances[0]!.send).not.toHaveBeenCalled();
   });
 
   it('registers sender on WebSocket open', () => {
@@ -242,7 +267,7 @@ describe('XtermPanel', () => {
     const sender = mockRegisterSender.mock.calls[0]![0] as (data: string) => void;
     sender('echo test\n');
 
-    expect(mockWsInstance.send).toHaveBeenCalledWith('echo test\n');
+    expect(mockWsInstances[0]!.send).toHaveBeenCalledWith('echo test\n');
   });
 
   it('unregisters sender on unmount', () => {
@@ -268,11 +293,69 @@ describe('XtermPanel', () => {
       expect.stringContaining('wss://'),
     );
 
-    // Restore
     Object.defineProperty(window, 'location', {
       value: { protocol: originalProtocol, host: originalHost },
       writable: true,
       configurable: true,
     });
+  });
+
+  // New tests for project-reactive behavior
+
+  it('reconnects WebSocket when activeProject changes', () => {
+    mockActiveProject = '/project-a';
+    const { rerender } = render(<XtermPanel />);
+
+    const firstWs = mockWsInstances[0]!;
+    expect(firstWs).toBeDefined();
+
+    // Simulate project change by updating mock and re-rendering
+    mockActiveProject = '/project-b';
+    rerender(<XtermPanel />);
+
+    // A second WebSocket should have been created
+    expect(mockWsInstances.length).toBe(2);
+    // First WebSocket should have been closed during cleanup
+    expect(firstWs.close).toHaveBeenCalled();
+  });
+
+  it('clears terminal on project switch', () => {
+    mockActiveProject = '/project-a';
+    const { rerender } = render(<XtermPanel />);
+
+    mockTerminalClear.mockClear();
+    mockTerminalReset.mockClear();
+
+    mockActiveProject = '/project-b';
+    rerender(<XtermPanel />);
+
+    expect(mockTerminalClear).toHaveBeenCalled();
+    expect(mockTerminalReset).toHaveBeenCalled();
+  });
+
+  it('writes session-replay data to terminal', () => {
+    render(<XtermPanel />);
+    triggerOpen();
+
+    const replayMsg = JSON.stringify({ type: 'session-replay', data: 'replayed output' });
+    act(() => {
+      mockWsInstances[0]!.onmessage?.({ data: replayMsg });
+    });
+
+    expect(mockTerminalWrite).toHaveBeenCalledWith('replayed output');
+  });
+
+  it('consumes session-info without writing to terminal', () => {
+    render(<XtermPanel />);
+    triggerOpen();
+
+    mockTerminalWrite.mockClear();
+
+    const infoMsg = JSON.stringify({ type: 'session-info', status: 'new' });
+    act(() => {
+      mockWsInstances[0]!.onmessage?.({ data: infoMsg });
+    });
+
+    expect(mockTerminalWrite).not.toHaveBeenCalled();
   });
 });
