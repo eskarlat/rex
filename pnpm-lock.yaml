@@ -237,6 +237,43 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@20.19.37)(jiti@2.6.1)(jsdom@25.0.1)(tsx@4.21.0)(yaml@2.8.2)
 
+  extensions/playwright-mcp:
+    dependencies:
+      '@renre-kit/extension-sdk':
+        specifier: workspace:*
+        version: link:../../packages/extension-sdk
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: ^6.6.0
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@testing-library/user-event':
+        specifier: ^14.5.0
+        version: 14.6.1(@testing-library/dom@10.4.1)
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      esbuild:
+        specifier: ^0.21.0
+        version: 0.21.5
+      jsdom:
+        specifier: ^25.0.0
+        version: 25.0.1
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.37)(jsdom@25.0.1)
+
   packages/cli:
     dependencies:
       '@clack/prompts':

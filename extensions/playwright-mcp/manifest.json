@@ -1,0 +1,46 @@
+{
+  "name": "playwright-mcp",
+  "title": "Playwright",
+  "version": "1.0.0",
+  "description": "Browser automation and testing via Playwright MCP server",
+  "icon": "icon.svg",
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show Playwright MCP server status and available tools"
+    }
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@anthropic-ai/playwright-mcp@latest"]
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "playwright-panel",
+        "title": "Playwright",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "playwright-status",
+        "title": "Playwright Status",
+        "entry": "dist/status-widget.js",
+        "defaultSize": { "w": 4, "h": 2 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "playwright", "path": "agent/skills/playwright" }
+    ]
+  }
+}
