@@ -73,3 +73,12 @@ This directory contains all Architecture Decision Records (ADRs) for the RenreKi
 | ADR | Decision | Status |
 |-----|----------|--------|
 | [ADR-001](security/ADR-001-trusted-code-model.md) | Trusted code model for MVP | Accepted |
+
+## Developer Workflow
+
+| ADR | Decision | Status |
+|-----|----------|--------|
+| [ADR-001](developer-workflow/ADR-001-dag-based-workflow-orchestration.md) | DAG-based workflow orchestration for all tiers | Proposed |
+| [ADR-002](developer-workflow/ADR-002-task-classification-and-routing.md) | Multi-dimensional task classification and routing | Proposed |
+| [ADR-003](developer-workflow/ADR-003-file-based-agent-communication.md) | File-based agent communication protocol | Proposed |
+| [ADR-004](developer-workflow/ADR-004-retrospective-knowledge-memory.md) | Retrospective knowledge memory for continuous improvement | Proposed |
