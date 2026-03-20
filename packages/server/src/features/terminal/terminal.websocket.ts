@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
 import * as pty from 'node-pty';
 import { homedir } from 'node:os';
+import { isAbsolute, normalize } from 'node:path';
 
 interface TerminalSocket {
   send(data: string): void;
@@ -37,8 +38,14 @@ function resolveShell(): string {
   return process.platform === 'win32' ? 'powershell.exe' : 'bash';
 }
 
+function isValidProjectPath(p: string): boolean {
+  if (!isAbsolute(p)) return false;
+  const normalized = normalize(p);
+  return normalized === p || normalized === p.replace(/\/+$/, '');
+}
+
 function resolveCwd(projectPath: string | undefined): string {
-  if (projectPath && projectPath.length > 0) return projectPath;
+  if (projectPath && isValidProjectPath(projectPath)) return normalize(projectPath);
   return homedir();
 }
 

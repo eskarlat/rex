@@ -66,8 +66,12 @@ export function XtermPanel() {
       terminal.write(String(event.data));
     };
 
+    let disposed = false;
+
     ws.onclose = () => {
-      terminal.write('\r\n\x1b[90m[Terminal session ended]\x1b[0m\r\n');
+      if (!disposed) {
+        terminal.write('\r\n\x1b[90m[Terminal session ended]\x1b[0m\r\n');
+      }
     };
 
     // Send user input to PTY
@@ -91,6 +95,7 @@ export function XtermPanel() {
     resizeObserver.observe(container);
 
     return () => {
+      disposed = true;
       unregisterSender();
       resizeObserver.disconnect();
       dataDisposable.dispose();

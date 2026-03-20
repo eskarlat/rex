@@ -104,6 +104,66 @@ describe('terminal.websocket', () => {
     );
   });
 
+  it('falls back to homedir for relative project path', async () => {
+    const { homedir } = await import('node:os');
+    const address = await app.listen({ port: 0 });
+    const wsUrl = address.replace('http', 'ws');
+
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`, {
+        headers: { 'x-renrekit-project': '../etc/passwd' },
+      });
+      ws.onopen = () => {
+        ws.close();
+        resolve();
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await new Promise((r) => setTimeout(r, 100));
+
+    expect(mockSpawn).toHaveBeenCalledWith(
+      expect.any(String),
+      [],
+      expect.objectContaining({
+        cwd: homedir(),
+      }),
+    );
+  });
+
+  it('falls back to homedir for path with traversal segments', async () => {
+    const { homedir } = await import('node:os');
+    const address = await app.listen({ port: 0 });
+    const wsUrl = address.replace('http', 'ws');
+
+    await new Promise<void>((resolve) => {
+      const ws = new WebSocket(`${wsUrl}/api/terminal`, {
+        headers: { 'x-renrekit-project': '/home/user/../../../etc' },
+      });
+      ws.onopen = () => {
+        ws.close();
+        resolve();
+      };
+      ws.onerror = () => {
+        ws.close();
+        resolve();
+      };
+    });
+
+    await new Promise((r) => setTimeout(r, 100));
+
+    expect(mockSpawn).toHaveBeenCalledWith(
+      expect.any(String),
+      [],
+      expect.objectContaining({
+        cwd: homedir(),
+      }),
+    );
+  });
+
   it('forwards PTY data to WebSocket', async () => {
     let dataCallback: ((data: string) => void) | undefined;
     mockOnData.mockImplementation((cb: (data: string) => void) => {
