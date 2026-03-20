@@ -117,8 +117,12 @@ export function XtermPanel() {
       terminal.write(raw);
     };
 
+    let disposed = false;
+
     ws.onclose = () => {
-      terminal.write('\r\n\x1b[90m[Terminal session ended]\x1b[0m\r\n');
+      if (!disposed) {
+        terminal.write('\r\n\x1b[90m[Terminal session ended]\x1b[0m\r\n');
+      }
     };
 
     const dataDisposable = terminal.onData((data: string) => {
@@ -132,6 +136,7 @@ export function XtermPanel() {
     });
 
     return () => {
+      disposed = true;
       unregisterSender();
       dataDisposable.dispose();
       resizeDisposable.dispose();
