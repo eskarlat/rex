@@ -223,21 +223,39 @@ export class ConnectionManager {
     };
 
     if (mcpConfig.transport === 'stdio') {
-      const env = resolveEnv(mcpConfig.env ?? {}, resolvedConfig ?? {});
-      internal.stdioProcess = spawnProcess(
-        mcpConfig.command ?? '',
-        mcpConfig.args ?? [],
-        env,
-        cwd ?? process.cwd(),
-      );
+      internal.stdioProcess = this.createStdioProcess(mcpConfig, resolvedConfig, cwd);
     } else {
-      internal.sseConnection = connect(
-        mcpConfig.url ?? '',
-        mcpConfig.headers ?? {},
-      );
+      internal.sseConnection = this.createSseConnection(mcpConfig, resolvedConfig);
     }
 
     return internal;
+  }
+
+  private createStdioProcess(
+    mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
+    cwd?: string,
+  ): McpStdioProcess {
+    const env = resolveEnv(mcpConfig.env ?? {}, resolvedConfig ?? {});
+    return spawnProcess(
+      mcpConfig.command ?? '',
+      mcpConfig.args ?? [],
+      env,
+      cwd ?? process.cwd(),
+    );
+  }
+
+  private createSseConnection(
+    mcpConfig: McpConfig,
+    resolvedConfig?: Record<string, unknown>,
+  ): McpSseConnection {
+    const config = resolvedConfig ?? {};
+    const resolvedUrl = interpolate(mcpConfig.url ?? '', config);
+    const resolvedHeaders: Record<string, string> = {};
+    for (const [key, value] of Object.entries(mcpConfig.headers ?? {})) {
+      resolvedHeaders[key] = interpolate(value, config);
+    }
+    return connect(resolvedUrl, resolvedHeaders);
   }
 
   private async stopConnection(

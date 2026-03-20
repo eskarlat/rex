@@ -147,7 +147,7 @@ describe('ext-config command', () => {
     expect(clack.log.success).toHaveBeenCalled();
   });
 
-  it('should enter secret value directly when no vault keys exist', async () => {
+  it('should create vault variable for secret when no vault keys exist', async () => {
     vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
     vi.mocked(loadManifest).mockReturnValue({
       name: 'jira',
@@ -163,16 +163,47 @@ describe('ext-config command', () => {
     });
 
     vi.mocked(listKeys).mockReturnValue([]);
-    vi.mocked(clack.select).mockResolvedValue('direct');
+    vi.mocked(clack.select).mockResolvedValue('vault-new');
+    vi.mocked(clack.text).mockResolvedValue('jira_api_token');
     vi.mocked(clack.password).mockResolvedValue('my-secret');
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
-    expect(clack.password).toHaveBeenCalled();
+    expect(setVaultEntry).toHaveBeenCalledWith('jira_api_token', 'my-secret', true, []);
     expect(setExtensionConfig).toHaveBeenCalledWith('jira', 'apiToken', {
-      source: 'direct',
-      value: 'my-secret',
+      source: 'vault',
+      value: 'jira_api_token',
     });
+  });
+
+  it('should not offer direct option for secret fields', async () => {
+    vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
+    vi.mocked(loadManifest).mockReturnValue({
+      name: 'jira',
+      version: '1.0.0',
+      description: 'Jira integration',
+      type: 'standard',
+      commands: {},
+      config: {
+        schema: {
+          apiToken: { type: 'string', description: 'API Token', secret: true },
+        },
+      },
+    });
+
+    vi.mocked(listKeys).mockReturnValue(['existing_key']);
+    vi.mocked(clack.select).mockResolvedValue('skip');
+
+    await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
+
+    const selectCall = vi.mocked(clack.select).mock.calls[0]?.[0] as {
+      options: Array<{ value: string }>;
+    };
+    const values = selectCall.options.map((o) => o.value);
+    expect(values).not.toContain('direct');
+    expect(values).toContain('vault');
+    expect(values).toContain('vault-new');
+    expect(values).toContain('skip');
   });
 
   it('should abort when user cancels vault key selection', async () => {

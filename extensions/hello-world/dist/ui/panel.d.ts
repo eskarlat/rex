@@ -1,8 +1,2 @@
-import type { RenreKitSDK } from '@renre-kit/extension-sdk';
-interface PanelProps {
-    sdk?: RenreKitSDK;
-    extensionName?: string;
-    projectPath?: string | null;
-}
-export default function HelloWorldPanel({ sdk, extensionName }: PanelProps): import("react/jsx-runtime").JSX.Element;
-export {};
+import type { PanelProps } from '@renre-kit/extension-sdk';
+export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelProps>): import("react/jsx-runtime").JSX.Element;

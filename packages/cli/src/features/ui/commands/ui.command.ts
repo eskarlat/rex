@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { createConnection } from 'node:net';
 import { resolve, dirname } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -86,6 +87,20 @@ function waitForServer(url: string, timeoutMs: number): Promise<boolean> {
   });
 }
 
+function isPortInUse(port: number, host: string): Promise<boolean> {
+  return new Promise((resolvePromise) => {
+    const socket = createConnection({ port, host });
+    socket.once('connect', () => {
+      socket.destroy();
+      resolvePromise(true);
+    });
+    socket.once('error', () => {
+      socket.destroy();
+      resolvePromise(false);
+    });
+  });
+}
+
 function buildDashboardUrl(port: number, lan: boolean): string {
   const host = lan ? '0.0.0.0' : '127.0.0.1';
   return `http://${lan ? 'localhost' : host}:${port}`;
@@ -121,6 +136,52 @@ function checkExistingServer(url: string): boolean {
   return false;
 }
 
+interface SpawnResult {
+  pid: number;
+  ready: boolean;
+}
+
+function spawnServer(env: Record<string, string>): { pid: number | undefined; child: ReturnType<typeof spawn> } {
+  const child = spawn(process.execPath, [resolveServerEntry()], {
+    env,
+    detached: true,
+    stdio: 'ignore',
+  });
+
+  child.on('error', (err) => {
+    clack.log.error(err.message);
+    process.exit(1);
+  });
+
+  return { pid: child.pid, child };
+}
+
+async function startAndVerifyServer(port: number, env: Record<string, string>): Promise<SpawnResult | null> {
+  const { pid, child } = spawnServer(env);
+  if (pid === undefined) {
+    clack.log.error('Could not obtain server process ID.');
+    process.exit(1);
+    return null;
+  }
+
+  mkdirSync(GLOBAL_DIR, { recursive: true });
+  writeFileSync(SERVER_PID_PATH, String(pid), 'utf-8');
+  child.unref();
+
+  const ready = await waitForServer(`http://127.0.0.1:${port}/api/projects`, 5000);
+
+  // Verify the spawned process is still alive — it may have crashed (e.g. EADDRINUSE)
+  if (!isProcessRunning(pid)) {
+    clack.log.error(
+      `Server process ${pid} exited unexpectedly. Port ${port} may be in use by another process.`,
+    );
+    try { unlinkSync(SERVER_PID_PATH); } catch { /* already removed */ }
+    return null;
+  }
+
+  return { pid, ready };
+}
+
 export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise<void> {
   clack.intro('RenreKit Dashboard');
 
@@ -132,39 +193,28 @@ export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise
 
   if (checkExistingServer(url)) return;
 
+  // Check if the port is already occupied by another process
+  const portBusy = await isPortInUse(port, '127.0.0.1');
+  if (portBusy) {
+    clack.log.error(`Port ${port} is already in use. Stop the other process or use --port to pick a different port.`);
+    clack.outro('Could not start dashboard.');
+    return;
+  }
+
   const env = buildServerEnv(port, lan, noSleep);
   const s = clack.spinner();
   s.start('Starting dashboard server...');
 
-  const child = spawn(process.execPath, [resolveServerEntry()], {
-    env,
-    detached: true,
-    stdio: 'ignore',
-  });
-
-  child.on('error', (err) => {
+  const result = await startAndVerifyServer(port, env);
+  if (!result) {
     s.stop('Failed to start server.');
-    clack.log.error(err.message);
-    process.exit(1);
-  });
-
-  const pid = child.pid;
-  if (pid === undefined) {
-    s.stop('Failed to start server.');
-    clack.log.error('Could not obtain server process ID.');
-    process.exit(1);
     return;
   }
 
-  mkdirSync(GLOBAL_DIR, { recursive: true });
-  writeFileSync(SERVER_PID_PATH, String(pid), 'utf-8');
-  child.unref();
-
-  const ready = await waitForServer(`http://127.0.0.1:${port}/api/projects`, 5000);
-  s.stop(ready ? 'Dashboard server is running.' : 'Server started (still initializing).');
+  s.stop(result.ready ? 'Dashboard server is running.' : 'Server started (still initializing).');
 
   if (!noBrowser) openBrowser(url);
 
-  clack.log.info(`PID: ${pid}`);
+  clack.log.info(`PID: ${result.pid}`);
   clack.outro(`Dashboard: ${url}`);
 }

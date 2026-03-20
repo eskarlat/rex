@@ -48,5 +48,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase 4 — Extension SDK & Ecosystem**
   - Published SDK with API client, React hooks, and shared components
   - `create-renre-extension` scaffolding tool
-  - Reference extensions: `hello-world` (standard), `echo-mcp` (MCP stdio)
+  - Reference extension: `hello-world` (standard)
   - SKILL.md convention for LLM skill definitions

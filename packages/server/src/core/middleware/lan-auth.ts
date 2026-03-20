@@ -35,22 +35,39 @@ export default fp(
       return { ok: true };
     });
 
-    fastify.addHook('onRequest', (request: FastifyRequest, reply: FastifyReply, hookDone: () => void) => {
-      // Allow PIN submission endpoint through
-      if (request.url === '/api/auth/pin' && request.method === 'POST') {
-        hookDone();
-        return;
-      }
-
+    // Auth status endpoint — always accessible so the UI can probe auth state
+    fastify.get('/api/auth/status', (request: FastifyRequest) => {
       const cookiePin = request.cookies[COOKIE_NAME];
-      if (cookiePin !== pin) {
-        reply.code(401);
-        void reply.send({ error: 'PIN required' });
-        return;
-      }
-
-      hookDone();
+      return { lanMode: true, authenticated: cookiePin === pin };
     });
+
+    fastify.addHook(
+      'onRequest',
+      (request: FastifyRequest, reply: FastifyReply, hookDone: () => void) => {
+        const url = request.url.split('?')[0]!;
+
+        // Allow non-API routes through (static assets, SPA fallback)
+        if (!url.startsWith('/api/')) {
+          hookDone();
+          return;
+        }
+
+        // Allow auth endpoints through without authentication
+        if (url === '/api/auth/pin' || url === '/api/auth/status') {
+          hookDone();
+          return;
+        }
+
+        const cookiePin = request.cookies[COOKIE_NAME];
+        if (cookiePin !== pin) {
+          reply.code(401);
+          void reply.send({ error: 'PIN required' });
+          return;
+        }
+
+        hookDone();
+      },
+    );
 
     done();
   },

@@ -124,10 +124,12 @@ function buildSourceOptions(
     });
   }
 
-  options.push({
-    value: 'direct',
-    label: 'Enter value directly',
-  });
+  if (!fieldSchema.secret) {
+    options.push({
+      value: 'direct',
+      label: 'Enter value directly',
+    });
+  }
 
   options.push({
     value: 'skip',

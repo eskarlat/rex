@@ -1,0 +1,20 @@
+{
+  "name": "atlassian-mcp",
+  "version": "1.0.0",
+  "description": "Atlassian MCP extension for RenreKit — Jira and Confluence via MCP",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && node build-panel.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@renre-kit/extension-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "esbuild": "^0.21.0",
+    "react": "^19.0.0"
+  }
+}

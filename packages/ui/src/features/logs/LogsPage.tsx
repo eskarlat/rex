@@ -24,13 +24,13 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 const consoleLevelColors: Record<string, string> = {
-  error: 'text-red-400',
-  warn: 'text-yellow-400',
-  debug: 'text-zinc-500',
+  error: 'text-red-600 dark:text-red-400',
+  warn: 'text-yellow-600 dark:text-yellow-400',
+  debug: 'text-zinc-400 dark:text-zinc-500',
 };
 
 function consoleColorForLevel(level: string): string {
-  return consoleLevelColors[level] ?? 'text-green-400';
+  return consoleLevelColors[level] ?? 'text-green-600 dark:text-green-400';
 }
 
 function formatTime(iso: string): string {
@@ -327,12 +327,12 @@ function ServerConsoleTab() {
       />
 
       <ScrollArea
-        className="flex-1 rounded-md border bg-zinc-950 dark:bg-zinc-950"
+        className="flex-1 rounded-md border bg-zinc-100 dark:bg-zinc-950"
         ref={scrollRef}
       >
         <div className="min-h-0">
           {filtered.length === 0 ? (
-            <div className="flex items-center justify-center p-8 text-zinc-500">
+            <div className="flex items-center justify-center p-8 text-muted-foreground">
               {connected
                 ? 'Waiting for console output...'
                 : 'Not connected to console stream'}
@@ -341,9 +341,9 @@ function ServerConsoleTab() {
             filtered.map((entry, i) => (
               <div
                 key={`${entry.time}-${i}`}
-                className="flex items-start gap-2 border-b border-zinc-800 px-3 py-1.5 text-sm font-mono"
+                className="flex items-start gap-2 border-b border-zinc-200 dark:border-zinc-800 px-3 py-1.5 text-sm font-mono"
               >
-                <span className="shrink-0 text-xs text-zinc-500 w-20">
+                <span className="shrink-0 text-xs text-muted-foreground w-20">
                   {formatTime(entry.time)}
                 </span>
                 <span className={cn(
@@ -352,7 +352,7 @@ function ServerConsoleTab() {
                 )}>
                   {entry.level}
                 </span>
-                <span className="flex-1 break-all text-zinc-200">
+                <span className="flex-1 break-all text-zinc-800 dark:text-zinc-200">
                   {entry.msg}
                 </span>
               </div>

@@ -1,0 +1,46 @@
+{
+  "name": "context7-mcp",
+  "title": "Context7",
+  "version": "1.0.0",
+  "description": "Library documentation lookup via Context7 MCP server",
+  "icon": "icon.svg",
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show Context7 MCP server status and available tools"
+    }
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": ["-y", "@upstash/context7-mcp"]
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "context7-panel",
+        "title": "Context7",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "context7-status",
+        "title": "Context7 Status",
+        "entry": "dist/status-widget.js",
+        "defaultSize": { "w": 4, "h": 2 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "context7", "path": "agent/skills/context7" }
+    ]
+  }
+}

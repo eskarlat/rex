@@ -729,7 +729,6 @@ packages/create-renre-extension/              # Scaffolding tool
       mcp/                                    # MCP extension template
 
 extensions/hello-world/                       # Reference standard extension
-extensions/echo-mcp/                          # Reference MCP extension
 ```
 
 ### SDK Capability Groups

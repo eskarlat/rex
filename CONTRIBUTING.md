@@ -93,9 +93,8 @@ Use the scaffolding tool:
 npx create-renre-extension my-extension
 ```
 
-Or see the reference extensions in `extensions/` for examples:
+Or see the reference extension in `extensions/` for an example:
 - `hello-world` — Standard in-process extension
-- `echo-mcp` — MCP stdio extension
 
 ### Extension Registry
 

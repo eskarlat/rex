@@ -16,7 +16,9 @@ vi.mock('@renre-kit/cli/lib', () => ({
     setMode: vi.fn(),
   })),
   getDb: vi.fn().mockReturnValue({
-    prepare: vi.fn().mockReturnValue({ all: vi.fn().mockReturnValue([]), run: vi.fn(), get: vi.fn() }),
+    prepare: vi
+      .fn()
+      .mockReturnValue({ all: vi.fn().mockReturnValue([]), run: vi.fn(), get: vi.fn() }),
   }),
   loadGlobalConfig: vi.fn().mockReturnValue({ registries: [], settings: {}, extensionConfigs: {} }),
   saveGlobalConfig: vi.fn(),
@@ -40,7 +42,9 @@ vi.mock('@renre-kit/cli/lib', () => ({
   loadManifest: vi.fn(),
   loadCommandHandler: vi.fn(),
   executeCommand: vi.fn(),
-  getLogger: vi.fn().mockReturnValue({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
+  getLogger: vi
+    .fn()
+    .mockReturnValue({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   LOGS_DIR: '/tmp/test-logs',
 }));
@@ -78,7 +82,7 @@ describe('createServer', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     server = await createServer({ lanMode: true, lanPin: '5678' });
     const routes = server.printRoutes();
-    expect(routes).toContain('auth/pin');
+    expect(routes).toContain('auth/');
   });
 
   it('does not register LAN auth by default', async () => {
@@ -161,7 +165,9 @@ describe('createServer', () => {
     server = await createServer();
     // Inject a request that would produce a 500 (e.g., unknown internal route)
     const { getActivated } = await import('@renre-kit/cli/lib');
-    vi.mocked(getActivated).mockImplementation(() => { throw new Error('boom'); });
+    vi.mocked(getActivated).mockImplementation(() => {
+      throw new Error('boom');
+    });
 
     await server.inject({
       method: 'POST',

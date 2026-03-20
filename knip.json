@@ -1,0 +1,67 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "exclude": ["types", "enumMembers"],
+  "workspaces": {
+    "packages/cli": {
+      "ignore": ["tsup.config.ts", "vitest.config.ts"],
+      "tsup": false,
+      "vitest": false
+    },
+    "packages/extension-sdk": {
+      "ignore": ["src/components/ui/**"]
+    },
+    "packages/server": {},
+    "packages/ui": {
+      "ignore": ["src/components/ui/**", "e2e/**"]
+    },
+    "packages/create-renre-extension": {},
+    "extensions/hello-world": {
+      "entry": [
+        "src/commands/greet.ts",
+        "src/commands/info.ts",
+        "src/ui/panel.tsx",
+        "src/ui/settings-panel.tsx",
+        "src/ui/analytics-panel.tsx",
+        "src/ui/status-widget.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "extensions/context7-mcp": {
+      "entry": [
+        "src/index.ts",
+        "src/commands/status.ts",
+        "src/ui/panel.tsx",
+        "src/ui/status-widget.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "extensions/figma-mcp": {
+      "entry": [
+        "src/index.ts",
+        "src/commands/status.ts",
+        "src/ui/panel.tsx",
+        "src/ui/status-widget.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "extensions/miro-mcp": {
+      "entry": [
+        "src/server.ts",
+        "src/commands/status.ts",
+        "src/ui/panel.tsx",
+        "src/ui/status-widget.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  },
+  "ignoreDependencies": [
+    "@vitest/coverage-istanbul",
+    "@typescript-eslint/eslint-plugin",
+    "@typescript-eslint/parser",
+    "eslint-plugin-sonarjs",
+    "pino-pretty",
+    "class-variance-authority",
+    "@radix-ui/*",
+    "@hookform/resolvers"
+  ]
+}

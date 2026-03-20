@@ -2,9 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ChildProcess } from 'node:child_process';
 
 const mockSpawn = vi.fn();
+const mockCreateConnection = vi.fn();
 
 vi.mock('node:child_process', () => ({
   spawn: (...args: unknown[]) => mockSpawn(...args),
+}));
+
+vi.mock('node:net', () => ({
+  createConnection: (...args: unknown[]) => mockCreateConnection(...args),
 }));
 
 vi.mock('node:os', () => ({
@@ -78,15 +83,32 @@ describe('ui command', () => {
   let mockChild: ChildProcess;
   const originalExit = process.exit;
 
+  function createMockSocket(portFree: boolean) {
+    const handlers: Record<string, (...args: unknown[]) => void> = {};
+    const socket = {
+      once: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+        handlers[event] = handler;
+        // Simulate async: port free triggers 'error', port busy triggers 'connect'
+        if (event === (portFree ? 'error' : 'connect')) {
+          queueMicrotask(() => handler());
+        }
+      }),
+      destroy: vi.fn(),
+    };
+    return socket;
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockChild = createMockChild();
     mockSpawn.mockReturnValue(mockChild);
     mockReadPidFile.mockReturnValue(null);
-    mockIsProcessRunning.mockReturnValue(false);
+    mockIsProcessRunning.mockReturnValue(true);
     process.exit = vi.fn() as never;
     // Mock fetch to resolve immediately (server ready)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 200 }));
+    // Default: port is free
+    mockCreateConnection.mockReturnValue(createMockSocket(true));
   });
 
   afterEach(() => {
@@ -203,7 +225,8 @@ describe('ui command', () => {
 
   it('cleans up stale PID and continues when process is dead', async () => {
     mockReadPidFile.mockReturnValue(999);
-    mockIsProcessRunning.mockReturnValue(false);
+    // First call (PID 999): stale process is dead. Second call (PID 42): new child is alive.
+    mockIsProcessRunning.mockReturnValueOnce(false).mockReturnValue(true);
 
     await handleUi({ noBrowser: true });
 
@@ -257,10 +280,9 @@ describe('ui command', () => {
 
     await handleUi({ noBrowser: true });
 
-    // Trigger the error handler
+    // Trigger the error handler (fires asynchronously after spawn)
     handlers['error']?.(new Error('spawn failed'));
 
-    expect(mockSpinnerStop).toHaveBeenCalledWith('Failed to start server.');
     expect(mockLogError).toHaveBeenCalledWith('spawn failed');
     expect(process.exit).toHaveBeenCalledWith(1);
   });
@@ -278,5 +300,28 @@ describe('ui command', () => {
     expect(mockSpinnerStop).toHaveBeenCalledWith('Failed to start server.');
     expect(mockLogError).toHaveBeenCalledWith('Could not obtain server process ID.');
     expect(process.exit).toHaveBeenCalledWith(1);
+  });
+
+  it('reports error when port is already in use', async () => {
+    mockCreateConnection.mockReturnValue(createMockSocket(false));
+
+    await handleUi({ noBrowser: true });
+
+    expect(mockLogError).toHaveBeenCalledWith(
+      expect.stringContaining('Port 4200 is already in use'),
+    );
+    expect(mockSpawn).not.toHaveBeenCalled();
+  });
+
+  it('reports error when spawned process exits unexpectedly', async () => {
+    // Port is free, but child process dies after spawn (e.g. EADDRINUSE race)
+    mockIsProcessRunning.mockReturnValue(false);
+
+    await handleUi({ noBrowser: true });
+
+    expect(mockSpinnerStop).toHaveBeenCalledWith('Failed to start server.');
+    expect(mockLogError).toHaveBeenCalledWith(
+      expect.stringContaining('exited unexpectedly'),
+    );
   });
 });

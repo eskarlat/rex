@@ -1,0 +1,90 @@
+{
+  "name": "atlassian-mcp",
+  "title": "Atlassian MCP",
+  "version": "1.0.0",
+  "description": "Jira and Confluence integration via MCP — 72 tools for issues, pages, sprints, and more",
+  "icon": "icon.svg",
+  "type": "mcp",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show Atlassian MCP connection status and available tools"
+    }
+  },
+  "mcp": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["dist/server.js"],
+    "env": {
+      "ATLASSIAN_DOMAIN": "${config.domain}",
+      "ATLASSIAN_EMAIL": "${config.email}",
+      "ATLASSIAN_API_TOKEN": "${config.apiToken}"
+    }
+  },
+  "config": {
+    "schema": {
+      "domain": {
+        "type": "string",
+        "description": "Atlassian Cloud domain (e.g., mycompany.atlassian.net)",
+        "secret": false
+      },
+      "email": {
+        "type": "string",
+        "description": "Atlassian account email address",
+        "secret": false
+      },
+      "apiToken": {
+        "type": "string",
+        "description": "Atlassian API token (https://id.atlassian.com/manage-profile/security/api-tokens)",
+        "secret": true,
+        "vaultHint": "atlassian-mcp.apiToken"
+      }
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "atlassian-panel",
+        "title": "Atlassian MCP",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "my-tasks-widget",
+        "title": "My Jira Tasks",
+        "entry": "dist/my-tasks-widget.js",
+        "defaultSize": { "w": 4, "h": 3 },
+        "minSize": { "w": 3, "h": 2 },
+        "maxSize": { "w": 6, "h": 6 }
+      },
+      {
+        "id": "comments-widget",
+        "title": "Recent Comments",
+        "entry": "dist/comments-widget.js",
+        "defaultSize": { "w": 4, "h": 3 },
+        "minSize": { "w": 3, "h": 2 },
+        "maxSize": { "w": 6, "h": 6 }
+      },
+      {
+        "id": "confluence-updates-widget",
+        "title": "Confluence Updates",
+        "entry": "dist/confluence-updates-widget.js",
+        "defaultSize": { "w": 4, "h": 3 },
+        "minSize": { "w": 3, "h": 2 },
+        "maxSize": { "w": 6, "h": 6 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "jira", "path": "agent/skills/jira" },
+      { "name": "confluence", "path": "agent/skills/confluence" }
+    ]
+  }
+}

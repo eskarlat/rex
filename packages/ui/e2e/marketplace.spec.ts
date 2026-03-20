@@ -30,8 +30,8 @@ test.describe('Marketplace Page', () => {
 
   test('installed tab shows installed extensions', async ({ page }) => {
     await page.getByRole('tab', { name: /installed/i }).click();
-    await expect(page.getByText('echo-mcp')).toBeVisible();
-    await expect(page.getByText('Echo MCP server')).toBeVisible();
+    await expect(page.getByText('weather-mcp')).toBeVisible();
+    await expect(page.getByText('Weather MCP server')).toBeVisible();
   });
 
   test('installed extension shows activate and remove buttons', async ({ page }) => {

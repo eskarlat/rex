@@ -16,6 +16,16 @@ describe('lan-auth middleware', () => {
     app.get('/api/test', () => {
       return { ok: true };
     });
+    // Static asset routes for testing non-API passthrough
+    app.get('/', () => {
+      return 'root';
+    });
+    app.get('/index.html', () => {
+      return 'html content';
+    });
+    app.get('/assets/main.js', () => {
+      return 'js content';
+    });
     await app.ready();
   });
 
@@ -81,5 +91,69 @@ describe('lan-auth middleware', () => {
     });
     // Should not return 401 for PIN endpoint itself
     expect(response.statusCode).toBe(200);
+  });
+
+  it('strips query strings when checking API paths', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/test?foo=bar',
+      cookies: { 'renrekit-pin': TEST_PIN },
+    });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('allows non-API routes through without authentication', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/index.html',
+    });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('allows root path through without authentication', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/',
+    });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it('allows static asset paths through without authentication', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/assets/main.js',
+    });
+    expect(response.statusCode).toBe(200);
+  });
+
+  describe('GET /api/auth/status', () => {
+    it('returns authenticated false when no PIN cookie is set', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/auth/status',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ lanMode: true, authenticated: false });
+    });
+
+    it('returns authenticated true when valid PIN cookie is set', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/auth/status',
+        cookies: { 'renrekit-pin': TEST_PIN },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ lanMode: true, authenticated: true });
+    });
+
+    it('returns authenticated false when invalid PIN cookie is set', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/auth/status',
+        cookies: { 'renrekit-pin': '9999' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ lanMode: true, authenticated: false });
+    });
   });
 });
