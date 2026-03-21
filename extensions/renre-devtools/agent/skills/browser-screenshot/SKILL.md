@@ -1,62 +1,54 @@
 ---
 name: browser-screenshot
-description: Use this skill to take screenshots of web pages or specific elements for visual debugging, testing, and documentation — e.g. "take a screenshot", "capture the page", "show me what the page looks like", "screenshot the header"
+description: Use this skill to capture screenshots of web pages or specific elements. Use for visual debugging, documenting page state, comparing before/after changes, or capturing evidence of issues.
 ---
 
 # renre-devtools/browser-screenshot
 
-Capture screenshots of the entire page or specific elements in the headed Puppeteer browser. Useful for visual regression testing, debugging layout issues, and documenting page state.
+Capture screenshots of the page or specific elements.
 
 ## Commands
 
-### renre-devtools:puppeteer_screenshot
+### renre-devtools:screenshot
 
-Take a screenshot of the current page or a specific element.
+Take a screenshot.
 
-**Parameters:**
+**Arguments:**
 
-- `name` (string, required) — A descriptive name for the screenshot
-- `selector` (string, optional) — CSS selector to capture a specific element. If omitted, captures the full page.
-- `width` (number, optional) — Viewport width in pixels
-- `height` (number, optional) — Viewport height in pixels
-- `encoded` (boolean, optional) — If true, return as base64-encoded data URI text instead of binary. Default: false.
+- `--selector <css>` — Capture a specific element (optional, defaults to viewport)
+- `--full-page` (flag) — Capture the full scrollable page
+- `--output <path>` — Save path (default: `screenshot-{timestamp}.png` in project root)
+- `--encoded` (flag) — Return as base64 data URI instead of saving to file
 
 **Examples:**
 
-Full page screenshot:
+Full viewport:
 
 ```
-renre-kit renre-devtools:puppeteer_screenshot --name "homepage"
+renre-kit renre-devtools:screenshot
 ```
 
-Screenshot of a specific element:
+Specific element:
 
 ```
-renre-kit renre-devtools:puppeteer_screenshot --name "nav-bar" --selector "nav.main-navigation"
+renre-kit renre-devtools:screenshot --selector "nav.main-nav"
 ```
 
-Screenshot with custom viewport:
+Full scrollable page:
 
 ```
-renre-kit renre-devtools:puppeteer_screenshot --name "mobile-view" --width 375 --height 812
+renre-kit renre-devtools:screenshot --full-page --output "./debug/full-page.png"
 ```
 
-Screenshot as base64 for inline display:
+Base64 for inline display:
 
 ```
-renre-kit renre-devtools:puppeteer_screenshot --name "debug-capture" --encoded true
+renre-kit renre-devtools:screenshot --encoded
 ```
-
-## Resources
-
-### screenshot://<name>
-
-Retrieve a previously captured screenshot by its name. Use the same name you passed to `puppeteer_screenshot`.
 
 ## Tips
 
-- Take a screenshot before and after changes to compare visual differences
-- Use `selector` to focus on specific components for targeted debugging
-- Set `width`/`height` to test responsive layouts at different breakpoints
-- Use `encoded: true` when you need to display the screenshot inline
-- Common responsive breakpoints: 375x812 (mobile), 768x1024 (tablet), 1280x720 (desktop)
+- Take screenshots before and after changes to compare
+- Use `--selector` to focus on specific components
+- Use `--full-page` to capture content below the fold
+- The `--output` path is relative to the project root

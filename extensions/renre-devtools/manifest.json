@@ -1,40 +1,116 @@
 {
   "name": "renre-devtools",
-  "title": "Browser Devtools",
+  "title": "Browser DevTools",
   "version": "1.0.0",
-  "description": "Browser automation and debugging via Puppeteer MCP server. Launch a headed browser, inspect tabs, take screenshots, execute JavaScript, and interact with web pages.",
+  "description": "Native browser automation and debugging via Chrome DevTools Protocol. Launch a browser, inspect DOM, execute JavaScript, capture network traffic, take screenshots, and more — all through CLI commands.",
   "icon": "icon.svg",
-  "type": "mcp",
+  "type": "standard",
   "engines": {
     "renre-kit": ">=0.0.1",
     "extension-sdk": ">=0.0.1"
   },
   "main": "dist/index.js",
   "commands": {
-    "status": {
-      "handler": "dist/commands/status.js",
-      "description": "Show browser MCP server status and available tools"
+    "launch": {
+      "handler": "dist/commands/launch.js",
+      "description": "Launch a browser instance with DevTools Protocol enabled"
+    },
+    "close": {
+      "handler": "dist/commands/close.js",
+      "description": "Close the browser and clean up"
+    },
+    "navigate": {
+      "handler": "dist/commands/navigate.js",
+      "description": "Navigate the current tab to a URL"
+    },
+    "tabs": {
+      "handler": "dist/commands/tabs.js",
+      "description": "List all open browser tabs"
+    },
+    "tab": {
+      "handler": "dist/commands/tab.js",
+      "description": "Switch to a specific tab by index"
+    },
+    "dom": {
+      "handler": "dist/commands/dom.js",
+      "description": "Get DOM tree or subtree as HTML"
+    },
+    "select": {
+      "handler": "dist/commands/select.js",
+      "description": "Query elements by CSS selector and return summary"
+    },
+    "click": {
+      "handler": "dist/commands/click.js",
+      "description": "Click an element by CSS selector"
+    },
+    "type": {
+      "handler": "dist/commands/type.js",
+      "description": "Type text into an input element"
+    },
+    "eval": {
+      "handler": "dist/commands/eval.js",
+      "description": "Execute JavaScript in the page context"
+    },
+    "network": {
+      "handler": "dist/commands/network.js",
+      "description": "Show captured network requests"
+    },
+    "console": {
+      "handler": "dist/commands/console.js",
+      "description": "Show captured console messages"
+    },
+    "screenshot": {
+      "handler": "dist/commands/screenshot.js",
+      "description": "Take a screenshot of the page or an element"
+    },
+    "cookies": {
+      "handler": "dist/commands/cookies.js",
+      "description": "List browser cookies"
+    },
+    "storage": {
+      "handler": "dist/commands/storage.js",
+      "description": "Show localStorage or sessionStorage contents"
+    },
+    "styles": {
+      "handler": "dist/commands/styles.js",
+      "description": "Get computed styles for an element"
+    },
+    "a11y": {
+      "handler": "dist/commands/a11y.js",
+      "description": "Get the accessibility tree"
+    },
+    "performance": {
+      "handler": "dist/commands/performance.js",
+      "description": "Get performance metrics and Core Web Vitals"
     }
   },
-  "mcp": {
-    "transport": "stdio",
-    "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
-  },
   "config": {
-    "schema": {}
+    "schema": {
+      "headless": {
+        "type": "boolean",
+        "description": "Launch browser in headless mode",
+        "secret": false,
+        "default": false
+      },
+      "port": {
+        "type": "number",
+        "description": "Chrome remote debugging port",
+        "secret": false,
+        "default": 9222
+      }
+    }
   },
   "ui": {
     "panels": [
       {
-        "id": "browser-panel",
-        "title": "Browser Devtools",
+        "id": "devtools-panel",
+        "title": "Browser DevTools",
         "entry": "dist/panel.js"
       }
     ],
     "widgets": [
       {
-        "id": "browser-widget",
+        "id": "browser-status",
         "title": "Browser Status",
         "entry": "dist/browser-widget.js",
         "defaultSize": { "w": 4, "h": 2 },
@@ -45,8 +121,10 @@
   },
   "agent": {
     "skills": [
-      { "name": "browser-navigate", "path": "agent/skills/browser-navigate" },
-      { "name": "browser-inspect", "path": "agent/skills/browser-inspect" },
+      { "name": "browser-control", "path": "agent/skills/browser-control" },
+      { "name": "dom-inspection", "path": "agent/skills/dom-inspection" },
+      { "name": "javascript-execution", "path": "agent/skills/javascript-execution" },
+      { "name": "network-analysis", "path": "agent/skills/network-analysis" },
       { "name": "browser-screenshot", "path": "agent/skills/browser-screenshot" }
     ]
   }

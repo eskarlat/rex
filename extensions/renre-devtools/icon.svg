@@ -1,9 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="12" fill="#2563EB"/>
-  <rect x="10" y="14" width="44" height="36" rx="4" stroke="white" stroke-width="2.5" fill="none"/>
-  <line x1="10" y1="24" x2="54" y2="24" stroke="white" stroke-width="2"/>
-  <circle cx="16" cy="19" r="2" fill="#EF4444"/>
-  <circle cx="22" cy="19" r="2" fill="#F59E0B"/>
-  <circle cx="28" cy="19" r="2" fill="#22C55E"/>
-  <text x="32" y="39" text-anchor="middle" font-family="monospace" font-size="10" fill="white">&lt;/&gt;</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="13" y1="14" x2="17" y2="14"/></svg>
