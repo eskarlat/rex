@@ -19,7 +19,7 @@ rex/
 │   ├── miro-mcp/
 │   ├── context7-mcp/
 │   ├── figma-mcp/
-│   └── renre-devtools/
+│   └── chrome-debugger/
 ├── renre-kit-architecture/       # Architecture docs & ADRs
 ├── doc/                          # This documentation site
 └── turbo.json                    # Turborepo task config

@@ -125,7 +125,7 @@ extensions/hello-world/
 - Design tool integration pattern
 - Simple config with vault hint
 
-## renre-devtools (Standard)
+## chrome-debugger (Standard)
 
 **Browser automation and screenshots** — a standard extension with a unique capability.
 
@@ -152,6 +152,6 @@ extensions/hello-world/
 | miro-mcp | MCP | 1 | 1 | 1 | 1 | 1 |
 | context7-mcp | MCP | 0 | 1 | 1 | 0 | 1 |
 | figma-mcp | MCP | 0 | 1 | 1 | 1 | 1 |
-| renre-devtools | Standard | 0 | 1 | 1 | 0 | 3 |
+| chrome-debugger | Standard | 0 | 1 | 1 | 0 | 3 |
 
 All reference extensions live in the `extensions/` directory at the root of the repository.
