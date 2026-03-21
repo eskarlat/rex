@@ -40,3 +40,24 @@ export interface ConsoleEntry {
   level: string;
   text: string;
 }
+
+export interface GlobalBrowserSession {
+  wsEndpoint: string;
+  pid: number;
+  port: number;
+  projectPath: string;
+  launchedAt: string;
+  lastSeenAt: string;
+  headless: boolean;
+  networkLogPath: string;
+  consoleLogPath: string;
+}
+
+export interface ScreenshotMeta {
+  filename: string;
+  path: string;
+  timestamp: string;
+  url: string;
+  selector: string | null;
+  fullPage: boolean;
+}

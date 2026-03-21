@@ -6,6 +6,7 @@ import { join as join2 } from "node:path";
 
 // src/shared/state.ts
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 function getStorageDir(projectPath) {
   return join(projectPath, ".renre-kit", "storage", "renre-devtools");
@@ -36,6 +37,18 @@ function ensureBrowserRunning(projectPath) {
     );
   }
   return state;
+}
+function getGlobalDir() {
+  return process.env.RENRE_KIT_HOME ?? join(homedir(), ".renre-kit");
+}
+function getGlobalSessionPath() {
+  return join(getGlobalDir(), "browser-session.json");
+}
+function deleteGlobalSession() {
+  const sessionPath = getGlobalSessionPath();
+  if (existsSync(sessionPath)) {
+    unlinkSync(sessionPath);
+  }
 }
 
 // src/shared/connection.ts
@@ -71,6 +84,7 @@ async function close(context) {
     }
   }
   deleteState(context.projectPath);
+  deleteGlobalSession();
   return {
     output: [
       "## Browser Closed",

@@ -2,33 +2,74 @@ import { join } from 'node:path';
 
 import puppeteer from 'puppeteer';
 
-import { readState, writeState, getLogDir } from '../shared/state.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
+import {
+  readState,
+  writeState,
+  getLogDir,
+  readGlobalSession,
+  writeGlobalSession,
+  isProcessAlive,
+  deleteGlobalSession,
+} from '../shared/state.js';
+import type { ExecutionContext, CommandResult, BrowserState } from '../shared/types.js';
+
+function checkExistingLocal(projectPath: string): CommandResult | null {
+  const existing = readState(projectPath);
+  if (!existing) return null;
+  return {
+    output: [
+      '## Browser Already Running',
+      '',
+      `- **PID**: ${String(existing.pid)}`,
+      `- **Port**: ${String(existing.port)}`,
+      `- **Launched**: ${existing.launchedAt}`,
+      '',
+      'Use `renre-devtools:close` to stop it first.',
+    ].join('\n'),
+    exitCode: 1,
+  };
+}
+
+function checkExistingGlobal(): CommandResult | null {
+  const globalSession = readGlobalSession();
+  if (!globalSession) return null;
+
+  if (!isProcessAlive(globalSession.pid)) {
+    deleteGlobalSession();
+    return null;
+  }
+
+  return {
+    output: [
+      '## Browser Already Running (another project)',
+      '',
+      `- **PID**: ${String(globalSession.pid)}`,
+      `- **Port**: ${String(globalSession.port)}`,
+      `- **Project**: ${globalSession.projectPath}`,
+      `- **Launched**: ${globalSession.launchedAt}`,
+      '',
+      'Only one browser instance is supported. Close it first from the originating project,',
+      'or use `renre-devtools:close` there.',
+    ].join('\n'),
+    exitCode: 1,
+  };
+}
+
+function resolvePort(context: ExecutionContext): number {
+  if (typeof context.args.port === 'number') return context.args.port;
+  if (typeof context.config.port === 'number') return context.config.port;
+  return 9222;
+}
 
 export default async function launch(context: ExecutionContext): Promise<CommandResult> {
-  const existing = readState(context.projectPath);
-  if (existing) {
-    return {
-      output: [
-        '## Browser Already Running',
-        '',
-        `- **PID**: ${String(existing.pid)}`,
-        `- **Port**: ${String(existing.port)}`,
-        `- **Launched**: ${existing.launchedAt}`,
-        '',
-        'Use `renre-devtools:close` to stop it first.',
-      ].join('\n'),
-      exitCode: 1,
-    };
-  }
+  const localCheck = checkExistingLocal(context.projectPath);
+  if (localCheck) return localCheck;
+
+  const globalCheck = checkExistingGlobal();
+  if (globalCheck) return globalCheck;
 
   const headless = context.config.headless === true || context.args.headless === true;
-  let port = 9222;
-  if (typeof context.args.port === 'number') {
-    port = context.args.port;
-  } else if (typeof context.config.port === 'number') {
-    port = context.config.port;
-  }
+  const port = resolvePort(context);
 
   const browser = await puppeteer.launch({
     headless,
@@ -40,18 +81,33 @@ export default async function launch(context: ExecutionContext): Promise<Command
   });
 
   const wsEndpoint = browser.wsEndpoint();
-  const process = browser.process();
-  const pid = process?.pid ?? 0;
+  const browserProcess = browser.process();
+  const pid = browserProcess?.pid ?? 0;
 
   const logDir = getLogDir(context.projectPath);
   const networkLogPath = join(logDir, 'network.jsonl');
   const consoleLogPath = join(logDir, 'console.jsonl');
+  const now = new Date().toISOString();
 
-  writeState(context.projectPath, {
+  const browserState: BrowserState = {
     wsEndpoint,
     pid,
     port,
-    launchedAt: new Date().toISOString(),
+    launchedAt: now,
+    networkLogPath,
+    consoleLogPath,
+  };
+
+  writeState(context.projectPath, browserState);
+
+  writeGlobalSession({
+    wsEndpoint,
+    pid,
+    port,
+    projectPath: context.projectPath,
+    launchedAt: now,
+    lastSeenAt: now,
+    headless,
     networkLogPath,
     consoleLogPath,
   });

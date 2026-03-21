@@ -1,7 +1,7 @@
 import { existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { readState, deleteState, getLogDir } from '../shared/state.js';
+import { readState, deleteState, getLogDir, deleteGlobalSession } from '../shared/state.js';
 import { connectBrowser } from '../shared/connection.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
@@ -36,6 +36,7 @@ export default async function close(context: ExecutionContext): Promise<CommandR
   }
 
   deleteState(context.projectPath);
+  deleteGlobalSession();
 
   return {
     output: [

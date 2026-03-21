@@ -6,6 +6,7 @@ import puppeteer from "puppeteer";
 
 // src/shared/state.ts
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 function getStorageDir(projectPath) {
   return join(projectPath, ".renre-kit", "storage", "renre-devtools");
@@ -29,31 +30,91 @@ function writeState(projectPath, state) {
   }
   writeFileSync(getStatePath(projectPath), JSON.stringify(state, null, 2));
 }
+function getGlobalDir() {
+  return process.env.RENRE_KIT_HOME ?? join(homedir(), ".renre-kit");
+}
+function getGlobalSessionPath() {
+  return join(getGlobalDir(), "browser-session.json");
+}
+function readGlobalSession() {
+  const sessionPath = getGlobalSessionPath();
+  if (!existsSync(sessionPath)) return null;
+  const raw = readFileSync(sessionPath, "utf-8");
+  return JSON.parse(raw);
+}
+function writeGlobalSession(session) {
+  const dir = getGlobalDir();
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  writeFileSync(getGlobalSessionPath(), JSON.stringify(session, null, 2));
+}
+function deleteGlobalSession() {
+  const sessionPath = getGlobalSessionPath();
+  if (existsSync(sessionPath)) {
+    unlinkSync(sessionPath);
+  }
+}
+function isProcessAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // src/commands/launch.ts
+function checkExistingLocal(projectPath) {
+  const existing = readState(projectPath);
+  if (!existing) return null;
+  return {
+    output: [
+      "## Browser Already Running",
+      "",
+      `- **PID**: ${String(existing.pid)}`,
+      `- **Port**: ${String(existing.port)}`,
+      `- **Launched**: ${existing.launchedAt}`,
+      "",
+      "Use `renre-devtools:close` to stop it first."
+    ].join("\n"),
+    exitCode: 1
+  };
+}
+function checkExistingGlobal() {
+  const globalSession = readGlobalSession();
+  if (!globalSession) return null;
+  if (!isProcessAlive(globalSession.pid)) {
+    deleteGlobalSession();
+    return null;
+  }
+  return {
+    output: [
+      "## Browser Already Running (another project)",
+      "",
+      `- **PID**: ${String(globalSession.pid)}`,
+      `- **Port**: ${String(globalSession.port)}`,
+      `- **Project**: ${globalSession.projectPath}`,
+      `- **Launched**: ${globalSession.launchedAt}`,
+      "",
+      "Only one browser instance is supported. Close it first from the originating project,",
+      "or use `renre-devtools:close` there."
+    ].join("\n"),
+    exitCode: 1
+  };
+}
+function resolvePort(context) {
+  if (typeof context.args.port === "number") return context.args.port;
+  if (typeof context.config.port === "number") return context.config.port;
+  return 9222;
+}
 async function launch(context) {
-  const existing = readState(context.projectPath);
-  if (existing) {
-    return {
-      output: [
-        "## Browser Already Running",
-        "",
-        `- **PID**: ${String(existing.pid)}`,
-        `- **Port**: ${String(existing.port)}`,
-        `- **Launched**: ${existing.launchedAt}`,
-        "",
-        "Use `renre-devtools:close` to stop it first."
-      ].join("\n"),
-      exitCode: 1
-    };
-  }
+  const localCheck = checkExistingLocal(context.projectPath);
+  if (localCheck) return localCheck;
+  const globalCheck = checkExistingGlobal();
+  if (globalCheck) return globalCheck;
   const headless = context.config.headless === true || context.args.headless === true;
-  let port = 9222;
-  if (typeof context.args.port === "number") {
-    port = context.args.port;
-  } else if (typeof context.config.port === "number") {
-    port = context.config.port;
-  }
+  const port = resolvePort(context);
   const browser = await puppeteer.launch({
     headless,
     args: [
@@ -63,16 +124,29 @@ async function launch(context) {
     ]
   });
   const wsEndpoint = browser.wsEndpoint();
-  const process = browser.process();
-  const pid = process?.pid ?? 0;
+  const browserProcess = browser.process();
+  const pid = browserProcess?.pid ?? 0;
   const logDir = getLogDir(context.projectPath);
   const networkLogPath = join2(logDir, "network.jsonl");
   const consoleLogPath = join2(logDir, "console.jsonl");
-  writeState(context.projectPath, {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const browserState = {
     wsEndpoint,
     pid,
     port,
-    launchedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    launchedAt: now,
+    networkLogPath,
+    consoleLogPath
+  };
+  writeState(context.projectPath, browserState);
+  writeGlobalSession({
+    wsEndpoint,
+    pid,
+    port,
+    projectPath: context.projectPath,
+    launchedAt: now,
+    lastSeenAt: now,
+    headless,
     networkLogPath,
     consoleLogPath
   });

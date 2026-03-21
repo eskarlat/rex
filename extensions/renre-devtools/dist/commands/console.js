@@ -47,22 +47,27 @@ function formatTimestamp(iso) {
 }
 
 // src/commands/console.ts
-function consoleCommand(context) {
-  const state = ensureBrowserRunning(context.projectPath);
-  const levelFilter = typeof context.args.level === "string" ? context.args.level : null;
-  const limit = typeof context.args.limit === "number" ? context.args.limit : 50;
-  if (!existsSync2(state.consoleLogPath)) {
-    return { output: "No console messages captured yet.", exitCode: 0 };
+function emptyResponse(format) {
+  if (format === "json") {
+    return { output: JSON.stringify({ entries: [], total: 0 }), exitCode: 0 };
   }
-  const raw = readFileSync2(state.consoleLogPath, "utf-8").trim();
-  if (raw.length === 0) {
-    return { output: "No console messages captured yet.", exitCode: 0 };
-  }
-  let entries = raw.split("\n").map((line) => JSON.parse(line));
-  if (levelFilter) {
-    entries = entries.filter((e) => e.level === levelFilter);
-  }
-  entries = entries.slice(-limit);
+  return { output: "No console messages captured yet.", exitCode: 0 };
+}
+function parseArgs(context) {
+  return {
+    levelFilter: typeof context.args.level === "string" ? context.args.level : null,
+    limit: typeof context.args.limit === "number" ? context.args.limit : 50,
+    offset: typeof context.args.offset === "number" ? context.args.offset : 0,
+    format: context.args.format === "json" ? "json" : "markdown"
+  };
+}
+function formatAsJson(entries, total) {
+  return {
+    output: JSON.stringify({ entries, total }),
+    exitCode: 0
+  };
+}
+function formatAsMarkdown(entries) {
   const rows = entries.map((e) => [
     formatTimestamp(e.timestamp),
     e.level.toUpperCase(),
@@ -73,6 +78,24 @@ function consoleCommand(context) {
     output: [`## Console Messages (${String(entries.length)})`, "", table].join("\n"),
     exitCode: 0
   };
+}
+function consoleCommand(context) {
+  const state = ensureBrowserRunning(context.projectPath);
+  const { levelFilter, limit, offset, format } = parseArgs(context);
+  if (!existsSync2(state.consoleLogPath)) {
+    return emptyResponse(format);
+  }
+  const raw = readFileSync2(state.consoleLogPath, "utf-8").trim();
+  if (raw.length === 0) {
+    return emptyResponse(format);
+  }
+  const allLines = raw.split("\n");
+  let entries = allLines.slice(offset).map((line) => JSON.parse(line));
+  if (levelFilter) {
+    entries = entries.filter((e) => e.level === levelFilter);
+  }
+  entries = entries.slice(-limit);
+  return format === "json" ? formatAsJson(entries, allLines.length) : formatAsMarkdown(entries);
 }
 export {
   consoleCommand as default

@@ -1,7 +1,8 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
 // src/commands/screenshot.ts
-import { join as join2 } from "node:path";
+import { appendFileSync, existsSync as existsSync2, mkdirSync as mkdirSync2 } from "node:fs";
+import { dirname, join as join2 } from "node:path";
 
 // src/shared/connection.ts
 import puppeteer from "puppeteer";
@@ -14,6 +15,9 @@ function getStorageDir(projectPath) {
 }
 function getStatePath(projectPath) {
   return join(getStorageDir(projectPath), "state.json");
+}
+function getScreenshotDir(projectPath) {
+  return join(getStorageDir(projectPath), "screenshots");
 }
 function readState(projectPath) {
   const statePath = getStatePath(projectPath);
@@ -55,46 +59,59 @@ async function withBrowser(projectPath, fn) {
 }
 
 // src/commands/screenshot.ts
+function parseArgs(context) {
+  return {
+    selector: typeof context.args.selector === "string" ? context.args.selector : null,
+    fullPage: context.args["full-page"] === true || context.args.fullPage === true,
+    output: typeof context.args.output === "string" ? context.args.output : null,
+    encoded: context.args.encoded === true,
+    dir: typeof context.args.dir === "string" ? context.args.dir : null
+  };
+}
+function ensureDir(filePath) {
+  const dir = dirname(filePath);
+  if (!existsSync2(dir)) {
+    mkdirSync2(dir, { recursive: true });
+  }
+}
+async function captureEncoded(page, element, selector, fullPage) {
+  const label = selector ? `Screenshot: \`${selector}\`` : "Screenshot (full page)";
+  const base64 = element ? await element.screenshot({ encoding: "base64" }) : await page.screenshot({ encoding: "base64", fullPage });
+  return {
+    output: [`## ${label}`, "", `\`data:image/png;base64,${base64}\``].join("\n"),
+    exitCode: 0
+  };
+}
+function registerMeta(screenshotDir, filePath, page, selector, fullPage) {
+  const metaPath = join2(screenshotDir, "screenshots.jsonl");
+  const meta = {
+    filename: filePath.slice(filePath.lastIndexOf("/") + 1),
+    path: filePath,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    url: page.url(),
+    selector,
+    fullPage
+  };
+  if (!existsSync2(screenshotDir)) {
+    mkdirSync2(screenshotDir, { recursive: true });
+  }
+  appendFileSync(metaPath, JSON.stringify(meta) + "\n");
+}
 async function screenshot(context) {
-  const selector = typeof context.args.selector === "string" ? context.args.selector : null;
-  const fullPage = context.args["full-page"] === true || context.args.fullPage === true;
-  const output = typeof context.args.output === "string" ? context.args.output : null;
-  const encoded = context.args.encoded === true;
+  const { selector, fullPage, output, encoded, dir } = parseArgs(context);
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const defaultName = `screenshot-${Date.now()}.png`;
-    const filePath = output ?? join2(context.projectPath, defaultName);
-    if (selector) {
-      const element = await page.$(selector);
-      if (!element) {
-        return {
-          output: `No element found for selector: \`${selector}\``,
-          exitCode: 1
-        };
-      }
-      if (encoded) {
-        const base64 = await element.screenshot({ encoding: "base64" });
-        return {
-          output: [
-            `## Screenshot: \`${selector}\``,
-            "",
-            `\`data:image/png;base64,${base64}\``
-          ].join("\n"),
-          exitCode: 0
-        };
-      }
-      await element.screenshot({ path: filePath });
-    } else {
-      if (encoded) {
-        const base64 = await page.screenshot({ encoding: "base64", fullPage });
-        return {
-          output: ["## Screenshot (full page)", "", `\`data:image/png;base64,${base64}\``].join(
-            "\n"
-          ),
-          exitCode: 0
-        };
-      }
-      await page.screenshot({ path: filePath, fullPage });
+    const element = selector ? await page.$(selector) : null;
+    if (selector && !element) {
+      return { output: `No element found for selector: \`${selector}\``, exitCode: 1 };
     }
+    if (encoded) {
+      return captureEncoded(page, element, selector, fullPage);
+    }
+    const screenshotDir = dir ?? getScreenshotDir(context.projectPath);
+    const filePath = output ?? join2(screenshotDir, `screenshot-${String(Date.now())}.png`);
+    ensureDir(filePath);
+    await (element ? element.screenshot({ path: filePath }) : page.screenshot({ path: filePath, fullPage }));
+    registerMeta(screenshotDir, filePath, page, selector, fullPage);
     return {
       output: [
         "## Screenshot Saved",

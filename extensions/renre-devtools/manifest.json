@@ -94,6 +94,38 @@
     "highlight": {
       "handler": "dist/commands/highlight.js",
       "description": "Highlight an element in the browser by CSS selector"
+    },
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Get browser session status with session recovery"
+    },
+    "heartbeat": {
+      "handler": "dist/commands/heartbeat.js",
+      "description": "Update browser session heartbeat timestamp"
+    },
+    "chrome-check": {
+      "handler": "dist/commands/chrome-check.js",
+      "description": "Check if Chrome/Chromium is installed"
+    },
+    "chrome-install": {
+      "handler": "dist/commands/chrome-install.js",
+      "description": "Download and install Chromium via Puppeteer"
+    },
+    "screenshot-list": {
+      "handler": "dist/commands/screenshot-list.js",
+      "description": "List saved screenshots with metadata"
+    },
+    "screenshot-read": {
+      "handler": "dist/commands/screenshot-read.js",
+      "description": "Read a screenshot as base64 data URL"
+    },
+    "screenshot-delete": {
+      "handler": "dist/commands/screenshot-delete.js",
+      "description": "Delete a saved screenshot"
+    },
+    "clear-logs": {
+      "handler": "dist/commands/clear-logs.js",
+      "description": "Clear console and network log files"
     }
   },
   "config": {
@@ -115,19 +147,19 @@
   "ui": {
     "panels": [
       {
-        "id": "devtools-panel",
-        "title": "Browser DevTools",
-        "entry": "dist/panel.js"
-      }
-    ],
-    "widgets": [
+        "id": "overview",
+        "title": "Overview",
+        "entry": "dist/panels/overview.js"
+      },
       {
-        "id": "browser-status",
-        "title": "Browser Status",
-        "entry": "dist/browser-widget.js",
-        "defaultSize": { "w": 4, "h": 2 },
-        "minSize": { "w": 3, "h": 2 },
-        "maxSize": { "w": 6, "h": 4 }
+        "id": "screenshots",
+        "title": "Screenshots",
+        "entry": "dist/panels/screenshots.js"
+      },
+      {
+        "id": "logs",
+        "title": "Logs",
+        "entry": "dist/panels/logs.js"
       }
     ]
   },

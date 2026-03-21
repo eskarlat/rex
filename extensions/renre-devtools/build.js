@@ -24,6 +24,14 @@ await buildExtension({
     { in: 'src/commands/inspect.ts', out: 'commands/inspect' },
     { in: 'src/commands/selected.ts', out: 'commands/selected' },
     { in: 'src/commands/highlight.ts', out: 'commands/highlight' },
+    { in: 'src/commands/status.ts', out: 'commands/status' },
+    { in: 'src/commands/heartbeat.ts', out: 'commands/heartbeat' },
+    { in: 'src/commands/chrome-check.ts', out: 'commands/chrome-check' },
+    { in: 'src/commands/chrome-install.ts', out: 'commands/chrome-install' },
+    { in: 'src/commands/screenshot-list.ts', out: 'commands/screenshot-list' },
+    { in: 'src/commands/screenshot-read.ts', out: 'commands/screenshot-read' },
+    { in: 'src/commands/screenshot-delete.ts', out: 'commands/screenshot-delete' },
+    { in: 'src/commands/clear-logs.ts', out: 'commands/clear-logs' },
   ],
   outdir: 'dist',
   external: ['puppeteer'],
@@ -31,8 +39,9 @@ await buildExtension({
 
 await buildPanel({
   entryPoints: [
-    { in: 'src/ui/panel.tsx', out: 'panel' },
-    { in: 'src/ui/browser-widget.tsx', out: 'browser-widget' },
+    { in: 'src/ui/panels/overview.tsx', out: 'panels/overview' },
+    { in: 'src/ui/panels/screenshots.tsx', out: 'panels/screenshots' },
+    { in: 'src/ui/panels/logs.tsx', out: 'panels/logs' },
   ],
   outdir: 'dist',
 });
