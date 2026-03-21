@@ -9,7 +9,7 @@ export class AtlassianBaseClient {
   private readonly authHeader: string;
 
   constructor(config: AtlassianClientConfig) {
-    const domain = config.domain.replace(/^https?:\/\//, '');
+    const domain = config.domain.replace(/^https?:\/\//, '').replace(/\/+$/, '');
     this.baseUrl = `https://${domain}`;
     this.authHeader = `Basic ${Buffer.from(`${config.email}:${config.apiToken}`).toString('base64')}`;
   }

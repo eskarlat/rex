@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Library documentation lookup via Context7 MCP server
-- MCP stdio transport via `@anthropic/context7-mcp-server`
+- MCP stdio transport via `@upstash/context7-mcp`
 - Dashboard panel with documentation search UI
 - Status widget showing server connection state
 - `status` command to check Context7 server health

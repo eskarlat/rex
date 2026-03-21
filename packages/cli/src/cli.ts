@@ -106,7 +106,11 @@ function formatCommandResult(result: unknown): string {
   ) {
     return (result as Record<string, unknown>).output as string;
   }
-  return JSON.stringify(result, null, 2);
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
+  }
 }
 
 function formatMcpResult(result: unknown): string {
@@ -120,7 +124,11 @@ function formatMcpResult(result: unknown): string {
       if (texts.length > 0) return texts.join('\n');
     }
   }
-  return JSON.stringify(result, null, 2);
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
+  }
 }
 
 function registerExtensionCommands(
