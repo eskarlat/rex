@@ -151,7 +151,8 @@ async function selected(context) {
     lines.push("", "### Computed Styles", "");
     const styleRows = Object.entries(info.styles).filter(([, v]) => v !== "" && v !== "none").map(([k, v]) => [k, v]);
     lines.push(markdownTable(["Property", "Value"], styleRows));
-    const trimmedHTML = info.html.length >= 500 ? info.html + "\n<!-- truncated -->" : info.html;
+    const MAX_HTML_LENGTH = 500;
+    const trimmedHTML = info.html.length >= MAX_HTML_LENGTH ? info.html.slice(0, MAX_HTML_LENGTH) + "\n<!-- truncated -->" : info.html;
     lines.push("", "### HTML", "", markdownCodeBlock(trimmedHTML, "html"));
     lines.push(
       "",

@@ -2,7 +2,7 @@ import { createRequire } from 'module'; const require = createRequire(import.met
 
 // src/commands/screenshot.ts
 import { appendFileSync, existsSync as existsSync2, mkdirSync as mkdirSync2 } from "node:fs";
-import { dirname, join as join2 } from "node:path";
+import { basename, dirname, join as join2 } from "node:path";
 
 // src/shared/connection.ts
 import puppeteer from "puppeteer";
@@ -85,7 +85,7 @@ async function captureEncoded(page, element, selector, fullPage) {
 function registerMeta(screenshotDir, filePath, page, selector, fullPage) {
   const metaPath = join2(screenshotDir, "screenshots.jsonl");
   const meta = {
-    filename: filePath.slice(filePath.lastIndexOf("/") + 1),
+    filename: basename(filePath),
     path: filePath,
     timestamp: (/* @__PURE__ */ new Date()).toISOString(),
     url: page.url(),

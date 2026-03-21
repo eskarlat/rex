@@ -4,8 +4,9 @@ import { createRequire } from 'module'; const require = createRequire(import.met
 import puppeteer from "puppeteer";
 
 // src/shared/state.ts
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { join } from "node:path";
 function getStorageDir(projectPath) {
   return join(projectPath, ".renre-kit", "storage", "renre-devtools");
@@ -18,6 +19,12 @@ function readState(projectPath) {
   if (!existsSync(statePath)) return null;
   const raw = readFileSync(statePath, "utf-8");
   return JSON.parse(raw);
+}
+function deleteState(projectPath) {
+  const statePath = getStatePath(projectPath);
+  if (existsSync(statePath)) {
+    unlinkSync(statePath);
+  }
 }
 function getGlobalDir() {
   return process.env.RENRE_KIT_HOME ?? join(homedir(), ".renre-kit");
@@ -37,7 +44,18 @@ function deleteGlobalSession() {
     unlinkSync(sessionPath);
   }
 }
+function winSystemRoot() {
+  return process.env.SystemRoot ?? "C:\\Windows";
+}
 function isProcessAlive(pid) {
+  if (platform() === "win32") {
+    const tasklist = join(winSystemRoot(), "System32", "tasklist.exe");
+    const result = spawnSync(tasklist, ["/FI", `PID eq ${String(pid)}`, "/NH"], {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    return result.status === 0 && result.stdout.includes(String(pid));
+  }
   try {
     process.kill(pid, 0);
     return true;
@@ -58,7 +76,8 @@ async function status(context) {
     };
   }
   if (!isProcessAlive(state.pid)) {
-    deleteGlobalSession();
+    if (localState) deleteState(context.projectPath);
+    if (globalSession) deleteGlobalSession();
     return {
       output: JSON.stringify({ running: false, staleSessionCleaned: true }),
       exitCode: 0
@@ -67,11 +86,13 @@ async function status(context) {
   try {
     const browser = await puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
     const pages = await browser.pages();
-    const tabs = pages.map((page, index) => ({
-      index,
-      title: page.url(),
-      url: page.url()
-    }));
+    const tabs = await Promise.all(
+      pages.map(async (page, index) => ({
+        index,
+        title: await page.title(),
+        url: page.url()
+      }))
+    );
     void browser.disconnect();
     const result = {
       running: true,
@@ -87,7 +108,8 @@ async function status(context) {
       exitCode: 0
     };
   } catch {
-    deleteGlobalSession();
+    if (localState) deleteState(context.projectPath);
+    if (globalSession) deleteGlobalSession();
     return {
       output: JSON.stringify({ running: false, staleSessionCleaned: true }),
       exitCode: 0

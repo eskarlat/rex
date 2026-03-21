@@ -2,7 +2,7 @@ import { createRequire } from 'module'; const require = createRequire(import.met
 
 // src/shared/state.ts
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { join } from "node:path";
 function getGlobalDir() {
   return process.env.RENRE_KIT_HOME ?? join(homedir(), ".renre-kit");

@@ -5,8 +5,9 @@ import { join as join2 } from "node:path";
 import puppeteer from "puppeteer";
 
 // src/shared/state.ts
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { join } from "node:path";
 function getStorageDir(projectPath) {
   return join(projectPath, ".renre-kit", "storage", "renre-devtools");
@@ -55,7 +56,18 @@ function deleteGlobalSession() {
     unlinkSync(sessionPath);
   }
 }
+function winSystemRoot() {
+  return process.env.SystemRoot ?? "C:\\Windows";
+}
 function isProcessAlive(pid) {
+  if (platform() === "win32") {
+    const tasklist = join(winSystemRoot(), "System32", "tasklist.exe");
+    const result = spawnSync(tasklist, ["/FI", `PID eq ${String(pid)}`, "/NH"], {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    return result.status === 0 && result.stdout.includes(String(pid));
+  }
   try {
     process.kill(pid, 0);
     return true;

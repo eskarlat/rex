@@ -5,8 +5,9 @@ import { existsSync as existsSync2, unlinkSync as unlinkSync2 } from "node:fs";
 import { join as join2 } from "node:path";
 
 // src/shared/state.ts
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { join } from "node:path";
 function getStorageDir(projectPath) {
   return join(projectPath, ".renre-kit", "storage", "renre-devtools");
@@ -50,6 +51,26 @@ function deleteGlobalSession() {
     unlinkSync(sessionPath);
   }
 }
+function winSystemRoot() {
+  return process.env.SystemRoot ?? "C:\\Windows";
+}
+function killProcessTree(pid) {
+  if (platform() === "win32") {
+    const taskkill = join(winSystemRoot(), "System32", "taskkill.exe");
+    spawnSync(taskkill, ["/PID", String(pid), "/T", "/F"], {
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    return;
+  }
+  try {
+    process.kill(-pid, "SIGTERM");
+  } catch {
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {
+    }
+  }
+}
 
 // src/shared/connection.ts
 import puppeteer from "puppeteer";
@@ -71,10 +92,7 @@ async function close(context) {
     const browser = await connectBrowser(context.projectPath);
     await browser.close();
   } catch {
-    try {
-      process.kill(state.pid);
-    } catch {
-    }
+    killProcessTree(state.pid);
   }
   const logDir = getLogDir(context.projectPath);
   for (const file of ["network.jsonl", "console.jsonl"]) {

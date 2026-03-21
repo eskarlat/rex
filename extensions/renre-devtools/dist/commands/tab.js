@@ -44,7 +44,8 @@ async function getPageByIndex(browser, index) {
 
 // src/commands/tab.ts
 async function tab(context) {
-  const index = Number(context.args.index ?? context.args._positional?.[0]);
+  const positional = Array.isArray(context.args._positional) ? context.args._positional : [];
+  const index = Number(context.args.index ?? positional[0]);
   if (Number.isNaN(index)) {
     return { output: "Error: --index <number> is required", exitCode: 1 };
   }
