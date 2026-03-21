@@ -1,4 +1,5 @@
 import type { EventType, EventPayload } from '../types/index.js';
+import { getLogger } from '../logger/index.js';
 
 type EventHandler = (payload: EventPayload) => void | Promise<void>;
 type BridgeFn = (event: string, payload: EventPayload) => void;
@@ -34,7 +35,9 @@ export class EventBus {
           Promise.resolve()
             .then(() => handler(payload))
             .catch((err: unknown) => {
-              console.error(`[EventBus] Handler for "${event}" failed:`, err);
+              getLogger().error('event-bus', `Handler for "${event}" failed`, {
+                error: err instanceof Error ? err.message : String(err),
+              });
             }),
         );
       }
