@@ -46,10 +46,10 @@ describe('TerminalDrawer', () => {
     expect(drawer?.className).toContain('w-0');
   });
 
-  it('does not render terminal content when closed', () => {
+  it('does not render terminal header when closed but keeps XtermPanel mounted', () => {
     render(<TerminalDrawer />);
     expect(screen.queryByText('Terminal')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('xterm-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('xterm-panel')).toBeInTheDocument();
   });
 
   it('renders with inline width style when open', () => {

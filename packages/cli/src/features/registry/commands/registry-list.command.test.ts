@@ -19,8 +19,20 @@ describe('registry-list command', () => {
 
   it('displays registries with sync status', () => {
     vi.mocked(registryManager.list).mockReturnValue([
-      { name: 'default', url: 'https://example.com', priority: 1, lastFetched: new Date(), isStale: false },
-      { name: 'community', url: 'https://community.com', priority: 2, lastFetched: null, isStale: true },
+      {
+        name: 'default',
+        url: 'https://example.com',
+        priority: 1,
+        lastFetched: new Date(),
+        isStale: false,
+      },
+      {
+        name: 'community',
+        url: 'https://community.com',
+        priority: 2,
+        lastFetched: null,
+        isStale: true,
+      },
     ]);
 
     handleRegistryList({

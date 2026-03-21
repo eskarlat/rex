@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Sidebar } from './Sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from './Sidebar';
 
 vi.mock('@/core/hooks/use-projects', () => ({
   useProjects: () => ({
@@ -21,6 +21,10 @@ vi.mock('@/core/providers/ProjectProvider', () => ({
   }),
 }));
 
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => false,
+}));
+
 const mockMarketplace = vi.fn();
 vi.mock('@/core/hooks/use-extensions', () => ({
   useMarketplace: () => mockMarketplace(),
@@ -33,22 +37,30 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <MemoryRouter>{ui}</MemoryRouter>
+        <MemoryRouter>
+          <SidebarProvider defaultOpen={true}>{ui}</SidebarProvider>
+        </MemoryRouter>
       </TooltipProvider>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
-describe('Sidebar', () => {
-  it('renders brand name', () => {
+describe('AppSidebar', () => {
+  it('renders brand name in header', () => {
     mockMarketplace.mockReturnValue({ data: undefined });
-    renderWithProviders(<Sidebar />);
+    renderWithProviders(<AppSidebar />);
     expect(screen.getByText('RenreKit')).toBeInTheDocument();
+  });
+
+  it('renders current project name in header', () => {
+    mockMarketplace.mockReturnValue({ data: undefined });
+    renderWithProviders(<AppSidebar />);
+    expect(screen.getByText('my-project')).toBeInTheDocument();
   });
 
   it('renders all navigation links', () => {
     mockMarketplace.mockReturnValue({ data: undefined });
-    renderWithProviders(<Sidebar />);
+    renderWithProviders(<AppSidebar />);
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Scheduler')).toBeInTheDocument();
     expect(screen.getByText('Logs')).toBeInTheDocument();
@@ -66,7 +78,7 @@ describe('Sidebar', () => {
         available: [],
       },
     });
-    renderWithProviders(<Sidebar />);
+    renderWithProviders(<AppSidebar />);
     expect(screen.getByText('Extensions')).toBeInTheDocument();
     expect(screen.getByText('hello-world')).toBeInTheDocument();
     expect(screen.getByText('context7-mcp')).toBeInTheDocument();
@@ -76,14 +88,20 @@ describe('Sidebar', () => {
     mockMarketplace.mockReturnValue({
       data: {
         active: [
-          { name: 'hello-world', version: '1.0.0', type: 'standard', status: 'active', title: 'Hello World' },
+          {
+            name: 'hello-world',
+            version: '1.0.0',
+            type: 'standard',
+            status: 'active',
+            title: 'Hello World',
+          },
           { name: 'context7-mcp', version: 'dev', type: 'mcp', status: 'active' },
         ],
         installed: [],
         available: [],
       },
     });
-    renderWithProviders(<Sidebar />);
+    renderWithProviders(<AppSidebar />);
     expect(screen.getByText('Hello World')).toBeInTheDocument();
     expect(screen.queryByText('hello-world')).not.toBeInTheDocument();
     expect(screen.getByText('context7-mcp')).toBeInTheDocument();
@@ -93,13 +111,19 @@ describe('Sidebar', () => {
     mockMarketplace.mockReturnValue({
       data: {
         active: [
-          { name: 'hello-world', version: '1.0.0', type: 'standard', status: 'active', hasIcon: true },
+          {
+            name: 'hello-world',
+            version: '1.0.0',
+            type: 'standard',
+            status: 'active',
+            hasIcon: true,
+          },
         ],
         installed: [],
         available: [],
       },
     });
-    renderWithProviders(<Sidebar />);
+    renderWithProviders(<AppSidebar />);
     const link = screen.getByRole('link', { name: 'hello-world' });
     const img = link.querySelector('img');
     expect(img).toHaveAttribute('src', '/api/extensions/hello-world/icon');
@@ -109,37 +133,13 @@ describe('Sidebar', () => {
     mockMarketplace.mockReturnValue({
       data: { active: [], installed: [], available: [] },
     });
-    renderWithProviders(<Sidebar />);
+    renderWithProviders(<AppSidebar />);
     expect(screen.queryByText('Extensions')).not.toBeInTheDocument();
   });
 
-  it('renders collapse button', () => {
+  it('renders project switcher dropdown trigger', () => {
     mockMarketplace.mockReturnValue({ data: undefined });
-    renderWithProviders(<Sidebar />);
-    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toBeInTheDocument();
-  });
-
-  it('hides labels and brand when collapsed', async () => {
-    mockMarketplace.mockReturnValue({ data: undefined });
-    renderWithProviders(<Sidebar />);
-
-    const collapseBtn = screen.getByRole('button', { name: 'Collapse sidebar' });
-    await userEvent.click(collapseBtn);
-
-    expect(screen.queryByText('RenreKit')).not.toBeInTheDocument();
-    expect(screen.queryByText('Home')).not.toBeInTheDocument();
-    expect(screen.queryByText('Scheduler')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Expand sidebar' })).toBeInTheDocument();
-  });
-
-  it('restores labels and brand when expanded again', async () => {
-    mockMarketplace.mockReturnValue({ data: undefined });
-    renderWithProviders(<Sidebar />);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }));
-
-    expect(screen.getByText('RenreKit')).toBeInTheDocument();
-    expect(screen.getByText('Home')).toBeInTheDocument();
+    renderWithProviders(<AppSidebar />);
+    expect(screen.getByRole('button', { name: /select project/i })).toBeInTheDocument();
   });
 });

@@ -35,7 +35,9 @@ export const extensionManifestsCheck: DiagnosticCheck = {
         try {
           loadManifest(extDir);
         } catch (err) {
-          errors.push(`${ext.name}@${ext.version}: ${err instanceof Error ? err.message : String(err)}`);
+          errors.push(
+            `${ext.name}@${ext.version}: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
 

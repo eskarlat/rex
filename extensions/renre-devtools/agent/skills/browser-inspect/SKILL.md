@@ -10,39 +10,47 @@ Execute JavaScript in the browser, inspect DOM elements, read page content, and 
 ## Commands
 
 ### renre-devtools:puppeteer_evaluate
+
 Execute JavaScript code in the browser console and return the result.
 
 **Parameters:**
+
 - `script` (string, required) — JavaScript code to execute in the browser context
 
 **Examples:**
 
 Get the page title:
+
 ```
 renre-kit renre-devtools:puppeteer_evaluate --script "document.title"
 ```
 
 Get all links on the page:
+
 ```
 renre-kit renre-devtools:puppeteer_evaluate --script "JSON.stringify([...document.querySelectorAll('a')].map(a => ({text: a.textContent, href: a.href})))"
 ```
 
 Check page performance:
+
 ```
 renre-kit renre-devtools:puppeteer_evaluate --script "JSON.stringify(performance.timing)"
 ```
 
 Read element text:
+
 ```
 renre-kit renre-devtools:puppeteer_evaluate --script "document.querySelector('h1')?.textContent"
 ```
 
 Get computed styles:
+
 ```
 renre-kit renre-devtools:puppeteer_evaluate --script "JSON.stringify(getComputedStyle(document.querySelector('.element')))"
 ```
 
 Check for errors in the DOM:
+
 ```
 renre-kit renre-devtools:puppeteer_evaluate --script "document.querySelectorAll('[aria-invalid=\"true\"]').length"
 ```
@@ -50,6 +58,7 @@ renre-kit renre-devtools:puppeteer_evaluate --script "document.querySelectorAll(
 ## Resources
 
 ### console://logs
+
 Access browser console output (log, warn, error messages) from the running browser session.
 
 ## Tips

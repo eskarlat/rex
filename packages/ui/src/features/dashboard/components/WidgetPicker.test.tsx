@@ -28,10 +28,7 @@ vi.mock('@/core/hooks/use-extensions', () => ({
 
 import { WidgetPicker } from './WidgetPicker';
 
-function renderPicker(
-  onAdd = vi.fn(),
-  addedWidgetIds = new Set<string>(),
-) {
+function renderPicker(onAdd = vi.fn(), addedWidgetIds = new Set<string>()) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });

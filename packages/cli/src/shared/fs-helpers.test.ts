@@ -58,9 +58,7 @@ describe('fs-helpers', () => {
       fs.mkdirSync(src);
       fs.writeFileSync(path.join(src, 'file.txt'), 'hello');
       copyDirSync(src, dest);
-      expect(fs.readFileSync(path.join(dest, 'file.txt'), 'utf-8')).toBe(
-        'hello',
-      );
+      expect(fs.readFileSync(path.join(dest, 'file.txt'), 'utf-8')).toBe('hello');
     });
   });
 
@@ -74,9 +72,7 @@ describe('fs-helpers', () => {
     });
 
     it('should not throw if directory does not exist', () => {
-      expect(() =>
-        removeDirSync(path.join(tmpDir, 'nonexistent')),
-      ).not.toThrow();
+      expect(() => removeDirSync(path.join(tmpDir, 'nonexistent'))).not.toThrow();
     });
   });
 

@@ -23,6 +23,10 @@ export const globalDirectoryCheck: DiagnosticCheck = {
         detail: `Check permissions on ${GLOBAL_DIR}`,
       };
     }
-    return { name: 'Global directory', status: 'pass', message: `${GLOBAL_DIR} exists and writable` };
+    return {
+      name: 'Global directory',
+      status: 'pass',
+      message: `${GLOBAL_DIR} exists and writable`,
+    };
   },
 };

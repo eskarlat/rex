@@ -21,11 +21,7 @@ function createWrapper() {
     defaultOptions: { queries: { retry: false } },
   });
   return function Wrapper({ children }: { children: ReactNode }) {
-    return React.createElement(
-      QueryClientProvider,
-      { client: queryClient },
-      children
-    );
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
   };
 }
 
@@ -84,7 +80,7 @@ describe('useUpdateSettings', () => {
       expect(mockFetchApi).toHaveBeenCalledWith('/api/settings', {
         method: 'PUT',
         body: input,
-      })
+      }),
     );
   });
 });
@@ -100,22 +96,19 @@ describe('useExtensionSettings', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(data);
-    expect(mockFetchApi).toHaveBeenCalledWith(
-      '/api/settings/extensions/my-ext'
-    );
+    expect(mockFetchApi).toHaveBeenCalledWith('/api/settings/extensions/my-ext');
   });
 
   it('encodes extension name in URL', async () => {
     mockFetchApi.mockResolvedValueOnce({});
 
-    const { result } = renderHook(
-      () => useExtensionSettings('my ext/special'),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useExtensionSettings('my ext/special'), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockFetchApi).toHaveBeenCalledWith(
-      `/api/settings/extensions/${encodeURIComponent('my ext/special')}`
+      `/api/settings/extensions/${encodeURIComponent('my ext/special')}`,
     );
   });
 
@@ -134,20 +127,19 @@ describe('useUpdateExtensionSettings', () => {
     mockFetchApi.mockResolvedValueOnce(undefined);
     const input = { fieldName: 'apiKey', mapping: { source: 'direct' as const, value: 'new-key' } };
 
-    const { result } = renderHook(
-      () => useUpdateExtensionSettings('my-ext'),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useUpdateExtensionSettings('my-ext'), {
+      wrapper: createWrapper(),
+    });
 
     act(() => {
       result.current.mutate(input);
     });
 
     await waitFor(() =>
-      expect(mockFetchApi).toHaveBeenCalledWith(
-        '/api/settings/extensions/my-ext',
-        { method: 'PUT', body: input }
-      )
+      expect(mockFetchApi).toHaveBeenCalledWith('/api/settings/extensions/my-ext', {
+        method: 'PUT',
+        body: input,
+      }),
     );
   });
 });

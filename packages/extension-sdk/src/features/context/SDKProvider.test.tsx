@@ -35,6 +35,8 @@ function createMockSDK(): RenreKitSDK {
       unregister: vi.fn(),
       update: vi.fn(),
     },
+    terminal: { open: vi.fn(), close: vi.fn(), send: vi.fn() },
+    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     destroy: vi.fn(),
   };
 }
@@ -82,8 +84,6 @@ describe('SDKProvider', () => {
     });
 
     expect(caughtError).toBeInstanceOf(Error);
-    expect((caughtError as Error).message).toBe(
-      'useSDK must be used within an SDKProvider',
-    );
+    expect((caughtError as Error).message).toBe('useSDK must be used within an SDKProvider');
   });
 });

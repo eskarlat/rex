@@ -79,10 +79,7 @@ export function readUpdateCache(): UpdateCache | null {
   }
 }
 
-export function refreshUpdateCache(
-  db: Database.Database,
-  registryConfigs: RegistryConfig[],
-): void {
+export function refreshUpdateCache(db: Database.Database, registryConfigs: RegistryConfig[]): void {
   const updates = computeUpdates(db, registryConfigs);
   writeUpdateCache(updates);
 }

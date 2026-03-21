@@ -124,9 +124,7 @@ describe('XtermPanel', () => {
 
   it('connects WebSocket to terminal endpoint', () => {
     render(<XtermPanel />);
-    expect(WebSocket).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/terminal$/),
-    );
+    expect(WebSocket).toHaveBeenCalledWith(expect.stringMatching(/\/api\/terminal$/));
   });
 
   it('registers onData handler for user input', () => {
@@ -172,7 +170,9 @@ describe('XtermPanel', () => {
       mockWsInstances[0]!.onclose?.();
     });
 
-    expect(mockTerminalWrite).toHaveBeenCalledWith(expect.stringContaining('Terminal session ended'));
+    expect(mockTerminalWrite).toHaveBeenCalledWith(
+      expect.stringContaining('Terminal session ended'),
+    );
   });
 
   it('disposes terminal and closes WebSocket on unmount', () => {
@@ -203,9 +203,7 @@ describe('XtermPanel', () => {
 
   it('connects without query params', () => {
     render(<XtermPanel />);
-    expect(WebSocket).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/terminal$/),
-    );
+    expect(WebSocket).toHaveBeenCalledWith(expect.stringMatching(/\/api\/terminal$/));
   });
 
   it('does not send data when WebSocket is not open', () => {
@@ -226,9 +224,10 @@ describe('XtermPanel', () => {
 
     mockWsInstances[0]!.send.mockClear();
 
-    const resizeCallback = mockOnResize.mock.calls[0]![0] as (
-      size: { cols: number; rows: number },
-    ) => void;
+    const resizeCallback = mockOnResize.mock.calls[0]![0] as (size: {
+      cols: number;
+      rows: number;
+    }) => void;
     act(() => {
       resizeCallback({ cols: 120, rows: 40 });
     });
@@ -242,9 +241,10 @@ describe('XtermPanel', () => {
     render(<XtermPanel />);
     mockWsInstances[0]!.readyState = 3;
 
-    const resizeCallback = mockOnResize.mock.calls[0]![0] as (
-      size: { cols: number; rows: number },
-    ) => void;
+    const resizeCallback = mockOnResize.mock.calls[0]![0] as (size: {
+      cols: number;
+      rows: number;
+    }) => void;
     act(() => {
       resizeCallback({ cols: 120, rows: 40 });
     });
@@ -289,9 +289,7 @@ describe('XtermPanel', () => {
 
     render(<XtermPanel />);
 
-    expect(WebSocket).toHaveBeenCalledWith(
-      expect.stringContaining('wss://'),
-    );
+    expect(WebSocket).toHaveBeenCalledWith(expect.stringContaining('wss://'));
 
     Object.defineProperty(window, 'location', {
       value: { protocol: originalProtocol, host: originalHost },

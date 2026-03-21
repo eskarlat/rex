@@ -1,6 +1,6 @@
 import { createHandler } from './types.js';
 export function createCrudToolset(config, client) {
-    const { toolsetName, resourceName, toolPrefix, resourceSlug, methodPrefix, dataDescription, } = config;
+    const { toolsetName, resourceName, toolPrefix, resourceSlug, methodPrefix, dataDescription } = config;
     const createName = `${toolPrefix}_create_${resourceSlug}`;
     const getName = `${toolPrefix}_get_${resourceSlug}`;
     const updateName = `${toolPrefix}_update_${resourceSlug}`;

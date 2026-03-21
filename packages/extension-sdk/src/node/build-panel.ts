@@ -1,4 +1,5 @@
 import type { Plugin, BuildOptions } from 'esbuild';
+import type { BuildPanelOptions } from './types.js';
 
 const reactGlobalPlugin: Plugin = {
   name: 'react-global',
@@ -9,7 +10,10 @@ const reactGlobalPlugin: Plugin = {
     }));
     b.onLoad({ filter: /.*/, namespace: 'react-global' }, (args) => {
       if (args.path === 'react/jsx-runtime') {
-        return { contents: 'export const { jsx, jsxs, Fragment } = window.__RENRE_JSX_RUNTIME__;', loader: 'js' };
+        return {
+          contents: 'export const { jsx, jsxs, Fragment } = window.__RENRE_JSX_RUNTIME__;',
+          loader: 'js',
+        };
       }
       return {
         contents: [
@@ -31,27 +35,60 @@ const reactGlobalPlugin: Plugin = {
 };
 
 /**
- * Build an extension UI panel using esbuild.
- * Bundles the panel as an ESM module with React resolved from dashboard globals.
+ * Build extension UI panels using esbuild.
+ * Bundles panels as ESM modules with React resolved from dashboard globals.
  *
- * @param entryPoint - Path to the panel source file (e.g. 'src/ui/panel.tsx')
- * @param outfile - Output path (e.g. 'dist/panel.js')
- * @param options - Additional esbuild options to merge
+ * @example
+ * // Multi-entry (recommended)
+ * await buildPanel({
+ *   entryPoints: [
+ *     { in: 'src/ui/panel.tsx', out: 'panel' },
+ *     { in: 'src/ui/status-widget.tsx', out: 'status-widget' },
+ *   ],
+ *   outdir: 'dist',
+ * });
+ *
+ * @example
+ * // Single-entry (legacy)
+ * await buildPanel('src/ui/panel.tsx', 'dist/panel.js');
  */
 export async function buildPanel(
-  entryPoint: string,
-  outfile: string,
+  entryPointOrOptions: string | BuildPanelOptions,
+  outfile?: string,
   options?: Partial<BuildOptions>,
 ): Promise<void> {
   const { build } = await import('esbuild');
+
+  if (typeof entryPointOrOptions === 'string') {
+    // Legacy single-entry signature: buildPanel('src/panel.tsx', 'dist/panel.js', opts?)
+    await build({
+      entryPoints: [entryPointOrOptions],
+      bundle: true,
+      format: 'esm',
+      outfile,
+      target: 'es2022',
+      jsx: 'automatic',
+      plugins: [reactGlobalPlugin],
+      ...options,
+    });
+    return;
+  }
+
+  // Multi-entry signature: buildPanel({ entryPoints, outdir })
+  const opts = entryPointOrOptions;
+  const esbuildEntries = opts.entryPoints.map((e) => ({
+    in: e.in,
+    out: e.out,
+  }));
+
   await build({
-    entryPoints: [entryPoint],
+    entryPoints: esbuildEntries,
     bundle: true,
     format: 'esm',
-    outfile,
+    outdir: opts.outdir,
     target: 'es2022',
     jsx: 'automatic',
     plugins: [reactGlobalPlugin],
-    ...options,
+    ...(opts.minify ? { minify: true } : {}),
   });
 }

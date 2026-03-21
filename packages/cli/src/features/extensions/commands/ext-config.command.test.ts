@@ -64,9 +64,7 @@ describe('ext-config command', () => {
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
-    expect(clack.log.info).toHaveBeenCalledWith(
-      'Extension "jira" has no configurable fields.',
-    );
+    expect(clack.log.info).toHaveBeenCalledWith('Extension "jira" has no configurable fields.');
   });
 
   it('should configure a direct value field', async () => {
@@ -112,9 +110,7 @@ describe('ext-config command', () => {
     });
 
     vi.mocked(listKeys).mockReturnValue(['jira_token', 'github_token']);
-    vi.mocked(clack.select)
-      .mockResolvedValueOnce('vault')
-      .mockResolvedValueOnce('jira_token');
+    vi.mocked(clack.select).mockResolvedValueOnce('vault').mockResolvedValueOnce('jira_token');
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
@@ -222,9 +218,7 @@ describe('ext-config command', () => {
     });
 
     vi.mocked(listKeys).mockReturnValue(['jira_token']);
-    vi.mocked(clack.select)
-      .mockResolvedValueOnce('vault')
-      .mockResolvedValueOnce(Symbol('cancel'));
+    vi.mocked(clack.select).mockResolvedValueOnce('vault').mockResolvedValueOnce(Symbol('cancel'));
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
@@ -280,9 +274,11 @@ describe('ext-config command', () => {
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
-    expect(clack.select).toHaveBeenCalledWith(expect.objectContaining({
-      message: expect.stringContaining('vault:jira_token'),
-    }));
+    expect(clack.select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('vault:jira_token'),
+      }),
+    );
   });
 
   it('should show default value in field label', async () => {
@@ -304,9 +300,11 @@ describe('ext-config command', () => {
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
-    expect(clack.select).toHaveBeenCalledWith(expect.objectContaining({
-      message: expect.stringContaining('default: 30'),
-    }));
+    expect(clack.select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('default: 30'),
+      }),
+    );
   });
 
   it('should handle empty config schema', async () => {
@@ -322,9 +320,7 @@ describe('ext-config command', () => {
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
-    expect(clack.log.info).toHaveBeenCalledWith(
-      'Extension "jira" has no configurable fields.',
-    );
+    expect(clack.log.info).toHaveBeenCalledWith('Extension "jira" has no configurable fields.');
   });
 
   it('should create a new vault variable inline', async () => {
@@ -402,9 +398,7 @@ describe('ext-config command', () => {
       { key: 'jira_token', value: '********', secret: true, tags: ['jira'] },
     ]);
 
-    vi.mocked(clack.select)
-      .mockResolvedValueOnce('vault')
-      .mockResolvedValueOnce('jira_token');
+    vi.mocked(clack.select).mockResolvedValueOnce('vault').mockResolvedValueOnce('jira_token');
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
@@ -439,12 +433,16 @@ describe('ext-config command', () => {
 
     await handleExtConfig({ name: 'jira', projectPath: '/tmp/project' });
 
-    expect(clack.select).toHaveBeenCalledWith(expect.objectContaining({
-      message: expect.stringContaining('********'),
-    }));
-    expect(clack.select).toHaveBeenCalledWith(expect.objectContaining({
-      message: expect.not.stringContaining('super-secret-value'),
-    }));
+    expect(clack.select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('********'),
+      }),
+    );
+    expect(clack.select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.not.stringContaining('super-secret-value'),
+      }),
+    );
   });
 
   it('should abort on cancel', async () => {

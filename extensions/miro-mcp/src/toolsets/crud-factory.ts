@@ -19,20 +19,11 @@ interface CrudConfig {
   dataDescription?: string;
 }
 
-type ClientMethod = (
-  boardId: string,
-  ...rest: unknown[]
-) => Promise<unknown>;
+type ClientMethod = (boardId: string, ...rest: unknown[]) => Promise<unknown>;
 
 export function createCrudToolset(config: CrudConfig, client: MiroClient): Toolset {
-  const {
-    toolsetName,
-    resourceName,
-    toolPrefix,
-    resourceSlug,
-    methodPrefix,
-    dataDescription,
-  } = config;
+  const { toolsetName, resourceName, toolPrefix, resourceSlug, methodPrefix, dataDescription } =
+    config;
 
   const createName = `${toolPrefix}_create_${resourceSlug}`;
   const getName = `${toolPrefix}_get_${resourceSlug}`;

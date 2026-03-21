@@ -17,10 +17,7 @@ describe('manifest-loader', () => {
   });
 
   function writeManifest(manifest: Record<string, unknown>): void {
-    writeFileSync(
-      join(tempDir, 'manifest.json'),
-      JSON.stringify(manifest, null, 2),
-    );
+    writeFileSync(join(tempDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
   }
 
   const validEngines = {
@@ -84,16 +81,12 @@ describe('manifest-loader', () => {
         iconColor: '#FF0000',
         main: 'src/index.js',
         agent: {
-          skills: [
-            { name: 'greet', path: 'skills/greet/SKILL.md' },
-          ],
+          skills: [{ name: 'greet', path: 'skills/greet/SKILL.md' }],
           prompts: ['agent/prompts/default.md'],
           context: ['agent/context/docs.md'],
         },
         ui: {
-          panels: [
-            { id: 'panel-1', title: 'Dashboard', entry: 'ui/dashboard.js' },
-          ],
+          panels: [{ id: 'panel-1', title: 'Dashboard', entry: 'ui/dashboard.js' }],
         },
         config: {
           schema: {

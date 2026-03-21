@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createTransitionsToolset(client) {
     return {
         name: 'jira_transitions',
@@ -34,7 +34,7 @@ export function createTransitionsToolset(client) {
             jira_get_transitions: async (args) => {
                 try {
                     const data = await client.getTransitions(args['issueKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -43,7 +43,7 @@ export function createTransitionsToolset(client) {
             jira_transition_issue: async (args) => {
                 try {
                     await client.transitionIssue(args['issueKey'], args['transitionId']);
-                    return textResult({ success: true, issueKey: args['issueKey'] });
+                    return markdownResult({ success: true, issueKey: args['issueKey'] });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

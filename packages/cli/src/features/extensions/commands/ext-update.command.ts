@@ -23,7 +23,9 @@ function checkEngineGate(resolved: ResolvedExtension, force?: boolean): boolean 
   if (compat.compatible) return true;
 
   if (!force) {
-    clack.log.error(`Extension "${resolved.name}" ${resolved.latestVersion} is incompatible with current engine:`);
+    clack.log.error(
+      `Extension "${resolved.name}" ${resolved.latestVersion} is incompatible with current engine:`,
+    );
     for (const issue of compat.issues) {
       clack.log.error(`  - ${issue}`);
     }
@@ -36,7 +38,11 @@ function checkEngineGate(resolved: ResolvedExtension, force?: boolean): boolean 
 }
 
 function isNewerVersion(latestVersion: string, currentVersion: string): boolean {
-  return !!semver.valid(latestVersion) && !!semver.valid(currentVersion) && semver.gt(latestVersion, currentVersion);
+  return (
+    !!semver.valid(latestVersion) &&
+    !!semver.valid(currentVersion) &&
+    semver.gt(latestVersion, currentVersion)
+  );
 }
 
 async function updateSingle(
@@ -70,7 +76,12 @@ async function updateSingle(
   const s = clack.spinner();
   s.start(`Updating ${name} ${ext.version} → ${resolved.latestVersion}...`);
 
-  const extPath = await installExtension(name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
+  const extPath = await installExtension(
+    name,
+    resolved.gitUrl,
+    resolved.latestVersion,
+    resolved.registryName,
+  );
   install(name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 
   // Re-activate if the extension was active in this project

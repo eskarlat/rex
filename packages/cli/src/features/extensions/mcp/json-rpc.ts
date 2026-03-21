@@ -1,8 +1,6 @@
-import type { JsonRpcRequest, JsonRpcResponse } from '../types/mcp.types.js';
-import {
-  ExtensionError,
-  ErrorCode,
-} from '../../../core/errors/extension-error.js';
+import type { JsonRpcRequest, JsonRpcResponse, JsonRpcNotification } from '../types/mcp.types.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
+import { CLI_VERSION } from '../../../core/version.js';
 
 export function buildRequest(
   method: string,
@@ -67,6 +65,29 @@ export function buildToolCallRequest(
   id: number,
 ): JsonRpcRequest {
   return buildRequest('tools/call', { name: toolName, arguments: args }, id);
+}
+
+export function buildInitializeRequest(id: number): JsonRpcRequest {
+  return buildRequest(
+    'initialize',
+    {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'renre-kit', version: CLI_VERSION },
+    },
+    id,
+  );
+}
+
+export function buildNotification(
+  method: string,
+  params?: Record<string, unknown>,
+): JsonRpcNotification {
+  const notification: JsonRpcNotification = { jsonrpc: '2.0', method };
+  if (params) {
+    notification.params = params;
+  }
+  return notification;
 }
 
 export function isNotification(msg: unknown): boolean {

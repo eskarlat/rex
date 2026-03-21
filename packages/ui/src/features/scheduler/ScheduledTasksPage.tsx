@@ -1,17 +1,8 @@
 import { type ChangeEvent, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  useScheduledTasks,
-  useCreateTask,
-} from '@/core/hooks/use-scheduler';
+import { useScheduledTasks, useCreateTask } from '@/core/hooks/use-scheduler';
 import { ResourcePage } from '@/core/components/ResourcePage';
 import { TaskRow } from './components/TaskRow';
 
@@ -34,7 +25,7 @@ export function ScheduledTasksPage(): React.ReactElement {
           setCommand('');
           setCron('');
         },
-      }
+      },
     );
   }
 
@@ -50,9 +41,7 @@ export function ScheduledTasksPage(): React.ReactElement {
       triggerLabel="Create Task"
       submitLabel="Create"
       submitPendingLabel="Creating..."
-      submitDisabled={
-        !extensionName || !command || !cron || createTask.isPending
-      }
+      submitDisabled={!extensionName || !command || !cron || createTask.isPending}
       isPending={createTask.isPending}
       onSubmit={handleCreate}
       formContent={
@@ -100,7 +89,7 @@ export function ScheduledTasksPage(): React.ReactElement {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {(!tasks || tasks.length === 0) ? (
+          {!tasks || tasks.length === 0 ? (
             <TaskRow task={undefined} />
           ) : (
             tasks.map((task) => <TaskRow key={task.id} task={task} />)

@@ -18,16 +18,12 @@ describe('LogViewer', () => {
   });
 
   it('applies custom maxHeight', () => {
-    const { container } = render(
-      <LogViewer lines={lines} maxHeight="200px" />
-    );
+    const { container } = render(<LogViewer lines={lines} maxHeight="200px" />);
     expect(container.firstChild).toHaveStyle({ maxHeight: '200px' });
   });
 
   it('applies custom className', () => {
-    const { container } = render(
-      <LogViewer lines={lines} className="custom-log" />
-    );
+    const { container } = render(<LogViewer lines={lines} className="custom-log" />);
     expect(container.firstChild).toHaveClass('custom-log');
   });
 

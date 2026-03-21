@@ -9,12 +9,14 @@ export class JiraClient extends AtlassianBaseClient {
         return this.request('GET', `/rest/api/3/issue/${issueKey}${query}`);
     }
     async search(jql, startAt = 0, maxResults = 50, fields) {
-        return this.request('POST', '/rest/api/3/search', {
+        const effectiveFields = fields ?? ['summary', 'status', 'assignee', 'priority', 'issuetype', 'updated'];
+        const params = new URLSearchParams({
             jql,
-            startAt,
-            maxResults,
-            fields: fields ?? ['summary', 'status', 'assignee', 'priority', 'issuetype', 'updated'],
+            startAt: String(startAt),
+            maxResults: String(maxResults),
+            fields: effectiveFields.join(','),
         });
+        return this.request('GET', `/rest/api/3/search/jql?${params.toString()}`);
     }
     async createIssue(fields) {
         return this.request('POST', '/rest/api/3/issue', { fields });
@@ -135,7 +137,7 @@ export class JiraClient extends AtlassianBaseClient {
         return this.request('GET', `/rest/api/3/issue/${issueKey}/watchers`);
     }
     async addWatcher(issueKey, accountId) {
-        return this.request('POST', `/rest/api/3/issue/${issueKey}/watchers`, JSON.stringify(accountId));
+        return this.request('POST', `/rest/api/3/issue/${issueKey}/watchers`, accountId);
     }
     async removeWatcher(issueKey, accountId) {
         return this.request('DELETE', `/rest/api/3/issue/${issueKey}/watchers?accountId=${encodeURIComponent(accountId)}`);
@@ -168,14 +170,23 @@ export class JiraClient extends AtlassianBaseClient {
         return this.request('GET', `/rest/servicedeskapi/request/${issueKey}/sla`);
     }
     // --- Development ---
-    async getDevelopmentInfo(issueId) {
-        return this.request('GET', `/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=stash&dataType=repository`);
-    }
-    async getBatchDevelopmentInfo(issueIds) {
-        return this.request('POST', '/rest/dev-status/latest/issue/detail', {
-            issueIds,
-            applicationType: 'stash',
-            dataType: 'repository',
+    async getDevelopmentInfo(issueId, applicationType = 'stash', dataType = 'repository') {
+        const params = new URLSearchParams({
+            issueId,
+            applicationType,
+            dataType,
         });
+        return this.request('GET', `/rest/dev-status/1.0/issue/detail?${params.toString()}`);
+    }
+    async getDevelopmentSummary(issueId) {
+        return this.request('GET', `/rest/dev-status/1.0/issue/summary?issueId=${issueId}`);
+    }
+    async getBatchDevelopmentInfo(issueIds, applicationType = 'stash', dataType = 'repository') {
+        const results = [];
+        for (const issueId of issueIds) {
+            const data = await this.getDevelopmentInfo(issueId, applicationType, dataType);
+            results.push(data);
+        }
+        return results;
     }
 }

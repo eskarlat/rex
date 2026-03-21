@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createFormsToolset(client) {
     return {
         name: 'jira_forms',
@@ -44,7 +44,7 @@ export function createFormsToolset(client) {
             jira_get_issue_proforma_forms: async (args) => {
                 try {
                     const data = await client.getIssueProformaForms(args['issueKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -53,7 +53,7 @@ export function createFormsToolset(client) {
             jira_get_proforma_form_details: async (args) => {
                 try {
                     const data = await client.getProformaFormDetails(args['issueKey'], args['formId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -62,7 +62,7 @@ export function createFormsToolset(client) {
             jira_update_proforma_form_answers: async (args) => {
                 try {
                     const data = await client.updateProformaFormAnswers(args['issueKey'], args['formId'], args['answers']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

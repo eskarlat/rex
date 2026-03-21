@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal() as Record<string, unknown>;
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     existsSync: vi.fn().mockReturnValue(false),
@@ -18,9 +18,9 @@ vi.mock('../../../core/paths/paths.js', () => ({
   EXTENSIONS_DIR: '/mock/global/extensions',
   CONFIG_PATH: '/mock/global/config.json',
   VAULT_PATH: '/mock/global/vault.json',
-  getExtensionDir: vi.fn().mockImplementation(
-    (name: string, version: string) => `/mock/extensions/${name}@${version}`,
-  ),
+  getExtensionDir: vi
+    .fn()
+    .mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
 }));
 
 vi.mock('../../../core/database/database.js', () => ({
@@ -102,14 +102,20 @@ describe('doctor checks', () => {
     vi.mocked(getSchemaVersion).mockReturnValue(1);
     vi.mocked(checkEngineCompat).mockReturnValue({ compatible: true, issues: [] });
     vi.mocked(loadManifest).mockReturnValue({
-      name: 'test', version: '1.0.0', type: 'standard', commands: {},
+      name: 'test',
+      version: '1.0.0',
+      type: 'standard',
+      commands: {},
       engines: { 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' },
     });
     vi.mocked(listInstalled).mockReturnValue([]);
-    vi.mocked(BetterSqlite3).mockImplementation(() => ({
-      close: vi.fn(),
-      prepare: vi.fn().mockReturnValue({ all: vi.fn().mockReturnValue([]) }),
-    }) as unknown as ReturnType<typeof BetterSqlite3>);
+    vi.mocked(BetterSqlite3).mockImplementation(
+      () =>
+        ({
+          close: vi.fn(),
+          prepare: vi.fn().mockReturnValue({ all: vi.fn().mockReturnValue([]) }),
+        }) as unknown as ReturnType<typeof BetterSqlite3>,
+    );
   });
 
   describe('nodeVersionCheck', () => {
@@ -190,13 +196,18 @@ describe('doctor checks', () => {
 
     it('passes when no pending migrations', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['001-initial.sql'] as unknown as ReturnType<typeof readdirSync>);
-      vi.mocked(BetterSqlite3).mockImplementation(() => ({
-        close: vi.fn(),
-        prepare: vi.fn().mockReturnValue({
-          all: vi.fn().mockReturnValue([{ name: '001-initial.sql' }]),
-        }),
-      }) as unknown as ReturnType<typeof BetterSqlite3>);
+      vi.mocked(readdirSync).mockReturnValue(['001-initial.sql'] as unknown as ReturnType<
+        typeof readdirSync
+      >);
+      vi.mocked(BetterSqlite3).mockImplementation(
+        () =>
+          ({
+            close: vi.fn(),
+            prepare: vi.fn().mockReturnValue({
+              all: vi.fn().mockReturnValue([{ name: '001-initial.sql' }]),
+            }),
+          }) as unknown as ReturnType<typeof BetterSqlite3>,
+      );
 
       const result = schemaStatusCheck.run();
       expect(result.status).toBe('pass');
@@ -205,13 +216,19 @@ describe('doctor checks', () => {
 
     it('warns when pending migrations exist', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readdirSync).mockReturnValue(['001-initial.sql', '002-add-col.sql'] as unknown as ReturnType<typeof readdirSync>);
-      vi.mocked(BetterSqlite3).mockImplementation(() => ({
-        close: vi.fn(),
-        prepare: vi.fn().mockReturnValue({
-          all: vi.fn().mockReturnValue([{ name: '001-initial.sql' }]),
-        }),
-      }) as unknown as ReturnType<typeof BetterSqlite3>);
+      vi.mocked(readdirSync).mockReturnValue([
+        '001-initial.sql',
+        '002-add-col.sql',
+      ] as unknown as ReturnType<typeof readdirSync>);
+      vi.mocked(BetterSqlite3).mockImplementation(
+        () =>
+          ({
+            close: vi.fn(),
+            prepare: vi.fn().mockReturnValue({
+              all: vi.fn().mockReturnValue([{ name: '001-initial.sql' }]),
+            }),
+          }) as unknown as ReturnType<typeof BetterSqlite3>,
+      );
 
       const result = schemaStatusCheck.run();
       expect(result.status).toBe('warn');
@@ -330,7 +347,9 @@ describe('doctor checks', () => {
 
     it('fails when statSync throws', () => {
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(statSync).mockImplementation(() => { throw new Error('EACCES'); });
+      vi.mocked(statSync).mockImplementation(() => {
+        throw new Error('EACCES');
+      });
       const result = vaultKeyCheck.run();
       expect(result.status).toBe('fail');
       expect(result.message).toContain('cannot stat');
@@ -355,7 +374,13 @@ describe('doctor checks', () => {
     it('passes when all manifests are valid', () => {
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       const result = extensionManifestsCheck.run();
       expect(result.status).toBe('pass');
@@ -365,7 +390,13 @@ describe('doctor checks', () => {
     it('fails when a manifest is invalid', () => {
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'bad-ext', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'bad-ext',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(loadManifest).mockImplementation(() => {
         throw new Error('Invalid manifest');
@@ -378,7 +409,9 @@ describe('doctor checks', () => {
     it('fails when database open throws', async () => {
       vi.mocked(existsSync).mockReturnValue(true);
       const BetterSqlite3 = (await import('better-sqlite3')).default;
-      vi.mocked(BetterSqlite3).mockImplementation(() => { throw new Error('DB error'); });
+      vi.mocked(BetterSqlite3).mockImplementation(() => {
+        throw new Error('DB error');
+      });
       const result = extensionManifestsCheck.run();
       expect(result.status).toBe('fail');
       expect(result.message).toContain('cannot check');
@@ -443,7 +476,9 @@ describe('doctor checks', () => {
 
     it('skips extension when directory does not exist', () => {
       vi.mocked(existsSync).mockReturnValue(false);
-      const check = createEngineConstraintsCheck('/tmp/project', () => ({ 'missing-ext': '1.0.0' }));
+      const check = createEngineConstraintsCheck('/tmp/project', () => ({
+        'missing-ext': '1.0.0',
+      }));
       const result = check.run();
       expect(result.status).toBe('pass');
     });

@@ -14,12 +14,7 @@ describe('ExtensionError', () => {
 
   it('should store original error', () => {
     const original = new Error('original cause');
-    const err = new ExtensionError(
-      'my-ext',
-      ErrorCode.MCP_SPAWN_FAILED,
-      'spawn failed',
-      original,
-    );
+    const err = new ExtensionError('my-ext', ErrorCode.MCP_SPAWN_FAILED, 'spawn failed', original);
     expect(err.originalError).toBe(original);
   });
 
@@ -46,21 +41,13 @@ describe('wrapError', () => {
   });
 
   it('should return the same ExtensionError if already correct type', () => {
-    const existing = new ExtensionError(
-      'my-ext',
-      ErrorCode.VAULT_DECRYPT_FAILED,
-      'decrypt fail',
-    );
+    const existing = new ExtensionError('my-ext', ErrorCode.VAULT_DECRYPT_FAILED, 'decrypt fail');
     const wrapped = wrapError(existing, 'my-ext', ErrorCode.VAULT_DECRYPT_FAILED);
     expect(wrapped).toBe(existing);
   });
 
   it('should re-wrap ExtensionError if code differs', () => {
-    const existing = new ExtensionError(
-      'my-ext',
-      ErrorCode.MCP_TIMEOUT,
-      'timeout',
-    );
+    const existing = new ExtensionError('my-ext', ErrorCode.MCP_TIMEOUT, 'timeout');
     const wrapped = wrapError(existing, 'my-ext', ErrorCode.MCP_DISCONNECTED);
     expect(wrapped).not.toBe(existing);
     expect(wrapped.code).toBe(ErrorCode.MCP_DISCONNECTED);

@@ -7,7 +7,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onOpenChange={vi.fn()} title="Test Modal">
         <p>Modal content</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByText('Test Modal')).toBeInTheDocument();
     expect(screen.getByText('Modal content')).toBeInTheDocument();
@@ -15,14 +15,9 @@ describe('Modal', () => {
 
   it('renders optional description', () => {
     render(
-      <Modal
-        open={true}
-        onOpenChange={vi.fn()}
-        title="Title"
-        description="A modal description"
-      >
+      <Modal open={true} onOpenChange={vi.fn()} title="Title" description="A modal description">
         <p>Content</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByText('A modal description')).toBeInTheDocument();
   });
@@ -31,7 +26,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onOpenChange={vi.fn()} title="Title">
         <p>Content</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.queryByText('A modal description')).not.toBeInTheDocument();
   });
@@ -40,7 +35,7 @@ describe('Modal', () => {
     render(
       <Modal open={false} onOpenChange={vi.fn()} title="Hidden">
         <p>Hidden content</p>
-      </Modal>
+      </Modal>,
     );
     expect(screen.queryByText('Hidden content')).not.toBeInTheDocument();
   });

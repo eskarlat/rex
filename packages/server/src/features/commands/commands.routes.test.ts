@@ -24,6 +24,12 @@ vi.mock('@renre-kit/cli/lib', () => ({
     setMode: vi.fn(),
   })),
   getLogger: vi.fn().mockReturnValue({ info: vi.fn(), error: vi.fn() }),
+  createExtensionLogger: vi.fn().mockReturnValue({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
 }));
 
 const { default: commandsRoutes } = await import('./commands.routes.js');
@@ -64,7 +70,10 @@ describe('commands routes', () => {
         payload: { command: 'ext:hello', args: { name: 'world' } },
       });
       expect(response.statusCode).toBe(200);
-      expect(mockLoadCommandHandler).toHaveBeenCalledWith('/mock/extensions/ext@1.0.0', 'commands/hello.js');
+      expect(mockLoadCommandHandler).toHaveBeenCalledWith(
+        '/mock/extensions/ext@1.0.0',
+        'commands/hello.js',
+      );
       expect(mockExecuteCommand).toHaveBeenCalledWith(
         handler,
         expect.objectContaining({ args: { name: 'world' } }),
@@ -155,7 +164,9 @@ describe('commands routes', () => {
     it('returns 500 when manifest load fails', async () => {
       mockGetActivated.mockReturnValue({ ext: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/mock/extensions/ext@1.0.0');
-      mockLoadManifest.mockImplementation(() => { throw new Error('no manifest'); });
+      mockLoadManifest.mockImplementation(() => {
+        throw new Error('no manifest');
+      });
 
       const response = await app.inject({
         method: 'POST',

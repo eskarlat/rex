@@ -9,11 +9,7 @@ export function ExtensionPanelPage() {
   const navigate = useNavigate();
 
   if (!name) {
-    return (
-      <div className="text-muted-foreground">
-        No extension specified.
-      </div>
-    );
+    return <div className="text-muted-foreground">No extension specified.</div>;
   }
 
   const extension = marketplace?.active.find((ext) => ext.name === name);
@@ -39,7 +35,7 @@ export function ExtensionPanelPage() {
                 'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
                 activePanelId === panel.id
                   ? 'border-primary text-foreground'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50',
               )}
             >
               {panel.title}

@@ -39,7 +39,7 @@ export function RegistriesPage() {
           setUrl('');
           setPriority('0');
         },
-      }
+      },
     );
   }
 
@@ -101,12 +101,9 @@ export function RegistriesPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {(!registries || registries.length === 0) ? (
+          {!registries || registries.length === 0 ? (
             <TableRow>
-              <TableCell
-                colSpan={5}
-                className="text-center text-muted-foreground"
-              >
+              <TableCell colSpan={5} className="text-center text-muted-foreground">
                 No registries configured.
               </TableCell>
             </TableRow>
@@ -114,14 +111,10 @@ export function RegistriesPage() {
             registries.map((reg) => (
               <TableRow key={reg.name}>
                 <TableCell className="font-medium">{reg.name}</TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  {reg.url}
-                </TableCell>
+                <TableCell className="max-w-[200px] truncate">{reg.url}</TableCell>
                 <TableCell>{reg.priority}</TableCell>
                 <TableCell>
-                  {reg.last_synced
-                    ? new Date(reg.last_synced).toLocaleString()
-                    : 'Never'}
+                  {reg.last_synced ? new Date(reg.last_synced).toLocaleString() : 'Never'}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">

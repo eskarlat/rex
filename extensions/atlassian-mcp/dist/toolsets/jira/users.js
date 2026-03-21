@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createUsersToolset(client) {
     return {
         name: 'jira_users',
@@ -19,7 +19,7 @@ export function createUsersToolset(client) {
                 try {
                     const accountId = args['accountId'];
                     const data = accountId ? await client.getUser(accountId) : await client.getMyself();
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

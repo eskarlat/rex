@@ -13,9 +13,6 @@ export default fp(
   (fastify: FastifyInstance, opts: LanAuthOptions, done: () => void) => {
     const pin = opts.pin ?? generatePin();
 
-    // eslint-disable-next-line no-console
-    console.log(`[LAN Auth] Dashboard PIN: ${pin}`);
-
     fastify.post('/api/auth/pin', (request: FastifyRequest, reply: FastifyReply) => {
       const body = request.body as Record<string, unknown> | null;
       const submitted = body?.pin;

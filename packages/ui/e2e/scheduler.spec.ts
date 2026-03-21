@@ -33,9 +33,7 @@ test.describe('Scheduler Page', () => {
   });
 
   test('shows Create Task button', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: 'Create Task' }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create Task' })).toBeVisible();
   });
 
   test('opens Create Task dialog', async ({ page }) => {

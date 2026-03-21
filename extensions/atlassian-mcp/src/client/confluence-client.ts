@@ -9,7 +9,7 @@ export class ConfluenceClient extends AtlassianBaseClient {
   // --- Pages ---
   async search(cql: string, limit = 25, start = 0): Promise<unknown> {
     const params = new URLSearchParams({ cql, limit: String(limit), start: String(start) });
-    return this.request('GET', `/wiki/rest/api/content/search?${params.toString()}`);
+    return this.request('GET', `/wiki/rest/api/search?${params.toString()}`);
   }
 
   async getPage(pageId: string, expand = 'body.storage,version'): Promise<unknown> {
@@ -42,7 +42,11 @@ export class ConfluenceClient extends AtlassianBaseClient {
     return this.request('DELETE', `/wiki/rest/api/content/${pageId}`);
   }
 
-  async movePage(pageId: string, targetAncestorId: string, currentVersion: number): Promise<unknown> {
+  async movePage(
+    pageId: string,
+    targetAncestorId: string,
+    currentVersion: number,
+  ): Promise<unknown> {
     return this.request('PUT', `/wiki/rest/api/content/${pageId}`, {
       type: 'page',
       ancestors: [{ id: targetAncestorId }],
@@ -100,18 +104,22 @@ export class ConfluenceClient extends AtlassianBaseClient {
   }
 
   // --- Analytics ---
-  async getPageViews(pageId: string): Promise<unknown> {
-    return this.request('GET', `/wiki/rest/api/content/${pageId}/history`);
+  async getPageViews(pageId: string, fromDate?: string): Promise<unknown> {
+    const params = fromDate ? `?fromDate=${encodeURIComponent(fromDate)}` : '';
+    return this.request('GET', `/wiki/rest/api/analytics/content/${pageId}/views${params}`);
+  }
+
+  async getPageViewers(pageId: string, fromDate?: string): Promise<unknown> {
+    const params = fromDate ? `?fromDate=${encodeURIComponent(fromDate)}` : '';
+    return this.request('GET', `/wiki/rest/api/analytics/content/${pageId}/viewers${params}`);
   }
 
   // --- Attachments ---
   async uploadAttachment(pageId: string, filename: string, content: string): Promise<unknown> {
-    return this.request(
-      'POST',
-      `/wiki/rest/api/content/${pageId}/child/attachment`,
-      { filename, content },
-      { 'X-Atlassian-Token': 'nocheck' },
-    );
+    const formData = new FormData();
+    const blob = new Blob([content]);
+    formData.append('file', blob, filename);
+    return this.requestFormData(`/wiki/rest/api/content/${pageId}/child/attachment`, formData);
   }
 
   async getAttachments(pageId: string, limit = 25, start = 0): Promise<unknown> {
@@ -122,10 +130,17 @@ export class ConfluenceClient extends AtlassianBaseClient {
   }
 
   async downloadAttachment(pageId: string, filename: string): Promise<Response> {
-    return this.requestRaw(
-      'GET',
-      `/wiki/download/attachments/${pageId}/${encodeURIComponent(filename)}`,
-    );
+    const data = (await this.getAttachments(pageId, 100)) as Record<string, unknown>;
+    const results = (data['results'] ?? []) as Array<Record<string, unknown>>;
+    const attachment = results.find((a) => a['title'] === filename);
+    if (!attachment) {
+      throw new Error(`Attachment "${filename}" not found on page ${pageId}`);
+    }
+    return this.requestRaw('GET', `/wiki/rest/api/content/${attachment['id'] as string}/download`);
+  }
+
+  async downloadAttachmentById(attachmentId: string): Promise<Response> {
+    return this.requestRaw('GET', `/wiki/rest/api/content/${attachmentId}/download`);
   }
 
   async deleteAttachment(attachmentId: string): Promise<unknown> {

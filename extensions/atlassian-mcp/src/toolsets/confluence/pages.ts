@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createPagesToolset(client: ConfluenceClient): Toolset {
   return {
@@ -138,7 +138,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
             (args['limit'] as number | undefined) ?? 25,
             (args['start'] as number | undefined) ?? 0,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -149,7 +149,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
             args['pageId'] as string,
             (args['expand'] as string | undefined) ?? 'body.storage,version',
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -161,7 +161,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
             (args['limit'] as number | undefined) ?? 25,
             (args['start'] as number | undefined) ?? 0,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -169,7 +169,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
       confluence_get_page_history: async (args) => {
         try {
           const data = await client.getPageHistory(args['pageId'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -191,7 +191,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
             page['ancestors'] = [{ id: args['parentId'] as string }];
           }
           const data = await client.createPage(page);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -209,7 +209,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
             },
             version: { number: (args['version'] as number) + 1 },
           });
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -217,7 +217,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
       confluence_delete_page: async (args) => {
         try {
           await client.deletePage(args['pageId'] as string);
-          return textResult({ success: true, pageId: args['pageId'] });
+          return markdownResult({ success: true, pageId: args['pageId'] });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -229,7 +229,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
             args['targetAncestorId'] as string,
             args['currentVersion'] as number,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -249,7 +249,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
           const toBody = (toPage['body'] as Record<string, unknown>)?.['storage'] as
             | Record<string, unknown>
             | undefined;
-          return textResult({
+          return markdownResult({
             pageId,
             fromVersion,
             toVersion,

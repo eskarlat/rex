@@ -42,7 +42,9 @@ export default function HelloWorldPanel({ sdk, extensionName }) {
     const pollTask = useCallback(() => {
         if (!sdk || !cronTask)
             return;
-        sdk.scheduler.list().then((tasks) => {
+        sdk.scheduler
+            .list()
+            .then((tasks) => {
             const current = tasks.find((t) => t.id === cronTask.id);
             if (current && current.last_run_at !== cronTask.last_run_at) {
                 setCronTask(current);
@@ -51,7 +53,8 @@ export default function HelloWorldPanel({ sdk, extensionName }) {
                     description: `Task ran at ${current.last_run_at ?? 'unknown'}`,
                 });
             }
-        }).catch(() => { });
+        })
+            .catch(() => { });
     }, [sdk, cronTask]);
     useEffect(() => {
         if (!cronTask)
@@ -80,7 +83,11 @@ export default function HelloWorldPanel({ sdk, extensionName }) {
             }
         }
         catch {
-            sdk.ui.toast({ title: 'Cron error', description: 'Failed to toggle cron task', variant: 'destructive' });
+            sdk.ui.toast({
+                title: 'Cron error',
+                description: 'Failed to toggle cron task',
+                variant: 'destructive',
+            });
         }
         finally {
             setCronLoading(false);
@@ -97,10 +104,18 @@ export default function HelloWorldPanel({ sdk, extensionName }) {
             setGreeting('Failed to execute info command.');
         }
     }
-    return (_jsxs("div", { className: "flex flex-col gap-4", children: [_jsx(Panel, { title: "Greet", description: "Send a greeting with an optional name. Uses companyName from extension settings.", children: _jsxs("div", { className: "flex flex-col gap-3", children: [_jsx(FormField, { label: "Name", children: _jsxs("div", { className: "flex gap-2", children: [_jsx("input", { type: "text", placeholder: "Enter a name...", value: name, onChange: (e) => setName(e.target.value), onKeyDown: (e) => { if (e.key === 'Enter')
-                                            handleGreet().catch(() => { }); }, className: "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" }), _jsx("button", { onClick: () => { handleGreet().catch(() => { }); }, disabled: loading, className: "inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none", children: loading ? 'Running...' : 'Greet' })] }) }), greeting && _jsx(CodeBlock, { code: greeting })] }) }), _jsx(Panel, { title: "Toast & Cron Demo", description: "Demonstrates SDK toast notifications and interval-based cron execution.", children: _jsxs("div", { className: "flex gap-2", children: [_jsx("button", { onClick: handleToast, className: "inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90", children: "Show Toast" }), _jsx("button", { onClick: () => { handleCronToggle().catch(() => { }); }, disabled: cronLoading, className: cronTask
+    return (_jsxs("div", { className: "flex flex-col gap-4", children: [_jsx(Panel, { title: "Greet", description: "Send a greeting with an optional name. Uses companyName from extension settings.", children: _jsxs("div", { className: "flex flex-col gap-3", children: [_jsx(FormField, { label: "Name", children: _jsxs("div", { className: "flex gap-2", children: [_jsx("input", { type: "text", placeholder: "Enter a name...", value: name, onChange: (e) => setName(e.target.value), onKeyDown: (e) => {
+                                            if (e.key === 'Enter')
+                                                handleGreet().catch(() => { });
+                                        }, className: "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" }), _jsx("button", { onClick: () => {
+                                            handleGreet().catch(() => { });
+                                        }, disabled: loading, className: "inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none", children: loading ? 'Running...' : 'Greet' })] }) }), greeting && _jsx(CodeBlock, { code: greeting })] }) }), _jsx(Panel, { title: "Toast & Cron Demo", description: "Demonstrates SDK toast notifications and interval-based cron execution.", children: _jsxs("div", { className: "flex gap-2", children: [_jsx("button", { onClick: handleToast, className: "inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90", children: "Show Toast" }), _jsx("button", { onClick: () => {
+                                handleCronToggle().catch(() => { });
+                            }, disabled: cronLoading, className: cronTask
                                 ? 'inline-flex h-9 items-center justify-center rounded-md border border-destructive bg-destructive/10 px-4 text-sm font-medium text-destructive shadow-sm hover:bg-destructive/20 disabled:opacity-50'
-                                : 'inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50', children: cronLoading ? '...' : cronTask ? 'Stop Cron' : 'Start Cron (every 3s)' })] }) }), _jsx(Panel, { title: "Extension Info", description: "View extension version and metadata.", children: _jsx("button", { onClick: () => { handleInfo().catch(() => { }); }, className: "inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground", children: "Show Info" }) }), _jsx(Panel, { title: "Commands", description: "Available CLI commands for this extension.", children: _jsx(DataTable, { columns: [
+                                : 'inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50', children: cronLoading ? '...' : cronTask ? 'Stop Cron' : 'Start Cron (every 3s)' })] }) }), _jsx(Panel, { title: "Extension Info", description: "View extension version and metadata.", children: _jsx("button", { onClick: () => {
+                        handleInfo().catch(() => { });
+                    }, className: "inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground", children: "Show Info" }) }), _jsx(Panel, { title: "Commands", description: "Available CLI commands for this extension.", children: _jsx(DataTable, { columns: [
                         { key: 'command', label: 'Command' },
                         { key: 'description', label: 'Description' },
                     ], data: [

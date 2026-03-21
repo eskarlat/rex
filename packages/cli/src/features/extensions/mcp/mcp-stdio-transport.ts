@@ -1,14 +1,12 @@
 import { spawn, type ChildProcess } from 'node:child_process';
-import type { JsonRpcRequest, JsonRpcResponse } from '../types/mcp.types.js';
+import type { JsonRpcRequest, JsonRpcResponse, JsonRpcNotification } from '../types/mcp.types.js';
 import { parseResponse } from './json-rpc.js';
-import {
-  ExtensionError,
-  ErrorCode,
-} from '../../../core/errors/extension-error.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 
 export interface McpStdioProcess {
   process: ChildProcess;
   buffer: string;
+  stderrBuffer: string;
 }
 
 export function spawnProcess(
@@ -23,10 +21,15 @@ export function spawnProcess(
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
-  return {
+  const proc: McpStdioProcess = {
     process: child,
     buffer: '',
+    stderrBuffer: '',
   };
+  child.stderr?.on('data', (chunk: Buffer) => {
+    proc.stderrBuffer += chunk.toString();
+  });
+  return proc;
 }
 
 export function sendRequest(
@@ -76,11 +79,13 @@ export function sendRequest(
     const onError = (err: Error): void => {
       if (!settled) {
         cleanup();
+        const stderr = proc.stderrBuffer.trim();
+        const detail = stderr ? `\n${stderr}` : '';
         reject(
           new ExtensionError(
             '',
             ErrorCode.MCP_PROCESS_CRASHED,
-            `MCP process error: ${err.message}`,
+            `MCP process error: ${err.message}${detail}`,
             err,
           ),
         );
@@ -90,11 +95,13 @@ export function sendRequest(
     const onClose = (code: number | null): void => {
       if (!settled) {
         cleanup();
+        const stderr = proc.stderrBuffer.trim();
+        const detail = stderr ? `\n${stderr}` : '';
         reject(
           new ExtensionError(
             '',
             ErrorCode.MCP_PROCESS_CRASHED,
-            `MCP process exited unexpectedly with code ${code}`,
+            `MCP process exited unexpectedly with code ${code}${detail}`,
           ),
         );
       }
@@ -115,6 +122,14 @@ export function sendRequest(
     const payload = JSON.stringify(request) + '\n';
     proc.process.stdin?.write(payload);
   });
+}
+
+export function sendNotification(
+  proc: McpStdioProcess,
+  notification: JsonRpcNotification,
+): void {
+  const payload = JSON.stringify(notification) + '\n';
+  proc.process.stdin?.write(payload);
 }
 
 const KILL_TIMEOUT_MS = 5000;

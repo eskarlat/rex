@@ -26,13 +26,13 @@ pnpm test
 
 ## Monorepo Structure
 
-| Package | Path | Purpose |
-|---------|------|---------|
-| `@renre-kit/cli` | `packages/cli/` | Core CLI: commands, extensions, registry, database |
-| `@renre-kit/server` | `packages/server/` | Dashboard REST API (Fastify) |
-| `@renre-kit/ui` | `packages/ui/` | Web dashboard SPA (React 19, Vite) |
-| `@renre-kit/extension-sdk` | `packages/extension-sdk/` | SDK for extension authors |
-| `create-renre-extension` | `packages/create-renre-extension/` | Extension scaffolding tool |
+| Package                    | Path                               | Purpose                                            |
+| -------------------------- | ---------------------------------- | -------------------------------------------------- |
+| `@renre-kit/cli`           | `packages/cli/`                    | Core CLI: commands, extensions, registry, database |
+| `@renre-kit/server`        | `packages/server/`                 | Dashboard REST API (Fastify)                       |
+| `@renre-kit/ui`            | `packages/ui/`                     | Web dashboard SPA (React 19, Vite)                 |
+| `@renre-kit/extension-sdk` | `packages/extension-sdk/`          | SDK for extension authors                          |
+| `create-renre-extension`   | `packages/create-renre-extension/` | Extension scaffolding tool                         |
 
 Build order: `extension-sdk` first, then `cli` + `ui` in parallel, then `server`.
 
@@ -94,6 +94,7 @@ npx create-renre-extension my-extension
 ```
 
 Or see the reference extension in `extensions/` for an example:
+
 - `hello-world` — Standard in-process extension
 
 ### Extension Registry
@@ -115,6 +116,7 @@ The local registry at `registry/extensions.json` lists the reference extensions.
 ## Reporting Issues
 
 Open an issue at https://github.com/example-org/renre-kit/issues with:
+
 - Steps to reproduce
 - Expected vs actual behavior
 - Node.js and OS version

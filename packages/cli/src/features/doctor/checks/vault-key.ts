@@ -19,12 +19,20 @@ export const vaultKeyCheck: DiagnosticCheck = {
     try {
       // Windows does not support Unix-style file permissions; skip permission check
       if (process.platform === 'win32') {
-        return { name: 'Vault key', status: 'pass', message: 'exists (permission check skipped on Windows)' };
+        return {
+          name: 'Vault key',
+          status: 'pass',
+          message: 'exists (permission check skipped on Windows)',
+        };
       }
       const stat = statSync(KEY_FILE);
       const mode = stat.mode & 0o777;
       if (mode === 0o600) {
-        return { name: 'Vault key', status: 'pass', message: 'exists with correct permissions (0o600)' };
+        return {
+          name: 'Vault key',
+          status: 'pass',
+          message: 'exists with correct permissions (0o600)',
+        };
       }
       return {
         name: 'Vault key',

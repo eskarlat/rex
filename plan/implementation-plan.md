@@ -9,6 +9,7 @@ The goal is to implement the entire system across 4 phases, matching the archite
 ### Development Methodology: TDD (Test-Driven Development)
 
 Every module is implemented test-first:
+
 1. Write failing tests that define the expected behavior
 2. Write minimal code to make tests pass
 3. Refactor while keeping tests green
@@ -237,29 +238,29 @@ The `capabilities` command scans `.agents/skills/*/SKILL.md` and concatenates th
 
 Each task: write tests first, then implementation.
 
-| Task | File(s) | Depends On | Stream |
-|------|---------|-----------|--------|
-| 1.1 | `core/paths/` + tests | — | A |
-| 1.2 | `core/types/*`, `features/extensions/types/*` | — | A |
-| 1.3 | `shared/fs-helpers.ts` + tests | — | A |
-| 1.4 | `core/logger/` + tests | 1.1 | A |
-| 1.5 | `core/database/` + `migrations/` + tests | 1.1, 1.2 | A |
-| 1.6 | `core/event-bus/` + tests | 1.2, 1.4 | A |
-| 1.7 | `core/errors/` + tests | 1.2 | A |
-| 1.8 | `features/extensions/manifest/` + tests | 1.2, 1.3 | B |
-| 1.9 | `features/extensions/runtime/` + tests | 1.2 | B |
-| 1.10 | `features/extensions/mcp/json-rpc.ts` + tests | 1.2 | B |
-| 1.11 | `features/extensions/mcp/mcp-stdio-transport.ts` + tests | 1.10 | B |
-| 1.12 | `features/extensions/mcp/mcp-sse-transport.ts` + tests | 1.10 | B |
-| 1.13 | `features/extensions/mcp/connection-manager.ts` + tests | 1.11, 1.12, 1.4 | B |
-| 1.14 | `shared/interpolation.ts` + tests | — | B |
-| 1.15 | `features/skills/capabilities-aggregator.ts` + tests | 1.1, 1.3 | C |
-| 1.16 | `features/registry/registry-cache.ts` + tests | 1.1, 1.3 | C |
-| 1.17 | `features/registry/registry-manager.ts` + tests | 1.1, 1.3, 1.4, 1.16 | C |
-| 1.18 | `core/project/project-manager.ts` + tests | 1.5, 1.6, 1.3, 1.1 | A |
-| 1.19 | `features/extensions/manager/extension-manager.ts` + tests | 1.5, 1.6, 1.3, 1.8 | A+B |
-| 1.20 | `core/command-registry/` + tests | 1.2, 1.8, 1.4 | A |
-| 1.21 | All `commands/*.command.ts` + tests, `cli.ts`, `index.ts` | ALL above | Integration |
+| Task | File(s)                                                    | Depends On          | Stream      |
+| ---- | ---------------------------------------------------------- | ------------------- | ----------- |
+| 1.1  | `core/paths/` + tests                                      | —                   | A           |
+| 1.2  | `core/types/*`, `features/extensions/types/*`              | —                   | A           |
+| 1.3  | `shared/fs-helpers.ts` + tests                             | —                   | A           |
+| 1.4  | `core/logger/` + tests                                     | 1.1                 | A           |
+| 1.5  | `core/database/` + `migrations/` + tests                   | 1.1, 1.2            | A           |
+| 1.6  | `core/event-bus/` + tests                                  | 1.2, 1.4            | A           |
+| 1.7  | `core/errors/` + tests                                     | 1.2                 | A           |
+| 1.8  | `features/extensions/manifest/` + tests                    | 1.2, 1.3            | B           |
+| 1.9  | `features/extensions/runtime/` + tests                     | 1.2                 | B           |
+| 1.10 | `features/extensions/mcp/json-rpc.ts` + tests              | 1.2                 | B           |
+| 1.11 | `features/extensions/mcp/mcp-stdio-transport.ts` + tests   | 1.10                | B           |
+| 1.12 | `features/extensions/mcp/mcp-sse-transport.ts` + tests     | 1.10                | B           |
+| 1.13 | `features/extensions/mcp/connection-manager.ts` + tests    | 1.11, 1.12, 1.4     | B           |
+| 1.14 | `shared/interpolation.ts` + tests                          | —                   | B           |
+| 1.15 | `features/skills/capabilities-aggregator.ts` + tests       | 1.1, 1.3            | C           |
+| 1.16 | `features/registry/registry-cache.ts` + tests              | 1.1, 1.3            | C           |
+| 1.17 | `features/registry/registry-manager.ts` + tests            | 1.1, 1.3, 1.4, 1.16 | C           |
+| 1.18 | `core/project/project-manager.ts` + tests                  | 1.5, 1.6, 1.3, 1.1  | A           |
+| 1.19 | `features/extensions/manager/extension-manager.ts` + tests | 1.5, 1.6, 1.3, 1.8  | A+B         |
+| 1.20 | `core/command-registry/` + tests                           | 1.2, 1.8, 1.4       | A           |
+| 1.21 | All `commands/*.command.ts` + tests, `cli.ts`, `index.ts`  | ALL above           | Integration |
 
 ### Database Schema (001-initial-schema.sql)
 
@@ -382,18 +383,18 @@ src/
 
 ### Task Breakdown (Phase 2) — TDD Order
 
-| Task | File(s) | Depends On | Stream |
-|------|---------|-----------|--------|
-| 2.1 | `vault/crypto/key-derivation.ts` + tests | Phase 1 | A |
-| 2.2 | `vault/crypto/vault-crypto.ts` + tests | 2.1 | A |
-| 2.3 | `vault/manager/vault-manager.ts` + tests | 2.2 | A |
-| 2.4 | `vault/commands/*` + tests | 2.3 | A |
-| 2.5 | `config/resolver/config-resolver.ts` + tests | 2.3, Phase 1 | B |
-| 2.6 | `config/matcher/vault-matcher.ts` + tests | 2.3 | B |
-| 2.7 | `config/manager/config-manager.ts` + tests | 2.5 | B |
-| 2.8 | `config/commands/ext-config.command.ts` + tests | 2.6, 2.7 | B |
-| 2.9 | `extensions/commands/ext-outdated,update,cleanup` + tests | Phase 1 | C |
-| 2.10 | Update `connection-manager.ts` for config interpolation + tests | 2.5 | C |
+| Task | File(s)                                                         | Depends On   | Stream |
+| ---- | --------------------------------------------------------------- | ------------ | ------ |
+| 2.1  | `vault/crypto/key-derivation.ts` + tests                        | Phase 1      | A      |
+| 2.2  | `vault/crypto/vault-crypto.ts` + tests                          | 2.1          | A      |
+| 2.3  | `vault/manager/vault-manager.ts` + tests                        | 2.2          | A      |
+| 2.4  | `vault/commands/*` + tests                                      | 2.3          | A      |
+| 2.5  | `config/resolver/config-resolver.ts` + tests                    | 2.3, Phase 1 | B      |
+| 2.6  | `config/matcher/vault-matcher.ts` + tests                       | 2.3          | B      |
+| 2.7  | `config/manager/config-manager.ts` + tests                      | 2.5          | B      |
+| 2.8  | `config/commands/ext-config.command.ts` + tests                 | 2.6, 2.7     | B      |
+| 2.9  | `extensions/commands/ext-outdated,update,cleanup` + tests       | Phase 1      | C      |
+| 2.10 | Update `connection-manager.ts` for config interpolation + tests | 2.5          | C      |
 
 ### Team Assignment (Phase 2)
 
@@ -416,7 +417,7 @@ src/
 ### Package: `packages/server/` — Domain Structure
 
 **Dependencies:** fastify, @fastify/cors, @fastify/static, @fastify/websocket, @fastify/cookie, cron-parser
-**Internal dep:** @renre-kit/cli (workspace:*)
+**Internal dep:** @renre-kit/cli (workspace:\*)
 
 ```
 packages/server/
@@ -592,36 +593,36 @@ packages/ui/
 
 ### REST API (32 endpoints)
 
-| Method | Endpoint | Handler |
-|--------|----------|---------|
-| GET | /api/projects | projectManager.list() |
-| PUT | /api/projects/active | set active project |
-| GET | /api/project | projectManager.get(active) |
-| GET | /api/marketplace | combined: active + installed + available |
-| POST | /api/extensions/install | registryManager.install + extensionManager.install |
-| POST | /api/extensions/activate | extensionManager.activate |
-| POST | /api/extensions/deactivate | extensionManager.deactivate |
-| DELETE | /api/extensions/:name | extensionManager.remove |
-| POST | /api/run | commandRegistry.resolve + execute |
-| WS | /api/logs | real-time log stream |
-| GET | /api/settings | configManager.getGlobal |
-| PUT | /api/settings | configManager.setGlobal |
-| GET | /api/settings/extensions/:name | configResolver.resolve |
-| PUT | /api/settings/extensions/:name | configManager.setExtensionConfig |
-| GET | /api/vault | vaultManager.list (masked) |
-| POST | /api/vault | vaultManager.set |
-| PUT | /api/vault/:key | vaultManager.set (update) |
-| DELETE | /api/vault/:key | vaultManager.remove |
-| GET | /api/registries | registryManager.list |
-| POST | /api/registries | add to global config |
-| DELETE | /api/registries/:name | remove from config |
-| POST | /api/registries/:name/sync | registryManager.sync |
-| GET | /api/scheduler | query scheduled_tasks |
-| POST | /api/scheduler | insert task |
-| PUT | /api/scheduler/:id | update task |
-| DELETE | /api/scheduler/:id | delete task |
-| POST | /api/scheduler/:id/trigger | immediate execution |
-| GET | /api/scheduler/:id/history | task_history (limit 50) |
+| Method | Endpoint                       | Handler                                            |
+| ------ | ------------------------------ | -------------------------------------------------- |
+| GET    | /api/projects                  | projectManager.list()                              |
+| PUT    | /api/projects/active           | set active project                                 |
+| GET    | /api/project                   | projectManager.get(active)                         |
+| GET    | /api/marketplace               | combined: active + installed + available           |
+| POST   | /api/extensions/install        | registryManager.install + extensionManager.install |
+| POST   | /api/extensions/activate       | extensionManager.activate                          |
+| POST   | /api/extensions/deactivate     | extensionManager.deactivate                        |
+| DELETE | /api/extensions/:name          | extensionManager.remove                            |
+| POST   | /api/run                       | commandRegistry.resolve + execute                  |
+| WS     | /api/logs                      | real-time log stream                               |
+| GET    | /api/settings                  | configManager.getGlobal                            |
+| PUT    | /api/settings                  | configManager.setGlobal                            |
+| GET    | /api/settings/extensions/:name | configResolver.resolve                             |
+| PUT    | /api/settings/extensions/:name | configManager.setExtensionConfig                   |
+| GET    | /api/vault                     | vaultManager.list (masked)                         |
+| POST   | /api/vault                     | vaultManager.set                                   |
+| PUT    | /api/vault/:key                | vaultManager.set (update)                          |
+| DELETE | /api/vault/:key                | vaultManager.remove                                |
+| GET    | /api/registries                | registryManager.list                               |
+| POST   | /api/registries                | add to global config                               |
+| DELETE | /api/registries/:name          | remove from config                                 |
+| POST   | /api/registries/:name/sync     | registryManager.sync                               |
+| GET    | /api/scheduler                 | query scheduled_tasks                              |
+| POST   | /api/scheduler                 | insert task                                        |
+| PUT    | /api/scheduler/:id             | update task                                        |
+| DELETE | /api/scheduler/:id             | delete task                                        |
+| POST   | /api/scheduler/:id/trigger     | immediate execution                                |
+| GET    | /api/scheduler/:id/history     | task_history (limit 50)                            |
 
 ### Team Assignment (Phase 3)
 
@@ -646,7 +647,7 @@ packages/ui/
 
 **Peer deps:** react ^19
 **Dependencies:** clsx, tailwind-merge, class-variance-authority
-**Dev:** @radix-ui/* primitives, typescript, vitest, tsup
+**Dev:** @radix-ui/\* primitives, typescript, vitest, tsup
 **UI Components:** shadcn/ui (Radix + Tailwind) — same system as `packages/ui/`, initialized via `npx shadcn@latest init`
 
 ```
@@ -758,12 +759,12 @@ extensions/hello-world/                       # Reference standard extension
 
 ## Testing Strategy — TDD
 
-| Layer | Tool | Coverage Target | When |
-|-------|------|----------------|------|
-| Unit | Vitest | 86% minimum | Before implementation (TDD) |
-| Integration | Vitest (temp dirs, real SQLite) | Key flows | After unit tests |
-| E2E (Phase 3+) | Playwright | Dashboard flows | After integration |
-| Convention | `*.test.ts` co-located in same folder | All packages | Always |
+| Layer          | Tool                                  | Coverage Target | When                        |
+| -------------- | ------------------------------------- | --------------- | --------------------------- |
+| Unit           | Vitest                                | 86% minimum     | Before implementation (TDD) |
+| Integration    | Vitest (temp dirs, real SQLite)       | Key flows       | After unit tests            |
+| E2E (Phase 3+) | Playwright                            | Dashboard flows | After integration           |
+| Convention     | `*.test.ts` co-located in same folder | All packages    | Always                      |
 
 ### Vitest Config (per package)
 
@@ -804,6 +805,7 @@ export default defineConfig({
    - **If gaps found → implement immediately before proceeding**
 
 2. **Quality Checks (must ALL pass):**
+
    ```bash
    pnpm turbo typecheck          # tsc --noEmit, zero errors, no `any` types
    pnpm turbo lint               # ESLint: complexity<=10, cognitive<=15, zero warnings

@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createProjectsToolset(client) {
     return {
         name: 'jira_projects',
@@ -65,7 +65,7 @@ export function createProjectsToolset(client) {
             jira_get_all_projects: async () => {
                 try {
                     const data = await client.getAllProjects();
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -74,7 +74,7 @@ export function createProjectsToolset(client) {
             jira_get_project_versions: async (args) => {
                 try {
                     const data = await client.getProjectVersions(args['projectKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -83,7 +83,7 @@ export function createProjectsToolset(client) {
             jira_get_project_components: async (args) => {
                 try {
                     const data = await client.getProjectComponents(args['projectKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -100,7 +100,7 @@ export function createProjectsToolset(client) {
                     if (args['releaseDate'])
                         version['releaseDate'] = args['releaseDate'];
                     const data = await client.createVersion(version);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -115,7 +115,7 @@ export function createProjectsToolset(client) {
                         const data = await client.createVersion({ project: projectKey, ...v });
                         results.push(data);
                     }
-                    return textResult(results);
+                    return markdownResult(results);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

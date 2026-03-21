@@ -3,7 +3,11 @@ import path from 'node:path';
 import { ProjectManager } from '../../../core/project/project-manager.js';
 import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getDb } from '../../../core/database/database.js';
-import { listInstalled, activate, getActivated } from '../../extensions/manager/extension-manager.js';
+import {
+  listInstalled,
+  activate,
+  getActivated,
+} from '../../extensions/manager/extension-manager.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
 import { ProjectAlreadyInitializedError } from '../../../core/types/errors.types.js';
 import { deployCoreSkills } from '../../skills/core-skills-deployer.js';
@@ -89,7 +93,12 @@ export async function handleInit(options: InitOptions): Promise<void> {
   for (const extName of selectedExtensions) {
     const ext = installed.find((e) => e.name === extName);
     if (ext) {
-      await activate(ext.name, ext.version, options.projectPath, getExtensionDir(ext.name, ext.version));
+      await activate(
+        ext.name,
+        ext.version,
+        options.projectPath,
+        getExtensionDir(ext.name, ext.version),
+      );
     }
   }
 

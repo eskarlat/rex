@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createAttachmentsToolset(client: JiraClient): Toolset {
   return {
@@ -34,23 +34,24 @@ export function createAttachmentsToolset(client: JiraClient): Toolset {
         try {
           const res = await client.downloadAttachment(args['attachmentId'] as string);
           const text = await res.text();
-          return textResult({ content: text, contentType: res.headers.get('content-type') });
+          return markdownResult({ content: text, contentType: res.headers.get('content-type') });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
       },
       jira_get_issue_images: async (args) => {
         try {
-          const data = (await client.getIssueForAttachments(
-            args['issueKey'] as string,
-          )) as Record<string, unknown>;
+          const data = (await client.getIssueForAttachments(args['issueKey'] as string)) as Record<
+            string,
+            unknown
+          >;
           const fields = data['fields'] as Record<string, unknown> | undefined;
           const attachments = (fields?.['attachment'] ?? []) as Array<Record<string, unknown>>;
           const images = attachments.filter((a) => {
             const mimeType = a['mimeType'] as string | undefined;
             return mimeType?.startsWith('image/');
           });
-          return textResult(images);
+          return markdownResult(images);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

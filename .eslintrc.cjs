@@ -51,6 +51,8 @@ module.exports = {
         '@typescript-eslint/no-unsafe-argument': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
         'sonarjs/sonar-prefer-read-only-props': 'off',
+        'sonarjs/deprecation': 'off',
+        'sonarjs/pseudo-random': 'off',
       },
     },
     {

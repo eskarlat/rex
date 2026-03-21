@@ -9,10 +9,7 @@ const SKILL_FILE = 'SKILL.md';
  * Handles both single-skill layout (SKILL.md at root) and
  * multi-skill layout (subdirectories each containing SKILL.md).
  */
-function collectSkillFiles(
-  extensionDir: string,
-  extensionName: string,
-): string[] {
+function collectSkillFiles(extensionDir: string, extensionName: string): string[] {
   const sections: string[] = [];
 
   // Check for single SKILL.md at the extension directory root

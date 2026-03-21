@@ -96,12 +96,7 @@ export class Logger {
     this.log('error', source, message, data);
   }
 
-  private log(
-    level: LogLevel,
-    source: string,
-    message: string,
-    data?: unknown,
-  ): void {
+  private log(level: LogLevel, source: string, message: string, data?: unknown): void {
     const entry: Record<string, unknown> = { source };
     if (data !== undefined) {
       entry.data = data;
@@ -114,11 +109,7 @@ export class Logger {
     }
   }
 
-  private writeToConsole(
-    level: LogLevel,
-    source: string,
-    message: string,
-  ): void {
+  private writeToConsole(level: LogLevel, source: string, message: string): void {
     const prefix = `[${level.toUpperCase()}] [${source}]`;
     switch (level) {
       case 'error':

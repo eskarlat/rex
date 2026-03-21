@@ -8,9 +8,15 @@ import {
 import { fetchApi } from '@/core/api/client';
 
 /** Position coordinates for a widget on the dashboard grid */
-export interface WidgetPosition { x: number; y: number }
+export interface WidgetPosition {
+  x: number;
+  y: number;
+}
 /** Dimensions for a widget on the dashboard grid */
-export interface WidgetDimensions { w: number; h: number }
+export interface WidgetDimensions {
+  w: number;
+  h: number;
+}
 
 /** UI-side widget placement — mirrors server-side DashboardLayout shape */
 export interface WidgetPlacement {
@@ -21,7 +27,9 @@ export interface WidgetPlacement {
   size: WidgetDimensions;
 }
 
-export interface DashboardLayout { widgets: WidgetPlacement[] }
+export interface DashboardLayout {
+  widgets: WidgetPlacement[];
+}
 
 export function useDashboardLayout(): UseQueryResult<DashboardLayout> {
   return useQuery<DashboardLayout>({
@@ -30,11 +38,7 @@ export function useDashboardLayout(): UseQueryResult<DashboardLayout> {
   });
 }
 
-export function useSaveDashboardLayout(): UseMutationResult<
-  void,
-  Error,
-  DashboardLayout
-> {
+export function useSaveDashboardLayout(): UseMutationResult<void, Error, DashboardLayout> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, DashboardLayout>({
     mutationFn: (layout: DashboardLayout) =>

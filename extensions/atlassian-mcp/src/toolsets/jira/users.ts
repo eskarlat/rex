@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createUsersToolset(client: JiraClient): Toolset {
   return {
@@ -22,7 +22,7 @@ export function createUsersToolset(client: JiraClient): Toolset {
         try {
           const accountId = args['accountId'] as string | undefined;
           const data = accountId ? await client.getUser(accountId) : await client.getMyself();
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

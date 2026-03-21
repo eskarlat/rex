@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import * as clack from '@clack/prompts';
 import { remove, deactivate, getActivated } from '../manager/extension-manager.js';
 import { getDb } from '../../../core/database/database.js';
@@ -52,5 +53,11 @@ export async function handleExtRemove(options: ExtRemoveOptions): Promise<void> 
 
   const db = getDb();
   remove(options.name, options.version, db);
+
+  const extDir = getExtensionDir(options.name, options.version);
+  if (fs.existsSync(extDir)) {
+    fs.rmSync(extDir, { recursive: true, force: true });
+  }
+
   clack.log.success(`Removed ${options.name}@${options.version}.`);
 }

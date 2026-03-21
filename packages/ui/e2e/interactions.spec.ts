@@ -46,12 +46,8 @@ test.describe('Marketplace Interactions', () => {
         },
       }),
     );
-    await newPage.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
-    await newPage.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await newPage.route('**/api/projects', (route) => route.fulfill({ json: [] }));
+    await newPage.route('**/api/project', (route) => route.fulfill({ json: null }));
     await newPage.goto('/marketplace');
     await expect(newPage.getByText('No description available.')).toBeVisible();
     await newPage.close();
@@ -69,9 +65,7 @@ test.describe('Marketplace Interactions', () => {
   });
 
   test('marketplace description is visible', async ({ page }) => {
-    await expect(
-      page.getByText('Browse, install, and manage extensions.'),
-    ).toBeVisible();
+    await expect(page.getByText('Browse, install, and manage extensions.')).toBeVisible();
   });
 });
 
@@ -82,9 +76,7 @@ test.describe('Vault Interactions', () => {
   });
 
   test('vault description is visible', async ({ page }) => {
-    await expect(
-      page.getByText('Manage encrypted secrets and keys.'),
-    ).toBeVisible();
+    await expect(page.getByText('Manage encrypted secrets and keys.')).toBeVisible();
   });
 
   test('Add Entry save button is disabled when fields empty', async ({ page }) => {
@@ -213,9 +205,7 @@ test.describe('Scheduler Interactions', () => {
 
   test('history modal description text', async ({ page }) => {
     await page.getByRole('button', { name: 'History' }).first().click();
-    await expect(
-      page.getByText('Execution history for this scheduled task.'),
-    ).toBeVisible();
+    await expect(page.getByText('Execution history for this scheduled task.')).toBeVisible();
   });
 
   test('history modal can be closed', async ({ page }) => {
@@ -342,9 +332,7 @@ test.describe('Registries Interactions', () => {
   });
 
   test('registries description is visible', async ({ page }) => {
-    await expect(
-      page.getByText('Manage extension registries.'),
-    ).toBeVisible();
+    await expect(page.getByText('Manage extension registries.')).toBeVisible();
   });
 
   test('registries table shows column headers', async ({ page }) => {
@@ -374,9 +362,9 @@ test.describe('Registries Interactions', () => {
     await page.getByLabel('URL').fill('https://test.com');
     await page.getByRole('button', { name: 'Add' }).click();
 
-    await expect(
-      page.getByText('Add a new extension registry source.'),
-    ).not.toBeVisible({ timeout: 3000 });
+    await expect(page.getByText('Add a new extension registry source.')).not.toBeVisible({
+      timeout: 3000,
+    });
   });
 
   test('Add Registry dialog can be closed with Escape', async ({ page }) => {

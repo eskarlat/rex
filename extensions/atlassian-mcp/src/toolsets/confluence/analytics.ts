@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createAnalyticsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -22,7 +22,7 @@ export function createAnalyticsToolset(client: ConfluenceClient): Toolset {
       confluence_get_page_views: async (args) => {
         try {
           const data = await client.getPageViews(args['pageId'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

@@ -10,11 +10,5 @@ export function DynamicPanel({ extensionName, panelId }: DynamicPanelProps) {
     ? `/api/extensions/${extensionName}/panels/${panelId}.js`
     : `/api/extensions/${extensionName}/panel.js`;
 
-  return (
-    <DynamicUiAsset
-      extensionName={extensionName}
-      url={panelUrl}
-      label="panel"
-    />
-  );
+  return <DynamicUiAsset extensionName={extensionName} url={panelUrl} label="panel" />;
 }

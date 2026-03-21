@@ -76,11 +76,11 @@ export function TerminalDrawer() {
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <div className="flex-1 overflow-hidden p-1">
-            <XtermPanel />
-          </div>
         </>
       )}
+      <div className="flex-1 overflow-hidden p-1">
+        <XtermPanel />
+      </div>
     </div>
   );
 }

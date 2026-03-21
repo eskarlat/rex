@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createConfluenceAttachmentsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -102,7 +102,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
             args['filename'] as string,
             args['content'] as string,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -116,7 +116,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
             const data = await client.uploadAttachment(pageId, file.filename, file.content);
             results.push(data);
           }
-          return textResult(results);
+          return markdownResult(results);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -128,7 +128,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
             (args['limit'] as number | undefined) ?? 25,
             (args['start'] as number | undefined) ?? 0,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -140,7 +140,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
             args['filename'] as string,
           );
           const text = await res.text();
-          return textResult({ content: text, contentType: res.headers.get('content-type') });
+          return markdownResult({ content: text, contentType: res.headers.get('content-type') });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -148,7 +148,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
       confluence_download_content_attachments: async (args) => {
         try {
           const data = await client.getAttachments(args['pageId'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -156,7 +156,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
       confluence_delete_attachment: async (args) => {
         try {
           await client.deleteAttachment(args['attachmentId'] as string);
-          return textResult({ success: true });
+          return markdownResult({ success: true });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -164,7 +164,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
       confluence_get_page_images: async (args) => {
         try {
           const data = await client.getPageImages(args['pageId'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

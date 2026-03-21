@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createConfluenceAttachmentsToolset(client) {
     return {
         name: 'confluence_attachments',
@@ -95,7 +95,7 @@ export function createConfluenceAttachmentsToolset(client) {
             confluence_upload_attachment: async (args) => {
                 try {
                     const data = await client.uploadAttachment(args['pageId'], args['filename'], args['content']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -110,7 +110,7 @@ export function createConfluenceAttachmentsToolset(client) {
                         const data = await client.uploadAttachment(pageId, file.filename, file.content);
                         results.push(data);
                     }
-                    return textResult(results);
+                    return markdownResult(results);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -119,7 +119,7 @@ export function createConfluenceAttachmentsToolset(client) {
             confluence_get_attachments: async (args) => {
                 try {
                     const data = await client.getAttachments(args['pageId'], args['limit'] ?? 25, args['start'] ?? 0);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -129,7 +129,7 @@ export function createConfluenceAttachmentsToolset(client) {
                 try {
                     const res = await client.downloadAttachment(args['pageId'], args['filename']);
                     const text = await res.text();
-                    return textResult({ content: text, contentType: res.headers.get('content-type') });
+                    return markdownResult({ content: text, contentType: res.headers.get('content-type') });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -138,7 +138,7 @@ export function createConfluenceAttachmentsToolset(client) {
             confluence_download_content_attachments: async (args) => {
                 try {
                     const data = await client.getAttachments(args['pageId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -147,7 +147,7 @@ export function createConfluenceAttachmentsToolset(client) {
             confluence_delete_attachment: async (args) => {
                 try {
                     await client.deleteAttachment(args['attachmentId']);
-                    return textResult({ success: true });
+                    return markdownResult({ success: true });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -156,7 +156,7 @@ export function createConfluenceAttachmentsToolset(client) {
             confluence_get_page_images: async (args) => {
                 try {
                     const data = await client.getPageImages(args['pageId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

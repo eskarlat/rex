@@ -7,16 +7,15 @@ import { ExtensionPanelPage } from './ExtensionPanelPage';
 const mockParams: Record<string, string | undefined> = { name: 'test-ext' };
 
 vi.mock('react-router-dom', async () => {
-  const actual =
-    await vi.importActual<typeof import('react-router-dom')>(
-      'react-router-dom'
-    );
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return { ...actual, useParams: () => mockParams, useNavigate: () => vi.fn() };
 });
 
 vi.mock('./components/DynamicPanel', () => ({
   DynamicPanel: ({ extensionName, panelId }: { extensionName: string; panelId?: string }) => (
-    <div data-testid="dynamic-panel" data-panel-id={panelId ?? ''}>{extensionName}</div>
+    <div data-testid="dynamic-panel" data-panel-id={panelId ?? ''}>
+      {extensionName}
+    </div>
   ),
 }));
 
@@ -32,7 +31,7 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -45,9 +44,7 @@ describe('ExtensionPanelPage', () => {
 
   it('renders extension name heading when no marketplace data', () => {
     renderWithProviders(<ExtensionPanelPage />);
-    expect(
-      screen.getByRole('heading', { name: 'test-ext' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'test-ext' })).toBeInTheDocument();
   });
 
   it('renders DynamicPanel with extension name', () => {
@@ -60,25 +57,28 @@ describe('ExtensionPanelPage', () => {
   it('shows no extension message when name is missing', () => {
     delete mockParams.name;
     renderWithProviders(<ExtensionPanelPage />);
-    expect(
-      screen.getByText('No extension specified.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('No extension specified.')).toBeInTheDocument();
   });
 
   it('displays title from marketplace instead of name', () => {
     mockMarketplace.mockReturnValue({
       data: {
         active: [
-          { name: 'test-ext', version: '1.0.0', type: 'standard', status: 'active', title: 'Test Extension', panels: [] },
+          {
+            name: 'test-ext',
+            version: '1.0.0',
+            type: 'standard',
+            status: 'active',
+            title: 'Test Extension',
+            panels: [],
+          },
         ],
         installed: [],
         available: [],
       },
     });
     renderWithProviders(<ExtensionPanelPage />);
-    expect(
-      screen.getByRole('heading', { name: 'Test Extension' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Test Extension' })).toBeInTheDocument();
   });
 
   it('shows tabs when extension has multiple panels', () => {

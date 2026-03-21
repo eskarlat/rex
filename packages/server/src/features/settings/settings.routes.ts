@@ -20,7 +20,6 @@ interface SetExtConfigBody {
   mapping: ConfigMapping;
 }
 
-
 const settingsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   fastify.get('/api/settings', () => {
     const config = loadGlobalConfig();

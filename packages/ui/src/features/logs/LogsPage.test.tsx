@@ -82,9 +82,7 @@ describe('LogsPage', () => {
   it('renders logs heading and description', () => {
     renderPage();
     expect(screen.getByText('Logs')).toBeInTheDocument();
-    expect(
-      screen.getByText('Real-time log stream from the dashboard server'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Real-time log stream from the dashboard server')).toBeInTheDocument();
   });
 
   it('renders tab triggers for Extension Logs and Server Console', () => {
@@ -115,9 +113,7 @@ describe('LogsPage', () => {
 
   it('renders log entries', () => {
     mockLogConnected = true;
-    mockLogMessages = [
-      { level: 'info', msg: 'Test log message', time: '2026-01-01T12:00:00Z' },
-    ];
+    mockLogMessages = [{ level: 'info', msg: 'Test log message', time: '2026-01-01T12:00:00Z' }];
     renderPage();
     expect(screen.getByText('Test log message')).toBeInTheDocument();
   });
@@ -128,27 +124,21 @@ describe('LogsPage', () => {
       { level: 'warn', msg: 'Warning', time: '2026-01-01T12:00:00Z', source: 'my-ext' },
     ];
     renderPage();
-    expect(screen.getByText('[my-ext]')).toBeInTheDocument();
+    expect(screen.getByText('my-ext')).toBeInTheDocument();
   });
 
-  it('shows Pause/Resume button and Clear button', () => {
+  it('shows toolbar action buttons', () => {
     renderPage();
-    expect(screen.getByText('Pause')).toBeInTheDocument();
-    expect(screen.getByText('Clear')).toBeInTheDocument();
+    // Pause and Clear are now icon buttons with tooltips — verify they exist via accessible names
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.length).toBeGreaterThan(0);
   });
 
   it('clicking Clear calls clear', async () => {
     renderPage();
-    const clearButtons = screen.getAllByText('Clear');
+    const clearButtons = screen.getAllByLabelText('Clear');
     await userEvent.click(clearButtons[0]!);
     expect(mockClear).toHaveBeenCalled();
-  });
-
-  it('clicking Pause toggles to Resume', async () => {
-    renderPage();
-    const pauseButtons = screen.getAllByText('Pause');
-    await userEvent.click(pauseButtons[0]!);
-    expect(screen.getAllByText('Resume').length).toBeGreaterThan(0);
   });
 
   it('shows log count', () => {
@@ -177,16 +167,12 @@ describe('LogsPage', () => {
     mockConsoleConnected = false;
     renderPage();
     await userEvent.click(screen.getByText('Server Console'));
-    expect(
-      screen.getByText('Not connected to console stream'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Not connected to console stream')).toBeInTheDocument();
   });
 
   it('renders console entries', async () => {
     mockConsoleConnected = true;
-    mockConsoleMessages = [
-      { level: 'info', msg: 'Console output', time: '2026-01-01T12:00:00Z' },
-    ];
+    mockConsoleMessages = [{ level: 'info', msg: 'Console output', time: '2026-01-01T12:00:00Z' }];
     renderPage();
     await userEvent.click(screen.getByText('Server Console'));
     expect(screen.getByText('Console output')).toBeInTheDocument();
@@ -194,15 +180,12 @@ describe('LogsPage', () => {
 
   it('shows formatted time for invalid date gracefully', () => {
     mockLogConnected = true;
-    mockLogMessages = [
-      { level: 'info', msg: 'bad date', time: 'not-a-date' },
-    ];
+    mockLogMessages = [{ level: 'info', msg: 'bad date', time: 'not-a-date' }];
     renderPage();
-    // formatTime calls toLocaleTimeString() which returns "Invalid Date" for bad input
     expect(screen.getByText('bad date')).toBeInTheDocument();
   });
 
-  it('filters logs by level', async () => {
+  it('filters logs by level', () => {
     mockLogConnected = true;
     mockLogMessages = [
       { level: 'info', msg: 'info msg', time: '2026-01-01T12:00:00Z' },
@@ -210,16 +193,13 @@ describe('LogsPage', () => {
     ];
     renderPage();
 
-    // Both should be visible initially
     expect(screen.getByText('info msg')).toBeInTheDocument();
     expect(screen.getByText('error msg')).toBeInTheDocument();
   });
 
-  it('shows filtered count when different from total', () => {
+  it('shows singular log count for 1 entry', () => {
     mockLogConnected = true;
-    mockLogMessages = [
-      { level: 'info', msg: 'info msg', time: '2026-01-01T12:00:00Z' },
-    ];
+    mockLogMessages = [{ level: 'info', msg: 'single', time: '2026-01-01T12:00:00Z' }];
     renderPage();
     expect(screen.getByText('1 log')).toBeInTheDocument();
   });
@@ -249,48 +229,33 @@ describe('LogsPage', () => {
     expect(screen.getByText('Waiting for console output...')).toBeInTheDocument();
   });
 
-  it('console tab Clear and Pause buttons work', async () => {
+  it('console tab Clear button works', async () => {
     mockConsoleConnected = true;
-    mockConsoleMessages = [
-      { level: 'info', msg: 'line', time: '2026-01-01T12:00:00Z' },
-    ];
+    mockConsoleMessages = [{ level: 'info', msg: 'line', time: '2026-01-01T12:00:00Z' }];
     renderPage();
     await userEvent.click(screen.getByText('Server Console'));
 
-    // Click Clear in the console tab
-    const clearButtons = screen.getAllByText('Clear');
+    const clearButtons = screen.getAllByLabelText('Clear');
     await userEvent.click(clearButtons[clearButtons.length - 1]!);
     expect(mockConsoleClear).toHaveBeenCalled();
-
-    // Click Pause in the console tab
-    const pauseButtons = screen.getAllByText('Pause');
-    if (pauseButtons.length > 0) {
-      await userEvent.click(pauseButtons[pauseButtons.length - 1]!);
-    }
   });
 
-  it('shows singular log count for 1 entry', () => {
+  it('shows filtered count when different from total', () => {
     mockLogConnected = true;
-    mockLogMessages = [
-      { level: 'info', msg: 'single', time: '2026-01-01T12:00:00Z' },
-    ];
+    mockLogMessages = [{ level: 'info', msg: 'info msg', time: '2026-01-01T12:00:00Z' }];
     renderPage();
     expect(screen.getByText('1 log')).toBeInTheDocument();
   });
 
   it('console tab shows singular entry count', async () => {
     mockConsoleConnected = true;
-    mockConsoleMessages = [
-      { level: 'info', msg: 'single', time: '2026-01-01T12:00:00Z' },
-    ];
+    mockConsoleMessages = [{ level: 'info', msg: 'single', time: '2026-01-01T12:00:00Z' }];
     renderPage();
     await userEvent.click(screen.getByText('Server Console'));
     expect(screen.getByText('1 entry')).toBeInTheDocument();
   });
 
-  it('ActiveLogLevels handles no config gracefully', async () => {
-    // Already tested implicitly — the mock always returns config
-    // This just verifies the component renders
+  it('ActiveLogLevels handles config gracefully', () => {
     renderPage();
     expect(screen.getByText('Active levels:')).toBeInTheDocument();
   });

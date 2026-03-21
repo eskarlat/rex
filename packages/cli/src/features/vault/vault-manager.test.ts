@@ -29,7 +29,7 @@ vi.mock('../../core/paths/paths.js', () => ({
 
 const STABLE_KEY = crypto.randomBytes(32).toString('hex');
 vi.mock('node:fs', async (importOriginal) => {
-  const actual = await importOriginal() as Record<string, unknown>;
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return {
     ...actual,
     default: {
@@ -88,7 +88,9 @@ describe('vault-manager', () => {
 
       expect(ensureDirSync).toHaveBeenCalled();
       const call = vi.mocked(writeJsonSync).mock.calls[0];
-      const written = call?.[1] as { entries: Record<string, { value: string; secret: boolean; tags: string[] }> };
+      const written = call?.[1] as {
+        entries: Record<string, { value: string; secret: boolean; tags: string[] }>;
+      };
       const entry = written.entries['api_token'];
       expect(entry).toBeDefined();
       expect(entry?.secret).toBe(true);
@@ -122,8 +124,7 @@ describe('vault-manager', () => {
 
   describe('getEntry', () => {
     it('should return a non-secret entry as-is', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         schemaVersion: 1,
@@ -165,8 +166,7 @@ describe('vault-manager', () => {
     });
 
     it('should return undefined for non-existent key', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         schemaVersion: 1,
@@ -210,8 +210,7 @@ describe('vault-manager', () => {
     });
 
     it('should return false when key does not exist', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         schemaVersion: 1,
@@ -287,8 +286,7 @@ describe('vault-manager', () => {
     });
 
     it('should return plaintext value for non-secret entries', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         schemaVersion: 1,
@@ -344,8 +342,7 @@ describe('vault-manager', () => {
 
   describe('error handling', () => {
     it('should throw VAULT_DECRYPT_FAILED for corrupted data', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         schemaVersion: 1,

@@ -58,8 +58,6 @@
     ]
   },
   "agent": {
-    "skills": [
-      { "name": "github", "path": "agent/skills/github" }
-    ]
+    "skills": [{ "name": "github", "path": "agent/skills/github" }]
   }
 }

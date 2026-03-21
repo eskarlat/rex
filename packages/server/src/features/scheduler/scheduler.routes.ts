@@ -55,7 +55,9 @@ function resolveTaskType(body: CreateTaskBody): string {
 const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   fastify.get('/api/scheduler', () => {
     const db = getDb();
-    return db.prepare('SELECT * FROM scheduled_tasks ORDER BY created_at DESC').all() as ScheduledTask[];
+    return db
+      .prepare('SELECT * FROM scheduled_tasks ORDER BY created_at DESC')
+      .all() as ScheduledTask[];
   });
 
   fastify.post('/api/scheduler', (request: FastifyRequest, reply: FastifyReply) => {
@@ -71,7 +73,8 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
     const id = generateId();
     const enabled = body.enabled !== false ? 1 : 0;
     const now = new Date().toISOString();
-    const projectPath = body.project_path ?? request.projectPath ?? fastify.activeProjectPath ?? null;
+    const projectPath =
+      body.project_path ?? request.projectPath ?? fastify.activeProjectPath ?? null;
 
     db.prepare(
       'INSERT INTO scheduled_tasks (id, name, type, project_path, cron, command, enabled, next_run_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -98,7 +101,9 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
     const body = request.body as UpdateTaskBody;
     const db = getDb();
 
-    const existing = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(params.id) as ScheduledTask | undefined;
+    const existing = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(params.id) as
+      | ScheduledTask
+      | undefined;
     if (!existing) {
       reply.code(404);
       return { error: 'Task not found' };
@@ -108,9 +113,12 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
     const cron = body.cron ?? existing.cron;
     const enabled = body.enabled ?? existing.enabled;
 
-    db.prepare(
-      'UPDATE scheduled_tasks SET command = ?, cron = ?, enabled = ? WHERE id = ?',
-    ).run(command, cron, enabled, params.id);
+    db.prepare('UPDATE scheduled_tasks SET command = ?, cron = ?, enabled = ? WHERE id = ?').run(
+      command,
+      cron,
+      enabled,
+      params.id,
+    );
 
     return { ok: true };
   });
@@ -129,20 +137,26 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
   fastify.post('/api/scheduler/:id/trigger', (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as SchedulerIdParams;
     const db = getDb();
-    const task = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(params.id) as ScheduledTask | undefined;
+    const task = db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?').get(params.id) as
+      | ScheduledTask
+      | undefined;
     if (!task) {
       reply.code(404);
       return { error: 'Task not found' };
     }
 
     const now = new Date().toISOString();
-    db.prepare(
-      'UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?',
-    ).run(now, 'triggered', params.id);
+    db.prepare('UPDATE scheduled_tasks SET last_run_at = ?, last_status = ? WHERE id = ?').run(
+      now,
+      'triggered',
+      params.id,
+    );
 
-    db.prepare(
-      'INSERT INTO task_history (task_id, started_at, status) VALUES (?, ?, ?)',
-    ).run(params.id, now, 'triggered');
+    db.prepare('INSERT INTO task_history (task_id, started_at, status) VALUES (?, ?, ?)').run(
+      params.id,
+      now,
+      'triggered',
+    );
 
     return { ok: true, triggered_at: now };
   });
@@ -150,9 +164,9 @@ const schedulerRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
   fastify.get('/api/scheduler/:id/history', (request: FastifyRequest) => {
     const params = request.params as SchedulerIdParams;
     const db = getDb();
-    return db.prepare(
-      'SELECT * FROM task_history WHERE task_id = ? ORDER BY started_at DESC LIMIT ?',
-    ).all(params.id, HISTORY_LIMIT);
+    return db
+      .prepare('SELECT * FROM task_history WHERE task_id = ? ORDER BY started_at DESC LIMIT ?')
+      .all(params.id, HISTORY_LIMIT);
   });
 
   done();

@@ -13,6 +13,7 @@ import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
 import { PROJECT_DIR, MANIFEST_JSON, PLUGINS_JSON } from '../../../core/paths/paths.js';
 import type { HookContext } from '@renre-kit/extension-sdk/node';
 import { deployAgentAssets, cleanupAgentAssets } from '../agent-deployer/agent-deployer.js';
+import { createExtensionLogger } from '../../../core/logger/extension-logger.js';
 
 export interface InstalledExtension {
   name: string;
@@ -65,6 +66,7 @@ async function runHook(
   mainPath: string,
   hookName: string,
   projectDir: string,
+  extensionName: string,
 ): Promise<void> {
   const fullPath = path.resolve(extensionDir, mainPath);
   if (!fs.existsSync(fullPath)) {
@@ -80,7 +82,11 @@ async function runHook(
         projectDir,
         agentDir,
         extensionDir,
-        sdk: { deployAgentAssets, cleanupAgentAssets },
+        sdk: {
+          deployAgentAssets: () => deployAgentAssets(extensionDir, projectDir, agentDir),
+          cleanupAgentAssets: () => cleanupAgentAssets(extensionDir, projectDir, agentDir),
+          logger: createExtensionLogger(extensionName),
+        },
       });
     }
   } catch (error: unknown) {
@@ -99,20 +105,14 @@ export function install(
   db: Database.Database,
 ): void {
   const stmt = db.prepare(
-    'INSERT OR REPLACE INTO installed_extensions (name, version, registry_source, type, installed_at) VALUES (?, ?, ?, ?, datetime(\'now\'))',
+    "INSERT OR REPLACE INTO installed_extensions (name, version, registry_source, type, installed_at) VALUES (?, ?, ?, ?, datetime('now'))",
   );
   stmt.run(name, version, registrySource, type);
   getLogger().info('extension-manager', `Installed ${name}@${version}`, { registrySource, type });
 }
 
-export function remove(
-  name: string,
-  version: string,
-  db: Database.Database,
-): void {
-  const stmt = db.prepare(
-    'DELETE FROM installed_extensions WHERE name = ? AND version = ?',
-  );
+export function remove(name: string, version: string, db: Database.Database): void {
+  const stmt = db.prepare('DELETE FROM installed_extensions WHERE name = ? AND version = ?');
   stmt.run(name, version);
 }
 
@@ -160,7 +160,7 @@ export async function activate(
   const missingKeys = validateVaultKeys(name);
 
   if (manifest.main) {
-    await runHook(extensionDir, manifest.main, 'onInit', projectPath);
+    await runHook(extensionDir, manifest.main, 'onInit', projectPath, name);
   }
 
   getLogger().info('extension-manager', `Activated ${name}@${version}`, { projectPath });
@@ -186,7 +186,7 @@ export async function deactivate(
   const manifest = loadManifest(extensionDir);
 
   if (manifest.main) {
-    await runHook(extensionDir, manifest.main, 'onDestroy', projectPath);
+    await runHook(extensionDir, manifest.main, 'onDestroy', projectPath, name);
   }
 
   const plugins = readPluginsJson(projectPath);
@@ -208,10 +208,7 @@ export function getActivated(projectPath: string): PluginsJson {
   return readPluginsJson(projectPath);
 }
 
-export function status(
-  projectPath: string,
-  db: Database.Database,
-): ExtensionStatus[] {
+export function status(projectPath: string, db: Database.Database): ExtensionStatus[] {
   const installed = listInstalled(db);
   const plugins = readPluginsJson(projectPath);
 

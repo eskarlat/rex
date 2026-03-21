@@ -13,12 +13,15 @@ export class JiraClient extends AtlassianBaseClient {
   }
 
   async search(jql: string, startAt = 0, maxResults = 50, fields?: string[]): Promise<unknown> {
-    return this.request('POST', '/rest/api/3/search', {
+    const effectiveFields =
+      fields ?? ['summary', 'status', 'assignee', 'priority', 'issuetype', 'updated'];
+    const params = new URLSearchParams({
       jql,
-      startAt,
-      maxResults,
-      fields: fields ?? ['summary', 'status', 'assignee', 'priority', 'issuetype', 'updated'],
+      startAt: String(startAt),
+      maxResults: String(maxResults),
+      fields: effectiveFields.join(','),
     });
+    return this.request('GET', `/rest/api/3/search/jql?${params.toString()}`);
   }
 
   async createIssue(fields: Record<string, unknown>): Promise<unknown> {
@@ -50,10 +53,7 @@ export class JiraClient extends AtlassianBaseClient {
   }
 
   async getFieldOptions(fieldId: string, contextId: string): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/rest/api/3/field/${fieldId}/context/${contextId}/option`,
-    );
+    return this.request('GET', `/rest/api/3/field/${fieldId}/context/${contextId}/option`);
   }
 
   // --- Comments ---
@@ -95,10 +95,7 @@ export class JiraClient extends AtlassianBaseClient {
 
   // --- Agile ---
   async getBoards(startAt = 0, maxResults = 50): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/rest/agile/1.0/board?startAt=${startAt}&maxResults=${maxResults}`,
-    );
+    return this.request('GET', `/rest/agile/1.0/board?startAt=${startAt}&maxResults=${maxResults}`);
   }
 
   async getBoardIssues(boardId: number, startAt = 0, maxResults = 50): Promise<unknown> {
@@ -151,7 +148,10 @@ export class JiraClient extends AtlassianBaseClient {
     return this.request('POST', '/rest/api/3/issueLink', link);
   }
 
-  async createRemoteIssueLink(issueKey: string, remoteLink: Record<string, unknown>): Promise<unknown> {
+  async createRemoteIssueLink(
+    issueKey: string,
+    remoteLink: Record<string, unknown>,
+  ): Promise<unknown> {
     return this.request('POST', `/rest/api/3/issue/${issueKey}/remotelink`, remoteLink);
   }
 
@@ -192,7 +192,7 @@ export class JiraClient extends AtlassianBaseClient {
   }
 
   async addWatcher(issueKey: string, accountId: string): Promise<unknown> {
-    return this.request('POST', `/rest/api/3/issue/${issueKey}/watchers`, JSON.stringify(accountId));
+    return this.request('POST', `/rest/api/3/issue/${issueKey}/watchers`, accountId);
   }
 
   async removeWatcher(issueKey: string, accountId: string): Promise<unknown> {
@@ -224,10 +224,7 @@ export class JiraClient extends AtlassianBaseClient {
   }
 
   async getProformaFormDetails(issueKey: string, formId: string): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/rest/api/3/issue/${issueKey}/properties/proforma.forms.${formId}`,
-    );
+    return this.request('GET', `/rest/api/3/issue/${issueKey}/properties/proforma.forms.${formId}`);
   }
 
   async updateProformaFormAnswers(
@@ -255,18 +252,33 @@ export class JiraClient extends AtlassianBaseClient {
   }
 
   // --- Development ---
-  async getDevelopmentInfo(issueId: string): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/rest/dev-status/latest/issue/detail?issueId=${issueId}&applicationType=stash&dataType=repository`,
-    );
+  async getDevelopmentInfo(
+    issueId: string,
+    applicationType = 'stash',
+    dataType = 'repository',
+  ): Promise<unknown> {
+    const params = new URLSearchParams({
+      issueId,
+      applicationType,
+      dataType,
+    });
+    return this.request('GET', `/rest/dev-status/1.0/issue/detail?${params.toString()}`);
   }
 
-  async getBatchDevelopmentInfo(issueIds: string[]): Promise<unknown> {
-    return this.request('POST', '/rest/dev-status/latest/issue/detail', {
-      issueIds,
-      applicationType: 'stash',
-      dataType: 'repository',
-    });
+  async getDevelopmentSummary(issueId: string): Promise<unknown> {
+    return this.request('GET', `/rest/dev-status/1.0/issue/summary?issueId=${issueId}`);
+  }
+
+  async getBatchDevelopmentInfo(
+    issueIds: string[],
+    applicationType = 'stash',
+    dataType = 'repository',
+  ): Promise<unknown[]> {
+    const results: unknown[] = [];
+    for (const issueId of issueIds) {
+      const data = await this.getDevelopmentInfo(issueId, applicationType, dataType);
+      results.push(data);
+    }
+    return results;
   }
 }

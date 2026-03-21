@@ -1,6 +1,9 @@
 import { buildPanel } from '@renre-kit/extension-sdk/node';
 
-await Promise.all([
-  buildPanel('src/ui/panel.tsx', 'dist/panel.js'),
-  buildPanel('src/ui/browser-widget.tsx', 'dist/browser-widget.js'),
-]);
+await buildPanel({
+  entryPoints: [
+    { in: 'src/ui/panel.tsx', out: 'panel' },
+    { in: 'src/ui/browser-widget.tsx', out: 'browser-widget' },
+  ],
+  outdir: 'dist',
+});

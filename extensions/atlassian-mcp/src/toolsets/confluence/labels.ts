@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createLabelsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -38,7 +38,7 @@ export function createLabelsToolset(client: ConfluenceClient): Toolset {
       confluence_get_labels: async (args) => {
         try {
           const data = await client.getLabels(args['pageId'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -47,7 +47,7 @@ export function createLabelsToolset(client: ConfluenceClient): Toolset {
         try {
           const labels = (args['labels'] as string[]).map((name) => ({ name }));
           const data = await client.addLabel(args['pageId'] as string, labels);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

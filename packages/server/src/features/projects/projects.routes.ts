@@ -31,19 +31,24 @@ const projectsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, 
     return { ok: true, projectPath: fastify.activeProjectPath };
   });
 
-  fastify.get('/api/project', (request: FastifyRequest, reply: FastifyReply): Record<string, unknown> => {
-    const projectPath = request.projectPath ?? fastify.activeProjectPath;
-    if (!projectPath) {
-      reply.code(400);
-      return { error: 'No project selected. Set X-RenreKit-Project header or PUT /api/projects/active.' };
-    }
-    const project = manager.get(projectPath);
-    if (!project) {
-      reply.code(404);
-      return { error: 'Project not found' };
-    }
-    return project as unknown as Record<string, unknown>;
-  });
+  fastify.get(
+    '/api/project',
+    (request: FastifyRequest, reply: FastifyReply): Record<string, unknown> => {
+      const projectPath = request.projectPath ?? fastify.activeProjectPath;
+      if (!projectPath) {
+        reply.code(400);
+        return {
+          error: 'No project selected. Set X-RenreKit-Project header or PUT /api/projects/active.',
+        };
+      }
+      const project = manager.get(projectPath);
+      if (!project) {
+        reply.code(404);
+        return { error: 'Project not found' };
+      }
+      return project as unknown as Record<string, unknown>;
+    },
+  );
 
   done();
 };

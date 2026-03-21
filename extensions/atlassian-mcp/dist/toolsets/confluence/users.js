@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createConfluenceUsersToolset(client) {
     return {
         name: 'confluence_users',
@@ -19,7 +19,7 @@ export function createConfluenceUsersToolset(client) {
             confluence_search_user: async (args) => {
                 try {
                     const data = await client.searchUser(args['query']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

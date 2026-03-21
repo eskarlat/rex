@@ -1,13 +1,20 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, Clock, Settings, Puzzle, ScrollText, PanelLeftClose, PanelLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { NavLink, useMatch } from 'react-router-dom';
+import { Home, Clock, Settings, Puzzle, ScrollText } from 'lucide-react';
 import { ProjectSwitcher } from './ProjectSwitcher';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMarketplace } from '@/core/hooks/use-extensions';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
+} from '@/components/ui/sidebar';
 
 const navLinks = [
   { to: '/', icon: Home, label: 'Home', end: true },
@@ -19,80 +26,28 @@ const bottomLinks = [
   { to: '/settings', icon: Settings, label: 'Settings', end: false },
 ];
 
-interface SidebarNavLinkProps {
+interface NavMenuItemProps {
   to: string;
   end: boolean;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  collapsed: boolean;
 }
 
-function SidebarNavLink({ to, end, icon: Icon, label, collapsed }: SidebarNavLinkProps) {
-  const link = (
-    <NavLink
-      to={to}
-      end={end}
-      aria-label={collapsed ? label : undefined}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center rounded-md text-sm font-medium transition-colors',
-          collapsed ? 'h-9 w-9 justify-center' : 'gap-3 px-3 py-2',
-          isActive
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-        )
-      }
-    >
-      <Icon className="h-4 w-4 shrink-0" />
-      {!collapsed && label}
-    </NavLink>
-  );
-
-  if (!collapsed) return link;
-
+function NavMenuItem({ to, end, icon: Icon, label }: NavMenuItemProps) {
+  const match = useMatch({ path: to, end });
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{link}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={!!match} tooltip={label}>
+        <NavLink to={to} end={end}>
+          <Icon />
+          <span>{label}</span>
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 
-interface SidebarHeaderProps {
-  collapsed: boolean;
-  onToggle: () => void;
-}
-
-function SidebarHeader({ collapsed, onToggle }: SidebarHeaderProps) {
-  return (
-    <div className={cn('flex h-14 items-center', collapsed ? 'justify-center px-0' : 'justify-between px-3')}>
-      {!collapsed && <span className="px-1 text-lg font-bold">RenreKit</span>}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggle}
-            className="h-9 w-9 text-muted-foreground"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="right">
-          {collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        </TooltipContent>
-      </Tooltip>
-    </div>
-  );
-}
-
-interface ExtensionNavProps {
-  extensions: Array<{ name: string; title?: string; hasIcon?: boolean }>;
-  collapsed: boolean;
-}
-
-function ExtensionIconComponent({ name, hasIcon }: { name: string; hasIcon?: boolean }) {
+function ExtensionIcon({ name, hasIcon }: { name: string; hasIcon?: boolean }) {
   if (!hasIcon) return <Puzzle className="h-4 w-4 shrink-0" />;
 
   return (
@@ -104,82 +59,67 @@ function ExtensionIconComponent({ name, hasIcon }: { name: string; hasIcon?: boo
   );
 }
 
-function ExtensionNav({ extensions, collapsed }: ExtensionNavProps) {
-  if (extensions.length === 0) return null;
+interface ExtensionMenuItemProps {
+  name: string;
+  title?: string;
+  hasIcon?: boolean;
+}
+
+function ExtensionMenuItem({ name, title, hasIcon }: ExtensionMenuItemProps) {
+  const label = title ?? name;
+  const match = useMatch({ path: `/extensions/${name}`, end: false });
   return (
-    <>
-      <Separator className="my-3" />
-      {!collapsed && (
-        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Extensions
-        </p>
-      )}
-      <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-0')}>
-        {extensions.map((ext) => {
-          const label = ext.title ?? ext.name;
-          const link = (
-            <NavLink
-              key={ext.name}
-              to={`/extensions/${ext.name}`}
-              aria-label={collapsed ? label : undefined}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center rounded-md text-sm font-medium transition-colors',
-                  collapsed ? 'h-9 w-9 justify-center' : 'gap-3 px-3 py-2',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )
-              }
-            >
-              <ExtensionIconComponent name={ext.name} hasIcon={ext.hasIcon} />
-              {!collapsed && label}
-            </NavLink>
-          );
-
-          if (!collapsed) return <div key={ext.name}>{link}</div>;
-
-          return (
-            <Tooltip key={ext.name}>
-              <TooltipTrigger asChild>{link}</TooltipTrigger>
-              <TooltipContent side="right">{label}</TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </nav>
-    </>
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={!!match} tooltip={label}>
+        <NavLink to={`/extensions/${name}`}>
+          <ExtensionIcon name={name} hasIcon={hasIcon} />
+          <span>{label}</span>
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+export function AppSidebar() {
   const { data: marketplace } = useMarketplace();
   const activeExtensions = marketplace?.active ?? [];
 
   return (
-    <aside className={cn('flex h-full flex-col border-r bg-muted/40 transition-all', collapsed ? 'w-14' : 'w-60')}>
-      <SidebarHeader collapsed={collapsed} onToggle={() => setCollapsed((prev) => !prev)} />
-      <Separator />
-      <ScrollArea className="flex-1 py-4">
-        <nav className={cn('space-y-1', collapsed ? 'flex flex-col items-center' : 'px-2')}>
-          {navLinks.map((link) => (
-            <SidebarNavLink key={link.to} {...link} collapsed={collapsed} />
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <ProjectSwitcher />
+      </SidebarHeader>
+      <SidebarSeparator />
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarMenu>
+            {navLinks.map((link) => (
+              <NavMenuItem key={link.to} {...link} />
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        {activeExtensions.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Extensions</SidebarGroupLabel>
+            <SidebarMenu>
+              {activeExtensions.map((ext) => (
+                <ExtensionMenuItem key={ext.name} {...ext} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
+      </SidebarContent>
+      <SidebarSeparator />
+      <SidebarGroup>
+        <SidebarMenu>
+          {bottomLinks.map((link) => (
+            <NavMenuItem key={link.to} {...link} />
           ))}
-        </nav>
-        <ExtensionNav extensions={activeExtensions} collapsed={collapsed} />
-      </ScrollArea>
-      <Separator />
-      <nav className={cn('space-y-1 py-2', collapsed ? 'flex flex-col items-center' : 'px-2')}>
-        {bottomLinks.map((link) => (
-          <SidebarNavLink key={link.to} {...link} collapsed={collapsed} />
-        ))}
-      </nav>
-      <Separator />
-      {!collapsed && (
-        <div className="p-3">
-          <ProjectSwitcher />
-        </div>
-      )}
-    </aside>
+        </SidebarMenu>
+      </SidebarGroup>
+      <SidebarFooter />
+      <SidebarRail />
+    </Sidebar>
   );
 }

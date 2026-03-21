@@ -44,11 +44,7 @@ interface CreateTaskVariables {
   cron: string;
 }
 
-export function useCreateTask(): UseMutationResult<
-  void,
-  Error,
-  CreateTaskVariables
-> {
+export function useCreateTask(): UseMutationResult<void, Error, CreateTaskVariables> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, CreateTaskVariables>({
     mutationFn: (data: CreateTaskVariables) =>
@@ -68,11 +64,7 @@ interface UpdateTaskVariables {
   cron?: string;
 }
 
-export function useUpdateTask(): UseMutationResult<
-  void,
-  Error,
-  UpdateTaskVariables
-> {
+export function useUpdateTask(): UseMutationResult<void, Error, UpdateTaskVariables> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, UpdateTaskVariables>({
     mutationFn: (data: UpdateTaskVariables) =>
@@ -115,8 +107,7 @@ export function useTriggerTask(): UseMutationResult<void, Error, string> {
 export function useTaskHistory(id: string): UseQueryResult<TaskHistoryEntry[]> {
   return useQuery<TaskHistoryEntry[]>({
     queryKey: ['scheduler', id, 'history'],
-    queryFn: () =>
-      fetchApi<TaskHistoryEntry[]>(`/api/scheduler/${id}/history`),
+    queryFn: () => fetchApi<TaskHistoryEntry[]>(`/api/scheduler/${id}/history`),
     enabled: !!id,
   });
 }

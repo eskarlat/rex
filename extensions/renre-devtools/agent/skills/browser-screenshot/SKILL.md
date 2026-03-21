@@ -10,9 +10,11 @@ Capture screenshots of the entire page or specific elements in the headed Puppet
 ## Commands
 
 ### renre-devtools:puppeteer_screenshot
+
 Take a screenshot of the current page or a specific element.
 
 **Parameters:**
+
 - `name` (string, required) — A descriptive name for the screenshot
 - `selector` (string, optional) — CSS selector to capture a specific element. If omitted, captures the full page.
 - `width` (number, optional) — Viewport width in pixels
@@ -22,21 +24,25 @@ Take a screenshot of the current page or a specific element.
 **Examples:**
 
 Full page screenshot:
+
 ```
 renre-kit renre-devtools:puppeteer_screenshot --name "homepage"
 ```
 
 Screenshot of a specific element:
+
 ```
 renre-kit renre-devtools:puppeteer_screenshot --name "nav-bar" --selector "nav.main-navigation"
 ```
 
 Screenshot with custom viewport:
+
 ```
 renre-kit renre-devtools:puppeteer_screenshot --name "mobile-view" --width 375 --height 812
 ```
 
 Screenshot as base64 for inline display:
+
 ```
 renre-kit renre-devtools:puppeteer_screenshot --name "debug-capture" --encoded true
 ```
@@ -44,6 +50,7 @@ renre-kit renre-devtools:puppeteer_screenshot --name "debug-capture" --encoded t
 ## Resources
 
 ### screenshot://<name>
+
 Retrieve a previously captured screenshot by its name. Use the same name you passed to `puppeteer_screenshot`.
 
 ## Tips

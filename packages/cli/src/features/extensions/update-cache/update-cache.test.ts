@@ -60,10 +60,20 @@ describe('update-cache', () => {
 
     it('returns empty when all extensions are up to date', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: '1.0.0', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: '1.0.0',
+        type: 'standard',
+        registryName: 'default',
       });
 
       const result = computeUpdates({} as never, []);
@@ -72,10 +82,20 @@ describe('update-cache', () => {
 
     it('detects when newer version is available', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: '1.1.0', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: '1.1.0',
+        type: 'standard',
+        registryName: 'default',
       });
       vi.mocked(checkEngineConstraints).mockReturnValue({ compatible: true, issues: [] });
 
@@ -89,10 +109,20 @@ describe('update-cache', () => {
 
     it('handles semver correctly (1.9.0 < 1.10.0)', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.9.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.9.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: '1.10.0', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: '1.10.0',
+        type: 'standard',
+        registryName: 'default',
       });
       vi.mocked(checkEngineConstraints).mockReturnValue({ compatible: true, issues: [] });
 
@@ -103,10 +133,20 @@ describe('update-cache', () => {
 
     it('skips extensions with invalid semver', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: 'not-a-version', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: 'not-a-version',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: '1.0.0', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: '1.0.0',
+        type: 'standard',
+        registryName: 'default',
       });
 
       const result = computeUpdates({} as never, []);
@@ -115,10 +155,20 @@ describe('update-cache', () => {
 
     it('marks engine incompatible updates', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
         engines: { 'renre-kit': '>=5.0.0' },
       });
       vi.mocked(checkEngineConstraints).mockReturnValue({
@@ -134,7 +184,13 @@ describe('update-cache', () => {
 
     it('skips when extension is not found in any registry', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue(null);
 
@@ -144,10 +200,20 @@ describe('update-cache', () => {
 
     it('skips when registry latestVersion is invalid semver', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: 'not-semver', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: 'not-semver',
+        type: 'standard',
+        registryName: 'default',
       });
 
       const result = computeUpdates({} as never, []);
@@ -156,10 +222,20 @@ describe('update-cache', () => {
 
     it('handles extensions with no engines field', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
       });
       vi.mocked(checkEngineConstraints).mockReturnValue({ compatible: true, issues: [] });
 
@@ -262,10 +338,20 @@ describe('update-cache', () => {
   describe('refreshUpdateCache', () => {
     it('computes and writes cache', () => {
       vi.mocked(listInstalled).mockReturnValue([
-        { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
       ]);
       vi.mocked(resolve).mockReturnValue({
-        name: 'ext-a', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        name: 'ext-a',
+        gitUrl: '',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
       });
       vi.mocked(checkEngineConstraints).mockReturnValue({ compatible: true, issues: [] });
 

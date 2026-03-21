@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createAgileToolset(client: JiraClient): Toolset {
   return {
@@ -111,7 +111,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
             (args['startAt'] as number | undefined) ?? 0,
             (args['maxResults'] as number | undefined) ?? 50,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -123,7 +123,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
             (args['startAt'] as number | undefined) ?? 0,
             (args['maxResults'] as number | undefined) ?? 50,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -135,7 +135,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
             (args['startAt'] as number | undefined) ?? 0,
             (args['maxResults'] as number | undefined) ?? 50,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -147,7 +147,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
             (args['startAt'] as number | undefined) ?? 0,
             (args['maxResults'] as number | undefined) ?? 50,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -162,7 +162,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
           if (args['endDate']) sprint['endDate'] = args['endDate'];
           if (args['goal']) sprint['goal'] = args['goal'];
           const data = await client.createSprint(sprint);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -177,7 +177,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
           if (args['endDate']) update['endDate'] = args['endDate'];
           if (args['goal']) update['goal'] = args['goal'];
           const data = await client.updateSprint(sprintId, update);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -188,7 +188,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
             args['sprintId'] as number,
             args['issueKeys'] as string[],
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

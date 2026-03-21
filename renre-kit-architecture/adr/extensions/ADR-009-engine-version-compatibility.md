@@ -1,9 +1,11 @@
 # ADR-009: Engine-Based Version Compatibility for Extensions
 
 ## Status
+
 Accepted
 
 ## Context
+
 Extensions depend on two things at different stages:
 
 1. **`@renre-kit/extension-sdk`** at **build time** — UI components, hooks, API client, agent deployer
@@ -17,11 +19,13 @@ Today, extensions declare their own version but have no way to express "I need C
 - ADR-006 (Exact Version Pinning) already flagged "version compatibility matrix" as future work
 
 Known patterns in the ecosystem:
+
 - **npm peer dependencies / VS Code `engines`**: Semver ranges (e.g., `"vscode": "^1.80.0"`)
 - **Android API levels**: Monotonic integer (`minApiLevel: 21`)
 - **Capability flags**: Feature-based (`requires: ["vault", "scheduler"]`)
 
 ## Decision
+
 Add an `engines` field to the extension manifest with **minimum-version-only** constraints:
 
 ```json
@@ -62,13 +66,17 @@ The Zod validation schema in the manifest loader adds:
 engines: z.object({
   'renre-kit': z.string().optional(),
   'extension-sdk': z.string().optional(),
-}).optional()
+}).optional();
 ```
 
 ### Validation logic (pseudo-code)
 
 ```typescript
-function checkEngineCompat(manifest: ExtensionManifest, coreVersion: string, sdkVersion: string): CompatResult {
+function checkEngineCompat(
+  manifest: ExtensionManifest,
+  coreVersion: string,
+  sdkVersion: string,
+): CompatResult {
   const issues: string[] = [];
 
   if (manifest.engines?.['renre-kit']) {
@@ -92,6 +100,7 @@ function checkEngineCompat(manifest: ExtensionManifest, coreVersion: string, sdk
 ## Consequences
 
 ### Positive
+
 - **No churn for extension authors**: Minimum-only means no updates needed on every core release — only when the extension starts using newer APIs
 - **Clear compatibility signal**: Users see immediately if an extension is too new for their CLI, before anything breaks
 - **Familiar pattern**: `engines` field mirrors npm's `package.json` convention; Node developers already understand it
@@ -100,6 +109,7 @@ function checkEngineCompat(manifest: ExtensionManifest, coreVersion: string, sdk
 - **Scaffolding stamps defaults**: New extensions get correct `engines` values out of the box
 
 ### Negative
+
 - **No protection against future breakage**: If core 2.0 breaks an extension that declared `>=1.0.0`, the constraint won't catch it (the extension technically said "any version from 1.0.0 onwards"). Mitigation: core publishes a migration guide on major bumps; extensions are expected to test and update.
 - **Requires semver discipline**: The core team must follow semver strictly — breaking changes only in major bumps. If a minor release breaks extensions, the `engines` contract provides false safety.
 - **New dependency**: Needs a semver parsing library (e.g., `semver` npm package) or a lightweight comparison utility.
@@ -112,12 +122,14 @@ function checkEngineCompat(manifest: ExtensionManifest, coreVersion: string, sdk
 - **No constraints, just documentation**: Status quo. Fails silently; documentation goes stale; users hit confusing runtime errors.
 
 ## Related Decisions
+
 - ADR-006: Exact Version Pinning — controls which extension version a project uses; this ADR controls whether that version is compatible with the host
 - ADR-008: Single Main Entry Point — `engines` is validated before lifecycle hooks from `main` are invoked
 - ADR-002: Extension Types — applies to all three types (standard, MCP stdio, MCP SSE)
 - ADR-003: Git-Based Registry — registry metadata could surface `engines` for pre-install compatibility checks
 
 ## Future Considerations
+
 - **Registry-level filtering**: Registry search results could exclude extensions incompatible with the user's CLI version
 - **Capability flags**: Complementary to `engines` — extensions could declare required host features (e.g., `requires: ["vault"]`) for more granular compatibility
 - **Deprecation warnings**: Core could warn when an extension's `engines` minimum is close to the current version and a major bump is planned

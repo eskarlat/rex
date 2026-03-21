@@ -22,7 +22,11 @@ describe('preventSleep', () => {
     const { preventSleep } = await import('./sleep-prevention.js');
 
     const lock = preventSleep();
-    expect(spawn).toHaveBeenCalledWith('caffeinate', ['-d'], expect.objectContaining({ stdio: 'ignore' }));
+    expect(spawn).toHaveBeenCalledWith(
+      'caffeinate',
+      ['-d'],
+      expect.objectContaining({ stdio: 'ignore' }),
+    );
     lock.release();
   });
 

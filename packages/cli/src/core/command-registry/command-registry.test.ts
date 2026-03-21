@@ -32,9 +32,7 @@ describe('CommandRegistry', () => {
 
     it('should throw on duplicate registration', () => {
       registry.register('ext', 'hello', noopHandler, metadata);
-      expect(() =>
-        registry.register('ext', 'hello', noopHandler, metadata),
-      ).toThrow();
+      expect(() => registry.register('ext', 'hello', noopHandler, metadata)).toThrow();
     });
   });
 

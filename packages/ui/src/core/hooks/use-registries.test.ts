@@ -21,11 +21,7 @@ function createWrapper() {
     defaultOptions: { queries: { retry: false } },
   });
   return function Wrapper({ children }: { children: ReactNode }) {
-    return React.createElement(
-      QueryClientProvider,
-      { client: queryClient },
-      children
-    );
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
   };
 }
 
@@ -35,9 +31,7 @@ beforeEach(() => {
 
 describe('useRegistries', () => {
   it('fetches registries', async () => {
-    const data = [
-      { name: 'default', url: 'https://example.com', priority: 1 },
-    ];
+    const data = [{ name: 'default', url: 'https://example.com', priority: 1 }];
     mockFetchApi.mockResolvedValueOnce(data);
 
     const { result } = renderHook(() => useRegistries(), {
@@ -78,7 +72,7 @@ describe('useAddRegistry', () => {
       expect(mockFetchApi).toHaveBeenCalledWith('/api/registries', {
         method: 'POST',
         body: input,
-      })
+      }),
     );
   });
 });
@@ -97,10 +91,9 @@ describe('useRemoveRegistry', () => {
     });
 
     await waitFor(() =>
-      expect(mockFetchApi).toHaveBeenCalledWith(
-        `/api/registries/${encodeURIComponent(name)}`,
-        { method: 'DELETE' }
-      )
+      expect(mockFetchApi).toHaveBeenCalledWith(`/api/registries/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+      }),
     );
   });
 });
@@ -121,8 +114,8 @@ describe('useSyncRegistry', () => {
     await waitFor(() =>
       expect(mockFetchApi).toHaveBeenCalledWith(
         `/api/registries/${encodeURIComponent(name)}/sync`,
-        { method: 'POST' }
-      )
+        { method: 'POST' },
+      ),
     );
   });
 });

@@ -7,7 +7,7 @@ describe('FormField', () => {
     render(
       <FormField label="Username">
         <input type="text" />
-      </FormField>
+      </FormField>,
     );
     expect(screen.getByText('Username')).toBeInTheDocument();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
@@ -17,7 +17,7 @@ describe('FormField', () => {
     render(
       <FormField label="Email" error="Email is required">
         <input type="email" />
-      </FormField>
+      </FormField>,
     );
     expect(screen.getByText('Email is required')).toBeInTheDocument();
   });
@@ -26,7 +26,7 @@ describe('FormField', () => {
     render(
       <FormField label="Name">
         <input type="text" />
-      </FormField>
+      </FormField>,
     );
     expect(screen.queryByText('Email is required')).not.toBeInTheDocument();
   });
@@ -35,7 +35,7 @@ describe('FormField', () => {
     const { container } = render(
       <FormField label="Field" className="custom-field">
         <input />
-      </FormField>
+      </FormField>,
     );
     expect(container.firstChild).toHaveClass('custom-field');
   });

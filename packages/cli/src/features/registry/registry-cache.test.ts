@@ -37,10 +37,7 @@ describe('registry-cache', () => {
   describe('updateTimestamp', () => {
     it('creates .fetched_at file with ISO timestamp', () => {
       updateTimestamp(tmpDir);
-      const content = fs.readFileSync(
-        path.join(tmpDir, '.fetched_at'),
-        'utf-8',
-      );
+      const content = fs.readFileSync(path.join(tmpDir, '.fetched_at'), 'utf-8');
       const date = new Date(content);
       expect(date.getTime()).not.toBeNaN();
       // Should be within last second
@@ -51,10 +48,7 @@ describe('registry-cache', () => {
       const old = new Date('2020-01-01').toISOString();
       fs.writeFileSync(path.join(tmpDir, '.fetched_at'), old);
       updateTimestamp(tmpDir);
-      const content = fs.readFileSync(
-        path.join(tmpDir, '.fetched_at'),
-        'utf-8',
-      );
+      const content = fs.readFileSync(path.join(tmpDir, '.fetched_at'), 'utf-8');
       expect(content).not.toBe(old);
     });
   });
@@ -66,19 +60,13 @@ describe('registry-cache', () => {
 
     it('returns true when cache is older than TTL', () => {
       const oldDate = new Date(Date.now() - 7200 * 1000); // 2 hours ago
-      fs.writeFileSync(
-        path.join(tmpDir, '.fetched_at'),
-        oldDate.toISOString(),
-      );
+      fs.writeFileSync(path.join(tmpDir, '.fetched_at'), oldDate.toISOString());
       expect(isStale(tmpDir, 3600)).toBe(true); // TTL = 1 hour
     });
 
     it('returns false when cache is fresher than TTL', () => {
       const recentDate = new Date(Date.now() - 60 * 1000); // 1 minute ago
-      fs.writeFileSync(
-        path.join(tmpDir, '.fetched_at'),
-        recentDate.toISOString(),
-      );
+      fs.writeFileSync(path.join(tmpDir, '.fetched_at'), recentDate.toISOString());
       expect(isStale(tmpDir, 3600)).toBe(false); // TTL = 1 hour
     });
 
@@ -94,10 +82,7 @@ describe('registry-cache', () => {
 
     it('cacheTTL -1 is never stale even with old timestamp', () => {
       const oldDate = new Date('2020-01-01');
-      fs.writeFileSync(
-        path.join(tmpDir, '.fetched_at'),
-        oldDate.toISOString(),
-      );
+      fs.writeFileSync(path.join(tmpDir, '.fetched_at'), oldDate.toISOString());
       expect(isStale(tmpDir, -1)).toBe(false);
     });
   });

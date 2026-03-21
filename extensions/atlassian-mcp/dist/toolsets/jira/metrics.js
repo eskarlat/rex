@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createMetricsToolset(client) {
     return {
         name: 'jira_metrics',
@@ -30,7 +30,7 @@ export function createMetricsToolset(client) {
             jira_get_issue_dates: async (args) => {
                 try {
                     const data = await client.getIssueDateFields(args['issueKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -39,7 +39,7 @@ export function createMetricsToolset(client) {
             jira_get_issue_sla: async (args) => {
                 try {
                     const data = await client.getIssueSla(args['issueKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

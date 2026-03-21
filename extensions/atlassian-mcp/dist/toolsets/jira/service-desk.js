@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createServiceDeskToolset(client) {
     return {
         name: 'jira_service_desk',
@@ -36,7 +36,7 @@ export function createServiceDeskToolset(client) {
             jira_get_service_desk_for_project: async () => {
                 try {
                     const data = await client.getServiceDesks();
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -45,7 +45,7 @@ export function createServiceDeskToolset(client) {
             jira_get_service_desk_queues: async (args) => {
                 try {
                     const data = await client.getServiceDeskQueues(args['serviceDeskId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -54,7 +54,7 @@ export function createServiceDeskToolset(client) {
             jira_get_queue_issues: async (args) => {
                 try {
                     const data = await client.getQueueIssues(args['serviceDeskId'], args['queueId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

@@ -7,12 +7,7 @@ export class ExtensionError extends Error {
   readonly code: ErrorCode;
   readonly originalError?: Error;
 
-  constructor(
-    extensionName: string,
-    code: ErrorCode,
-    message: string,
-    originalError?: Error,
-  ) {
+  constructor(extensionName: string, code: ErrorCode, message: string, originalError?: Error) {
     super(message);
     this.name = 'ExtensionError';
     this.extensionName = extensionName;
@@ -21,17 +16,12 @@ export class ExtensionError extends Error {
   }
 }
 
-export function wrapError(
-  err: Error,
-  extensionName: string,
-  code: ErrorCode,
-): ExtensionError {
+export function wrapError(err: Error, extensionName: string, code: ErrorCode): ExtensionError {
   if (err instanceof ExtensionError && err.code === code && err.extensionName === extensionName) {
     return err;
   }
 
-  const message =
-    err instanceof Error ? err.message : String(err);
+  const message = err instanceof Error ? err.message : String(err);
 
   return new ExtensionError(extensionName, code, message, err instanceof Error ? err : undefined);
 }

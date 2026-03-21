@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  loadCommandHandler,
-  executeCommand,
-} from './standard-runtime.js';
+import { loadCommandHandler, executeCommand } from './standard-runtime.js';
 import type { ExecutionContext } from '../../../core/types/context.types.js';
 import { ErrorCode } from '../../../core/errors/extension-error.js';
 
@@ -25,6 +22,7 @@ describe('standard-runtime', () => {
     projectPath: '/tmp/test-project',
     config: { key: 'value' },
     args: { name: 'world' },
+    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 
   function writeCommandFile(filename: string, code: string): string {
@@ -55,9 +53,7 @@ describe('standard-runtime', () => {
     });
 
     it('should throw when command file does not exist', async () => {
-      await expect(
-        loadCommandHandler(tempDir, 'commands/nonexistent.mjs'),
-      ).rejects.toThrow();
+      await expect(loadCommandHandler(tempDir, 'commands/nonexistent.mjs')).rejects.toThrow();
       try {
         await loadCommandHandler(tempDir, 'commands/nonexistent.mjs');
       } catch (err: unknown) {
@@ -67,13 +63,8 @@ describe('standard-runtime', () => {
     });
 
     it('should throw when module has no default or execute export', async () => {
-      writeCommandFile(
-        'bad.mjs',
-        'export const name = "bad";',
-      );
-      await expect(
-        loadCommandHandler(tempDir, 'commands/bad.mjs'),
-      ).rejects.toThrow();
+      writeCommandFile('bad.mjs', 'export const name = "bad";');
+      await expect(loadCommandHandler(tempDir, 'commands/bad.mjs')).rejects.toThrow();
       try {
         await loadCommandHandler(tempDir, 'commands/bad.mjs');
       } catch (err: unknown) {

@@ -70,14 +70,9 @@ export function createConnectorsToolset(client: MiroClient): Toolset {
   ];
 
   const handlers = {
-    miro_list_connectors: createHandler((args) =>
-      client.listConnectors(args['boardId'] as string),
-    ),
+    miro_list_connectors: createHandler((args) => client.listConnectors(args['boardId'] as string)),
     miro_create_connector: createHandler((args) =>
-      client.createConnector(
-        args['boardId'] as string,
-        args['data'] as Record<string, unknown>,
-      ),
+      client.createConnector(args['boardId'] as string, args['data'] as Record<string, unknown>),
     ),
     miro_get_connector: createHandler((args) =>
       client.getConnector(args['boardId'] as string, args['connectorId'] as string),

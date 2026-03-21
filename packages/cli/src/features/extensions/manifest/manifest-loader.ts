@@ -2,10 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import type { ExtensionManifest } from '../types/extension.types.js';
-import {
-  ExtensionError,
-  ErrorCode,
-} from '../../../core/errors/extension-error.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 
 const extensionCommandSchema = z.object({
   handler: z.string(),
@@ -162,9 +159,7 @@ export function loadManifest(extensionDir: string): ExtensionManifest {
   const result = extensionManifestSchema.safeParse(raw);
 
   if (!result.success) {
-    const issues = result.error.issues
-      .map((i) => `${i.path.join('.')}: ${i.message}`)
-      .join('; ');
+    const issues = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new ExtensionError(
       '',
       ErrorCode.MANIFEST_INVALID,

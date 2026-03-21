@@ -17,11 +17,7 @@ const defaultEngines = { 'renre-kit': '>=0.0.1', 'extension-sdk': '>=0.0.1' };
 
 describe('checkEngineCompat', () => {
   it('returns compatible when versions satisfy constraints', () => {
-    const result = checkEngineCompat(
-      makeManifest(defaultEngines),
-      '1.0.0',
-      '1.0.0',
-    );
+    const result = checkEngineCompat(makeManifest(defaultEngines), '1.0.0', '1.0.0');
     expect(result.compatible).toBe(true);
     expect(result.issues).toEqual([]);
   });
@@ -135,22 +131,14 @@ describe('checkEngineConstraints', () => {
   });
 
   it('returns incompatible when only renre-kit specified and fails', () => {
-    const result = checkEngineConstraints(
-      { 'renre-kit': '>=2.0.0' },
-      '1.0.0',
-      '1.0.0',
-    );
+    const result = checkEngineConstraints({ 'renre-kit': '>=2.0.0' }, '1.0.0', '1.0.0');
     expect(result.compatible).toBe(false);
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]).toContain('renre-kit');
   });
 
   it('returns incompatible when only extension-sdk specified and fails', () => {
-    const result = checkEngineConstraints(
-      { 'extension-sdk': '>=2.0.0' },
-      '1.0.0',
-      '1.0.0',
-    );
+    const result = checkEngineConstraints({ 'extension-sdk': '>=2.0.0' }, '1.0.0', '1.0.0');
     expect(result.compatible).toBe(false);
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]).toContain('extension-sdk');
@@ -177,22 +165,14 @@ describe('checkEngineConstraints', () => {
   });
 
   it('returns issue for invalid renre-kit range', () => {
-    const result = checkEngineConstraints(
-      { 'renre-kit': 'not-a-range' },
-      '1.0.0',
-      '1.0.0',
-    );
+    const result = checkEngineConstraints({ 'renre-kit': 'not-a-range' }, '1.0.0', '1.0.0');
     expect(result.compatible).toBe(false);
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]).toContain('Invalid renre-kit engine constraint');
   });
 
   it('returns issue for invalid extension-sdk range', () => {
-    const result = checkEngineConstraints(
-      { 'extension-sdk': '%%%' },
-      '1.0.0',
-      '1.0.0',
-    );
+    const result = checkEngineConstraints({ 'extension-sdk': '%%%' }, '1.0.0', '1.0.0');
     expect(result.compatible).toBe(false);
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0]).toContain('Invalid extension-sdk engine constraint');

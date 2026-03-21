@@ -22,26 +22,5 @@ export default function StatusWidget({ sdk, extensionName }) {
             setLoading(false);
         }
     }
-    return (_jsxs("div", { style: { padding: '8px' }, children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }, children: [_jsx("span", { style: {
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: error ? '#ef4444' : '#22c55e',
-                            display: 'inline-block',
-                        } }), _jsx("span", { style: { fontSize: '14px', fontWeight: 500 }, children: extName })] }), _jsx("button", { onClick: () => void handleCheckStatus(), disabled: loading || !sdk, style: {
-                    padding: '4px 12px',
-                    borderRadius: '4px',
-                    border: '1px solid #ccc',
-                    cursor: loading || !sdk ? 'not-allowed' : 'pointer',
-                    fontSize: '13px',
-                    background: 'transparent',
-                    color: 'inherit',
-                    opacity: loading || !sdk ? 0.5 : 1,
-                }, children: loading ? 'Checking...' : 'Check Status' }), output && (_jsx("pre", { style: {
-                    fontSize: '12px',
-                    marginTop: '8px',
-                    color: 'var(--muted-foreground, #666)',
-                    whiteSpace: 'pre-wrap',
-                    margin: '8px 0 0',
-                }, children: output })), error && (_jsx("p", { style: { fontSize: '12px', marginTop: '8px', color: '#ef4444' }, children: error }))] }));
+    return (_jsxs("div", { className: "p-2", children: [_jsxs("div", { className: "mb-2 flex items-center gap-1.5", children: [_jsx("span", { className: `inline-block h-2 w-2 rounded-full ${error ? 'bg-red-500' : 'bg-emerald-500'}` }), _jsx("span", { className: "text-sm font-medium", children: extName })] }), _jsx("button", { onClick: () => void handleCheckStatus(), disabled: loading || !sdk, className: "inline-flex h-8 items-center rounded border border-border bg-transparent px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50", children: loading ? 'Checking...' : 'Check Status' }), output && (_jsx("pre", { className: "mt-2 whitespace-pre-wrap text-xs text-muted-foreground", children: output })), error && _jsx("p", { className: "mt-2 text-xs text-red-500", children: error })] }));
 }

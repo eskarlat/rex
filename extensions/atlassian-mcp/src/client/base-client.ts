@@ -9,7 +9,8 @@ export class AtlassianBaseClient {
   private readonly authHeader: string;
 
   constructor(config: AtlassianClientConfig) {
-    this.baseUrl = `https://${config.domain}`;
+    const domain = config.domain.replace(/^https?:\/\//, '');
+    this.baseUrl = `https://${domain}`;
     this.authHeader = `Basic ${Buffer.from(`${config.email}:${config.apiToken}`).toString('base64')}`;
   }
 
@@ -41,6 +42,34 @@ export class AtlassianBaseClient {
     }
 
     return res.json() as Promise<T>;
+  }
+
+  protected async requestFormData(
+    path: string,
+    formData: FormData,
+    headers?: Record<string, string>,
+  ): Promise<unknown> {
+    const url = `${this.baseUrl}${path}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: this.authHeader,
+        'X-Atlassian-Token': 'nocheck',
+        ...headers,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => 'Unknown error');
+      throw new Error(`Atlassian API error ${res.status}: ${text}`);
+    }
+
+    if (res.status === 204) {
+      return undefined;
+    }
+
+    return res.json();
   }
 
   protected async requestRaw(

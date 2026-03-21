@@ -10,7 +10,7 @@ export default function status(context) {
         `API Token: ${hasToken ? '(set)' : '(not set)'}`,
         '',
         `Toolsets: 21 (15 Jira + 6 Confluence)`,
-        `Total Tools: 72 (49 Jira + 23 Confluence)`,
+        `Total Tools: 73 (50 Jira + 23 Confluence)`,
         '',
         domain && email && hasToken ? 'Status: ready' : 'Status: configuration required',
     ];

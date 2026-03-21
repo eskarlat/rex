@@ -29,6 +29,7 @@
 RenreKit is a **microkernel CLI** — a tiny core that does very little on its own, but becomes powerful through **extensions**. Think of it like VS Code, but for your terminal and AI workflows.
 
 The core handles three things:
+
 1. **Discovering** extensions
 2. **Loading** them
 3. **Routing** commands to them
@@ -37,11 +38,11 @@ Everything else — every feature, every command, every UI panel — comes from 
 
 Each extension can plug into **three interaction modes**:
 
-| Mode | What it does |
-|------|-------------|
-| **CLI commands** | Terminal commands you can run from anywhere |
-| **Dashboard panels** | Visual UI in the web dashboard |
-| **LLM skills** | SKILL.md files that teach AI agents new capabilities |
+| Mode                 | What it does                                         |
+| -------------------- | ---------------------------------------------------- |
+| **CLI commands**     | Terminal commands you can run from anywhere          |
+| **Dashboard panels** | Visual UI in the web dashboard                       |
+| **LLM skills**       | SKILL.md files that teach AI agents new capabilities |
 
 ## Quick Start
 
@@ -111,11 +112,11 @@ renre-kit ext:update <name>     # Update to latest
 
 ### Three Flavors of Extensions
 
-| Type | How it works | Best for |
-|------|-------------|----------|
-| **Standard** | Loaded in-process via `require()` | Simple tools, fast execution |
+| Type          | How it works                               | Best for                          |
+| ------------- | ------------------------------------------ | --------------------------------- |
+| **Standard**  | Loaded in-process via `require()`          | Simple tools, fast execution      |
 | **MCP stdio** | Spawned as a child process, talks JSON-RPC | Isolated tools, language-agnostic |
-| **MCP SSE** | Remote HTTP server | Shared services, always-on tools |
+| **MCP SSE**   | Remote HTTP server                         | Shared services, always-on tools  |
 
 MCP connections are managed automatically — lazy start, 30-second idle timeout, exponential backoff on failures (up to 3 retries).
 
@@ -226,6 +227,7 @@ server (depends on cli)
 **@renre-kit/ui** — React 19 SPA built with Vite, Tailwind CSS, and shadcn/ui. Talks to the server via React Query. Supports dynamic loading of extension UI panels.
 
 **@renre-kit/extension-sdk** — Everything extension authors need:
+
 - `.` — API client and React hooks
 - `./components` — Shared shadcn/ui components
 - `./node` — Node utilities (`deployAgentAssets`, `cleanupAgentAssets`, `buildPanel`)
@@ -236,32 +238,32 @@ server (depends on cli)
 
 ### Global (`~/.renre-kit/`)
 
-| Path | Purpose |
-|------|---------|
-| `db.sqlite` | Project registry (SQLite) |
+| Path                           | Purpose                      |
+| ------------------------------ | ---------------------------- |
+| `db.sqlite`                    | Project registry (SQLite)    |
 | `extensions/{name}@{version}/` | Installed extension packages |
-| `registries/{name}/` | Cloned registry repos |
-| `vault.json` | Encrypted secrets |
-| `config.json` | Global settings |
-| `logs/` | Rotating daily logs |
+| `registries/{name}/`           | Cloned registry repos        |
+| `vault.json`                   | Encrypted secrets            |
+| `config.json`                  | Global settings              |
+| `logs/`                        | Rotating daily logs          |
 
 ### Per-Project (`.renre-kit/`)
 
-| Path | Purpose |
-|------|---------|
-| `manifest.json` | Project metadata |
-| `plugins.json` | Activated extensions with pinned versions |
-| `storage/` | Extension-scoped key/value storage |
+| Path            | Purpose                                   |
+| --------------- | ----------------------------------------- |
+| `manifest.json` | Project metadata                          |
+| `plugins.json`  | Activated extensions with pinned versions |
+| `storage/`      | Extension-scoped key/value storage        |
 
 ### LLM Assets (`.agents/`)
 
-| Path | Purpose |
-|------|---------|
+| Path                     | Purpose                         |
+| ------------------------ | ------------------------------- |
 | `skills/{name}/SKILL.md` | Skill definitions for AI agents |
-| `prompts/` | Prompt templates |
-| `context/` | Context documents |
-| `agents/` | Agent configurations |
-| `workflows/` | Workflow definitions |
+| `prompts/`               | Prompt templates                |
+| `context/`               | Context documents               |
+| `agents/`                | Agent configurations            |
+| `workflows/`             | Workflow definitions            |
 
 ## Building Extensions
 
@@ -272,6 +274,7 @@ npx create-renre-extension my-extension
 ```
 
 This scaffolds a project with:
+
 - A `manifest.json` describing your extension
 - A `main` entry point with `onInit` / `onDestroy` lifecycle hooks
 - Optional UI panel (React component bundled with esbuild)
@@ -356,24 +359,24 @@ pnpm --filter @renre-kit/server dev              # Server dev (port 4200)
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| CLI framework | Commander.js |
-| Database | SQLite (better-sqlite3) |
-| Interactive prompts | clack |
-| Schema validation | Zod |
-| Git operations | simple-git |
-| Logging | Pino |
-| API server | Fastify |
-| Frontend | React 19 |
-| Build (UI) | Vite |
-| Styling | Tailwind CSS |
-| Components | shadcn/ui (Radix) |
-| Data fetching | React Query |
-| Forms | React Hook Form |
-| Monorepo | Turborepo |
-| Testing | Vitest + Playwright |
-| Coverage | Istanbul |
+| Layer               | Technology              |
+| ------------------- | ----------------------- |
+| CLI framework       | Commander.js            |
+| Database            | SQLite (better-sqlite3) |
+| Interactive prompts | clack                   |
+| Schema validation   | Zod                     |
+| Git operations      | simple-git              |
+| Logging             | Pino                    |
+| API server          | Fastify                 |
+| Frontend            | React 19                |
+| Build (UI)          | Vite                    |
+| Styling             | Tailwind CSS            |
+| Components          | shadcn/ui (Radix)       |
+| Data fetching       | React Query             |
+| Forms               | React Hook Form         |
+| Monorepo            | Turborepo               |
+| Testing             | Vitest + Playwright     |
+| Coverage            | Istanbul                |
 
 ### Quality Standards
 
@@ -412,8 +415,8 @@ Browser → React UI → React Query → Fastify API → CLI Managers → SQLite
 
 ## Environment Variables
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
+| Variable         | Purpose                   | Default        |
+| ---------------- | ------------------------- | -------------- |
 | `RENRE_KIT_HOME` | Override global directory | `~/.renre-kit` |
 
 ## Contributing

@@ -6,9 +6,7 @@ function createMockClient(): MiroClient {
   return {
     getItems: vi.fn().mockResolvedValue([{ id: 'item1', type: 'sticky_note' }]),
     getItem: vi.fn().mockResolvedValue({ id: 'item1', type: 'sticky_note' }),
-    updateItemPosition: vi
-      .fn()
-      .mockResolvedValue({ id: 'item1', position: { x: 100, y: 200 } }),
+    updateItemPosition: vi.fn().mockResolvedValue({ id: 'item1', position: { x: 100, y: 200 } }),
     deleteItem: vi.fn().mockResolvedValue(undefined),
   } as unknown as MiroClient;
 }

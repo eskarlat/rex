@@ -10,10 +10,7 @@ import {
 } from '../../shared/fs-helpers.js';
 import { migrateFile, getSchemaVersion } from '../../shared/schema-migration.js';
 import { vaultMigrations } from './migrations/index.js';
-import {
-  ExtensionError,
-  ErrorCode,
-} from '../../core/errors/extension-error.js';
+import { ExtensionError, ErrorCode } from '../../core/errors/extension-error.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
@@ -55,10 +52,7 @@ function encrypt(plaintext: string): string {
   const key = deriveKey();
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf-8'),
-    cipher.final(),
-  ]);
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf-8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
   // Format: hex(iv) + ':' + hex(authTag) + ':' + hex(ciphertext)
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
@@ -84,10 +78,7 @@ function decrypt(encoded: string): string {
 
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
     decipher.setAuthTag(authTag);
-    const decrypted = Buffer.concat([
-      decipher.update(ciphertext),
-      decipher.final(),
-    ]);
+    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     return decrypted.toString('utf-8');
   } catch {
     throw new ExtensionError(
@@ -145,12 +136,7 @@ function writeVault(data: VaultData): void {
   writeJsonSync(VAULT_PATH, envelope);
 }
 
-export function setEntry(
-  key: string,
-  value: string,
-  secret: boolean,
-  tags: string[] = [],
-): void {
+export function setEntry(key: string, value: string, secret: boolean, tags: string[] = []): void {
   const data = readVault();
   data[key] = {
     value: secret ? encrypt(value) : value,

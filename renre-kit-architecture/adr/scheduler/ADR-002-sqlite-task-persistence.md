@@ -1,13 +1,17 @@
 # ADR-002: Persist Scheduled Tasks in SQLite with Rolling Execution History
 
 ## Status
+
 Accepted
 
 ## Context
+
 Scheduled tasks must survive dashboard restarts. Users need visibility into task execution history for debugging (e.g., "Did the sync task run last night?"). Without persistence, all task registrations are lost on restart. Without history, debugging missed executions is difficult.
 
 ## Decision
+
 Persist scheduled tasks in SQLite with execution history:
+
 1. **scheduled_tasks table**: Stores task definitions
    - Columns: id, extensionName, taskName, cronExpression, command, enabled, createdAt, updatedAt
    - Primary key: (extensionName, taskName) - extensions cannot have duplicate task names
@@ -20,6 +24,7 @@ Persist scheduled tasks in SQLite with execution history:
 ## Consequences
 
 ### Positive
+
 - **Persistence across restarts**: Tasks survive dashboard restart
 - **Execution history**: Users can debug missed or failed tasks
 - **Bounded storage**: 50-row limit per task prevents database bloat
@@ -28,6 +33,7 @@ Persist scheduled tasks in SQLite with execution history:
 - **Transaction support**: Can ensure task + history written atomically
 
 ### Negative
+
 - **Database dependency**: Scheduler is tightly coupled to core database
 - **Migration complexity**: Schema changes require database migration tooling
 - **Limited history**: 50 rows may not be enough for long-running systems

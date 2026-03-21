@@ -25,7 +25,12 @@ describe('ext-activate command', () => {
       extensionDir: '/path/to/ext',
     });
 
-    expect(extensionManager.activate).toHaveBeenCalledWith('my-ext', '1.0.0', '/tmp/project', '/path/to/ext');
+    expect(extensionManager.activate).toHaveBeenCalledWith(
+      'my-ext',
+      '1.0.0',
+      '/tmp/project',
+      '/path/to/ext',
+    );
     expect(clack.log.success).toHaveBeenCalled();
   });
 

@@ -1,3 +1,4 @@
+import type { JsonToMarkdownOptions } from '@renre-kit/extension-sdk/node';
 export interface ToolDefinition {
     name: string;
     description: string;
@@ -21,4 +22,6 @@ export interface Toolset {
     handlers: Record<string, (args: Record<string, unknown>) => Promise<ToolResult>>;
 }
 export declare function textResult(data: unknown): ToolResult;
+/** Converts data to LLM-friendly Markdown instead of raw JSON */
+export declare function markdownResult(data: unknown, options?: JsonToMarkdownOptions): ToolResult;
 export declare function errorResult(message: string): ToolResult;

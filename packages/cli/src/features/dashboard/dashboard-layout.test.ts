@@ -48,10 +48,7 @@ describe('dashboard-layout', () => {
 
     it('handles malformed JSON gracefully (returns empty)', () => {
       mkdirSync(join(tempDir, '.renre-kit'), { recursive: true });
-      writeFileSync(
-        join(tempDir, '.renre-kit', 'dashboard-layout.json'),
-        '{ broken json }',
-      );
+      writeFileSync(join(tempDir, '.renre-kit', 'dashboard-layout.json'), '{ broken json }');
       const layout = getDashboardLayout(tempDir);
       expect(layout).toEqual({ widgets: [] });
     });
@@ -60,10 +57,7 @@ describe('dashboard-layout', () => {
   describe('saveDashboardLayout', () => {
     it('saves layout to file', () => {
       saveDashboardLayout(tempDir, sampleLayout);
-      const raw = readFileSync(
-        join(tempDir, '.renre-kit', 'dashboard-layout.json'),
-        'utf-8',
-      );
+      const raw = readFileSync(join(tempDir, '.renre-kit', 'dashboard-layout.json'), 'utf-8');
       const saved = JSON.parse(raw) as DashboardLayout;
       expect(saved.widgets).toHaveLength(1);
       expect(saved.widgets[0]?.id).toBe('hello-world:status-widget');
@@ -71,10 +65,7 @@ describe('dashboard-layout', () => {
 
     it('creates .renre-kit dir if missing', () => {
       saveDashboardLayout(tempDir, sampleLayout);
-      const raw = readFileSync(
-        join(tempDir, '.renre-kit', 'dashboard-layout.json'),
-        'utf-8',
-      );
+      const raw = readFileSync(join(tempDir, '.renre-kit', 'dashboard-layout.json'), 'utf-8');
       expect(JSON.parse(raw)).toEqual(sampleLayout);
     });
 
@@ -82,10 +73,7 @@ describe('dashboard-layout', () => {
       saveDashboardLayout(tempDir, sampleLayout);
       const updatedLayout: DashboardLayout = { widgets: [] };
       saveDashboardLayout(tempDir, updatedLayout);
-      const raw = readFileSync(
-        join(tempDir, '.renre-kit', 'dashboard-layout.json'),
-        'utf-8',
-      );
+      const raw = readFileSync(join(tempDir, '.renre-kit', 'dashboard-layout.json'), 'utf-8');
       expect(JSON.parse(raw)).toEqual({ widgets: [] });
     });
   });

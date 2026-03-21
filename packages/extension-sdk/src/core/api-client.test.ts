@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ApiClient, ApiClientError } from './api-client';
-import type {
-  CreateTaskPayload,
-  UpdateTaskPayload,
-} from './types';
+import type { CreateTaskPayload, UpdateTaskPayload } from './types';
 
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
@@ -107,16 +104,14 @@ describe('ApiClient', () => {
 
   describe('error handling', () => {
     it('throws ApiClientError on non-ok response', async () => {
-      mockFetch.mockResolvedValueOnce(
-        jsonResponse({ error: 'not found' }, 404)
-      );
+      mockFetch.mockResolvedValueOnce(jsonResponse({ error: 'not found' }, 404));
 
       await expect(client.getProject()).rejects.toThrow(ApiClientError);
       await expect(
         client.getProject().catch((e: ApiClientError) => {
           expect(e.status).toBe(404);
           throw e;
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -276,6 +271,47 @@ describe('ApiClient', () => {
       const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
       expect(url).toBe('http://localhost:4200/api/scheduler/42');
       expect(init.method).toBe('DELETE');
+    });
+  });
+
+  describe('writeLog', () => {
+    it('sends POST /api/logs/write with level, source, and message', async () => {
+      mockFetch.mockResolvedValueOnce(noContentResponse());
+
+      await client.writeLog('info', 'ext:my-ext', 'hello from extension');
+
+      const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('http://localhost:4200/api/logs/write');
+      expect(init.method).toBe('POST');
+      expect(JSON.parse(init.body as string)).toEqual({
+        level: 'info',
+        source: 'ext:my-ext',
+        message: 'hello from extension',
+      });
+    });
+
+    it('includes data when provided', async () => {
+      mockFetch.mockResolvedValueOnce(noContentResponse());
+
+      await client.writeLog('warn', 'ext:test', 'caution', { detail: 42 });
+
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(JSON.parse(init.body as string)).toEqual({
+        level: 'warn',
+        source: 'ext:test',
+        message: 'caution',
+        data: { detail: 42 },
+      });
+    });
+
+    it('omits data field when not provided', async () => {
+      mockFetch.mockResolvedValueOnce(noContentResponse());
+
+      await client.writeLog('debug', 'ext:x', 'no data');
+
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const body = JSON.parse(init.body as string);
+      expect(body).not.toHaveProperty('data');
     });
   });
 });

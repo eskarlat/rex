@@ -7,10 +7,7 @@ import { ExtensionSettingsPage } from './ExtensionSettingsPage';
 const mockParams: Record<string, string> = { name: 'test-ext' };
 
 vi.mock('react-router-dom', async () => {
-  const actual =
-    await vi.importActual<typeof import('react-router-dom')>(
-      'react-router-dom'
-    );
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return { ...actual, useParams: () => mockParams };
 });
 
@@ -36,7 +33,7 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -56,9 +53,7 @@ describe('ExtensionSettingsPage', () => {
 
     renderWithProviders(<ExtensionSettingsPage />);
 
-    expect(
-      screen.getByText('No extension specified.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('No extension specified.')).toBeInTheDocument();
 
     // Restore
     mockParams.name = 'test-ext';
@@ -72,10 +67,7 @@ describe('ExtensionSettingsPage loading state', () => {
 
   it('shows skeleton when loading', async () => {
     vi.doMock('react-router-dom', async () => {
-      const actual =
-        await vi.importActual<typeof import('react-router-dom')>(
-          'react-router-dom'
-        );
+      const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
       return { ...actual, useParams: () => ({ name: 'test-ext' }) };
     });
     vi.doMock('@/core/hooks/use-settings', () => ({
@@ -89,9 +81,7 @@ describe('ExtensionSettingsPage loading state', () => {
       ConfigForm: () => <div data-testid="config-form">ConfigForm</div>,
     }));
 
-    const { ExtensionSettingsPage: LoadingPage } = await import(
-      './ExtensionSettingsPage'
-    );
+    const { ExtensionSettingsPage: LoadingPage } = await import('./ExtensionSettingsPage');
 
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -101,7 +91,7 @@ describe('ExtensionSettingsPage loading state', () => {
         <MemoryRouter>
           <LoadingPage />
         </MemoryRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     expect(screen.queryByTestId('config-form')).not.toBeInTheDocument();
@@ -109,10 +99,7 @@ describe('ExtensionSettingsPage loading state', () => {
 
   it('shows no configuration message when config is null', async () => {
     vi.doMock('react-router-dom', async () => {
-      const actual =
-        await vi.importActual<typeof import('react-router-dom')>(
-          'react-router-dom'
-        );
+      const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
       return { ...actual, useParams: () => ({ name: 'test-ext' }) };
     });
     vi.doMock('@/core/hooks/use-settings', () => ({
@@ -126,9 +113,7 @@ describe('ExtensionSettingsPage loading state', () => {
       ConfigForm: () => <div data-testid="config-form">ConfigForm</div>,
     }));
 
-    const { ExtensionSettingsPage: NoConfigPage } = await import(
-      './ExtensionSettingsPage'
-    );
+    const { ExtensionSettingsPage: NoConfigPage } = await import('./ExtensionSettingsPage');
 
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -138,11 +123,9 @@ describe('ExtensionSettingsPage loading state', () => {
         <MemoryRouter>
           <NoConfigPage />
         </MemoryRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
-    expect(
-      screen.getByText('No configuration available for this extension.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('No configuration available for this extension.')).toBeInTheDocument();
   });
 });

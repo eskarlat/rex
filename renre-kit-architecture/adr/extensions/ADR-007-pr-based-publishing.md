@@ -1,10 +1,13 @@
 # ADR-007: PR-Based Publishing Workflow for Extension Registries
 
 ## Status
+
 Accepted
 
 ## Context
+
 Extension registries (git repos with `extensions.json`) need a publishing mechanism. Options:
+
 1. **Self-service push**: Authors push directly to main branch
 2. **PR-based review**: Authors submit PRs; CI validates; maintainers merge
 3. **Central service**: Separate publish API (like npm publish)
@@ -12,7 +15,9 @@ Extension registries (git repos with `extensions.json`) need a publishing mechan
 Direct push is fast but error-prone. A central service adds infrastructure. PR-based workflow leverages existing git workflows and provides a review checkpoint.
 
 ## Decision
+
 Use pull request workflow for publishing extensions:
+
 - Authors fork the registry repo
 - Add or update entry in `extensions.json`:
   ```json
@@ -37,6 +42,7 @@ Use pull request workflow for publishing extensions:
 ## Consequences
 
 ### Positive
+
 - Familiar workflow: Git-based workflow matches development practices
 - Review checkpoint: Community and maintainers can comment on new extensions before publishing
 - CI quality gates: Automated validation prevents invalid entries
@@ -45,6 +51,7 @@ Use pull request workflow for publishing extensions:
 - Spam prevention: PR-based flow filters low-quality extensions
 
 ### Negative
+
 - Slower publishing: Authors wait for maintainer review (hours to days)
 - Maintainer burden: Maintainers must review every submission
 - Publishing friction: Higher barrier to entry for new extension authors
@@ -52,11 +59,13 @@ Use pull request workflow for publishing extensions:
 - Scaling issues: Single registry maintainer becomes bottleneck at scale
 
 ## Alternatives Considered
+
 - **Self-service push** (fast): `git push origin main` on registry. Fast, but no validation; risk of broken entries
 - **Central service** (e.g., `renre ext:publish`): Requires auth token, external service, permission management. Complex to implement; adds attack surface
 - **Automated sync from npm**: Periodically pull from npm registry and auto-add. Loses community review; complexity of npm versioning
 
 ## Implementation
+
 - **CI workflow** (GitHub Actions):
   ```yaml
   on: [pull_request]
@@ -86,11 +95,13 @@ Use pull request workflow for publishing extensions:
   - Semantic versioning format
 
 ## Future Enhancements
+
 - **Auto-publish for verified authors**: Whitelist trusted authors to skip review
 - **Scheduled sync**: Periodically verify all extension tags still exist
 - **Deprecation workflow**: Support marking extensions as deprecated in registry
 - **Multi-maintainer model**: Split registries by domain (design extensions, AI extensions, etc.)
 
 ## Related Decisions
+
 - ADR-003: Git-Based Registry (how registries are structured)
 - ADR-006: Exact Version Pinning (versions published as git tags)

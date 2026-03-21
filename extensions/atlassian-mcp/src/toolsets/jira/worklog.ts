@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createWorklogToolset(client: JiraClient): Toolset {
   return {
@@ -36,7 +36,7 @@ export function createWorklogToolset(client: JiraClient): Toolset {
       jira_get_worklog: async (args) => {
         try {
           const data = await client.getWorklog(args['issueKey'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -60,7 +60,7 @@ export function createWorklogToolset(client: JiraClient): Toolset {
           }
           if (args['started']) worklog['started'] = args['started'];
           const data = await client.addWorklog(args['issueKey'] as string, worklog);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

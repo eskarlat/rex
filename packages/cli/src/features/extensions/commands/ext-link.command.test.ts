@@ -19,8 +19,11 @@ vi.mock('../../../core/database/database.js', () => ({
 const mockExtensionsDir = path.join(os.tmpdir(), `renre-link-exts-${Date.now()}`);
 
 vi.mock('../../../core/paths/paths.js', () => ({
-  get EXTENSIONS_DIR() { return mockExtensionsDir; },
-  getExtensionDir: (name: string, version: string) => path.join(mockExtensionsDir, `${name}@${version}`),
+  get EXTENSIONS_DIR() {
+    return mockExtensionsDir;
+  },
+  getExtensionDir: (name: string, version: string) =>
+    path.join(mockExtensionsDir, `${name}@${version}`),
 }));
 
 import * as clack from '@clack/prompts';
@@ -51,9 +54,7 @@ describe('ext-link command', () => {
       projectPath: null,
     });
 
-    expect(clack.log.error).toHaveBeenCalledWith(
-      expect.stringContaining('does not exist'),
-    );
+    expect(clack.log.error).toHaveBeenCalledWith(expect.stringContaining('does not exist'));
   });
 
   it('errors when manifest.json is missing', async () => {
@@ -62,9 +63,7 @@ describe('ext-link command', () => {
       projectPath: null,
     });
 
-    expect(clack.log.error).toHaveBeenCalledWith(
-      expect.stringContaining('manifest.json'),
-    );
+    expect(clack.log.error).toHaveBeenCalledWith(expect.stringContaining('manifest.json'));
   });
 
   it('creates symlink and records in database', async () => {
@@ -90,11 +89,13 @@ describe('ext-link command', () => {
     expect(fs.readlinkSync(linkPath)).toBe(extDir);
 
     expect(extensionManager.install).toHaveBeenCalledWith(
-      'my-ext', 'dev', 'local', 'standard', expect.anything(),
+      'my-ext',
+      'dev',
+      'local',
+      'standard',
+      expect.anything(),
     );
-    expect(clack.log.success).toHaveBeenCalledWith(
-      expect.stringContaining('my-ext'),
-    );
+    expect(clack.log.success).toHaveBeenCalledWith(expect.stringContaining('my-ext'));
   });
 
   it('activates in project when projectPath provided', async () => {
@@ -116,10 +117,11 @@ describe('ext-link command', () => {
     });
 
     expect(extensionManager.activate).toHaveBeenCalledWith(
-      'my-ext', 'dev', '/tmp/project', expect.any(String),
+      'my-ext',
+      'dev',
+      '/tmp/project',
+      expect.any(String),
     );
-    expect(clack.log.success).toHaveBeenCalledWith(
-      expect.stringContaining('Activated'),
-    );
+    expect(clack.log.success).toHaveBeenCalledWith(expect.stringContaining('Activated'));
   });
 });

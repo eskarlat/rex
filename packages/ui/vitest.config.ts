@@ -12,12 +12,7 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     setupFiles: ['./src/test-setup.ts'],
     ...createCoverageConfig({
-      exclude: [
-        'src/test-setup.ts',
-        'src/main.tsx',
-        'src/App.tsx',
-        'src/components/ui/**',
-      ],
+      exclude: ['src/test-setup.ts', 'src/main.tsx', 'src/App.tsx', 'src/components/ui/**'],
     }),
   },
 });

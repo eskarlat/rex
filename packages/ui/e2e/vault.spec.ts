@@ -26,9 +26,7 @@ test.describe('Vault Page', () => {
   });
 
   test('shows Add Entry button', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: 'Add Entry' }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add Entry' })).toBeVisible();
   });
 
   test('opens Add Entry dialog', async ({ page }) => {

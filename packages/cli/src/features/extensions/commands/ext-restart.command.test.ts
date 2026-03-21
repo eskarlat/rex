@@ -14,7 +14,14 @@ describe('ext-restart command', () => {
   });
 
   it('calls restart and reports success', async () => {
-    const restartFn = vi.fn().mockResolvedValue({ extensionName: 'my-ext', transport: 'stdio', state: 'running', retryCount: 0 });
+    const restartFn = vi
+      .fn()
+      .mockResolvedValue({
+        extensionName: 'my-ext',
+        transport: 'stdio',
+        state: 'running',
+        retryCount: 0,
+      });
 
     await handleExtRestart({ name: 'my-ext', restartFn });
 

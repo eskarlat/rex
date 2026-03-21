@@ -38,38 +38,45 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Issues — CRUD operations and search
 
 - **`atlassian-mcp:jira_get_issue`** — Get a single issue by key.
+
   ```
   renre-kit atlassian-mcp:jira_get_issue --issueKey "PROJ-123"
   renre-kit atlassian-mcp:jira_get_issue --issueKey "PROJ-123" --expand "changelog,renderedFields"
   ```
 
 - **`atlassian-mcp:jira_search`** — Search issues using JQL (Jira Query Language).
+
   ```
   renre-kit atlassian-mcp:jira_search --jql "project = PROJ AND status = 'In Progress'"
   renre-kit atlassian-mcp:jira_search --jql "assignee = currentUser() ORDER BY updated DESC" --maxResults 20
   ```
 
 - **`atlassian-mcp:jira_get_project_issues`** — Get all issues for a project.
+
   ```
   renre-kit atlassian-mcp:jira_get_project_issues --projectKey "PROJ"
   ```
 
 - **`atlassian-mcp:jira_create_issue`** — Create a new issue.
+
   ```
   renre-kit atlassian-mcp:jira_create_issue --projectKey "PROJ" --issueType "Task" --summary "Implement login page" --description "Build the login page per the Figma design"
   ```
 
 - **`atlassian-mcp:jira_update_issue`** — Update issue fields.
+
   ```
   renre-kit atlassian-mcp:jira_update_issue --issueKey "PROJ-123" --fields '{"summary": "Updated title", "priority": {"name": "High"}}'
   ```
 
 - **`atlassian-mcp:jira_delete_issue`** — Delete an issue.
+
   ```
   renre-kit atlassian-mcp:jira_delete_issue --issueKey "PROJ-123"
   ```
 
 - **`atlassian-mcp:jira_batch_create_issues`** — Create multiple issues at once.
+
   ```
   renre-kit atlassian-mcp:jira_batch_create_issues --issues '[{"fields": {"project": {"key": "PROJ"}, "issuetype": {"name": "Task"}, "summary": "Task 1"}}, {"fields": {"project": {"key": "PROJ"}, "issuetype": {"name": "Task"}, "summary": "Task 2"}}]'
   ```
@@ -82,6 +89,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Fields — Discover available fields and their options
 
 - **`atlassian-mcp:jira_search_fields`** — List all available fields (system and custom). No args.
+
   ```
   renre-kit atlassian-mcp:jira_search_fields
   ```
@@ -94,6 +102,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Comments — Add and edit issue comments
 
 - **`atlassian-mcp:jira_add_comment`** — Add a comment to an issue.
+
   ```
   renre-kit atlassian-mcp:jira_add_comment --issueKey "PROJ-123" --body "Implementation complete. Ready for review."
   ```
@@ -106,6 +115,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Transitions — Move issues through workflow states
 
 - **`atlassian-mcp:jira_get_transitions`** — Get available transitions for an issue.
+
   ```
   renre-kit atlassian-mcp:jira_get_transitions --issueKey "PROJ-123"
   ```
@@ -118,21 +128,25 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Projects — Project metadata, versions, and components
 
 - **`atlassian-mcp:jira_get_all_projects`** — List all accessible projects. No args.
+
   ```
   renre-kit atlassian-mcp:jira_get_all_projects
   ```
 
 - **`atlassian-mcp:jira_get_project_versions`** — Get project release versions.
+
   ```
   renre-kit atlassian-mcp:jira_get_project_versions --projectKey "PROJ"
   ```
 
 - **`atlassian-mcp:jira_get_project_components`** — Get project components.
+
   ```
   renre-kit atlassian-mcp:jira_get_project_components --projectKey "PROJ"
   ```
 
 - **`atlassian-mcp:jira_create_version`** — Create a release version.
+
   ```
   renre-kit atlassian-mcp:jira_create_version --projectKey "PROJ" --name "v2.1.0" --releaseDate "2026-04-01"
   ```
@@ -145,31 +159,37 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Agile — Boards, sprints, and sprint management
 
 - **`atlassian-mcp:jira_get_agile_boards`** — List all agile boards (Scrum/Kanban).
+
   ```
   renre-kit atlassian-mcp:jira_get_agile_boards
   ```
 
 - **`atlassian-mcp:jira_get_board_issues`** — Get issues on a board.
+
   ```
   renre-kit atlassian-mcp:jira_get_board_issues --boardId 42
   ```
 
 - **`atlassian-mcp:jira_get_sprints_from_board`** — List sprints for a board.
+
   ```
   renre-kit atlassian-mcp:jira_get_sprints_from_board --boardId 42
   ```
 
 - **`atlassian-mcp:jira_get_sprint_issues`** — Get issues in a specific sprint.
+
   ```
   renre-kit atlassian-mcp:jira_get_sprint_issues --sprintId 15
   ```
 
 - **`atlassian-mcp:jira_create_sprint`** — Create a new sprint.
+
   ```
   renre-kit atlassian-mcp:jira_create_sprint --boardId 42 --name "Sprint 10" --startDate "2026-03-24T00:00:00.000Z" --endDate "2026-04-07T00:00:00.000Z" --goal "Complete auth module"
   ```
 
 - **`atlassian-mcp:jira_update_sprint`** — Update sprint details or state.
+
   ```
   renre-kit atlassian-mcp:jira_update_sprint --sprintId 15 --state "active"
   ```
@@ -182,21 +202,25 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Links — Issue relationships and remote links
 
 - **`atlassian-mcp:jira_get_link_types`** — Get available link types (Blocks, Relates, etc.). No args.
+
   ```
   renre-kit atlassian-mcp:jira_get_link_types
   ```
 
 - **`atlassian-mcp:jira_link_to_epic`** — Link issues to an epic.
+
   ```
   renre-kit atlassian-mcp:jira_link_to_epic --epicKey "PROJ-50" --issueKeys '["PROJ-101", "PROJ-102"]'
   ```
 
 - **`atlassian-mcp:jira_create_issue_link`** — Create a link between two issues.
+
   ```
   renre-kit atlassian-mcp:jira_create_issue_link --typeName "Blocks" --inwardIssueKey "PROJ-101" --outwardIssueKey "PROJ-102"
   ```
 
 - **`atlassian-mcp:jira_create_remote_issue_link`** — Link an issue to an external URL.
+
   ```
   renre-kit atlassian-mcp:jira_create_remote_issue_link --issueKey "PROJ-123" --url "https://github.com/org/repo/pull/42" --title "PR #42: Fix auth bug"
   ```
@@ -209,6 +233,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Worklog — Time tracking
 
 - **`atlassian-mcp:jira_get_worklog`** — Get work log entries.
+
   ```
   renre-kit atlassian-mcp:jira_get_worklog --issueKey "PROJ-123"
   ```
@@ -221,6 +246,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Attachments — Download and inspect attachments
 
 - **`atlassian-mcp:jira_download_attachments`** — Download an attachment by ID.
+
   ```
   renre-kit atlassian-mcp:jira_download_attachments --attachmentId "10001"
   ```
@@ -241,11 +267,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Watchers — Issue watchers management
 
 - **`atlassian-mcp:jira_get_issue_watchers`** — List watchers on an issue.
+
   ```
   renre-kit atlassian-mcp:jira_get_issue_watchers --issueKey "PROJ-123"
   ```
 
 - **`atlassian-mcp:jira_add_watcher`** — Add a watcher.
+
   ```
   renre-kit atlassian-mcp:jira_add_watcher --issueKey "PROJ-123" --accountId "5b10a2844c20165700ede21g"
   ```
@@ -258,11 +286,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Service Desk — JSM queues and requests
 
 - **`atlassian-mcp:jira_get_service_desk_for_project`** — List all service desks. No args.
+
   ```
   renre-kit atlassian-mcp:jira_get_service_desk_for_project
   ```
 
 - **`atlassian-mcp:jira_get_service_desk_queues`** — Get queues for a service desk.
+
   ```
   renre-kit atlassian-mcp:jira_get_service_desk_queues --serviceDeskId 1
   ```
@@ -275,11 +305,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Forms — Proforma form data
 
 - **`atlassian-mcp:jira_get_issue_proforma_forms`** — Get forms on an issue.
+
   ```
   renre-kit atlassian-mcp:jira_get_issue_proforma_forms --issueKey "PROJ-123"
   ```
 
 - **`atlassian-mcp:jira_get_proforma_form_details`** — Get form details.
+
   ```
   renre-kit atlassian-mcp:jira_get_proforma_form_details --issueKey "PROJ-123" --formId "form-1"
   ```
@@ -292,6 +324,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Metrics — Dates and SLA tracking
 
 - **`atlassian-mcp:jira_get_issue_dates`** — Get date fields (created, updated, resolved, due).
+
   ```
   renre-kit atlassian-mcp:jira_get_issue_dates --issueKey "PROJ-123"
   ```
@@ -304,6 +337,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Development — Linked commits, branches, and PRs
 
 - **`atlassian-mcp:jira_get_issue_development_info`** — Get dev info for one issue.
+
   ```
   renre-kit atlassian-mcp:jira_get_issue_development_info --issueId "10001"
   ```
@@ -391,6 +425,7 @@ Never assume the current state of an issue. Always use `jira_get_issue` or `jira
 ### Use JQL Effectively
 
 JQL is powerful for filtering. Common patterns:
+
 - `project = PROJ AND status = "In Progress"` — active work
 - `assignee = currentUser() AND sprint in openSprints()` — my sprint work
 - `priority = Highest AND status != Done` — critical open issues
@@ -410,6 +445,7 @@ Before deleting issues or removing links, confirm with the user. These actions m
 
 **Cause:** The extension's domain, email, or API token is not configured.
 **Solution:** Guide the user to configure the extension:
+
 ```
 renre-kit ext config atlassian-mcp --set domain=company.atlassian.net
 renre-kit ext config atlassian-mcp --set email=user@company.com

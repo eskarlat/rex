@@ -60,9 +60,7 @@ export function createOrganizationToolset(client: MiroClient): Toolset {
   ];
 
   const handlers = {
-    miro_get_organization: createHandler((args) =>
-      client.getOrganization(args['orgId'] as string),
-    ),
+    miro_get_organization: createHandler((args) => client.getOrganization(args['orgId'] as string)),
     miro_list_org_members: createHandler((args) =>
       client.listOrgMembers(
         args['orgId'] as string,

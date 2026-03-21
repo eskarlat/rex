@@ -22,19 +22,10 @@ export default function MyTasksWidget({ sdk, extensionName }) {
             .finally(() => setLoading(false));
     }, [sdk, extName]);
     if (loading) {
-        return _jsx("div", { style: { padding: '12px', fontSize: '13px', color: '#6b7280' }, children: "Loading tasks..." });
+        return _jsx("div", { className: "p-3 text-xs text-muted-foreground", children: "Loading tasks..." });
     }
     if (error) {
-        return _jsx("div", { style: { padding: '12px', fontSize: '13px', color: '#ef4444' }, children: error });
+        return _jsx("div", { className: "p-3 text-xs text-red-500", children: error });
     }
-    return (_jsxs("div", { style: { padding: '8px', overflow: 'auto', maxHeight: '100%' }, children: [_jsx("p", { style: { fontSize: '13px', fontWeight: 600, marginBottom: '8px' }, children: "My Jira Tasks" }), issues.length === 0 ? (_jsx("p", { style: { fontSize: '12px', color: '#6b7280' }, children: "No assigned issues found." })) : (_jsx("ul", { style: { listStyle: 'none', padding: 0, margin: 0 }, children: issues.map((issue) => (_jsxs("li", { style: {
-                        padding: '6px 0',
-                        borderBottom: '1px solid var(--border, #e5e7eb)',
-                        fontSize: '12px',
-                    }, children: [_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, children: [_jsx("span", { style: { fontWeight: 500, color: '#0052CC' }, children: issue.key }), _jsx("span", { style: {
-                                        fontSize: '11px',
-                                        padding: '1px 6px',
-                                        borderRadius: '3px',
-                                        background: 'var(--muted, #f3f4f6)',
-                                    }, children: issue.fields.status.name })] }), _jsx("div", { style: { color: '#374151', marginTop: '2px' }, children: issue.fields.summary })] }, issue.key))) }))] }));
+    return (_jsxs("div", { className: "max-h-full overflow-auto p-2", children: [_jsx("p", { className: "mb-2 text-xs font-semibold", children: "My Jira Tasks" }), issues.length === 0 ? (_jsx("p", { className: "text-xs text-muted-foreground", children: "No assigned issues found." })) : (_jsx("ul", { className: "m-0 list-none p-0", children: issues.map((issue) => (_jsxs("li", { className: "border-b border-border py-1.5 text-xs", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx("span", { className: "font-medium text-[#0052CC]", children: issue.key }), _jsx("span", { className: "rounded bg-muted px-1.5 py-0.5 text-[11px]", children: issue.fields.status.name })] }), _jsx("div", { className: "mt-0.5 text-foreground", children: issue.fields.summary })] }, issue.key))) }))] }));
 }

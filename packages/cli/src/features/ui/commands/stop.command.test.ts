@@ -60,9 +60,7 @@ describe('stop command', () => {
 
     handleStop();
 
-    expect(mockLogWarn).toHaveBeenCalledWith(
-      expect.stringContaining('99999'),
-    );
+    expect(mockLogWarn).toHaveBeenCalledWith(expect.stringContaining('99999'));
     expect(mockUnlinkSync).toHaveBeenCalled();
     expect(mockOutro).toHaveBeenCalledWith('Nothing to stop.');
   });
@@ -77,9 +75,7 @@ describe('stop command', () => {
     handleStop();
 
     expect(killSpy).toHaveBeenCalledWith(12345);
-    expect(mockLogSuccess).toHaveBeenCalledWith(
-      expect.stringContaining('12345'),
-    );
+    expect(mockLogSuccess).toHaveBeenCalledWith(expect.stringContaining('12345'));
     expect(mockUnlinkSync).toHaveBeenCalled();
     expect(mockOutro).toHaveBeenCalledWith('Done.');
 
@@ -97,9 +93,7 @@ describe('stop command', () => {
 
     handleStop();
 
-    expect(mockLogError).toHaveBeenCalledWith(
-      expect.stringContaining('Operation not permitted'),
-    );
+    expect(mockLogError).toHaveBeenCalledWith(expect.stringContaining('Operation not permitted'));
     expect(mockUnlinkSync).toHaveBeenCalled();
 
     killSpy.mockRestore();

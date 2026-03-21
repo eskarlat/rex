@@ -2,9 +2,15 @@ import '@testing-library/jest-dom';
 
 // Polyfill ResizeObserver for Radix UI components in jsdom
 class ResizeObserverMock {
-  observe() { /* noop */ }
-  unobserve() { /* noop */ }
-  disconnect() { /* noop */ }
+  observe() {
+    /* noop */
+  }
+  unobserve() {
+    /* noop */
+  }
+  disconnect() {
+    /* noop */
+  }
 }
 
 if (typeof globalThis.ResizeObserver === 'undefined') {

@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createLinksToolset(client) {
     return {
         name: 'jira_links',
@@ -66,7 +66,7 @@ export function createLinksToolset(client) {
             jira_get_link_types: async () => {
                 try {
                     const data = await client.getLinkTypes();
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -75,7 +75,7 @@ export function createLinksToolset(client) {
             jira_link_to_epic: async (args) => {
                 try {
                     const data = await client.linkToEpic(args['epicKey'], args['issueKeys']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -88,7 +88,7 @@ export function createLinksToolset(client) {
                         inwardIssue: { key: args['inwardIssueKey'] },
                         outwardIssue: { key: args['outwardIssueKey'] },
                     });
-                    return textResult(data ?? { success: true });
+                    return markdownResult(data ?? { success: true });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -99,7 +99,7 @@ export function createLinksToolset(client) {
                     const data = await client.createRemoteIssueLink(args['issueKey'], {
                         object: { url: args['url'], title: args['title'] },
                     });
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -108,7 +108,7 @@ export function createLinksToolset(client) {
             jira_remove_issue_link: async (args) => {
                 try {
                     await client.removeIssueLink(args['linkId']);
-                    return textResult({ success: true });
+                    return markdownResult({ success: true });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

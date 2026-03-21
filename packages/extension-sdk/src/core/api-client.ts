@@ -12,7 +12,7 @@ export class ApiClientError extends Error {
   constructor(
     public readonly status: number,
     public readonly statusText: string,
-    public readonly body: unknown
+    public readonly body: unknown,
   ) {
     super(`API Error ${status}: ${statusText}`);
     this.name = 'ApiClientError';
@@ -81,10 +81,7 @@ export class ApiClient {
   }
 
   /** POST /api/run — execute a CLI command through the dashboard. */
-  async runCommand(
-    command: string,
-    args?: Record<string, unknown>
-  ): Promise<CommandResult> {
+  async runCommand(command: string, args?: Record<string, unknown>): Promise<CommandResult> {
     const body: Record<string, unknown> = { command };
     if (args !== undefined) {
       body['args'] = args;
@@ -94,46 +91,36 @@ export class ApiClient {
 
   /** GET /api/settings/extensions/:name — read extension storage/config. */
   async getStorage(extensionName: string): Promise<unknown> {
-    return this.fetch<unknown>(
-      `/api/settings/extensions/${extensionName}`,
-      { method: 'GET' }
-    );
+    return this.fetch<unknown>(`/api/settings/extensions/${extensionName}`, { method: 'GET' });
   }
 
   /** PUT /api/settings/extensions/:name — write a key-value pair to extension storage. */
-  async setStorage(
-    extensionName: string,
-    key: string,
-    value: string
-  ): Promise<void> {
-    return this.fetch<void>(
-      `/api/settings/extensions/${extensionName}`,
-      { method: 'PUT', body: { key, value } }
-    );
+  async setStorage(extensionName: string, key: string, value: string): Promise<void> {
+    return this.fetch<void>(`/api/settings/extensions/${extensionName}`, {
+      method: 'PUT',
+      body: { key, value },
+    });
   }
 
   /** GET /api/settings/extensions/:name/keys/:key — read a single storage value. */
   async getStorageValue(extensionName: string, key: string): Promise<string | null> {
-    return this.fetch<string | null>(
-      `/api/settings/extensions/${extensionName}/keys/${key}`,
-      { method: 'GET' }
-    );
+    return this.fetch<string | null>(`/api/settings/extensions/${extensionName}/keys/${key}`, {
+      method: 'GET',
+    });
   }
 
   /** DELETE /api/settings/extensions/:name/keys/:key — delete a storage key. */
   async deleteStorage(extensionName: string, key: string): Promise<void> {
-    return this.fetch<void>(
-      `/api/settings/extensions/${extensionName}/keys/${key}`,
-      { method: 'DELETE' }
-    );
+    return this.fetch<void>(`/api/settings/extensions/${extensionName}/keys/${key}`, {
+      method: 'DELETE',
+    });
   }
 
   /** GET /api/settings/extensions/:name/keys — list all storage entries. */
   async listStorage(extensionName: string): Promise<StorageEntry[]> {
-    return this.fetch<StorageEntry[]>(
-      `/api/settings/extensions/${extensionName}/keys`,
-      { method: 'GET' }
-    );
+    return this.fetch<StorageEntry[]>(`/api/settings/extensions/${extensionName}/keys`, {
+      method: 'GET',
+    });
   }
 
   /** GET /api/scheduler — list all scheduled tasks. */
@@ -150,10 +137,7 @@ export class ApiClient {
   }
 
   /** PUT /api/scheduler/:id — update an existing scheduled task. */
-  async updateTask(
-    id: string,
-    payload: UpdateTaskPayload
-  ): Promise<ScheduledTask> {
+  async updateTask(id: string, payload: UpdateTaskPayload): Promise<ScheduledTask> {
     return this.fetch<ScheduledTask>(`/api/scheduler/${id}`, {
       method: 'PUT',
       body: payload,
@@ -163,5 +147,19 @@ export class ApiClient {
   /** DELETE /api/scheduler/:id — delete a scheduled task. */
   async deleteTask(id: string): Promise<void> {
     return this.fetch<void>(`/api/scheduler/${id}`, { method: 'DELETE' });
+  }
+
+  /** POST /api/logs/write — write a log entry from an extension. */
+  async writeLog(
+    level: string,
+    source: string,
+    message: string,
+    data?: unknown,
+  ): Promise<void> {
+    const body: Record<string, unknown> = { level, source, message };
+    if (data !== undefined) {
+      body['data'] = data;
+    }
+    return this.fetch<void>('/api/logs/write', { method: 'POST', body });
   }
 }

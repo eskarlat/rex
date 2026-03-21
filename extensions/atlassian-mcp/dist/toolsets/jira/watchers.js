@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createWatchersToolset(client) {
     return {
         name: 'jira_watchers',
@@ -43,7 +43,7 @@ export function createWatchersToolset(client) {
             jira_get_issue_watchers: async (args) => {
                 try {
                     const data = await client.getWatchers(args['issueKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -52,7 +52,7 @@ export function createWatchersToolset(client) {
             jira_add_watcher: async (args) => {
                 try {
                     await client.addWatcher(args['issueKey'], args['accountId']);
-                    return textResult({ success: true });
+                    return markdownResult({ success: true });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -61,7 +61,7 @@ export function createWatchersToolset(client) {
             jira_remove_watcher: async (args) => {
                 try {
                     await client.removeWatcher(args['issueKey'], args['accountId']);
-                    return textResult({ success: true });
+                    return markdownResult({ success: true });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

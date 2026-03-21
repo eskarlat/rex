@@ -53,15 +53,19 @@ erDiagram
 ## Table Descriptions
 
 ### projects
+
 Stores information about Rex Kit projects. Each project has a unique path and tracks when it was created and last accessed.
 
 ### installed_extensions
+
 Manages installed extensions with composite primary key (name, version). Tracks the registry source, installation date, and extension type.
 
 ### scheduled_tasks
+
 Stores scheduled tasks that are associated with extensions and optionally with specific projects. Includes cron schedule, command, enabled status, and execution tracking fields.
 
 ### task_history
+
 Records the execution history of scheduled tasks. Links to scheduled_tasks with cascade delete semantics, storing execution duration, status, and output logs.
 
 ## Relationships

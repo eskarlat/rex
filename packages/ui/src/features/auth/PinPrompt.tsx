@@ -2,13 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { fetchApi, ApiError } from '@/core/api/client';
 
@@ -73,17 +67,11 @@ export function PinPrompt({ onSuccess }: PinPromptProps) {
                 maxLength={4}
                 placeholder="Enter 4-digit PIN"
                 value={pin}
-                onChange={(e) =>
-                  setPin(e.target.value.replace(/\D/g, '').slice(0, 4))
-                }
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 autoFocus
               />
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={pin.length !== 4 || loading}
-            >
+            <Button type="submit" className="w-full" disabled={pin.length !== 4 || loading}>
               {loading ? 'Verifying...' : 'Submit'}
             </Button>
           </form>

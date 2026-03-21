@@ -10,10 +10,11 @@ describe('interpolation', () => {
     });
 
     it('should replace multiple config variables', () => {
-      const result = interpolate(
-        '${config.proto}://${config.host}:${config.port}',
-        { proto: 'https', host: 'localhost', port: 8080 },
-      );
+      const result = interpolate('${config.proto}://${config.host}:${config.port}', {
+        proto: 'https',
+        host: 'localhost',
+        port: 8080,
+      });
       expect(result).toBe('https://localhost:8080');
     });
 
@@ -49,9 +50,7 @@ describe('interpolation', () => {
     });
 
     it('should throw on missing config key', () => {
-      expect(() =>
-        interpolate('${config.missing}', { other: 'value' }),
-      ).toThrow();
+      expect(() => interpolate('${config.missing}', { other: 'value' })).toThrow();
       try {
         interpolate('${config.missing}', { other: 'value' });
       } catch (err: unknown) {
@@ -61,15 +60,11 @@ describe('interpolation', () => {
     });
 
     it('should throw on missing nested config key', () => {
-      expect(() =>
-        interpolate('${config.a.b.c}', { a: { b: {} } }),
-      ).toThrow();
+      expect(() => interpolate('${config.a.b.c}', { a: { b: {} } })).toThrow();
     });
 
     it('should throw when intermediate path is not an object', () => {
-      expect(() =>
-        interpolate('${config.a.b}', { a: 'string' }),
-      ).toThrow();
+      expect(() => interpolate('${config.a.b}', { a: 'string' })).toThrow();
     });
 
     it('should handle empty template', () => {

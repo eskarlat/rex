@@ -4,27 +4,39 @@ import userEvent from '@testing-library/user-event';
 import FigmaPanel from './panel.js';
 
 const GET_FILE_RESPONSE = JSON.stringify({
-  content: [{
-    type: 'text',
-    text: JSON.stringify({
-      name: 'My Design File',
-      lastModified: '2024-01-15T10:30:00Z',
-      version: '123456',
-      document: { id: '0:0', name: 'Document', type: 'DOCUMENT' },
-    }, null, 2),
-  }],
+  content: [
+    {
+      type: 'text',
+      text: JSON.stringify(
+        {
+          name: 'My Design File',
+          lastModified: '2024-01-15T10:30:00Z',
+          version: '123456',
+          document: { id: '0:0', name: 'Document', type: 'DOCUMENT' },
+        },
+        null,
+        2,
+      ),
+    },
+  ],
 });
 
 const GET_COMMENTS_RESPONSE = JSON.stringify({
-  content: [{
-    type: 'text',
-    text: JSON.stringify({
-      comments: [
-        { id: '1', message: 'Looks great!', user: { handle: 'designer1' } },
-        { id: '2', message: 'Needs more contrast', user: { handle: 'reviewer1' } },
-      ],
-    }, null, 2),
-  }],
+  content: [
+    {
+      type: 'text',
+      text: JSON.stringify(
+        {
+          comments: [
+            { id: '1', message: 'Looks great!', user: { handle: 'designer1' } },
+            { id: '2', message: 'Needs more contrast', user: { handle: 'reviewer1' } },
+          ],
+        },
+        null,
+        2,
+      ),
+    },
+  ],
 });
 
 function createMockSdk(overrides: Record<string, unknown> = {}) {

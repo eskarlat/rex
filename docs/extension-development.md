@@ -78,25 +78,25 @@ The `manifest.json` is the single source of truth for your extension's configura
 
 ### Required Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | string | Unique extension identifier |
-| `version` | string | Semver version |
-| `description` | string | Short description for marketplace listing |
-| `type` | `"standard"` \| `"mcp"` | Extension type |
-| `commands` | object | Command declarations (can be `{}` for MCP-only) |
+| Field         | Type                    | Description                                     |
+| ------------- | ----------------------- | ----------------------------------------------- |
+| `name`        | string                  | Unique extension identifier                     |
+| `version`     | string                  | Semver version                                  |
+| `description` | string                  | Short description for marketplace listing       |
+| `type`        | `"standard"` \| `"mcp"` | Extension type                                  |
+| `commands`    | object                  | Command declarations (can be `{}` for MCP-only) |
 
 ### Optional Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `main` | string | Entry point module for lifecycle hooks (`onInit`/`onDestroy`) |
-| `icon` | string | Icon name for dashboard display |
-| `mcp` | object | MCP transport config (required when `type: "mcp"`) |
-| `ui.panels` | array | Dashboard panel definitions |
-| `agent` | object | LLM asset declarations (skills, prompts, context, agents, workflows) |
-| `engines` | object | Minimum version constraints for `renre-kit` and `extension-sdk` |
-| `config.schema` | object | Configuration fields with types, descriptions, and vault hints |
+| Field           | Type   | Description                                                          |
+| --------------- | ------ | -------------------------------------------------------------------- |
+| `main`          | string | Entry point module for lifecycle hooks (`onInit`/`onDestroy`)        |
+| `icon`          | string | Icon name for dashboard display                                      |
+| `mcp`           | object | MCP transport config (required when `type: "mcp"`)                   |
+| `ui.panels`     | array  | Dashboard panel definitions                                          |
+| `agent`         | object | LLM asset declarations (skills, prompts, context, agents, workflows) |
+| `engines`       | object | Minimum version constraints for `renre-kit` and `extension-sdk`      |
+| `config.schema` | object | Configuration fields with types, descriptions, and vault hints       |
 
 ### Full Example (Standard)
 
@@ -119,14 +119,10 @@ The `manifest.json` is the single source of truth for your extension's configura
     }
   },
   "ui": {
-    "panels": [
-      { "id": "hello-panel", "title": "Hello World", "entry": "ui/panel.js" }
-    ]
+    "panels": [{ "id": "hello-panel", "title": "Hello World", "entry": "ui/panel.js" }]
   },
   "agent": {
-    "skills": [
-      { "name": "greet", "path": "agent/skills/greet/SKILL.md" }
-    ],
+    "skills": [{ "name": "greet", "path": "agent/skills/greet/SKILL.md" }],
     "prompts": ["agent/prompts/style.md"],
     "context": ["agent/context/docs.md"]
   }
@@ -153,9 +149,7 @@ The `manifest.json` is the single source of truth for your extension's configura
     "args": ["src/server.js"]
   },
   "agent": {
-    "skills": [
-      { "name": "echo", "path": "agent/skills/echo/SKILL.md" }
-    ]
+    "skills": [{ "name": "echo", "path": "agent/skills/echo/SKILL.md" }]
   }
 }
 ```
@@ -211,7 +205,10 @@ import { useState } from 'react';
 interface PanelProps {
   sdk?: {
     exec: {
-      run(command: string, args?: Record<string, unknown>): Promise<{ output: string; exitCode: number }>;
+      run(
+        command: string,
+        args?: Record<string, unknown>,
+      ): Promise<{ output: string; exitCode: number }>;
     };
   };
   extensionName?: string;
@@ -293,10 +290,10 @@ export function onDestroy(context: HookContext): void {
 
 The `HookContext` type is a type-only import (erased at compile time), so extensions installed without `node_modules` still work correctly.
 
-| Hook | When | Typical use |
-|------|------|-------------|
-| `onInit` | Extension activated in a project | Deploy agent assets to `.agents/` |
-| `onDestroy` | Extension deactivated from a project | Clean up deployed assets |
+| Hook        | When                                 | Typical use                       |
+| ----------- | ------------------------------------ | --------------------------------- |
+| `onInit`    | Extension activated in a project     | Deploy agent assets to `.agents/` |
+| `onDestroy` | Extension deactivated from a project | Clean up deployed assets          |
 
 Both are optional. If your extension has no agent assets to deploy, you can omit `main` entirely.
 
@@ -345,11 +342,13 @@ rl.on('line', (line: string) => {
     const response = handleRequest(request);
     process.stdout.write(JSON.stringify(response) + '\n');
   } catch {
-    process.stdout.write(JSON.stringify({
-      jsonrpc: '2.0',
-      id: 0,
-      error: { code: -32700, message: 'Parse error' },
-    }) + '\n');
+    process.stdout.write(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: 0,
+        error: { code: -32700, message: 'Parse error' },
+      }) + '\n',
+    );
   }
 });
 ```

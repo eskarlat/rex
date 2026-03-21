@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockInit = vi.fn().mockReturnValue({ id: 1, name: 'test', path: '/test', created_at: '', last_accessed_at: '' });
+const mockInit = vi
+  .fn()
+  .mockReturnValue({ id: 1, name: 'test', path: '/test', created_at: '', last_accessed_at: '' });
 
 vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
@@ -40,7 +42,9 @@ vi.mock('../../doctor/commands/doctor.command.js', () => ({
 }));
 
 vi.mock('../../../core/paths/paths.js', () => ({
-  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
+  getExtensionDir: vi
+    .fn()
+    .mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
 }));
 
 import * as clack from '@clack/prompts';
@@ -93,7 +97,13 @@ describe('init command', () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
     vi.mocked(clack.select).mockResolvedValue('.github');
     vi.mocked(extensionManager.listInstalled).mockReturnValue([
-      { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+      {
+        name: 'ext-a',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '',
+        type: 'standard',
+      },
     ]);
     vi.mocked(clack.multiselect).mockResolvedValue(['ext-a']);
 
@@ -101,7 +111,10 @@ describe('init command', () => {
 
     expect(clack.multiselect).toHaveBeenCalled();
     expect(extensionManager.activate).toHaveBeenCalledWith(
-      'ext-a', '1.0.0', '/tmp/test', expect.any(String),
+      'ext-a',
+      '1.0.0',
+      '/tmp/test',
+      expect.any(String),
     );
   });
 
@@ -109,7 +122,13 @@ describe('init command', () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
     vi.mocked(clack.select).mockResolvedValue('.github');
     vi.mocked(extensionManager.listInstalled).mockReturnValue([
-      { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
+      {
+        name: 'ext-a',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '',
+        type: 'standard',
+      },
     ]);
     vi.mocked(clack.multiselect).mockResolvedValue(Symbol('cancel'));
     vi.mocked(clack.isCancel)
@@ -144,7 +163,9 @@ describe('init command', () => {
       throw new Error('Database is locked');
     });
 
-    await expect(handleInit({ projectPath: '/tmp/test', force: false })).rejects.toThrow('Database is locked');
+    await expect(handleInit({ projectPath: '/tmp/test', force: false })).rejects.toThrow(
+      'Database is locked',
+    );
   });
 
   it('handles cancel on agent dir select', async () => {
@@ -164,8 +185,20 @@ describe('init command', () => {
     vi.mocked(clack.text).mockResolvedValue('my-project');
     vi.mocked(clack.select).mockResolvedValue('.agents');
     vi.mocked(extensionManager.listInstalled).mockReturnValue([
-      { name: 'ext-a', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
-      { name: 'ext-b', version: '2.0.0', registry_source: 'default', installed_at: '', type: 'mcp' },
+      {
+        name: 'ext-a',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '',
+        type: 'standard',
+      },
+      {
+        name: 'ext-b',
+        version: '2.0.0',
+        registry_source: 'default',
+        installed_at: '',
+        type: 'mcp',
+      },
     ]);
     vi.mocked(clack.multiselect).mockResolvedValue(['ext-a', 'ext-b']);
 
@@ -185,10 +218,7 @@ describe('init command', () => {
       expect(clack.confirm).toHaveBeenCalledWith(
         expect.objectContaining({ message: expect.stringContaining('diagnostic') }),
       );
-      expect(mockHandleDoctor).toHaveBeenCalledWith(
-        '/tmp/test',
-        expect.any(Function),
-      );
+      expect(mockHandleDoctor).toHaveBeenCalledWith('/tmp/test', expect.any(Function));
     });
 
     it('skips doctor when user declines', async () => {
@@ -206,9 +236,7 @@ describe('init command', () => {
       vi.mocked(clack.select).mockResolvedValue('.github');
       const cancelSymbol = Symbol('cancel');
       vi.mocked(clack.confirm).mockResolvedValue(cancelSymbol);
-      vi.mocked(clack.isCancel).mockImplementation(
-        (val) => val === cancelSymbol,
-      );
+      vi.mocked(clack.isCancel).mockImplementation((val) => val === cancelSymbol);
 
       await handleInit({ projectPath: '/tmp/test', force: false });
 

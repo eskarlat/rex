@@ -1,6 +1,8 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { ChevronRight, Package, TerminalSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useMarketplace } from '@/core/hooks/use-extensions';
 import { useTerminal } from '@/features/terminal/use-terminal';
 
@@ -10,7 +12,9 @@ interface Crumb {
 }
 
 function buildSettingsCrumbs(segments: string[], name?: string): Crumb[] {
-  const crumbs: Crumb[] = [{ label: 'Settings', to: segments.length > 1 ? '/settings' : undefined }];
+  const crumbs: Crumb[] = [
+    { label: 'Settings', to: segments.length > 1 ? '/settings' : undefined },
+  ];
   const sub = segments[1];
   if (sub === 'registries') crumbs.push({ label: 'Registries' });
   else if (sub === 'vault') crumbs.push({ label: 'Vault' });
@@ -27,10 +31,7 @@ function buildExtensionCrumbs(
   const extLabel = ext?.title ?? name;
   if (panelId) {
     const panel = ext?.panels?.find((p) => p.id === panelId);
-    return [
-      { label: extLabel, to: `/extensions/${name}` },
-      { label: panel?.title ?? panelId },
-    ];
+    return [{ label: extLabel, to: `/extensions/${name}` }, { label: panel?.title ?? panelId }];
   }
   return [{ label: extLabel }];
 }
@@ -68,10 +69,7 @@ function useBreadcrumbs(): Crumb[] {
 function CrumbItem({ crumb, isLast }: { crumb: Crumb; isLast: boolean }) {
   if (crumb.to && !isLast) {
     return (
-      <Link
-        to={crumb.to}
-        className="text-muted-foreground hover:text-foreground transition-colors"
-      >
+      <Link to={crumb.to} className="text-muted-foreground hover:text-foreground transition-colors">
         {crumb.label}
       </Link>
     );
@@ -88,15 +86,19 @@ export function Toolbar() {
   const { isOpen, toggle } = useTerminal();
 
   return (
-    <div className="flex h-14 items-center justify-between border-b px-6">
-      <nav className="flex items-center gap-1 text-sm" aria-label="Breadcrumb">
-        {crumbs.map((crumb, i) => (
-          <span key={crumb.to ?? crumb.label} className="flex items-center gap-1">
-            {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-            <CrumbItem crumb={crumb} isLast={i === crumbs.length - 1} />
-          </span>
-        ))}
-      </nav>
+    <div className="flex h-14 items-center justify-between border-b px-4">
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <nav className="flex items-center gap-1 text-sm" aria-label="Breadcrumb">
+          {crumbs.map((crumb, i) => (
+            <span key={crumb.to ?? crumb.label} className="flex items-center gap-1">
+              {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+              <CrumbItem crumb={crumb} isLast={i === crumbs.length - 1} />
+            </span>
+          ))}
+        </nav>
+      </div>
       <div className="flex items-center gap-1">
         <Link
           to="/marketplace"

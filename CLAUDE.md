@@ -47,13 +47,13 @@ pnpm --filter @renre-kit/server dev                  # Server dev with tsx watch
 
 Turborepo + pnpm workspaces (`packages/*` and `extensions/*`). Build order: `extension-sdk` first (no deps), then `cli` and `ui` (both depend on extension-sdk, can build in parallel), then `server` (depends on cli).
 
-| Package | Path | Build | Purpose |
-|---------|------|-------|---------|
-| **extension-sdk** | `packages/extension-sdk/` | tsup | SDK for extension authors: API client, hooks, shared shadcn/ui components |
-| **cli** | `packages/cli/` | tsup | Core CLI: project lifecycle, extensions, registry, commands |
-| **server** | `packages/server/` | tsup, tsx watch (dev) | Dashboard REST API (pure proxy to CLI managers, zero business logic) |
-| **ui** | `packages/ui/` | Vite | Web dashboard SPA (React 19, Tailwind, shadcn/ui, React Query) |
-| **create-renre-extension** | `packages/create-renre-extension/` | tsup | Scaffolding tool for generating new extensions |
+| Package                    | Path                               | Build                 | Purpose                                                                   |
+| -------------------------- | ---------------------------------- | --------------------- | ------------------------------------------------------------------------- |
+| **extension-sdk**          | `packages/extension-sdk/`          | tsup                  | SDK for extension authors: API client, hooks, shared shadcn/ui components |
+| **cli**                    | `packages/cli/`                    | tsup                  | Core CLI: project lifecycle, extensions, registry, commands               |
+| **server**                 | `packages/server/`                 | tsup, tsx watch (dev) | Dashboard REST API (pure proxy to CLI managers, zero business logic)      |
+| **ui**                     | `packages/ui/`                     | Vite                  | Web dashboard SPA (React 19, Tailwind, shadcn/ui, React Query)            |
+| **create-renre-extension** | `packages/create-renre-extension/` | tsup                  | Scaffolding tool for generating new extensions                            |
 
 ## Code Architecture
 
@@ -84,6 +84,7 @@ Every dashboard action imports CLI managers through `@renre-kit/cli/lib` and cal
 ### Extension SDK Export Paths
 
 The SDK (`@renre-kit/extension-sdk`) has three export subpaths:
+
 - **`.`** — API client, React hooks for extension UIs
 - **`./components`** — Shared shadcn/ui components
 - **`./node`** — Node-only utilities: `deployAgentAssets`, `cleanupAgentAssets`, `buildPanel` (esbuild bundler for extension UI panels)
@@ -91,6 +92,7 @@ The SDK (`@renre-kit/extension-sdk`) has three export subpaths:
 ### Extension Manifest Format
 
 Every extension has a `manifest.json` with mandatory `engines` constraints (`renre-kit` and `extension-sdk` semver ranges). Key sections:
+
 - **`type`**: `"standard"` (in-process) or `"mcp"` (child process)
 - **`commands`**: Map of command name → `{ handler, description }` where handler points to a compiled JS file
 - **`mcp`** (MCP extensions only): `{ transport: "stdio"|"sse", command, args, env?, url?, headers? }`
@@ -102,6 +104,7 @@ Every extension has a `manifest.json` with mandatory `engines` constraints (`ren
 ### Reference Extensions
 
 `extensions/` at repo root contains extensions for testing and reference:
+
 - **hello-world** — Standard type (in-process). Full example with commands, UI panels/widgets, config schema, and agent assets.
 - **context7-mcp**, **figma-mcp**, **miro-mcp**, **github-mcp**, **atlassian-mcp** — MCP stdio extensions wrapping third-party MCP servers.
 
@@ -116,6 +119,7 @@ Extensions follow the build pattern: `tsc && node build-panel.js` (where `build-
 ## Testing
 
 **Unit tests**: Vitest with Istanbul coverage via `vitest.workspace.ts` (4 packages: cli, server, ui, extension-sdk). Shared 86% threshold defined in `vitest.shared.ts`. Tests are co-located (`*.test.ts` next to source). Environments differ per package:
+
 - **cli, server**: `environment: 'node'`
 - **ui, extension-sdk**: `environment: 'jsdom'` with setup files (`src/test-setup.ts` — imports `@testing-library/jest-dom`, polyfills `ResizeObserver`)
 

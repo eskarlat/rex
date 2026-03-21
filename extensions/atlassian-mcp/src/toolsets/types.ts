@@ -1,3 +1,6 @@
+import { jsonToMarkdown } from '@renre-kit/extension-sdk/node';
+import type { JsonToMarkdownOptions } from '@renre-kit/extension-sdk/node';
+
 export interface ToolDefinition {
   name: string;
   description: string;
@@ -22,7 +25,16 @@ export interface Toolset {
 
 export function textResult(data: unknown): ToolResult {
   return {
-    content: [{ type: 'text', text: typeof data === 'string' ? data : JSON.stringify(data, null, 2) }],
+    content: [
+      { type: 'text', text: typeof data === 'string' ? data : JSON.stringify(data, null, 2) },
+    ],
+  };
+}
+
+/** Converts data to LLM-friendly Markdown instead of raw JSON */
+export function markdownResult(data: unknown, options?: JsonToMarkdownOptions): ToolResult {
+  return {
+    content: [{ type: 'text', text: jsonToMarkdown(data, { filterNoise: true, ...options }) }],
   };
 }
 

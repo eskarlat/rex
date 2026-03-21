@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createAnalyticsToolset(client) {
     return {
         name: 'confluence_analytics',
@@ -19,7 +19,7 @@ export function createAnalyticsToolset(client) {
             confluence_get_page_views: async (args) => {
                 try {
                     const data = await client.getPageViews(args['pageId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

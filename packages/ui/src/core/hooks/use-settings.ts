@@ -40,11 +40,7 @@ export function useSettings(): UseQueryResult<GlobalConfig> {
   });
 }
 
-export function useUpdateSettings(): UseMutationResult<
-  void,
-  Error,
-  GlobalConfig
-> {
+export function useUpdateSettings(): UseMutationResult<void, Error, GlobalConfig> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, GlobalConfig>({
     mutationFn: (data: GlobalConfig) =>
@@ -63,32 +59,25 @@ export interface SetExtensionConfigVariables {
   mapping: ConfigMapping;
 }
 
-export function useExtensionSettings(
-  name: string
-): UseQueryResult<Record<string, unknown>> {
+export function useExtensionSettings(name: string): UseQueryResult<Record<string, unknown>> {
   return useQuery<Record<string, unknown>>({
     queryKey: ['settings', 'extensions', name],
     queryFn: () =>
-      fetchApi<Record<string, unknown>>(
-        `/api/settings/extensions/${encodeURIComponent(name)}`
-      ),
+      fetchApi<Record<string, unknown>>(`/api/settings/extensions/${encodeURIComponent(name)}`),
     enabled: !!name,
   });
 }
 
 export function useUpdateExtensionSettings(
-  name: string
+  name: string,
 ): UseMutationResult<void, Error, SetExtensionConfigVariables> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, SetExtensionConfigVariables>({
     mutationFn: (data: SetExtensionConfigVariables) =>
-      fetchApi<void>(
-        `/api/settings/extensions/${encodeURIComponent(name)}`,
-        {
-          method: 'PUT',
-          body: data,
-        }
-      ),
+      fetchApi<void>(`/api/settings/extensions/${encodeURIComponent(name)}`, {
+        method: 'PUT',
+        body: data,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['settings', 'extensions', name],

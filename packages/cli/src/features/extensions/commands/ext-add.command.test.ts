@@ -54,12 +54,19 @@ describe('ext-add command', () => {
 
     await handleExtAdd({
       name: 'my-ext',
-      registryConfigs: [{ name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 }],
+      registryConfigs: [
+        { name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 },
+      ],
       projectPath: '/tmp/project',
     });
 
     expect(registryManager.resolve).toHaveBeenCalledWith('my-ext', expect.any(Array));
-    expect(registryManager.installExtension).toHaveBeenCalledWith('my-ext', 'https://github.com/user/my-ext.git', '1.0.0', 'default');
+    expect(registryManager.installExtension).toHaveBeenCalledWith(
+      'my-ext',
+      'https://github.com/user/my-ext.git',
+      '1.0.0',
+      'default',
+    );
     expect(extensionManager.install).toHaveBeenCalled();
   });
 
@@ -68,7 +75,9 @@ describe('ext-add command', () => {
 
     await handleExtAdd({
       name: 'nonexistent',
-      registryConfigs: [{ name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 }],
+      registryConfigs: [
+        { name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 },
+      ],
       projectPath: null,
     });
 
@@ -87,7 +96,9 @@ describe('ext-add command', () => {
 
     await handleExtAdd({
       name: 'my-ext',
-      registryConfigs: [{ name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 }],
+      registryConfigs: [
+        { name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 },
+      ],
       projectPath: '/tmp/project',
     });
 

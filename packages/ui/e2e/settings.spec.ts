@@ -35,9 +35,7 @@ test.describe('Settings - General Page', () => {
   });
 
   test('shows save button', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: 'Save Settings' }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save Settings' })).toBeVisible();
   });
 
   test('can modify port and save', async ({ page }) => {
@@ -92,9 +90,7 @@ test.describe('Settings - Registries Page', () => {
   });
 
   test('shows Add Registry button', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: 'Add Registry' }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add Registry' })).toBeVisible();
   });
 
   test('opens Add Registry dialog', async ({ page }) => {
@@ -188,9 +184,7 @@ test.describe('Settings - Extension Settings Page', () => {
   });
 
   test('shows save button', async ({ page }) => {
-    await expect(
-      page.getByRole('button', { name: /save/i }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /save/i })).toBeVisible();
   });
 
   test('can update and save settings', async ({ page }) => {

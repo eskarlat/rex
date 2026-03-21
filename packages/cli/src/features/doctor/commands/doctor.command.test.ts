@@ -33,7 +33,12 @@ describe('doctor command', () => {
       },
       {
         name: 'Test check 2',
-        run: () => ({ name: 'Test check 2', status: 'warn', message: 'minor issue', detail: 'fix it' }),
+        run: () => ({
+          name: 'Test check 2',
+          status: 'warn',
+          message: 'minor issue',
+          detail: 'fix it',
+        }),
       },
     ]);
 

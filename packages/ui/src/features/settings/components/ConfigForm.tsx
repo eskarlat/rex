@@ -4,12 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { KeyRound } from 'lucide-react';
 import { useVaultEntries } from '@/core/hooks/use-vault';
 import type { ConfigField, ConfigMapping } from '@/core/hooks/use-settings';
@@ -18,7 +13,9 @@ const VAULT_PREFIX = '{{VAULT:';
 const VAULT_SUFFIX = '}}';
 
 function isVaultRef(value: unknown): boolean {
-  return typeof value === 'string' && value.startsWith(VAULT_PREFIX) && value.endsWith(VAULT_SUFFIX);
+  return (
+    typeof value === 'string' && value.startsWith(VAULT_PREFIX) && value.endsWith(VAULT_SUFFIX)
+  );
 }
 
 function extractVaultKey(value: string): string {
@@ -68,7 +65,13 @@ export function ConfigForm({ schema, values, onSave, isSaving }: ConfigFormProps
   }
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form.getValues()); }} className="space-y-6">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(form.getValues());
+      }}
+      className="space-y-6"
+    >
       {fields.map(([key, field]) => (
         <div key={key} className="space-y-1">
           <Label htmlFor={`config-${key}`} className="capitalize">
@@ -185,7 +188,12 @@ function VaultPickerDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Select Vault Key</DialogTitle>
@@ -198,13 +206,18 @@ function VaultPickerDialog({
         />
         {hint && (
           <p className="text-xs text-muted-foreground">
-            Suggested: <button type="button" className="font-mono underline" onClick={() => onSelect(hint)}>{hint}</button>
+            Suggested:{' '}
+            <button type="button" className="font-mono underline" onClick={() => onSelect(hint)}>
+              {hint}
+            </button>
           </p>
         )}
         <div className="max-h-60 overflow-y-auto space-y-1">
           {filtered.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
-              {entries?.length === 0 ? 'No vault entries. Add one in Settings > Vault.' : 'No matches.'}
+              {entries?.length === 0
+                ? 'No vault entries. Add one in Settings > Vault.'
+                : 'No matches.'}
             </p>
           ) : (
             filtered.map((entry) => (
@@ -215,7 +228,9 @@ function VaultPickerDialog({
                 onClick={() => onSelect(entry.key)}
               >
                 <span className="font-mono">{entry.key}</span>
-                <span className="text-xs text-muted-foreground">{entry.created_at?.slice(0, 10) ?? ''}</span>
+                <span className="text-xs text-muted-foreground">
+                  {entry.created_at?.slice(0, 10) ?? ''}
+                </span>
               </button>
             ))
           )}

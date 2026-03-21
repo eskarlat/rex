@@ -8,9 +8,7 @@ test.describe('Extension Panel Page', () => {
 
   test('displays extension name as heading', async ({ page }) => {
     await page.goto('/extensions/hello-world');
-    await expect(
-      page.getByRole('heading', { name: 'hello-world' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'hello-world' })).toBeVisible();
   });
 
   test('shows extension panel subtitle', async ({ page }) => {
@@ -33,9 +31,7 @@ test.describe('Extension Panel Page', () => {
       route.fulfill({ status: 404, body: 'Not found' }),
     );
     await page.goto('/extensions/my-broken-ext');
-    await expect(
-      page.getByText(/my-broken-ext/),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/my-broken-ext/)).toBeVisible({ timeout: 10000 });
   });
 
   test('shows skeleton while panel loads', async ({ page }) => {
@@ -44,16 +40,12 @@ test.describe('Extension Panel Page', () => {
       // Never fulfill
     });
     await page.goto('/extensions/slow-ext');
-    await expect(
-      page.getByRole('heading', { name: 'slow-ext' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'slow-ext' })).toBeVisible();
   });
 
   test('navigates to extension panel from marketplace', async ({ page }) => {
     await page.goto('/extensions/hello-world');
-    await expect(
-      page.getByRole('heading', { name: 'hello-world' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'hello-world' })).toBeVisible();
     await expect(page.getByText('Extension panel')).toBeVisible();
   });
 });

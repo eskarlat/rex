@@ -1,0 +1,57 @@
+/* RenreKit brand colors — purple/indigo palette */
+:root {
+  --vp-c-brand-1: #818cf8;
+  --vp-c-brand-2: #6366f1;
+  --vp-c-brand-3: #4f46e5;
+  --vp-c-brand-soft: rgba(129, 140, 248, 0.14);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+
+  --vp-home-hero-image-background-image: linear-gradient(
+    135deg,
+    rgba(129, 140, 248, 0.3) 0%,
+    rgba(167, 139, 250, 0.3) 100%
+  );
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-brand-1: #a5b4fc;
+  --vp-c-brand-2: #818cf8;
+  --vp-c-brand-3: #6366f1;
+  --vp-c-brand-soft: rgba(129, 140, 248, 0.16);
+}
+
+/* Feature cards styling */
+.VPFeature {
+  border-radius: 12px !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.VPFeature:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(129, 140, 248, 0.15) !important;
+}
+
+/* Code block styling */
+.vp-doc div[class*='language-'] {
+  border-radius: 10px;
+}
+
+/* Tip callouts with brand color */
+.vp-doc .custom-block.tip {
+  border-color: var(--vp-c-brand-1);
+}
+
+/* Smoother transitions */
+.VPSidebar,
+.VPNav {
+  transition: all 0.25s ease;
+}
+
+/* Hero image sizing */
+.VPHero .VPImage {
+  max-width: 200px;
+  max-height: 200px;
+}

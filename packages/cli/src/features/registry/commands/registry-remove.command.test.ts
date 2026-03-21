@@ -23,7 +23,12 @@ describe('registry:remove command', () => {
   it('removes an existing registry from config', () => {
     mockLoadGlobalConfig.mockReturnValue({
       registries: [
-        { name: 'default', url: 'https://github.com/eskarlat/rex.git', priority: 0, cacheTTL: 3600 },
+        {
+          name: 'default',
+          url: 'https://github.com/eskarlat/rex.git',
+          priority: 0,
+          cacheTTL: 3600,
+        },
         { name: 'internal', url: 'https://company.com/reg.git', priority: 50, cacheTTL: 3600 },
       ],
       settings: {},
@@ -34,9 +39,7 @@ describe('registry:remove command', () => {
 
     expect(mockSaveGlobalConfig).toHaveBeenCalledWith(
       expect.objectContaining({
-        registries: [
-          expect.objectContaining({ name: 'default' }),
-        ],
+        registries: [expect.objectContaining({ name: 'default' })],
       }),
     );
     expect(clack.log.success).toHaveBeenCalledWith("Registry 'internal' removed.");
@@ -44,7 +47,14 @@ describe('registry:remove command', () => {
 
   it('warns when registry not found', () => {
     mockLoadGlobalConfig.mockReturnValue({
-      registries: [{ name: 'default', url: 'https://github.com/eskarlat/rex.git', priority: 0, cacheTTL: 3600 }],
+      registries: [
+        {
+          name: 'default',
+          url: 'https://github.com/eskarlat/rex.git',
+          priority: 0,
+          cacheTTL: 3600,
+        },
+      ],
       settings: {},
       extensionConfigs: {},
     });

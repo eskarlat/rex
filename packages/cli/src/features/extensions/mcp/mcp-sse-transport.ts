@@ -1,8 +1,5 @@
 import type { JsonRpcRequest, JsonRpcResponse } from '../types/mcp.types.js';
-import {
-  ExtensionError,
-  ErrorCode,
-} from '../../../core/errors/extension-error.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 
 export interface McpSseConnection {
   url: string;
@@ -12,10 +9,7 @@ export interface McpSseConnection {
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
-export function connect(
-  url: string,
-  headers: Record<string, string>,
-): McpSseConnection {
+export function connect(url: string, headers: Record<string, string>): McpSseConnection {
   return {
     url,
     headers,

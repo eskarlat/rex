@@ -15,7 +15,12 @@ export function createCoverageConfig(opts: CoverageOptions = {}): UserConfig['te
       provider: 'istanbul' as const,
       reporter: ['text', 'text-summary', 'lcov'] as const,
       include: ['src/**/*.ts', 'src/**/*.tsx'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', ...(opts.exclude ?? []), ...DEFAULT_EXCLUDE],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+        ...(opts.exclude ?? []),
+        ...DEFAULT_EXCLUDE,
+      ],
       thresholds: {
         statements: COVERAGE_THRESHOLD,
         branches: COVERAGE_THRESHOLD,

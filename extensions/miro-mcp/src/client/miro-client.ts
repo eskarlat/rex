@@ -67,11 +67,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/app_cards/${itemId}`);
   }
 
-  updateAppCard(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateAppCard(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/app_cards/${itemId}`, data);
   }
 
@@ -88,11 +84,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/cards/${itemId}`);
   }
 
-  updateCard(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateCard(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/cards/${itemId}`, data);
   }
 
@@ -155,11 +147,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/frames/${itemId}`);
   }
 
-  updateFrame(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateFrame(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/frames/${itemId}`, data);
   }
 
@@ -176,11 +164,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/documents/${itemId}`);
   }
 
-  updateDocument(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateDocument(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/documents/${itemId}`, data);
   }
 
@@ -197,11 +181,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/texts/${itemId}`);
   }
 
-  updateText(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateText(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/texts/${itemId}`, data);
   }
 
@@ -222,24 +202,12 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/images/${itemId}`);
   }
 
-  updateImage(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateImage(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/images/${itemId}`, data);
   }
 
-  updateImageFromFile(
-    boardId: string,
-    itemId: string,
-    formData: FormData,
-  ): Promise<unknown> {
-    return this.requestMultipart(
-      'PATCH',
-      `/boards/${boardId}/images/${itemId}`,
-      formData,
-    );
+  updateImageFromFile(boardId: string, itemId: string, formData: FormData): Promise<unknown> {
+    return this.requestMultipart('PATCH', `/boards/${boardId}/images/${itemId}`, formData);
   }
 
   deleteImage(boardId: string, itemId: string): Promise<unknown> {
@@ -259,11 +227,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/shapes/${itemId}`);
   }
 
-  updateShape(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateShape(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/shapes/${itemId}`, data);
   }
 
@@ -280,11 +244,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/embeds/${itemId}`);
   }
 
-  updateEmbed(
-    boardId: string,
-    itemId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateEmbed(boardId: string, itemId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/embeds/${itemId}`, data);
   }
 
@@ -305,11 +265,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/boards/${boardId}/tags/${tagId}`);
   }
 
-  updateTag(
-    boardId: string,
-    tagId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateTag(boardId: string, tagId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/tags/${tagId}`, data);
   }
 
@@ -367,11 +323,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('POST', `/boards/${boardId}/groups`, data);
   }
 
-  updateGroup(
-    boardId: string,
-    groupId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  updateGroup(boardId: string, groupId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('PATCH', `/boards/${boardId}/groups/${groupId}`, data);
   }
 
@@ -410,21 +362,11 @@ export class MiroClient extends MiroBaseClient {
 
   // ── Projects ────────────────────────────────────────────────────────
   listProjectMembers(orgId: string, projectId: string): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/orgs/${orgId}/projects/${projectId}/members`,
-    );
+    return this.request('GET', `/orgs/${orgId}/projects/${projectId}/members`);
   }
 
-  getProjectMember(
-    orgId: string,
-    projectId: string,
-    memberId: string,
-  ): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/orgs/${orgId}/projects/${projectId}/members/${memberId}`,
-    );
+  getProjectMember(orgId: string, projectId: string, memberId: string): Promise<unknown> {
+    return this.request('GET', `/orgs/${orgId}/projects/${projectId}/members/${memberId}`);
   }
 
   updateProjectMember(
@@ -433,11 +375,7 @@ export class MiroClient extends MiroBaseClient {
     memberId: string,
     data: Record<string, unknown>,
   ): Promise<unknown> {
-    return this.request(
-      'PATCH',
-      `/orgs/${orgId}/projects/${projectId}/members/${memberId}`,
-      data,
-    );
+    return this.request('PATCH', `/orgs/${orgId}/projects/${projectId}/members/${memberId}`, data);
   }
 
   // ── Exports ─────────────────────────────────────────────────────────
@@ -462,10 +400,7 @@ export class MiroClient extends MiroBaseClient {
     return this.request('GET', `/orgs/${orgId}/compliance/cases/${caseId}`);
   }
 
-  createComplianceCase(
-    orgId: string,
-    data: Record<string, unknown>,
-  ): Promise<unknown> {
+  createComplianceCase(orgId: string, data: Record<string, unknown>): Promise<unknown> {
     return this.request('POST', `/orgs/${orgId}/compliance/cases`, data);
   }
 
@@ -474,11 +409,7 @@ export class MiroClient extends MiroBaseClient {
     caseId: string,
     data: Record<string, unknown>,
   ): Promise<unknown> {
-    return this.request(
-      'PATCH',
-      `/orgs/${orgId}/compliance/cases/${caseId}`,
-      data,
-    );
+    return this.request('PATCH', `/orgs/${orgId}/compliance/cases/${caseId}`, data);
   }
 
   listLegalHolds(orgId: string): Promise<unknown> {
@@ -495,10 +426,7 @@ export class MiroClient extends MiroBaseClient {
   }
 
   getContentClassification(orgId: string, boardId: string): Promise<unknown> {
-    return this.request(
-      'GET',
-      `/orgs/${orgId}/compliance/boards/${boardId}/classification`,
-    );
+    return this.request('GET', `/orgs/${orgId}/compliance/boards/${boardId}/classification`);
   }
 
   // ── Organization ────────────────────────────────────────────────────

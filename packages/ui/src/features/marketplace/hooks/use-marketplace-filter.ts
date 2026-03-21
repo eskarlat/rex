@@ -10,13 +10,13 @@ export interface MarketplaceFilter {
   filteredActive: Extension[];
   filteredInstalled: Extension[];
   filteredAvailable: Extension[];
+  allFiltered: Extension[];
 }
 
 function matchesQuery(ext: Extension, query: string): boolean {
   const q = query.toLowerCase();
   return (
-    ext.name.toLowerCase().includes(q) ||
-    (ext.description?.toLowerCase().includes(q) ?? false)
+    ext.name.toLowerCase().includes(q) || (ext.description?.toLowerCase().includes(q) ?? false)
   );
 }
 
@@ -32,7 +32,7 @@ export function useMarketplaceFilter(
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
-    for (const ext of available) {
+    for (const ext of [...active, ...installed, ...available]) {
       if (ext.tags) {
         for (const tag of ext.tags) {
           tagSet.add(tag);
@@ -40,7 +40,7 @@ export function useMarketplaceFilter(
       }
     }
     return [...tagSet].sort((a, b) => a.localeCompare(b));
-  }, [available]);
+  }, [active, installed, available]);
 
   const filteredActive = useMemo(() => {
     if (!searchQuery) return active;
@@ -58,12 +58,15 @@ export function useMarketplaceFilter(
       result = result.filter((ext) => matchesQuery(ext, searchQuery));
     }
     if (selectedTag) {
-      result = result.filter(
-        (ext) => ext.tags?.some((t) => t === selectedTag) ?? false,
-      );
+      result = result.filter((ext) => ext.tags?.some((t) => t === selectedTag) ?? false);
     }
     return result;
   }, [available, searchQuery, selectedTag]);
+
+  const allFiltered = useMemo(
+    () => [...filteredActive, ...filteredInstalled, ...filteredAvailable],
+    [filteredActive, filteredInstalled, filteredAvailable],
+  );
 
   return {
     searchQuery,
@@ -74,5 +77,6 @@ export function useMarketplaceFilter(
     filteredActive,
     filteredInstalled,
     filteredAvailable,
+    allFiltered,
   };
 }

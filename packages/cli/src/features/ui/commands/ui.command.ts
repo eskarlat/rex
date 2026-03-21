@@ -1,12 +1,12 @@
 import { spawn } from 'node:child_process';
 import { createConnection } from 'node:net';
 import { resolve, dirname } from 'node:path';
-import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import * as clack from '@clack/prompts';
-import { SERVER_PID_PATH, GLOBAL_DIR } from '../../../core/paths/paths.js';
+import { SERVER_PID_PATH, LAN_PIN_PATH, GLOBAL_DIR } from '../../../core/paths/paths.js';
 import { isProcessRunning, readPidFile } from '../../../shared/process-utils.js';
 
 export interface UiCommandOptions {
@@ -108,7 +108,7 @@ function buildDashboardUrl(port: number, lan: boolean): string {
 
 function buildServerEnv(port: number, lan: boolean, noSleep: boolean): Record<string, string> {
   const env: Record<string, string> = {
-    ...process.env as Record<string, string>,
+    ...(process.env as Record<string, string>),
     PORT: String(port),
   };
   if (lan) env['LAN_MODE'] = 'true';
@@ -141,7 +141,10 @@ interface SpawnResult {
   ready: boolean;
 }
 
-function spawnServer(env: Record<string, string>): { pid: number | undefined; child: ReturnType<typeof spawn> } {
+function spawnServer(env: Record<string, string>): {
+  pid: number | undefined;
+  child: ReturnType<typeof spawn>;
+} {
   const child = spawn(process.execPath, [resolveServerEntry()], {
     env,
     detached: true,
@@ -156,7 +159,10 @@ function spawnServer(env: Record<string, string>): { pid: number | undefined; ch
   return { pid: child.pid, child };
 }
 
-async function startAndVerifyServer(port: number, env: Record<string, string>): Promise<SpawnResult | null> {
+async function startAndVerifyServer(
+  port: number,
+  env: Record<string, string>,
+): Promise<SpawnResult | null> {
   const { pid, child } = spawnServer(env);
   if (pid === undefined) {
     clack.log.error('Could not obtain server process ID.');
@@ -175,20 +181,39 @@ async function startAndVerifyServer(port: number, env: Record<string, string>): 
     clack.log.error(
       `Server process ${pid} exited unexpectedly. Port ${port} may be in use by another process.`,
     );
-    try { unlinkSync(SERVER_PID_PATH); } catch { /* already removed */ }
+    try {
+      unlinkSync(SERVER_PID_PATH);
+    } catch {
+      /* already removed */
+    }
     return null;
   }
 
   return { pid, ready };
 }
 
+function resolveOptions(options: Partial<UiCommandOptions>): UiCommandOptions {
+  return {
+    port: options.port ?? DEFAULT_PORT,
+    lan: options.lan ?? false,
+    noBrowser: options.noBrowser ?? false,
+    noSleep: options.noSleep ?? false,
+  };
+}
+
+function showLanPin(): void {
+  try {
+    const pin = readFileSync(LAN_PIN_PATH, 'utf-8').trim();
+    clack.log.info(`LAN PIN: ${pin}`);
+  } catch {
+    // PIN file not yet written — server may still be initializing
+  }
+}
+
 export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise<void> {
   clack.intro('RenreKit Dashboard');
 
-  const port = options.port ?? DEFAULT_PORT;
-  const lan = options.lan ?? false;
-  const noBrowser = options.noBrowser ?? false;
-  const noSleep = options.noSleep ?? false;
+  const { port, lan, noBrowser, noSleep } = resolveOptions(options);
   const url = buildDashboardUrl(port, lan);
 
   if (checkExistingServer(url)) return;
@@ -196,7 +221,9 @@ export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise
   // Check if the port is already occupied by another process
   const portBusy = await isPortInUse(port, '127.0.0.1');
   if (portBusy) {
-    clack.log.error(`Port ${port} is already in use. Stop the other process or use --port to pick a different port.`);
+    clack.log.error(
+      `Port ${port} is already in use. Stop the other process or use --port to pick a different port.`,
+    );
     clack.outro('Could not start dashboard.');
     return;
   }
@@ -216,5 +243,8 @@ export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise
   if (!noBrowser) openBrowser(url);
 
   clack.log.info(`PID: ${result.pid}`);
+
+  if (lan) showLanPin();
+
   clack.outro(`Dashboard: ${url}`);
 }

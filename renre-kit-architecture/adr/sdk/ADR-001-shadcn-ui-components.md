@@ -1,13 +1,17 @@
 # ADR-001: Use shadcn/ui (Radix + Tailwind) as Shared Component Library
 
 ## Status
+
 Accepted
 
 ## Context
+
 The system needs consistent UI across the dashboard and all extension panels. Extension developers need a component library to build panels without worrying about styling or accessibility. Using different UI libraries across the ecosystem would lead to visual inconsistency and fragmentation.
 
 ## Decision
+
 Use shadcn/ui as the shared component library:
+
 1. SDK package exports curated shadcn/ui components (Button, Input, Select, Dialog, etc.)
 2. Extensions import components from the SDK package: `import { Button } from '@renre/sdk/ui'`
 3. Components are styled with Tailwind CSS using design tokens (CSS custom properties)
@@ -25,6 +29,7 @@ Use shadcn/ui as the shared component library:
 ## Consequences
 
 ### Positive
+
 - **Consistent theming**: All extensions match dashboard visually
 - **Lightweight**: shadcn/ui is tree-shakeable; only used components included in bundles
 - **Owned source code**: shadcn/ui provides source directly; not locked into dependency updates
@@ -33,6 +38,7 @@ Use shadcn/ui as the shared component library:
 - **Composable**: Easy to build custom components on top of primitives
 
 ### Negative
+
 - **Tailwind requirement**: Extensions must use Tailwind CSS; pure CSS alternatives difficult
 - **Design tokens setup**: Requires careful design token definition and distribution
 - **Learning curve**: Extensions need to understand Tailwind and Radix model

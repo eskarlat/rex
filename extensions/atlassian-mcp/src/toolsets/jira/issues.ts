@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createIssuesToolset(client: JiraClient): Toolset {
   return {
@@ -120,7 +120,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
             args['issueKey'] as string,
             args['expand'] as string | undefined,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -133,7 +133,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
             (args['maxResults'] as number | undefined) ?? 50,
             args['fields'] as string[] | undefined,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -145,7 +145,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
             (args['startAt'] as number | undefined) ?? 0,
             (args['maxResults'] as number | undefined) ?? 50,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -171,7 +171,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
             };
           }
           const data = await client.createIssue(fields);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -182,7 +182,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
             args['issueKey'] as string,
             args['fields'] as Record<string, unknown>,
           );
-          return textResult({ success: true, issueKey: args['issueKey'] });
+          return markdownResult({ success: true, issueKey: args['issueKey'] });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -190,7 +190,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
       jira_delete_issue: async (args) => {
         try {
           await client.deleteIssue(args['issueKey'] as string);
-          return textResult({ success: true, issueKey: args['issueKey'] });
+          return markdownResult({ success: true, issueKey: args['issueKey'] });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -199,7 +199,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
         try {
           const issues = args['issues'] as Array<{ fields: Record<string, unknown> }>;
           const data = await client.bulkCreateIssues(issues);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -211,7 +211,7 @@ export function createIssuesToolset(client: JiraClient): Toolset {
             (args['startAt'] as number | undefined) ?? 0,
             (args['maxResults'] as number | undefined) ?? 100,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

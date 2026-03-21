@@ -50,12 +50,8 @@ test.describe('Extension Install → Accessible in UI', () => {
       return route.fulfill({ json: { ok: true } });
     });
 
-    await page.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
-    await page.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await page.route('**/api/projects', (route) => route.fulfill({ json: [] }));
+    await page.route('**/api/project', (route) => route.fulfill({ json: null }));
 
     await page.goto('/marketplace');
 
@@ -122,12 +118,8 @@ test.describe('Extension Install → Accessible in UI', () => {
       return route.fulfill({ json: { ok: true } });
     });
 
-    await page.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
-    await page.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await page.route('**/api/projects', (route) => route.fulfill({ json: [] }));
+    await page.route('**/api/project', (route) => route.fulfill({ json: null }));
 
     await page.goto('/marketplace');
 
@@ -206,12 +198,8 @@ test.describe('Extension Install → Accessible in UI', () => {
         },
       }),
     );
-    await page.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
-    await page.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await page.route('**/api/projects', (route) => route.fulfill({ json: [] }));
+    await page.route('**/api/project', (route) => route.fulfill({ json: null }));
     await page.route('**/api/settings/extensions/hello-world', (route) =>
       route.fulfill({
         json: {
@@ -225,9 +213,7 @@ test.describe('Extension Install → Accessible in UI', () => {
 
     // Navigate to extension settings
     await page.goto('/settings/extensions/hello-world');
-    await expect(
-      page.getByRole('heading', { name: 'hello-world' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'hello-world' })).toBeVisible();
     await expect(page.getByText('Extension settings')).toBeVisible();
     await expect(page.getByText('Custom greeting')).toBeVisible();
   });
@@ -250,18 +236,12 @@ test.describe('Extension Install → Accessible in UI', () => {
         },
       }),
     );
-    await page.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
-    await page.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await page.route('**/api/projects', (route) => route.fulfill({ json: [] }));
+    await page.route('**/api/project', (route) => route.fulfill({ json: null }));
 
     // Navigate directly to extension panel
     await page.goto('/extensions/hello-world');
-    await expect(
-      page.getByRole('heading', { name: 'hello-world' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'hello-world' })).toBeVisible();
     await expect(page.getByText('Extension panel')).toBeVisible();
   });
 });

@@ -20,10 +20,7 @@ export function getDashboardLayout(projectPath: string): DashboardLayout {
   }
 }
 
-export function saveDashboardLayout(
-  projectPath: string,
-  layout: DashboardLayout,
-): void {
+export function saveDashboardLayout(projectPath: string, layout: DashboardLayout): void {
   const filePath = join(projectPath, PROJECT_DIR, LAYOUT_FILENAME);
   const dir = dirname(filePath);
   if (!existsSync(dir)) {

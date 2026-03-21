@@ -6,6 +6,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { fetchApi } from '@/core/api/client';
+import { showToast } from '@/core/hooks/use-toast';
 
 export interface ExtensionPanel {
   id: string;
@@ -35,6 +36,10 @@ export interface Extension {
   updateAvailable?: string | null;
   engineCompatible?: boolean;
   hasIcon?: boolean;
+  installedAt?: string;
+  registrySource?: string;
+  installPath?: string;
+  gitUrl?: string;
 }
 
 export interface MarketplaceResult {
@@ -50,6 +55,36 @@ export function useMarketplace(): UseQueryResult<MarketplaceResult> {
   });
 }
 
+export function useExtensionChangelog(
+  name: string | undefined,
+): UseQueryResult<string | null> {
+  return useQuery<string | null>({
+    queryKey: ['extension-changelog', name],
+    queryFn: async () => {
+      const result = await fetchApi<{ changelog: string }>(
+        `/api/extensions/${encodeURIComponent(name!)}/changelog`,
+      );
+      return result.changelog;
+    },
+    enabled: !!name,
+  });
+}
+
+export function useExtensionReadme(
+  name: string | undefined,
+): UseQueryResult<string | null> {
+  return useQuery<string | null>({
+    queryKey: ['extension-readme', name],
+    queryFn: async () => {
+      const result = await fetchApi<{ readme: string }>(
+        `/api/extensions/${encodeURIComponent(name!)}/readme`,
+      );
+      return result.readme;
+    },
+    enabled: !!name,
+  });
+}
+
 export function useInstallExtension(): UseMutationResult<
   void,
   Error,
@@ -62,8 +97,16 @@ export function useInstallExtension(): UseMutationResult<
         method: 'POST',
         body: data,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      showToast({ title: `Installed ${variables.name}` });
+    },
+    onError: (error, variables) => {
+      showToast({
+        title: `Failed to install ${variables.name}`,
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 }
@@ -80,17 +123,21 @@ export function useActivateExtension(): UseMutationResult<
         method: 'POST',
         body: data,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      showToast({ title: `Activated ${variables.name}` });
+    },
+    onError: (error, variables) => {
+      showToast({
+        title: `Failed to activate ${variables.name}`,
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 }
 
-export function useDeactivateExtension(): UseMutationResult<
-  void,
-  Error,
-  string
-> {
+export function useDeactivateExtension(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: (name: string) =>
@@ -98,8 +145,16 @@ export function useDeactivateExtension(): UseMutationResult<
         method: 'POST',
         body: { name },
       }),
-    onSuccess: () => {
+    onSuccess: (_data, name) => {
       void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      showToast({ title: `Deactivated ${name}` });
+    },
+    onError: (error, name) => {
+      showToast({
+        title: `Failed to deactivate ${name}`,
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 }
@@ -116,8 +171,16 @@ export function useUpdateExtension(): UseMutationResult<
         method: 'POST',
         body: data,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      showToast({ title: `Updated ${variables.name}` });
+    },
+    onError: (error, variables) => {
+      showToast({
+        title: `Failed to update ${variables.name}`,
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 }
@@ -129,8 +192,16 @@ export function useRemoveExtension(): UseMutationResult<void, Error, string> {
       fetchApi<void>(`/api/extensions/${encodeURIComponent(name)}`, {
         method: 'DELETE',
       }),
-    onSuccess: () => {
+    onSuccess: (_data, name) => {
       void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      showToast({ title: `Uninstalled ${name}` });
+    },
+    onError: (error, name) => {
+      showToast({
+        title: `Failed to uninstall ${name}`,
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 }

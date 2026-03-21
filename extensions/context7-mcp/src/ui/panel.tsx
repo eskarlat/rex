@@ -103,7 +103,11 @@ export default function Context7Panel({ sdk, extensionName }: Partial<PanelProps
       setLibraries(parsed);
       const firstId = parsed[0]!.libraryId;
       setSelectedId(firstId);
-      await saveToHistory({ libraryName: libraryName.trim(), libraryId: firstId, timestamp: Date.now() });
+      await saveToHistory({
+        libraryName: libraryName.trim(),
+        libraryId: firstId,
+        timestamp: Date.now(),
+      });
     } catch {
       setError('Failed to resolve library. Check the name and try again.');
     } finally {
@@ -145,10 +149,7 @@ export default function Context7Panel({ sdk, extensionName }: Partial<PanelProps
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel
-        title="Context7"
-        description="Library documentation lookup via Context7 MCP server."
-      >
+      <Panel title="Context7" description="Library documentation lookup via Context7 MCP server.">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
           MCP stdio transport
@@ -164,7 +165,9 @@ export default function Context7Panel({ sdk, extensionName }: Partial<PanelProps
                 placeholder="Enter library name (e.g. react, express, zod)"
                 value={libraryName}
                 onChange={(e) => setLibraryName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') void handleSearch(); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleSearch();
+                }}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <button
@@ -196,7 +199,9 @@ export default function Context7Panel({ sdk, extensionName }: Partial<PanelProps
                   <span className="font-medium">{lib.title}</span>
                   <code className="text-xs text-muted-foreground">{lib.libraryId}</code>
                 </div>
-                <span className="text-xs text-muted-foreground line-clamp-1">{lib.description}</span>
+                <span className="text-xs text-muted-foreground line-clamp-1">
+                  {lib.description}
+                </span>
               </button>
             ))}
           </div>
@@ -216,7 +221,9 @@ export default function Context7Panel({ sdk, extensionName }: Partial<PanelProps
                   placeholder="Enter your query (e.g. how to use hooks)"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') void handleGetDocs(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void handleGetDocs();
+                  }}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
                 <button

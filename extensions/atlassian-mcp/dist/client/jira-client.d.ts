@@ -50,6 +50,7 @@ export declare class JiraClient extends AtlassianBaseClient {
     updateProformaFormAnswers(issueKey: string, formId: string, answers: Record<string, unknown>): Promise<unknown>;
     getIssueDateFields(issueKey: string): Promise<unknown>;
     getIssueSla(issueKey: string): Promise<unknown>;
-    getDevelopmentInfo(issueId: string): Promise<unknown>;
-    getBatchDevelopmentInfo(issueIds: string[]): Promise<unknown>;
+    getDevelopmentInfo(issueId: string, applicationType?: string, dataType?: string): Promise<unknown>;
+    getDevelopmentSummary(issueId: string): Promise<unknown>;
+    getBatchDevelopmentInfo(issueIds: string[], applicationType?: string, dataType?: string): Promise<unknown[]>;
 }

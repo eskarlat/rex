@@ -1,5 +1,10 @@
 import path from 'node:path';
-import type { GlobalConfig, ConfigMapping, ConfigSchemaField, RegistryConfig } from '../../core/types/index.js';
+import type {
+  GlobalConfig,
+  ConfigMapping,
+  ConfigSchemaField,
+  RegistryConfig,
+} from '../../core/types/index.js';
 import type { ProjectManifest } from '../../core/types/project.types.js';
 import { CONFIG_PATH, GLOBAL_DIR, PROJECT_DIR, MANIFEST_JSON } from '../../core/paths/paths.js';
 import {
@@ -60,9 +65,7 @@ export function setExtensionConfig(
   saveGlobalConfig(config);
 }
 
-export function getExtensionConfigMappings(
-  extensionName: string,
-): Record<string, ConfigMapping> {
+export function getExtensionConfigMappings(extensionName: string): Record<string, ConfigMapping> {
   const config = loadGlobalConfig();
   return config.extensionConfigs[extensionName] ?? {};
 }
@@ -92,9 +95,7 @@ export function resolveExtensionConfig(
   projectPath?: string,
 ): Record<string, unknown> {
   const globalMappings = getExtensionConfigMappings(extensionName);
-  const projectMappings = projectPath
-    ? loadProjectConfig(projectPath, extensionName)
-    : undefined;
+  const projectMappings = projectPath ? loadProjectConfig(projectPath, extensionName) : undefined;
 
   const resolved: Record<string, unknown> = {};
 

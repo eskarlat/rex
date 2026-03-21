@@ -35,7 +35,9 @@ function isInitMessage(data: unknown): data is InitMessage {
 function isResizeMessage(data: unknown): data is ResizeMessage {
   if (typeof data !== 'object' || data === null) return false;
   const obj = data as Record<string, unknown>;
-  return obj['type'] === 'resize' && typeof obj['cols'] === 'number' && typeof obj['rows'] === 'number';
+  return (
+    obj['type'] === 'resize' && typeof obj['cols'] === 'number' && typeof obj['rows'] === 'number'
+  );
 }
 
 function parseJson(raw: string): unknown {
@@ -131,7 +133,10 @@ const terminalWebsocket: FastifyPluginCallback<TerminalWebsocketOptions> = (
     let attachedKey: string | undefined;
 
     const timer = setTimeout(() => {
-      safeSend(socket, '\r\n\x1b[31mTerminal init timed out — no init message received.\x1b[0m\r\n');
+      safeSend(
+        socket,
+        '\r\n\x1b[31mTerminal init timed out — no init message received.\x1b[0m\r\n',
+      );
       try {
         socket.close();
       } catch {

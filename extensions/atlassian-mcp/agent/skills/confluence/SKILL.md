@@ -38,44 +38,52 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Pages — Search, read, create, update, and manage pages
 
 - **`atlassian-mcp:confluence_search`** — Search Confluence content using CQL (Confluence Query Language).
+
   ```
   renre-kit atlassian-mcp:confluence_search --cql "type = page AND space = DEV AND title ~ 'API'"
   renre-kit atlassian-mcp:confluence_search --cql "lastModified >= now('-7d') ORDER BY lastModified DESC" --limit 10
   ```
 
 - **`atlassian-mcp:confluence_get_page`** — Get a page by ID with full content.
+
   ```
   renre-kit atlassian-mcp:confluence_get_page --pageId "123456"
   renre-kit atlassian-mcp:confluence_get_page --pageId "123456" --expand "body.storage,version,ancestors"
   ```
 
 - **`atlassian-mcp:confluence_get_page_children`** — Get child pages under a parent.
+
   ```
   renre-kit atlassian-mcp:confluence_get_page_children --pageId "123456"
   ```
 
 - **`atlassian-mcp:confluence_get_page_history`** — Get version history of a page.
+
   ```
   renre-kit atlassian-mcp:confluence_get_page_history --pageId "123456"
   ```
 
 - **`atlassian-mcp:confluence_create_page`** — Create a new page in a space.
+
   ```
   renre-kit atlassian-mcp:confluence_create_page --spaceKey "DEV" --title "API Reference" --body "<h1>API Reference</h1><p>Documentation for the REST API.</p>"
   renre-kit atlassian-mcp:confluence_create_page --spaceKey "DEV" --title "Auth Guide" --body "<p>How to authenticate.</p>" --parentId "123456"
   ```
 
 - **`atlassian-mcp:confluence_update_page`** — Update an existing page's title and content.
+
   ```
   renre-kit atlassian-mcp:confluence_update_page --pageId "123456" --title "Updated API Reference" --body "<h1>API Reference v2</h1><p>Updated documentation.</p>" --version 5
   ```
 
 - **`atlassian-mcp:confluence_delete_page`** — Delete a page.
+
   ```
   renre-kit atlassian-mcp:confluence_delete_page --pageId "123456"
   ```
 
 - **`atlassian-mcp:confluence_move_page`** — Move a page under a different parent.
+
   ```
   renre-kit atlassian-mcp:confluence_move_page --pageId "123456" --targetAncestorId "789012" --currentVersion 5
   ```
@@ -88,11 +96,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Comments — Page discussions
 
 - **`atlassian-mcp:confluence_get_comments`** — Get comments on a page.
+
   ```
   renre-kit atlassian-mcp:confluence_get_comments --pageId "123456"
   ```
 
 - **`atlassian-mcp:confluence_add_comment`** — Add a comment to a page.
+
   ```
   renre-kit atlassian-mcp:confluence_add_comment --pageId "123456" --body "<p>This section needs updating for v2.</p>"
   ```
@@ -105,6 +115,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Labels — Content categorization
 
 - **`atlassian-mcp:confluence_get_labels`** — Get labels on a page.
+
   ```
   renre-kit atlassian-mcp:confluence_get_labels --pageId "123456"
   ```
@@ -131,31 +142,37 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Attachments — File management on pages
 
 - **`atlassian-mcp:confluence_upload_attachment`** — Upload a file to a page.
+
   ```
   renre-kit atlassian-mcp:confluence_upload_attachment --pageId "123456" --filename "diagram.png" --content "<base64-content>"
   ```
 
 - **`atlassian-mcp:confluence_upload_attachments`** — Upload multiple files.
+
   ```
   renre-kit atlassian-mcp:confluence_upload_attachments --pageId "123456" --files '[{"filename": "file1.txt", "content": "text"}, {"filename": "file2.txt", "content": "text"}]'
   ```
 
 - **`atlassian-mcp:confluence_get_attachments`** — List all attachments on a page.
+
   ```
   renre-kit atlassian-mcp:confluence_get_attachments --pageId "123456"
   ```
 
 - **`atlassian-mcp:confluence_download_attachment`** — Download an attachment by filename.
+
   ```
   renre-kit atlassian-mcp:confluence_download_attachment --pageId "123456" --filename "diagram.png"
   ```
 
 - **`atlassian-mcp:confluence_download_content_attachments`** — Download all attachments from a page.
+
   ```
   renre-kit atlassian-mcp:confluence_download_content_attachments --pageId "123456"
   ```
 
 - **`atlassian-mcp:confluence_delete_attachment`** — Delete an attachment.
+
   ```
   renre-kit atlassian-mcp:confluence_delete_attachment --attachmentId "att789"
   ```
@@ -247,6 +264,7 @@ Confluence requires the current version number for updates (optimistic locking).
 ### Use CQL Effectively
 
 CQL is powerful for finding content. Common patterns:
+
 - `type = page AND space = DEV` — all pages in a space
 - `title ~ "API"` — title contains "API"
 - `label = "architecture"` — pages with specific label
@@ -257,6 +275,7 @@ CQL is powerful for finding content. Common patterns:
 ### Use Confluence Storage Format
 
 Page bodies use Confluence storage format (XHTML-like). Common elements:
+
 - `<h1>`, `<h2>`, `<h3>` for headings
 - `<p>` for paragraphs
 - `<ul><li>` for lists
@@ -277,6 +296,7 @@ When creating pages, always suggest adding relevant labels to improve discoverab
 
 **Cause:** The extension's domain, email, or API token is not configured.
 **Solution:** Guide the user to configure the extension:
+
 ```
 renre-kit ext config atlassian-mcp --set domain=company.atlassian.net
 renre-kit ext config atlassian-mcp --set email=user@company.com

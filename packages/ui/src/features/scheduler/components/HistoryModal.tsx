@@ -25,12 +25,7 @@ interface HistoryModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function HistoryModal({
-  taskId,
-  taskName,
-  open,
-  onOpenChange,
-}: HistoryModalProps) {
+export function HistoryModal({ taskId, taskName, open, onOpenChange }: HistoryModalProps) {
   const { data: history, isLoading } = useTaskHistory(open ? taskId : '');
 
   return (
@@ -38,65 +33,54 @@ export function HistoryModal({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Task History: {taskName}</DialogTitle>
-          <DialogDescription>
-            Execution history for this scheduled task.
-          </DialogDescription>
+          <DialogDescription>Execution history for this scheduled task.</DialogDescription>
         </DialogHeader>
         {isLoading ? (
           <Skeleton className="h-48 w-full" />
         ) : (
           <ScrollArea className="max-h-96">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Started</TableHead>
-                <TableHead>Finished</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Output</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(!history || history.length === 0) ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center text-muted-foreground"
-                  >
-                    No execution history.
-                  </TableCell>
+                  <TableHead>Started</TableHead>
+                  <TableHead>Finished</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Output</TableHead>
                 </TableRow>
-              ) : (
-                history.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell>
-                      {new Date(entry.started_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      {entry.finished_at ? new Date(entry.finished_at).toLocaleString() : '-'}
-                    </TableCell>
-                    <TableCell>{entry.duration_ms != null ? `${entry.duration_ms}ms` : '-'}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          entry.status === 'success'
-                            ? 'default'
-                            : 'destructive'
-                        }
-                      >
-                        {entry.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <pre className="max-h-24 max-w-xs overflow-auto whitespace-pre-wrap text-xs font-mono">
-                        {entry.output ?? '-'}
-                      </pre>
+              </TableHeader>
+              <TableBody>
+                {!history || history.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      No execution history.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  history.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>{new Date(entry.started_at).toLocaleString()}</TableCell>
+                      <TableCell>
+                        {entry.finished_at ? new Date(entry.finished_at).toLocaleString() : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {entry.duration_ms != null ? `${entry.duration_ms}ms` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={entry.status === 'success' ? 'default' : 'destructive'}>
+                          {entry.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <pre className="max-h-24 max-w-xs overflow-auto whitespace-pre-wrap text-xs font-mono">
+                          {entry.output ?? '-'}
+                        </pre>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </ScrollArea>
         )}
       </DialogContent>

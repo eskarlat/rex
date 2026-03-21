@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
 import semver from 'semver';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
@@ -48,9 +48,7 @@ interface UpdateValidationSuccess {
   db: ReturnType<typeof getDb>;
 }
 
-function validateUpdate(
-  body: UpdateBody,
-): UpdateValidationError | UpdateValidationSuccess {
+function validateUpdate(body: UpdateBody): UpdateValidationError | UpdateValidationSuccess {
   const db = getDb();
   const installed = listInstalled(db);
   const ext = installed.find((e) => e.name === body.name);
@@ -64,7 +62,11 @@ function validateUpdate(
     return { code: 404, body: { error: `Extension "${body.name}" not found in any registry.` } };
   }
 
-  if (!semver.valid(resolved.latestVersion) || !semver.valid(ext.version) || !semver.gt(resolved.latestVersion, ext.version)) {
+  if (
+    !semver.valid(resolved.latestVersion) ||
+    !semver.valid(ext.version) ||
+    !semver.gt(resolved.latestVersion, ext.version)
+  ) {
     return { code: 200, body: { name: body.name, message: 'Already up to date' } };
   }
 
@@ -187,7 +189,9 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
 
   // Sync registries once at startup (background, non-blocking)
   const { registries: startupRegistries } = loadGlobalConfig();
-  void ensureSynced(startupRegistries).then(() => refreshUpdateCache(getDb(), startupRegistries)).catch(() => {});
+  void ensureSynced(startupRegistries)
+    .then(() => refreshUpdateCache(getDb(), startupRegistries))
+    .catch(() => {});
 
   fastify.get('/api/marketplace', (request: FastifyRequest) => {
     const { registries } = loadGlobalConfig();
@@ -198,15 +202,22 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
 
     const activatedPlugins = projectPath ? getActivated(projectPath) : {};
     const updateCache = readUpdateCache();
-    const updateMap = new Map(
-      (updateCache?.updates ?? []).map((u) => [u.name, u]),
-    );
+    const updateMap = new Map((updateCache?.updates ?? []).map((u) => [u.name, u]));
 
-    function getUpdateInfo(extName: string): { updateAvailable: string | null; engineCompatible: boolean } {
+    function getUpdateInfo(extName: string): {
+      updateAvailable: string | null;
+      engineCompatible: boolean;
+    } {
       const update = updateMap.get(extName);
       if (!update) return { updateAvailable: null, engineCompatible: true };
-      return { updateAvailable: update.availableVersion, engineCompatible: update.engineCompatible };
+      return {
+        updateAvailable: update.availableVersion,
+        engineCompatible: update.engineCompatible,
+      };
     }
+
+    const allRegistryEntries = listAvailableExtensions(registries);
+    const registryMap = new Map(allRegistryEntries.map((e) => [e.name, e]));
 
     const active = installed
       .filter((ext) => activatedPlugins[ext.name] === ext.version)
@@ -216,9 +227,17 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
         let description: string | undefined;
         let hasIcon = false;
         let panels: Array<{ id: string; title: string }> = [];
-        let widgets: Array<{ id: string; title: string; defaultSize: { w: number; h: number }; minSize?: { w: number; h: number }; maxSize?: { w: number; h: number } }> = [];
+        let widgets: Array<{
+          id: string;
+          title: string;
+          defaultSize: { w: number; h: number };
+          minSize?: { w: number; h: number };
+          maxSize?: { w: number; h: number };
+        }> = [];
+        let installPath: string | undefined;
         try {
           const extDir = getExtensionDir(ext.name, ext.version);
+          installPath = extDir;
           const manifest = loadManifest(extDir);
           hasConfig = Object.keys(manifest.config?.schema ?? {}).length > 0;
           title = manifest.title;
@@ -232,7 +251,10 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
             ...(w.minSize ? { minSize: w.minSize } : {}),
             ...(w.maxSize ? { maxSize: w.maxSize } : {}),
           }));
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
+        const regEntry = registryMap.get(ext.name);
         return {
           name: ext.name,
           version: ext.version,
@@ -244,6 +266,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
           hasIcon,
           panels,
           widgets,
+          author: regEntry?.author,
+          tags: regEntry?.tags ?? [],
+          gitUrl: regEntry?.gitUrl,
+          installedAt: ext.installed_at,
+          registrySource: ext.registry_source ?? undefined,
+          installPath,
           ...getUpdateInfo(ext.name),
         };
       });
@@ -254,13 +282,18 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
         let title: string | undefined;
         let description: string | undefined;
         let hasIcon = false;
+        let installPath: string | undefined;
         try {
           const extDir = getExtensionDir(ext.name, ext.version);
+          installPath = extDir;
           const manifest = loadManifest(extDir);
           title = manifest.title;
           description = manifest.description;
           hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
+        const regEntry = registryMap.get(ext.name);
         return {
           name: ext.name,
           version: ext.version,
@@ -269,13 +302,20 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
           title,
           description,
           hasIcon,
+          author: regEntry?.author,
+          tags: regEntry?.tags ?? [],
+          gitUrl: regEntry?.gitUrl,
+          installedAt: ext.installed_at,
+          registrySource: ext.registry_source ?? undefined,
+          installPath,
           ...getUpdateInfo(ext.name),
         };
       });
 
     const installedNames = new Set(installed.map((ext) => ext.name));
-    const availableEntries = listAvailableExtensions(registries)
-      .filter((entry) => !installedNames.has(entry.name));
+    const availableEntries = allRegistryEntries.filter(
+      (entry) => !installedNames.has(entry.name),
+    );
 
     // Pre-compute icon availability, skipping entries without an icon field
     const extensionsWithIcons = new Set<string>();
@@ -296,6 +336,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       tags: entry.tags ?? [],
       status: 'available' as const,
       hasIcon: extensionsWithIcons.has(entry.name),
+      gitUrl: entry.gitUrl,
     }));
 
     return {
@@ -315,7 +356,11 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
   // Note: browser import() cannot send custom headers, so we also check activeProjectPath
   fastify.get('/api/extensions/:name/panel.js', (request: FastifyRequest, reply: FastifyReply) => {
     const { name } = request.params as { name: string };
-    const panelContent = findExtensionUiAsset(name, request.projectPath ?? fastify.activeProjectPath, 'panels');
+    const panelContent = findExtensionUiAsset(
+      name,
+      request.projectPath ?? fastify.activeProjectPath,
+      'panels',
+    );
     if (!panelContent) {
       reply.code(404);
       return reply.send({ error: `Panel not found for extension '${name}'` });
@@ -325,28 +370,44 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
   });
 
   // Serve specific panel by ID: /api/extensions/{name}/panels/{panelId}.js
-  fastify.get('/api/extensions/:name/panels/:panelId.js', (request: FastifyRequest, reply: FastifyReply) => {
-    const { name, panelId } = request.params as { name: string; panelId: string };
-    const panelContent = findExtensionUiAsset(name, request.projectPath ?? fastify.activeProjectPath, 'panels', panelId);
-    if (!panelContent) {
-      reply.code(404);
-      return reply.send({ error: `Panel '${panelId}' not found for extension '${name}'` });
-    }
-    reply.header('Content-Type', 'application/javascript');
-    return reply.send(panelContent);
-  });
+  fastify.get(
+    '/api/extensions/:name/panels/:panelId.js',
+    (request: FastifyRequest, reply: FastifyReply) => {
+      const { name, panelId } = request.params as { name: string; panelId: string };
+      const panelContent = findExtensionUiAsset(
+        name,
+        request.projectPath ?? fastify.activeProjectPath,
+        'panels',
+        panelId,
+      );
+      if (!panelContent) {
+        reply.code(404);
+        return reply.send({ error: `Panel '${panelId}' not found for extension '${name}'` });
+      }
+      reply.header('Content-Type', 'application/javascript');
+      return reply.send(panelContent);
+    },
+  );
 
   // Serve widget JS by ID: /api/extensions/{name}/widgets/{widgetId}.js
-  fastify.get('/api/extensions/:name/widgets/:widgetId.js', (request: FastifyRequest, reply: FastifyReply) => {
-    const { name, widgetId } = request.params as { name: string; widgetId: string };
-    const widgetContent = findExtensionUiAsset(name, request.projectPath ?? fastify.activeProjectPath, 'widgets', widgetId);
-    if (!widgetContent) {
-      reply.code(404);
-      return reply.send({ error: `Widget '${widgetId}' not found for extension '${name}'` });
-    }
-    reply.header('Content-Type', 'application/javascript');
-    return reply.send(widgetContent);
-  });
+  fastify.get(
+    '/api/extensions/:name/widgets/:widgetId.js',
+    (request: FastifyRequest, reply: FastifyReply) => {
+      const { name, widgetId } = request.params as { name: string; widgetId: string };
+      const widgetContent = findExtensionUiAsset(
+        name,
+        request.projectPath ?? fastify.activeProjectPath,
+        'widgets',
+        widgetId,
+      );
+      if (!widgetContent) {
+        reply.code(404);
+        return reply.send({ error: `Widget '${widgetId}' not found for extension '${name}'` });
+      }
+      reply.header('Content-Type', 'application/javascript');
+      return reply.send(widgetContent);
+    },
+  );
 
   // Serve extension icon: /api/extensions/{name}/icon
   // Checks installed extension directory first, then falls back to registry icons
@@ -376,6 +437,54 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     return reply.send({ error: `Icon not found for extension '${name}'` });
   });
 
+  // Serve extension changelog: /api/extensions/{name}/changelog
+  fastify.get(
+    '/api/extensions/:name/changelog',
+    (request: FastifyRequest, reply: FastifyReply) => {
+      const { name } = request.params as { name: string };
+      const candidates = getVersionCandidates(name, request.projectPath ?? fastify.activeProjectPath);
+
+      for (const version of candidates) {
+        try {
+          const extDir = getExtensionDir(name, version);
+          const changelogPath = join(extDir, 'CHANGELOG.md');
+          if (existsSync(changelogPath)) {
+            return { changelog: readFileSync(changelogPath, 'utf-8') };
+          }
+        } catch {
+          // try next version
+        }
+      }
+
+      reply.code(404);
+      return { error: `Changelog not found for extension '${name}'` };
+    },
+  );
+
+  // Serve extension readme: /api/extensions/{name}/readme
+  fastify.get(
+    '/api/extensions/:name/readme',
+    (request: FastifyRequest, reply: FastifyReply) => {
+      const { name } = request.params as { name: string };
+      const candidates = getVersionCandidates(name, request.projectPath ?? fastify.activeProjectPath);
+
+      for (const version of candidates) {
+        try {
+          const extDir = getExtensionDir(name, version);
+          const readmePath = join(extDir, 'README.md');
+          if (existsSync(readmePath)) {
+            return { readme: readFileSync(readmePath, 'utf-8') };
+          }
+        } catch {
+          // try next version
+        }
+      }
+
+      reply.code(404);
+      return { error: `README not found for extension '${name}'` };
+    },
+  );
+
   fastify.post('/api/extensions/install', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as InstallBody;
     if (!body.name || typeof body.name !== 'string') {
@@ -390,7 +499,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: `Extension '${body.name}' not found in registries` };
     }
 
-    const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
+    const extDir = await installExtension(
+      resolved.name,
+      resolved.gitUrl,
+      resolved.latestVersion,
+      resolved.registryName,
+    );
     const db = getDb();
     install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 
@@ -434,24 +548,27 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     return missingKeys.length > 0 ? { ok: true, missingKeys } : { ok: true };
   });
 
-  fastify.post('/api/extensions/deactivate', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as DeactivateBody;
-    const projectPath = body.projectPath ?? request.projectPath ?? fastify.activeProjectPath;
-    if (!projectPath) {
-      reply.code(400);
-      return { error: 'projectPath is required' };
-    }
+  fastify.post(
+    '/api/extensions/deactivate',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = request.body as DeactivateBody;
+      const projectPath = body.projectPath ?? request.projectPath ?? fastify.activeProjectPath;
+      if (!projectPath) {
+        reply.code(400);
+        return { error: 'projectPath is required' };
+      }
 
-    const ext = findInstalledExtension(body.name);
-    if (!ext) {
-      reply.code(404);
-      return { error: `Extension "${body.name}" is not installed.` };
-    }
+      const ext = findInstalledExtension(body.name);
+      if (!ext) {
+        reply.code(404);
+        return { error: `Extension "${body.name}" is not installed.` };
+      }
 
-    const extensionDir = getExtensionDir(body.name, ext.version);
-    await deactivate(body.name, projectPath, extensionDir, bus);
-    return { ok: true };
-  });
+      const extensionDir = getExtensionDir(body.name, ext.version);
+      await deactivate(body.name, projectPath, extensionDir, bus);
+      return { ok: true };
+    },
+  );
 
   fastify.post('/api/extensions/update', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as UpdateBody;
@@ -471,7 +588,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     }
 
     const { ext, resolved, config, db } = result;
-    const extDir = await installExtension(resolved.name, resolved.gitUrl, resolved.latestVersion, resolved.registryName);
+    const extDir = await installExtension(
+      resolved.name,
+      resolved.gitUrl,
+      resolved.latestVersion,
+      resolved.registryName,
+    );
     install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 
     // Re-activate if the extension was active in the project
@@ -500,6 +622,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: `Extension '${params.name}' not installed` };
     }
     remove(params.name, ext.version, getDb());
+
+    const extDir = getExtensionDir(params.name, ext.version);
+    if (existsSync(extDir)) {
+      rmSync(extDir, { recursive: true, force: true });
+    }
+
     return { ok: true };
   });
 

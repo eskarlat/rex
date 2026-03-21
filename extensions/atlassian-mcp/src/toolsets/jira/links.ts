@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createLinksToolset(client: JiraClient): Toolset {
   return {
@@ -69,7 +69,7 @@ export function createLinksToolset(client: JiraClient): Toolset {
       jira_get_link_types: async () => {
         try {
           const data = await client.getLinkTypes();
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -80,7 +80,7 @@ export function createLinksToolset(client: JiraClient): Toolset {
             args['epicKey'] as string,
             args['issueKeys'] as string[],
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -92,7 +92,7 @@ export function createLinksToolset(client: JiraClient): Toolset {
             inwardIssue: { key: args['inwardIssueKey'] as string },
             outwardIssue: { key: args['outwardIssueKey'] as string },
           });
-          return textResult(data ?? { success: true });
+          return markdownResult(data ?? { success: true });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -102,7 +102,7 @@ export function createLinksToolset(client: JiraClient): Toolset {
           const data = await client.createRemoteIssueLink(args['issueKey'] as string, {
             object: { url: args['url'] as string, title: args['title'] as string },
           });
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -110,7 +110,7 @@ export function createLinksToolset(client: JiraClient): Toolset {
       jira_remove_issue_link: async (args) => {
         try {
           await client.removeIssueLink(args['linkId'] as string);
-          return textResult({ success: true });
+          return markdownResult({ success: true });
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

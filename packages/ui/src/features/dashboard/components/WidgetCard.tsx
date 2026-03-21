@@ -47,13 +47,7 @@ export function WidgetCard({
   onRemove,
   onResize,
 }: WidgetCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -63,14 +57,10 @@ export function WidgetCard({
   };
 
   const canGrow =
-    !constraints?.maxSize ||
-    size.w < constraints.maxSize.w ||
-    size.h < constraints.maxSize.h;
+    !constraints?.maxSize || size.w < constraints.maxSize.w || size.h < constraints.maxSize.h;
 
   const canShrink =
-    !constraints?.minSize ||
-    size.w > constraints.minSize.w ||
-    size.h > constraints.minSize.h;
+    !constraints?.minSize || size.w > constraints.minSize.w || size.h > constraints.minSize.h;
 
   const handleGrow = () => {
     if (!onResize) return;

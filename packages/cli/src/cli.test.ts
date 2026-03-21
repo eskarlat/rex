@@ -23,10 +23,18 @@ vi.mock('./core/paths/paths.js', () => ({
   PROJECT_DIR: '.renre-kit',
   PLUGINS_JSON: 'plugins.json',
   MANIFEST_JSON: 'manifest.json',
-  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => path.join('/mock', 'extensions', `${name}@${version}`)),
-  getManifestPath: vi.fn().mockImplementation((p: string) => path.join(p, '.renre-kit', 'manifest.json')),
+  getExtensionDir: vi
+    .fn()
+    .mockImplementation((name: string, version: string) =>
+      path.join('/mock', 'extensions', `${name}@${version}`),
+    ),
+  getManifestPath: vi
+    .fn()
+    .mockImplementation((p: string) => path.join(p, '.renre-kit', 'manifest.json')),
   getProjectDir: vi.fn().mockImplementation((p: string) => path.join(p, '.renre-kit')),
-  getPluginsPath: vi.fn().mockImplementation((p: string) => path.join(p, '.renre-kit', 'plugins.json')),
+  getPluginsPath: vi
+    .fn()
+    .mockImplementation((p: string) => path.join(p, '.renre-kit', 'plugins.json')),
   getSkillsDir: vi.fn().mockImplementation((p: string) => path.join(p, '.agents', 'skills')),
   getAgentDir: vi.fn().mockImplementation((p: string, t: string) => path.join(p, '.agents', t)),
 }));
@@ -39,22 +47,47 @@ const mockExecuteToolCall = vi.fn().mockResolvedValue('mcp result');
 vi.mock('./features/extensions/mcp/connection-manager.js', () => ({
   ConnectionManager: vi.fn().mockImplementation(() => ({
     status: vi.fn().mockReturnValue(new Map()),
-    restart: vi.fn().mockResolvedValue({ extensionName: '', transport: 'stdio', state: 'running', retryCount: 0 }),
+    restart: vi
+      .fn()
+      .mockResolvedValue({
+        extensionName: '',
+        transport: 'stdio',
+        state: 'running',
+        retryCount: 0,
+      }),
     getConnection: (...args: unknown[]) => mockGetConnection(...args),
     executeToolCall: (...args: unknown[]) => mockExecuteToolCall(...args),
   })),
+}));
+vi.mock('./core/logger/extension-logger.js', () => ({
+  createExtensionLogger: vi.fn().mockReturnValue({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
 }));
 vi.mock('./features/config/config-manager.js', () => ({
   loadGlobalConfig: vi.fn().mockReturnValue({ registries: [], settings: {}, extensionConfigs: {} }),
   resolveExtensionConfig: vi.fn().mockReturnValue({}),
 }));
 vi.mock('./features/extensions/manager/extension-manager.js', () => ({
-  listInstalled: vi.fn().mockReturnValue([
-    { name: 'my-ext', version: '1.0.0', registry_source: 'default', installed_at: '', type: 'standard' },
-  ]),
+  listInstalled: vi
+    .fn()
+    .mockReturnValue([
+      {
+        name: 'my-ext',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '',
+        type: 'standard',
+      },
+    ]),
   getActivated: vi.fn().mockReturnValue({}),
 }));
-const mockLoadManifest = vi.fn().mockImplementation(() => { throw new Error('no manifest'); });
+const mockLoadManifest = vi.fn().mockImplementation(() => {
+  throw new Error('no manifest');
+});
 vi.mock('./features/extensions/manifest/manifest-loader.js', () => ({
   loadManifest: (...args: unknown[]) => mockLoadManifest(...args),
 }));
@@ -195,45 +228,55 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'init']);
-    expect(handleInit).toHaveBeenCalledWith(expect.objectContaining({
-      projectPath: expect.any(String),
-    }));
+    expect(handleInit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectPath: expect.any(String),
+      }),
+    );
   });
 
   it('runs destroy command', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'destroy']);
-    expect(handleDestroy).toHaveBeenCalledWith(expect.objectContaining({
-      projectPath: expect.any(String),
-    }));
+    expect(handleDestroy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectPath: expect.any(String),
+      }),
+    );
   });
 
   it('passes --force global flag to destroy', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', '--force', 'destroy']);
-    expect(handleDestroy).toHaveBeenCalledWith(expect.objectContaining({
-      force: true,
-    }));
+    expect(handleDestroy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        force: true,
+      }),
+    );
   });
 
   it('runs ext:add command', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:add', 'my-ext']);
-    expect(handleExtAdd).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
   });
 
   it('runs ext:remove command', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:remove', 'my-ext']);
-    expect(handleExtRemove).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtRemove).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
   });
 
   it('runs ext:list command', async () => {
@@ -247,29 +290,35 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:activate', 'my-ext']);
-    expect(handleExtActivate).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtActivate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
   });
 
   it('parses name@version format in ext:activate', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:activate', 'my-ext@1.0.0']);
-    expect(handleExtActivate).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-      version: '1.0.0',
-    }));
+    expect(handleExtActivate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+        version: '1.0.0',
+      }),
+    );
   });
 
   it('parses name@version format in ext:remove', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:remove', 'my-ext@1.0.0']);
-    expect(handleExtRemove).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-      version: '1.0.0',
-    }));
+    expect(handleExtRemove).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+        version: '1.0.0',
+      }),
+    );
   });
 
   it('parses name@version format in ext:deactivate', async () => {
@@ -277,9 +326,11 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:deactivate', 'my-ext@1.0.0']);
-    expect(handleExtDeactivate).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtDeactivate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
     vi.mocked(getActivated).mockReturnValue({});
   });
 
@@ -288,9 +339,11 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:deactivate', 'my-ext']);
-    expect(handleExtDeactivate).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtDeactivate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
     vi.mocked(getActivated).mockReturnValue({});
   });
 
@@ -298,9 +351,11 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:config', 'my-ext']);
-    expect(handleExtConfig).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
   });
 
   it('runs ext:status command', async () => {
@@ -323,11 +378,15 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:restart', 'my-ext']);
-    expect(handleExtRestart).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtRestart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
     vi.mocked(getActivated).mockReturnValue({});
-    mockLoadManifest.mockImplementation(() => { throw new Error('no manifest'); });
+    mockLoadManifest.mockImplementation(() => {
+      throw new Error('no manifest');
+    });
   });
 
   it('runs registry:sync command', async () => {
@@ -347,48 +406,72 @@ describe('cli', () => {
   it('runs registry:add command', async () => {
     const program = createProgram();
     program.exitOverride();
-    await program.parseAsync(['node', 'renre-kit', 'registry:add', 'internal', 'https://github.com/company/reg.git']);
-    expect(handleRegistryAdd).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'internal',
-      url: 'https://github.com/company/reg.git',
-    }));
+    await program.parseAsync([
+      'node',
+      'renre-kit',
+      'registry:add',
+      'internal',
+      'https://github.com/company/reg.git',
+    ]);
+    expect(handleRegistryAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'internal',
+        url: 'https://github.com/company/reg.git',
+      }),
+    );
   });
 
   it('runs registry:remove command', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'registry:remove', 'internal']);
-    expect(handleRegistryRemove).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'internal',
-    }));
+    expect(handleRegistryRemove).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'internal',
+      }),
+    );
   });
 
   it('runs registry:search command with query', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'registry:search', 'hello']);
-    expect(handleRegistrySearch).toHaveBeenCalledWith(expect.objectContaining({
-      query: 'hello',
-    }));
+    expect(handleRegistrySearch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: 'hello',
+      }),
+    );
   });
 
   it('runs registry:search with --type and --tag flags', async () => {
     const program = createProgram();
     program.exitOverride();
-    await program.parseAsync(['node', 'renre-kit', 'registry:search', '--type', 'mcp', '--tag', 'example']);
-    expect(handleRegistrySearch).toHaveBeenCalledWith(expect.objectContaining({
-      type: 'mcp',
-      tag: 'example',
-    }));
+    await program.parseAsync([
+      'node',
+      'renre-kit',
+      'registry:search',
+      '--type',
+      'mcp',
+      '--tag',
+      'example',
+    ]);
+    expect(handleRegistrySearch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'mcp',
+        tag: 'example',
+      }),
+    );
   });
 
   it('runs capabilities command', async () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'capabilities']);
-    expect(handleCapabilities).toHaveBeenCalledWith(expect.objectContaining({
-      projectPath: expect.any(String),
-    }));
+    expect(handleCapabilities).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectPath: expect.any(String),
+      }),
+    );
   });
 
   it('runs ext:outdated command', async () => {
@@ -402,9 +485,11 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ext:update', 'my-ext']);
-    expect(handleExtUpdate).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'my-ext',
-    }));
+    expect(handleExtUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'my-ext',
+      }),
+    );
   });
 
   it('runs ext:cleanup command', async () => {
@@ -417,12 +502,22 @@ describe('cli', () => {
   it('runs vault:set command', async () => {
     const program = createProgram();
     program.exitOverride();
-    await program.parseAsync(['node', 'renre-kit', 'vault:set', 'my-key', '--secret', '--value', 'my-val']);
-    expect(handleVaultSet).toHaveBeenCalledWith(expect.objectContaining({
-      key: 'my-key',
-      value: 'my-val',
-      secret: true,
-    }));
+    await program.parseAsync([
+      'node',
+      'renre-kit',
+      'vault:set',
+      'my-key',
+      '--secret',
+      '--value',
+      'my-val',
+    ]);
+    expect(handleVaultSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'my-key',
+        value: 'my-val',
+        secret: true,
+      }),
+    );
   });
 
   it('runs vault:list command', async () => {
@@ -436,9 +531,11 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'vault:remove', 'my-key']);
-    expect(handleVaultRemove).toHaveBeenCalledWith(expect.objectContaining({
-      key: 'my-key',
-    }));
+    expect(handleVaultRemove).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'my-key',
+      }),
+    );
   });
 
   it('runs scheduler:list command', async () => {
@@ -452,13 +549,15 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'scheduler:trigger', 'task-1']);
-    expect(handleSchedulerTrigger).toHaveBeenCalledWith(expect.objectContaining({
-      taskId: 'task-1',
-    }));
+    expect(handleSchedulerTrigger).toHaveBeenCalledWith(
+      expect.objectContaining({
+        taskId: 'task-1',
+      }),
+    );
   });
 
   it('registers dynamic extension commands from activated plugins', async () => {
-    vi.mocked(getActivated).mockReturnValue({ 'figma': '1.2.0' });
+    vi.mocked(getActivated).mockReturnValue({ figma: '1.2.0' });
     mockLoadManifest.mockReturnValue({
       name: 'figma',
       version: '1.2.0',
@@ -486,7 +585,9 @@ describe('cli', () => {
 
   it('skips extensions with missing manifests during dynamic loading', () => {
     vi.mocked(getActivated).mockReturnValue({ 'broken-ext': '1.0.0' });
-    mockLoadManifest.mockImplementation(() => { throw new Error('not found'); });
+    mockLoadManifest.mockImplementation(() => {
+      throw new Error('not found');
+    });
 
     const program = createProgram();
     const cmd = program.commands.find((c) => c.name() === 'broken-ext:anything');
@@ -534,8 +635,17 @@ describe('cli', () => {
       // Commander may throw for unknown command before our override runs
     }
 
-    expect(mockGetConnection).toHaveBeenCalledWith('mcp-ext', expect.objectContaining({ transport: 'stdio' }), expect.any(Object), expect.any(String));
-    expect(mockExecuteToolCall).toHaveBeenCalledWith('mcp-ext', 'query', expect.objectContaining({ _positional: ['arg1'] }));
+    expect(mockGetConnection).toHaveBeenCalledWith(
+      'mcp-ext',
+      expect.objectContaining({ transport: 'stdio' }),
+      expect.any(Object),
+      expect.any(String),
+    );
+    expect(mockExecuteToolCall).toHaveBeenCalledWith(
+      'mcp-ext',
+      'query',
+      expect.objectContaining({ _positional: ['arg1'] }),
+    );
 
     process.argv = originalArgv;
   });
@@ -560,16 +670,20 @@ describe('cli', () => {
     const program = createProgram();
     program.exitOverride();
     await program.parseAsync(['node', 'renre-kit', 'ui', '--no-browser']);
-    expect(mockHandleUi).toHaveBeenCalledWith(expect.objectContaining({
-      port: 4200,
-      noBrowser: true,
-    }));
+    expect(mockHandleUi).toHaveBeenCalledWith(
+      expect.objectContaining({
+        port: 4200,
+        noBrowser: true,
+      }),
+    );
   });
 
   it('rejects invalid port for ui command', async () => {
     const program = createProgram();
     program.exitOverride();
-    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('exit');
+    });
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
@@ -586,7 +700,9 @@ describe('cli', () => {
   it('rejects out-of-range port for ui command', async () => {
     const program = createProgram();
     program.exitOverride();
-    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => { throw new Error('exit'); });
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('exit');
+    });
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
@@ -607,12 +723,111 @@ describe('cli', () => {
     expect(mockHandleStop).toHaveBeenCalled();
   });
 
+  it('extracts output from CommandResult objects in extension commands', async () => {
+    vi.mocked(getActivated).mockReturnValue({ 'my-tool': '1.0.0' });
+    mockLoadManifest.mockReturnValue({
+      name: 'my-tool',
+      version: '1.0.0',
+      description: 'A tool',
+      type: 'standard',
+      commands: { status: { handler: 'commands/status.js' } },
+    });
+    mockExecuteCommand.mockResolvedValue({ output: 'status ok', exitCode: 0 });
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    const program = createProgram();
+    program.exitOverride();
+    await program.parseAsync(['node', 'renre-kit', 'my-tool:status']);
+
+    expect(writeSpy).toHaveBeenCalledWith('status ok');
+    writeSpy.mockRestore();
+  });
+
+  it('writes MCP tool call errors to stderr', async () => {
+    vi.mocked(getActivated).mockReturnValue({ 'mcp-ext': '1.0.0' });
+    mockLoadManifest.mockReturnValue({
+      name: 'mcp-ext',
+      version: '1.0.0',
+      description: 'MCP ext',
+      type: 'mcp',
+      mcp: { transport: 'stdio', command: 'node', args: ['server.js'] },
+      commands: {},
+    });
+    mockExecuteToolCall.mockRejectedValue(new Error('MCP error -32603: Tool crashed'));
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const originalArgv = process.argv;
+    process.argv = ['node', 'renre-kit', 'mcp-ext:query', 'arg1'];
+
+    const program = createProgram();
+    program.exitOverride();
+    try {
+      await program.parseAsync(process.argv);
+    } catch {
+      // Commander may throw for unknown command before our override runs
+    }
+
+    // Wait for microtask (the .then error handler)
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(stderrSpy).toHaveBeenCalledWith('Error: MCP error -32603: Tool crashed\n');
+    stderrSpy.mockRestore();
+    process.argv = originalArgv;
+    vi.mocked(getActivated).mockReturnValue({});
+    mockLoadManifest.mockImplementation(() => {
+      throw new Error('no manifest');
+    });
+  });
+
+  it('extracts text content from MCP tool results', async () => {
+    vi.mocked(getActivated).mockReturnValue({ 'mcp-ext': '1.0.0' });
+    mockLoadManifest.mockReturnValue({
+      name: 'mcp-ext',
+      version: '1.0.0',
+      description: 'MCP ext',
+      type: 'mcp',
+      mcp: { transport: 'stdio', command: 'node', args: ['server.js'] },
+      commands: {},
+    });
+    mockExecuteToolCall.mockResolvedValue({
+      content: [{ type: 'text', text: 'search results here' }],
+    });
+    const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    const originalArgv = process.argv;
+    process.argv = ['node', 'renre-kit', 'mcp-ext:search'];
+
+    const program = createProgram();
+    program.exitOverride();
+    try {
+      await program.parseAsync(process.argv);
+    } catch {
+      // Commander may throw
+    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(stdoutSpy).toHaveBeenCalledWith('search results here\n');
+    stdoutSpy.mockRestore();
+    process.argv = originalArgv;
+    vi.mocked(getActivated).mockReturnValue({});
+    mockLoadManifest.mockImplementation(() => {
+      throw new Error('no manifest');
+    });
+  });
+
   it('shows suggestions for unknown commands', async () => {
     const program = createProgram();
     program.exitOverride();
     let errorMessage = '';
     program.configureOutput({
-      writeErr: (str: string) => { errorMessage += str; },
+      writeErr: (str: string) => {
+        errorMessage += str;
+      },
       writeOut: () => {},
     });
 

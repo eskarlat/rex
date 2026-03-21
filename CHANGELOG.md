@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - `renre-kit ui` command to start the web dashboard from CLI
   - Supports `--port`, `--lan`, `--no-browser`, `--no-sleep` flags
   - Spawns Fastify server and optionally opens browser
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CODEOWNERS for GitHub code review assignment
 
 ### Fixed
+
 - Database migration path resolution in bundled builds (tsup)
 - `cron-parser` CJS/ESM interop — replaced with `croner` (ESM-native)
 - `extension-sdk` DTS generation for `node:fs`/`node:path` imports
@@ -25,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2026-03-17
 
 ### Added
+
 - **Phase 1 — Core CLI & Extensions**
   - Project lifecycle (`init`, `destroy`)
   - Extension management (add, remove, list, activate, deactivate, config, status, restart)

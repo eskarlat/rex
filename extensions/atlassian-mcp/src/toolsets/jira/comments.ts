@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createCommentsToolset(client: JiraClient): Toolset {
   return {
@@ -46,7 +46,7 @@ export function createCommentsToolset(client: JiraClient): Toolset {
             ],
           };
           const data = await client.addComment(args['issueKey'] as string, adfBody);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -68,7 +68,7 @@ export function createCommentsToolset(client: JiraClient): Toolset {
             args['commentId'] as string,
             adfBody,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

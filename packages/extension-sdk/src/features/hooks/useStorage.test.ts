@@ -13,12 +13,14 @@ function createMockSDK(): RenreKitSDK {
     storage: {
       get: vi.fn().mockResolvedValue(null),
       set: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn(),
-      list: vi.fn(),
+      delete: vi.fn().mockResolvedValue(undefined),
+      list: vi.fn().mockResolvedValue([]),
     },
     ui: { toast: vi.fn(), confirm: vi.fn(), navigate: vi.fn() },
     events: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
     scheduler: { list: vi.fn(), register: vi.fn(), unregister: vi.fn(), update: vi.fn() },
+    terminal: { open: vi.fn(), close: vi.fn(), send: vi.fn() },
+    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     destroy: vi.fn(),
   };
 }
@@ -34,68 +36,74 @@ describe('useStorage', () => {
     return createElement(SDKProvider, { sdk: mockSDK }, children);
   }
 
-  it('fetches value on mount', async () => {
-    vi.mocked(mockSDK.storage.get).mockResolvedValue('stored-value');
-
-    const { result } = renderHook(() => useStorage('my-key'), { wrapper });
-
-    // Initially null before async fetch completes
-    expect(result.current[0]).toBeNull();
-
-    await act(async () => {
-      // Let the useEffect resolve
-    });
-
-    expect(mockSDK.storage.get).toHaveBeenCalledWith('my-key');
-    expect(result.current[0]).toBe('stored-value');
+  it('starts with loading true and data null', () => {
+    const { result } = renderHook(() => useStorage('my-ext'), { wrapper });
+    expect(result.current.data).toBeNull();
+    expect(result.current.loading).toBe(true);
   });
 
-  it('setValue updates storage and local state', async () => {
-    vi.mocked(mockSDK.storage.get).mockResolvedValue(null);
+  it('loads extension-scoped data on mount', async () => {
+    vi.mocked(mockSDK.storage.list).mockResolvedValue([
+      { key: 'my-ext:theme', value: 'dark' },
+      { key: 'my-ext:lang', value: 'en' },
+      { key: 'other-ext:foo', value: 'bar' },
+    ]);
 
-    const { result } = renderHook(() => useStorage('my-key'), { wrapper });
+    const { result } = renderHook(() => useStorage('my-ext'), { wrapper });
 
+    await act(async () => {});
+
+    expect(result.current.data).toEqual({ theme: 'dark', lang: 'en' });
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('set stores value with scoped key', async () => {
+    vi.mocked(mockSDK.storage.list).mockResolvedValue([]);
+
+    const { result } = renderHook(() => useStorage('my-ext'), { wrapper });
+
+    await act(async () => {});
     await act(async () => {
-      // Let mount effect resolve
+      await result.current.set('theme', 'dark');
     });
 
+    expect(mockSDK.storage.set).toHaveBeenCalledWith('my-ext:theme', 'dark');
+    expect(result.current.data).toEqual({ theme: 'dark' });
+  });
+
+  it('remove deletes value with scoped key', async () => {
+    vi.mocked(mockSDK.storage.list).mockResolvedValue([
+      { key: 'my-ext:theme', value: 'dark' },
+    ]);
+
+    const { result } = renderHook(() => useStorage('my-ext'), { wrapper });
+
+    await act(async () => {});
     await act(async () => {
-      await result.current[1]('new-value');
+      await result.current.remove('theme');
     });
 
-    expect(mockSDK.storage.set).toHaveBeenCalledWith('my-key', 'new-value');
-    expect(result.current[0]).toBe('new-value');
+    expect(mockSDK.storage.delete).toHaveBeenCalledWith('my-ext:theme');
+    expect(result.current.data).toEqual({});
   });
 
   it('does not update state after unmount', async () => {
-    let resolveGet!: (value: string | null) => void;
-    vi.mocked(mockSDK.storage.get).mockImplementation(
-      () => new Promise((resolve) => { resolveGet = resolve; }),
+    let resolveList!: (value: { key: string; value: string }[]) => void;
+    vi.mocked(mockSDK.storage.list).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveList = resolve;
+        }),
     );
 
-    const { result, unmount } = renderHook(() => useStorage('my-key'), { wrapper });
+    const { result, unmount } = renderHook(() => useStorage('my-ext'), { wrapper });
 
-    // Unmount before the get resolves
     unmount();
 
-    // Resolve after unmount — should not throw or update state
     await act(async () => {
-      resolveGet('late-value');
+      resolveList([{ key: 'my-ext:late', value: 'data' }]);
     });
 
-    // State should still be null (the cancelled flag prevents update)
-    expect(result.current[0]).toBeNull();
-  });
-
-  it('returns null when storage has no value', async () => {
-    vi.mocked(mockSDK.storage.get).mockResolvedValue(null);
-
-    const { result } = renderHook(() => useStorage('missing-key'), { wrapper });
-
-    await act(async () => {
-      // Let mount effect resolve
-    });
-
-    expect(result.current[0]).toBeNull();
+    expect(result.current.data).toBeNull();
   });
 });

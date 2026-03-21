@@ -22,12 +22,14 @@ export default function CommentsWidget({ sdk, extensionName }) {
                 const latest = comments[comments.length - 1];
                 if (!latest)
                     return [];
-                return [{
+                return [
+                    {
                         key: issue.key,
                         author: latest.author.displayName,
                         snippet: String(latest.body).slice(0, 80),
                         time: latest.updated,
-                    }];
+                    },
+                ];
             });
             setItems(flat);
         })
@@ -35,14 +37,10 @@ export default function CommentsWidget({ sdk, extensionName }) {
             .finally(() => setLoading(false));
     }, [sdk, extName]);
     if (loading) {
-        return _jsx("div", { style: { padding: '12px', fontSize: '13px', color: '#6b7280' }, children: "Loading comments..." });
+        return _jsx("div", { className: "p-3 text-xs text-muted-foreground", children: "Loading comments..." });
     }
     if (error) {
-        return _jsx("div", { style: { padding: '12px', fontSize: '13px', color: '#ef4444' }, children: error });
+        return _jsx("div", { className: "p-3 text-xs text-red-500", children: error });
     }
-    return (_jsxs("div", { style: { padding: '8px', overflow: 'auto', maxHeight: '100%' }, children: [_jsx("p", { style: { fontSize: '13px', fontWeight: 600, marginBottom: '8px' }, children: "Recent Comments" }), items.length === 0 ? (_jsx("p", { style: { fontSize: '12px', color: '#6b7280' }, children: "No recent comments." })) : (_jsx("ul", { style: { listStyle: 'none', padding: 0, margin: 0 }, children: items.map((item, i) => (_jsxs("li", { style: {
-                        padding: '6px 0',
-                        borderBottom: '1px solid var(--border, #e5e7eb)',
-                        fontSize: '12px',
-                    }, children: [_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between' }, children: [_jsx("span", { style: { fontWeight: 500, color: '#0052CC' }, children: item.key }), _jsx("span", { style: { color: '#6b7280', fontSize: '11px' }, children: item.author })] }), _jsx("div", { style: { color: '#374151', marginTop: '2px' }, children: item.snippet })] }, `${item.key}-${i}`))) }))] }));
+    return (_jsxs("div", { className: "max-h-full overflow-auto p-2", children: [_jsx("p", { className: "mb-2 text-xs font-semibold", children: "Recent Comments" }), items.length === 0 ? (_jsx("p", { className: "text-xs text-muted-foreground", children: "No recent comments." })) : (_jsx("ul", { className: "m-0 list-none p-0", children: items.map((item, i) => (_jsxs("li", { className: "border-b border-border py-1.5 text-xs", children: [_jsxs("div", { className: "flex justify-between", children: [_jsx("span", { className: "font-medium text-[#0052CC]", children: item.key }), _jsx("span", { className: "text-[11px] text-muted-foreground", children: item.author })] }), _jsx("div", { className: "mt-0.5 text-foreground", children: item.snippet })] }, `${item.key}-${i}`))) }))] }));
 }

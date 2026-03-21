@@ -178,31 +178,26 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir);
 
-      expect(
-        existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md')),
-      ).toBe(true);
-      expect(
-        existsSync(join(projectDir, '.agents', 'prompts', 'test-ext.style.prompt.md')),
-      ).toBe(true);
-      expect(
-        existsSync(join(projectDir, '.agents', 'context', 'test-ext.docs.context.md')),
-      ).toBe(true);
+      expect(existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md'))).toBe(
+        true,
+      );
+      expect(existsSync(join(projectDir, '.agents', 'prompts', 'test-ext.style.prompt.md'))).toBe(
+        true,
+      );
+      expect(existsSync(join(projectDir, '.agents', 'context', 'test-ext.docs.context.md'))).toBe(
+        true,
+      );
       expect(
         existsSync(join(projectDir, '.agents', 'agents', 'test-ext.researcher.agent.md')),
       ).toBe(true);
       expect(
         existsSync(join(projectDir, '.agents', 'workflows', 'test-ext.deploy.workflow.md')),
       ).toBe(true);
-      expect(
-        existsSync(join(projectDir, '.agents', 'hooks', 'test-ext.session.json')),
-      ).toBe(true);
+      expect(existsSync(join(projectDir, '.agents', 'hooks', 'test-ext.session.json'))).toBe(true);
     });
 
     it('should transform frontmatter name in skills', () => {
-      writeExtFile(
-        'skills/greet/SKILL.md',
-        '---\nname: greet\ndescription: Greets\n---\n# Greet',
-      );
+      writeExtFile('skills/greet/SKILL.md', '---\nname: greet\ndescription: Greets\n---\n# Greet');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -243,10 +238,7 @@ describe('agent-deployer', () => {
     });
 
     it('should transform frontmatter name in agents', () => {
-      writeExtFile(
-        'agent/agents/researcher.agent.md',
-        '---\nname: researcher\n---\n# Researcher',
-      );
+      writeExtFile('agent/agents/researcher.agent.md', '---\nname: researcher\n---\n# Researcher');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -282,10 +274,7 @@ describe('agent-deployer', () => {
     });
 
     it('should not double-prefix if name is already prefixed', () => {
-      writeExtFile(
-        'skills/greet/SKILL.md',
-        '---\nname: test-ext.greet\n---\n# Greet',
-      );
+      writeExtFile('skills/greet/SKILL.md', '---\nname: test-ext.greet\n---\n# Greet');
       writeManifest({
         ...baseManifest,
         agent: {
@@ -391,17 +380,17 @@ describe('agent-deployer', () => {
       deployAgentAssets(extensionDir, projectDir);
 
       // greet has extra files
-      expect(
-        existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md')),
-      ).toBe(true);
+      expect(existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'SKILL.md'))).toBe(
+        true,
+      );
       expect(
         existsSync(join(projectDir, '.agents', 'skills', 'test-ext.greet', 'examples', 'basic.md')),
       ).toBe(true);
 
       // info has only SKILL.md
-      expect(
-        existsSync(join(projectDir, '.agents', 'skills', 'test-ext.info', 'SKILL.md')),
-      ).toBe(true);
+      expect(existsSync(join(projectDir, '.agents', 'skills', 'test-ext.info', 'SKILL.md'))).toBe(
+        true,
+      );
     });
 
     it('should deploy to custom agent directory when specified', () => {
@@ -417,12 +406,12 @@ describe('agent-deployer', () => {
 
       deployAgentAssets(extensionDir, projectDir, '.github');
 
-      expect(
-        existsSync(join(projectDir, '.github', 'skills', 'test-ext.greet', 'SKILL.md')),
-      ).toBe(true);
-      expect(
-        existsSync(join(projectDir, '.github', 'prompts', 'test-ext.style.prompt.md')),
-      ).toBe(true);
+      expect(existsSync(join(projectDir, '.github', 'skills', 'test-ext.greet', 'SKILL.md'))).toBe(
+        true,
+      );
+      expect(existsSync(join(projectDir, '.github', 'prompts', 'test-ext.style.prompt.md'))).toBe(
+        true,
+      );
       expect(existsSync(join(projectDir, '.agents'))).toBe(false);
     });
   });

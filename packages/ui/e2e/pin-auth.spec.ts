@@ -9,15 +9,11 @@ test.describe('PIN Authentication', () => {
       }
       return route.fulfill({ status: 401, json: { error: 'Invalid PIN' } });
     });
-    await page.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
+    await page.route('**/api/projects', (route) => route.fulfill({ json: [] }));
     await page.route('**/api/marketplace', (route) =>
       route.fulfill({ json: { active: [], installed: [], available: [] } }),
     );
-    await page.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await page.route('**/api/project', (route) => route.fulfill({ json: null }));
 
     await page.goto('/');
 
@@ -54,9 +50,7 @@ test.describe('PIN Authentication', () => {
         json: [{ name: 'my-project', path: '/tmp/my-project' }],
       }),
     );
-    await page.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await page.route('**/api/project', (route) => route.fulfill({ json: null }));
     await page.route('**/api/projects/active', (route) => {
       if (route.request().method() === 'PUT') {
         putBody = route.request().postDataJSON() as Record<string, unknown>;

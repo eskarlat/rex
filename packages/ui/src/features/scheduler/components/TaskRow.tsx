@@ -38,7 +38,9 @@ export function TaskRow({ task }: TaskRowProps) {
       <TableRow>
         <TableCell>
           <span className="font-medium">{task.name}</span>
-          <Badge variant="outline" className="ml-2 text-xs">{task.type}</Badge>
+          <Badge variant="outline" className="ml-2 text-xs">
+            {task.type}
+          </Badge>
         </TableCell>
         <TableCell>
           <code className="text-xs text-muted-foreground">{task.command}</code>
@@ -61,32 +63,20 @@ export function TaskRow({ task }: TaskRowProps) {
           </div>
         </TableCell>
         <TableCell>
-          {task.last_run_at
-            ? new Date(task.last_run_at).toLocaleString()
-            : 'Never'}
+          {task.last_run_at ? new Date(task.last_run_at).toLocaleString() : 'Never'}
         </TableCell>
         <TableCell>
-          {task.next_run_at
-            ? new Date(task.next_run_at).toLocaleString()
-            : '-'}
+          {task.next_run_at ? new Date(task.next_run_at).toLocaleString() : '-'}
         </TableCell>
         <TableCell>
           <div className="flex gap-1">
             <Button size="sm" variant="outline" onClick={() => triggerTask.mutate(task.id)}>
               Run Now
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setHistoryOpen(true)}
-            >
+            <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
               History
             </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => deleteTask.mutate(task.id)}
-            >
+            <Button size="sm" variant="destructive" onClick={() => deleteTask.mutate(task.id)}>
               Delete
             </Button>
           </div>

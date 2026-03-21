@@ -16,7 +16,10 @@ let mockWs: MockWebSocket;
 
 beforeEach(() => {
   mockWs = new MockWebSocket();
-  vi.stubGlobal('WebSocket', vi.fn(() => mockWs));
+  vi.stubGlobal(
+    'WebSocket',
+    vi.fn(() => mockWs),
+  );
 });
 
 afterEach(() => {
@@ -31,9 +34,7 @@ describe('useLogSocket', () => {
       result.current.connect();
     });
 
-    expect(WebSocket).toHaveBeenCalledWith(
-      `ws://${window.location.host}/api/logs`
-    );
+    expect(WebSocket).toHaveBeenCalledWith(`ws://${window.location.host}/api/logs`);
   });
 
   it('sets connected to true on open', () => {
@@ -137,9 +138,7 @@ describe('useLogSocket', () => {
     const { result } = renderHook(() => useLogSocket());
 
     act(() => {
-      result.current.setInitial([
-        { level: 'info', msg: 'test', time: '2026-01-01T00:00:00Z' },
-      ]);
+      result.current.setInitial([{ level: 'info', msg: 'test', time: '2026-01-01T00:00:00Z' }]);
     });
 
     expect(result.current.messages).toHaveLength(1);
