@@ -20,10 +20,25 @@ describe('MarkdownRenderer', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
-  it('renders links', () => {
+  it('renders external links with target _blank and rel attributes', () => {
     render(<MarkdownRenderer>{'[Example](https://example.com)'}</MarkdownRenderer>);
     const link = screen.getByRole('link', { name: 'Example' });
     expect(link).toHaveAttribute('href', 'https://example.com');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow');
+  });
+
+  it('renders internal links without target _blank', () => {
+    render(<MarkdownRenderer>{'[Docs](/docs/intro)'}</MarkdownRenderer>);
+    const link = screen.getByRole('link', { name: 'Docs' });
+    expect(link).toHaveAttribute('href', '/docs/intro');
+    expect(link).not.toHaveAttribute('target');
+  });
+
+  it('strips javascript: hrefs', () => {
+    render(<MarkdownRenderer>{'[Click](javascript:alert(1))'}</MarkdownRenderer>);
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByText('Click')).toBeInTheDocument();
   });
 
   it('renders inline code', () => {
@@ -65,6 +80,12 @@ describe('MarkdownRenderer', () => {
     render(<MarkdownRenderer>{'**bold** and *italic*'}</MarkdownRenderer>);
     expect(screen.getByText('bold')).toBeInTheDocument();
     expect(screen.getByText('italic')).toBeInTheDocument();
+  });
+
+  it('blocks external images and shows alt text', () => {
+    render(<MarkdownRenderer>{'![Tracking pixel](https://evil.com/pixel.png)'}</MarkdownRenderer>);
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('Tracking pixel')).toBeInTheDocument();
   });
 
   it('renders blockquotes', () => {

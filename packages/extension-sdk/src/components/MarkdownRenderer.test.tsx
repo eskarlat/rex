@@ -50,10 +50,11 @@ describe('MarkdownRenderer', () => {
     expect(checkboxes).toHaveLength(2);
   });
 
-  it('applies custom className', () => {
+  it('applies custom className alongside base styles', () => {
     render(<MarkdownRenderer className="custom-class">{'# Test'}</MarkdownRenderer>);
     const container = screen.getByRole('heading', { level: 1 }).parentElement;
     expect(container).toHaveClass('custom-class');
+    expect(container).toHaveClass('text-sm');
   });
 
   it('applies testId', () => {

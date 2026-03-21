@@ -11,7 +11,7 @@ export interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ children, className, testId }: MarkdownRendererProps) {
   return (
-    <div data-testid={testId} className={cn('prose-markdown', className)}>
+    <div data-testid={testId} className={cn('text-sm leading-relaxed', className)}>
       <Markdown remarkPlugins={[remarkGfm]}>{children}</Markdown>
     </div>
   );
