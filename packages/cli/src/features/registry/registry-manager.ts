@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -228,88 +227,5 @@ export async function installExtension(
     await git.clone(gitUrl, extDir, ['--branch', `v${version}`, '--depth', '1']);
   }
 
-  postInstallDeps(extDir);
-
   return extDir;
-}
-
-/**
- * Run `npm install --omit=dev` as a fallback for extensions that are not fully bundled.
- * Skips if: no package.json, node_modules already exists, no real (non-workspace) dependencies,
- * or dist files appear to be bundled (self-contained).
- */
-function postInstallDeps(extDir: string): void {
-  const pkgPath = path.join(extDir, 'package.json');
-  const nodeModulesPath = path.join(extDir, 'node_modules');
-
-  if (!fs.existsSync(pkgPath) || fs.existsSync(nodeModulesPath)) {
-    return;
-  }
-
-  const raw = fs.readFileSync(pkgPath, 'utf-8');
-  const pkg = JSON.parse(raw) as Record<string, unknown>;
-  const deps = (pkg['dependencies'] ?? {}) as Record<string, string>;
-
-  // Filter out workspace:* references — they don't resolve outside a monorepo
-  const realDeps = Object.entries(deps).filter(([, v]) => !v.startsWith('workspace:'));
-
-  if (realDeps.length === 0) {
-    return;
-  }
-
-  // Check if the main dist file is bundled (contains no bare import specifiers).
-  // Bundled extensions don't need npm install.
-  const mainField = pkg['main'] as string | undefined;
-  if (mainField) {
-    const mainPath = path.join(extDir, mainField);
-    if (fs.existsSync(mainPath)) {
-      const content = fs.readFileSync(mainPath, 'utf-8');
-      // A bundled ESM file typically has createRequire banner and no bare module imports.
-      // If it has the esbuild createRequire banner, it's bundled.
-      if (content.includes("createRequire(import.meta.url)")) {
-        return;
-      }
-    }
-  }
-
-  // Rewrite workspace:* refs to avoid npm install failures
-  rewriteWorkspaceRefs(pkgPath);
-
-  try {
-    execSync('npm install --omit=dev --ignore-scripts', {
-      cwd: extDir,
-      stdio: 'pipe',
-      timeout: 60_000,
-    });
-  } catch {
-    // npm install may fail (e.g. no network) — extension may still work if partially bundled
-  }
-}
-
-/**
- * Rewrite workspace:* references in package.json dependencies to wildcard ranges.
- * These references only work inside a pnpm workspace and break when cloned standalone.
- */
-function rewriteWorkspaceRefs(pkgPath: string): void {
-  const raw = fs.readFileSync(pkgPath, 'utf-8');
-  const pkg = JSON.parse(raw) as Record<string, unknown>;
-  let changed = false;
-
-  for (const depType of ['dependencies', 'devDependencies'] as const) {
-    const section = pkg[depType] as Record<string, string> | undefined;
-    if (!section) continue;
-
-    for (const [name, version] of Object.entries(section)) {
-      if (version.startsWith('workspace:')) {
-        // Replace with a permissive range — the exact version doesn't matter
-        // for bundled extensions since the dep is inlined
-        section[name] = '*';
-        changed = true;
-      }
-    }
-  }
-
-  if (changed) {
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-  }
 }
