@@ -140,6 +140,21 @@ describe('useNotificationSocket', () => {
     expect(mockWs.close).toHaveBeenCalled();
   });
 
+  it('closes socket on error', () => {
+    const { wrapper } = createWrapper();
+    renderHook(() => useNotificationSocket(), { wrapper });
+
+    act(() => {
+      mockWs.onopen?.();
+    });
+
+    act(() => {
+      mockWs.onerror?.();
+    });
+
+    expect(mockWs.close).toHaveBeenCalled();
+  });
+
   it('reconnects after close with exponential backoff', () => {
     vi.useFakeTimers();
     const { wrapper } = createWrapper();

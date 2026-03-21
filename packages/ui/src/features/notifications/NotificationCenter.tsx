@@ -111,7 +111,7 @@ export function NotificationCenter() {
   const handleRead = (id: number, actionUrl: string | null) => {
     markRead.mutate(id);
     if (actionUrl) {
-      navigate(actionUrl);
+      Promise.resolve(navigate(actionUrl)).catch(() => {});
     }
   };
 

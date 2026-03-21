@@ -223,6 +223,29 @@ describe('NotificationCenter', () => {
     expect(mockMarkRead.mutate).toHaveBeenCalledWith(9);
   });
 
+  it('navigates when clicking a notification with action_url', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    mockUnreadCount.mockReturnValue({ data: { unread: 1 } });
+    mockNotifications.mockReturnValue({
+      data: [
+        {
+          id: 1,
+          title: 'Navigable',
+          message: 'Click me',
+          variant: 'info',
+          read: 0,
+          created_at: new Date().toISOString(),
+          extension_name: 'ext:test',
+          action_url: '/settings',
+        },
+      ],
+    });
+    renderComponent();
+    await userEvent.click(screen.getByLabelText('Notifications'));
+    await userEvent.click(screen.getByText('Navigable'));
+    expect(mockMarkRead.mutate).toHaveBeenCalledWith(1);
+  });
+
   it('calls markAllRead when mark all read is clicked', async () => {
     const { default: userEvent } = await import('@testing-library/user-event');
     mockUnreadCount.mockReturnValue({ data: { unread: 3 } });
