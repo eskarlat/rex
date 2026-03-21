@@ -71,7 +71,7 @@
       ],
       "project": ["src/**/*.{ts,tsx}"]
     },
-    "extensions/renre-devtools": {
+    "extensions/chrome-debugger": {
       "entry": [
         "src/commands/status.ts",
         "src/ui/panel.tsx",
