@@ -115,7 +115,7 @@ export function WidgetGrid() {
       ) : (
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={widgets.map((w) => w.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-12 gap-4 auto-rows-[100px]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-6 sm:auto-rows-[100px] md:grid-cols-12 md:gap-4">
               {widgets.map((w) => (
                 <WidgetCard
                   key={w.id}

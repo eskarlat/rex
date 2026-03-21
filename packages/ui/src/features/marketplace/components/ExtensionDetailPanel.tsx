@@ -65,7 +65,7 @@ function LinkRow({ label, url }: Readonly<LinkRowProps>) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-primary hover:underline break-all"
+        className="inline-flex items-center gap-1 break-all text-primary hover:underline"
       >
         {url.replace(/^https?:\/\//, '').replace(/\.git$/, '')}
         <ExternalLink className="h-3 w-3 shrink-0" />
@@ -89,11 +89,11 @@ function DocContent({ data, isLoading, testIdPrefix }: Readonly<DocContentProps>
       </div>
     );
   }
-  if (!data) return null;
+  if (data == null) return null;
   return (
     <pre
       data-testid={`${testIdPrefix}-content`}
-      className="whitespace-pre-wrap text-sm text-muted-foreground font-mono max-h-[400px] overflow-auto rounded-md bg-muted p-3"
+      className="max-h-[400px] overflow-auto whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-sm text-muted-foreground"
     >
       {data}
     </pre>
@@ -108,18 +108,29 @@ function DocsTabs({ name }: Readonly<DocsTabsProps>) {
   const { data: readme, isLoading: readmeLoading } = useExtensionReadme(name);
   const { data: changelog, isLoading: changelogLoading } = useExtensionChangelog(name);
 
+  const hasReadme = readmeLoading || readme != null;
+  const hasChangelog = changelogLoading || changelog != null;
+
+  if (!hasReadme && !hasChangelog) return null;
+
+  const defaultTab = hasReadme ? 'readme' : 'changelog';
+
   return (
-    <Tabs defaultValue="readme" data-testid="docs-tabs">
+    <Tabs defaultValue={defaultTab} data-testid="docs-tabs">
       <TabsList>
-        <TabsTrigger value="readme">README</TabsTrigger>
-        <TabsTrigger value="changelog">Changelog</TabsTrigger>
+        {hasReadme && <TabsTrigger value="readme">README</TabsTrigger>}
+        {hasChangelog && <TabsTrigger value="changelog">Changelog</TabsTrigger>}
       </TabsList>
-      <TabsContent value="readme">
-        <DocContent data={readme} isLoading={readmeLoading} testIdPrefix="readme" />
-      </TabsContent>
-      <TabsContent value="changelog">
-        <DocContent data={changelog} isLoading={changelogLoading} testIdPrefix="changelog" />
-      </TabsContent>
+      {hasReadme && (
+        <TabsContent value="readme">
+          <DocContent data={readme} isLoading={readmeLoading} testIdPrefix="readme" />
+        </TabsContent>
+      )}
+      {hasChangelog && (
+        <TabsContent value="changelog">
+          <DocContent data={changelog} isLoading={changelogLoading} testIdPrefix="changelog" />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }
@@ -136,12 +147,12 @@ export function ExtensionDetailPanel({ extension }: Readonly<ExtensionDetailPane
   return (
     <div className="flex flex-1 flex-col" data-testid="detail-panel">
       {/* Header */}
-      <div className="space-y-3 p-6">
-        <div className="flex items-start gap-4">
+      <div className="space-y-3 p-4 md:p-6">
+        <div className="flex items-start gap-3 md:gap-4">
           <DetailIcon extension={extension} />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold">{extension.name}</h2>
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+              <h2 className="text-lg font-semibold md:text-xl">{extension.name}</h2>
               <Badge variant="outline">{extension.version}</Badge>
               <Badge variant="secondary">{extension.type}</Badge>
             </div>
@@ -155,7 +166,7 @@ export function ExtensionDetailPanel({ extension }: Readonly<ExtensionDetailPane
 
       {/* Body */}
       <ScrollArea className="flex-1">
-        <div className="space-y-6 p-6">
+        <div className="space-y-4 p-4 md:space-y-6 md:p-6">
           {/* Description */}
           <div>
             <h3 className="mb-2 text-sm font-semibold">Description</h3>

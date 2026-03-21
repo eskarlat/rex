@@ -6,7 +6,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 
-import { fetchApi } from '@/core/api/client';
+import { ApiError, fetchApi } from '@/core/api/client';
 import { showToast } from '@/core/hooks/use-toast';
 
 export interface ExtensionPanel {
@@ -56,34 +56,43 @@ export function useMarketplace(): UseQueryResult<MarketplaceResult> {
   });
 }
 
+export function useExtensionDoc(
+  name: string | undefined,
+  docType: 'readme' | 'changelog',
+): UseQueryResult<string | null> {
+  return useQuery<string | null>({
+    queryKey: [`extension-${docType}`, name],
+    queryFn: async () => {
+      try {
+        const result = await fetchApi<Record<string, string>>(
+          `/api/extensions/${encodeURIComponent(name!)}/${docType}`,
+        );
+        return result[docType] ?? null;
+      } catch (error: unknown) {
+        if (error instanceof ApiError && error.status === 404) {
+          return null;
+        }
+        throw error;
+      }
+    },
+    enabled: !!name,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && error.status === 404) return false;
+      return failureCount < 3;
+    },
+  });
+}
+
 export function useExtensionChangelog(
   name: string | undefined,
 ): UseQueryResult<string | null> {
-  return useQuery<string | null>({
-    queryKey: ['extension-changelog', name],
-    queryFn: async () => {
-      const result = await fetchApi<{ changelog: string }>(
-        `/api/extensions/${encodeURIComponent(name!)}/changelog`,
-      );
-      return result.changelog;
-    },
-    enabled: !!name,
-  });
+  return useExtensionDoc(name, 'changelog');
 }
 
 export function useExtensionReadme(
   name: string | undefined,
 ): UseQueryResult<string | null> {
-  return useQuery<string | null>({
-    queryKey: ['extension-readme', name],
-    queryFn: async () => {
-      const result = await fetchApi<{ readme: string }>(
-        `/api/extensions/${encodeURIComponent(name!)}/readme`,
-      );
-      return result.readme;
-    },
-    enabled: !!name,
-  });
+  return useExtensionDoc(name, 'readme');
 }
 
 export function useInstallExtension(): UseMutationResult<

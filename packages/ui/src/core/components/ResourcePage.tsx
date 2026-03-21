@@ -49,23 +49,23 @@ export function ResourcePage({
 }: Readonly<ResourcePageProps>) {
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+      <div className="space-y-4 md:space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
         <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{title}</h1>
+          <p className="text-sm text-muted-foreground md:text-base">{description}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={onDialogOpenChange}>
           <DialogTrigger asChild>
-            <Button>{triggerLabel}</Button>
+            <Button className="w-full sm:w-auto">{triggerLabel}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

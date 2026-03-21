@@ -1,12 +1,13 @@
 import { type ChangeEvent, useState } from 'react';
 
-import { TaskRow } from './components/TaskRow';
+import { TaskRow, TaskCardMobile } from './components/TaskRow';
 
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useScheduledTasks, useCreateTask } from '@/core/hooks/use-scheduler';
 import { ResourcePage } from '@/core/components/ResourcePage';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function ScheduledTasksPage(): React.ReactElement {
   const { data: tasks, isLoading } = useScheduledTasks();
@@ -15,6 +16,7 @@ export function ScheduledTasksPage(): React.ReactElement {
   const [extensionName, setExtensionName] = useState('');
   const [command, setCommand] = useState('');
   const [cron, setCron] = useState('');
+  const isMobile = useIsMobile();
 
   function handleCreate(): void {
     if (!extensionName || !command || !cron) return;
@@ -78,26 +80,36 @@ export function ScheduledTasksPage(): React.ReactElement {
         </>
       }
     >
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Task Name</TableHead>
-            <TableHead>Command</TableHead>
-            <TableHead>Cron</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Last Run</TableHead>
-            <TableHead>Next Run</TableHead>
-            <TableHead className="w-48">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+      {isMobile ? (
+        <div className="space-y-3">
           {!tasks || tasks.length === 0 ? (
-            <TaskRow task={undefined} />
+            <p className="py-4 text-center text-sm text-muted-foreground">No scheduled tasks.</p>
           ) : (
-            tasks.map((task) => <TaskRow key={task.id} task={task} />)
+            tasks.map((task) => <TaskCardMobile key={task.id} task={task} />)
           )}
-        </TableBody>
-      </Table>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Task Name</TableHead>
+              <TableHead>Command</TableHead>
+              <TableHead>Cron</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Last Run</TableHead>
+              <TableHead>Next Run</TableHead>
+              <TableHead className="w-48">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {!tasks || tasks.length === 0 ? (
+              <TaskRow task={undefined} />
+            ) : (
+              tasks.map((task) => <TaskRow key={task.id} task={task} />)
+            )}
+          </TableBody>
+        </Table>
+      )}
     </ResourcePage>
   );
 }

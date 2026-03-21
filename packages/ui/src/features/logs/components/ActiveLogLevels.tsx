@@ -21,7 +21,7 @@ export function ActiveLogLevels() {
   if (!levels) return null;
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       <span className="text-xs text-muted-foreground">Active levels:</span>
       {levels.map((level) => (
         <Badge

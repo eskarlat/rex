@@ -76,7 +76,7 @@ interface CrumbItemProps {
 function CrumbItem({ crumb, isLast }: Readonly<CrumbItemProps>) {
   if (crumb.to && !isLast) {
     return (
-      <Link to={crumb.to} className="text-muted-foreground hover:text-foreground transition-colors">
+      <Link to={crumb.to} className="text-muted-foreground transition-colors hover:text-foreground">
         {crumb.label}
       </Link>
     );
@@ -93,41 +93,46 @@ export function Toolbar() {
   const { isOpen, toggle } = useTerminal();
 
   return (
-    <div className="flex h-14 items-center justify-between border-b px-4">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <nav className="flex items-center gap-1 text-sm" aria-label="Breadcrumb">
+    <div className="flex h-14 items-center justify-between border-b px-2 md:px-4">
+      <div className="flex min-w-0 items-center gap-1.5 md:gap-2">
+        <SidebarTrigger className="-ml-1 shrink-0" />
+        <Separator orientation="vertical" className="mr-1 h-4 md:mr-2" />
+        <nav
+          className="flex min-w-0 items-center gap-1 text-sm"
+          aria-label="Breadcrumb"
+        >
           {crumbs.map((crumb, i) => (
-            <span key={crumb.to ?? crumb.label} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-              <CrumbItem crumb={crumb} isLast={i === crumbs.length - 1} />
+            <span key={crumb.to ?? crumb.label} className="flex min-w-0 items-center gap-1">
+              {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+              <span className="truncate">
+                <CrumbItem crumb={crumb} isLast={i === crumbs.length - 1} />
+              </span>
             </span>
           ))}
         </nav>
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-0.5 md:gap-1">
         <NotificationCenter />
         <Link
           to="/marketplace"
-          className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:gap-2 md:px-3"
         >
           <Package className="h-4 w-4" />
-          Marketplace
+          <span className="hidden sm:inline">Marketplace</span>
         </Link>
         <button
           type="button"
           onClick={toggle}
           aria-label={isOpen ? 'Close terminal' : 'Open terminal'}
           className={cn(
-            'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+            'inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors md:gap-2 md:px-3',
             isOpen
               ? 'bg-primary text-primary-foreground'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
           )}
         >
           <TerminalSquare className="h-4 w-4" />
-          Terminal
+          <span className="hidden sm:inline">Terminal</span>
         </button>
       </div>
     </div>

@@ -9,11 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { Extension } from '@/core/hooks/use-extensions';
+import { cn } from '@/lib/utils';
 
 interface ExtensionSidebarProps {
   filter: MarketplaceFilter;
   selectedName: string | null;
   onSelect: (name: string) => void;
+  fullWidth?: boolean;
 }
 
 interface SectionHeaderProps {
@@ -32,12 +35,47 @@ function SectionHeader({ label, count }: Readonly<SectionHeaderProps>) {
   );
 }
 
-export function ExtensionSidebar({ filter, selectedName, onSelect }: Readonly<ExtensionSidebarProps>) {
+interface ExtensionSectionProps {
+  label: string;
+  extensions: Extension[];
+  selectedName: string | null;
+  onSelect: (name: string) => void;
+}
+
+function ExtensionSection({ label, extensions, selectedName, onSelect }: Readonly<ExtensionSectionProps>) {
+  if (extensions.length === 0) return null;
+  return (
+    <div>
+      <SectionHeader label={label} count={extensions.length} />
+      {extensions.map((ext) => (
+        <ExtensionListItem
+          key={ext.name}
+          extension={ext}
+          isSelected={selectedName === ext.name}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function ExtensionSidebar({
+  filter,
+  selectedName,
+  onSelect,
+  fullWidth,
+}: Readonly<ExtensionSidebarProps>) {
   const [showFilters, setShowFilters] = useState(false);
   const hasActiveFilter = !!filter.selectedTag;
 
   return (
-    <div className="flex w-80 shrink-0 flex-col border-r" data-testid="extension-sidebar">
+    <div
+      className={cn(
+        'flex shrink-0 flex-col',
+        fullWidth ? 'w-full' : 'w-80 border-r',
+      )}
+      data-testid="extension-sidebar"
+    >
       <div className="space-y-2 p-3">
         <div className="flex gap-2">
           <Input
@@ -76,47 +114,9 @@ export function ExtensionSidebar({ filter, selectedName, onSelect }: Readonly<Ex
 
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
-          {filter.filteredActive.length > 0 && (
-            <div>
-              <SectionHeader label="Active" count={filter.filteredActive.length} />
-              {filter.filteredActive.map((ext) => (
-                <ExtensionListItem
-                  key={ext.name}
-                  extension={ext}
-                  isSelected={selectedName === ext.name}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          )}
-
-          {filter.filteredInstalled.length > 0 && (
-            <div>
-              <SectionHeader label="Installed" count={filter.filteredInstalled.length} />
-              {filter.filteredInstalled.map((ext) => (
-                <ExtensionListItem
-                  key={ext.name}
-                  extension={ext}
-                  isSelected={selectedName === ext.name}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          )}
-
-          {filter.filteredAvailable.length > 0 && (
-            <div>
-              <SectionHeader label="Available" count={filter.filteredAvailable.length} />
-              {filter.filteredAvailable.map((ext) => (
-                <ExtensionListItem
-                  key={ext.name}
-                  extension={ext}
-                  isSelected={selectedName === ext.name}
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
-          )}
+          <ExtensionSection label="Active" extensions={filter.filteredActive} selectedName={selectedName} onSelect={onSelect} />
+          <ExtensionSection label="Installed" extensions={filter.filteredInstalled} selectedName={selectedName} onSelect={onSelect} />
+          <ExtensionSection label="Available" extensions={filter.filteredAvailable} selectedName={selectedName} onSelect={onSelect} />
 
           {filter.allFiltered.length === 0 && (
             <p className="px-2 py-4 text-center text-sm text-muted-foreground">

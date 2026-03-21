@@ -119,6 +119,28 @@ function getVersionCandidates(name: string, projectPath: string | undefined): st
   return candidates;
 }
 
+function findExtensionDoc(
+  name: string,
+  filename: string,
+  projectPath: string | undefined,
+): string | null {
+  const candidates = getVersionCandidates(name, projectPath);
+  for (const version of candidates) {
+    try {
+      const extDir = getExtensionDir(name, version);
+      const filePath = join(extDir, filename);
+      if (existsSync(filePath)) {
+        return readFileSync(filePath, 'utf-8');
+      }
+    } catch (error: unknown) {
+      getLogger().warn('extensions', `Failed to read ${filename} for ${name}@${version}`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return null;
+}
+
 function findExtensionUiAsset(
   name: string,
   projectPath: string | undefined,
@@ -138,8 +160,12 @@ function findExtensionUiAsset(
       if (existsSync(assetPath)) {
         return readFileSync(assetPath, 'utf-8');
       }
-    } catch {
-      // try next version
+    } catch (error: unknown) {
+      getLogger().warn('extensions', `Failed to load UI asset for ${name}@${version}`, {
+        assetType,
+        assetId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return null;
@@ -312,8 +338,10 @@ function findExtensionIcon(
   for (const version of candidates) {
     try {
       return readIconFromDir(getExtensionDir(name, version));
-    } catch {
-      // try next version
+    } catch (error: unknown) {
+      getLogger().warn('extensions', `Failed to read icon for ${name}@${version}`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return null;
@@ -492,22 +520,16 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     '/api/extensions/:name/changelog',
     (request: FastifyRequest, reply: FastifyReply) => {
       const { name } = request.params as { name: string };
-      const candidates = getVersionCandidates(name, request.projectPath ?? fastify.activeProjectPath);
-
-      for (const version of candidates) {
-        try {
-          const extDir = getExtensionDir(name, version);
-          const changelogPath = join(extDir, 'CHANGELOG.md');
-          if (existsSync(changelogPath)) {
-            return { changelog: readFileSync(changelogPath, 'utf-8') };
-          }
-        } catch {
-          // try next version
-        }
+      const content = findExtensionDoc(
+        name,
+        'CHANGELOG.md',
+        request.projectPath ?? fastify.activeProjectPath,
+      );
+      if (content === null) {
+        reply.code(404);
+        return { error: `Changelog not found for extension '${name}'` };
       }
-
-      reply.code(404);
-      return { error: `Changelog not found for extension '${name}'` };
+      return { changelog: content };
     },
   );
 
@@ -516,22 +538,16 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     '/api/extensions/:name/readme',
     (request: FastifyRequest, reply: FastifyReply) => {
       const { name } = request.params as { name: string };
-      const candidates = getVersionCandidates(name, request.projectPath ?? fastify.activeProjectPath);
-
-      for (const version of candidates) {
-        try {
-          const extDir = getExtensionDir(name, version);
-          const readmePath = join(extDir, 'README.md');
-          if (existsSync(readmePath)) {
-            return { readme: readFileSync(readmePath, 'utf-8') };
-          }
-        } catch {
-          // try next version
-        }
+      const content = findExtensionDoc(
+        name,
+        'README.md',
+        request.projectPath ?? fastify.activeProjectPath,
+      );
+      if (content === null) {
+        reply.code(404);
+        return { error: `README not found for extension '${name}'` };
       }
-
-      reply.code(404);
-      return { error: `README not found for extension '${name}'` };
+      return { readme: content };
     },
   );
 
