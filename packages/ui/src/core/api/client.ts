@@ -64,7 +64,8 @@ export async function fetchApi<T>(path: string, options: FetchApiOptions = {}): 
     try {
       errorBody = await response.json();
     } catch (parseError: unknown) {
-      // Response may not contain JSON - use null body
+      // eslint-disable-next-line no-console
+      console.warn('[api-client] Failed to parse error response body as JSON:', parseError);
       errorBody = String(parseError);
     }
     const error = new ApiError(response.status, response.statusText, errorBody);

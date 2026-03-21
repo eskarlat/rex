@@ -23534,6 +23534,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return handler(request.params.arguments ?? {});
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error("[atlassian-mcp] Tool call failed:", request.params.name, message);
     return errorResult(message);
   }
 });

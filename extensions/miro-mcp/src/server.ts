@@ -23,7 +23,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   try {
     const reg = getRegistry();
     return { tools: reg.tools };
-  } catch {
+  } catch (err) {
+    console.error('[miro-mcp] Failed to list tools:', err instanceof Error ? err.message : String(err));
     return { tools: [] };
   }
 });
@@ -38,6 +39,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return handler((request.params.arguments ?? {}) as Record<string, unknown>);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error('[miro-mcp] Tool call failed:', request.params.name, message);
     return errorResult(message);
   }
 });

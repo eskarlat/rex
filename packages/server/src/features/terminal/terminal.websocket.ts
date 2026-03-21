@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
+import { getLogger } from '@renre-kit/cli/lib';
 import { TerminalSessionManager } from './terminal-session-manager.js';
 
 interface WebSocketLike {
@@ -43,7 +44,10 @@ function isResizeMessage(data: unknown): data is ResizeMessage {
 function parseJson(raw: string): unknown {
   try {
     return JSON.parse(raw);
-  } catch {
+  } catch (err) {
+    getLogger().debug('terminal', 'Failed to parse WebSocket message as JSON', {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return null;
   }
 }
@@ -55,8 +59,10 @@ function toUtf8(raw: Buffer | string): string {
 function safeSend(socket: WebSocketLike, data: string): void {
   try {
     socket.send(data);
-  } catch {
-    // Socket may already be closed
+  } catch (err) {
+    getLogger().debug('terminal', 'WebSocket send failed (socket likely closed)', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -91,8 +97,10 @@ function handleInit(
     safeSend(socket, `\r\n\x1b[31mFailed to start terminal: ${errMsg}\x1b[0m\r\n`);
     try {
       socket.close();
-    } catch {
-      // already closed
+    } catch (closeErr) {
+      getLogger().debug('terminal', 'Socket close failed after init error', {
+        error: closeErr instanceof Error ? closeErr.message : String(closeErr),
+      });
     }
     return undefined;
   }
@@ -139,8 +147,10 @@ const terminalWebsocket: FastifyPluginCallback<TerminalWebsocketOptions> = (
       );
       try {
         socket.close();
-      } catch {
-        // already closed
+      } catch (err) {
+        getLogger().debug('terminal', 'Socket close failed on init timeout', {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }, INIT_TIMEOUT_MS);
 

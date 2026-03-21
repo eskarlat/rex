@@ -5,6 +5,7 @@ import { simpleGit } from 'simple-git';
 import type { RegistryConfig, RegistryEntry } from '../../core/types/index.js';
 import type { PartialEngineConstraints } from '../extensions/types/extension.types.js';
 import { isStale as checkStale, updateTimestamp, getLastFetched } from './registry-cache.js';
+import { getLogger } from '../../core/logger/index.js';
 
 export interface RegistryStatus {
   name: string;
@@ -114,8 +115,11 @@ export async function ensureSynced(configs: RegistryConfig[]): Promise<void> {
     if (!fs.existsSync(regDir) || checkStale(regDir, config.cacheTTL)) {
       try {
         await sync(config.name, config);
-      } catch {
-        // Sync may fail (e.g. no network) — continue with stale/missing data
+      } catch (err) {
+        getLogger().warn('registry', `Registry sync failed for "${config.name}"`, {
+          url: config.url,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
   }

@@ -19,7 +19,9 @@ function cleanOldLogs(logDir: string): void {
   let files: string[];
   try {
     files = fs.readdirSync(logDir);
-  } catch {
+  } catch (err) {
+    // Cannot use logger here (bootstrapping) — write to stderr
+    process.stderr.write(`[logger] Failed to read log directory for cleanup: ${err instanceof Error ? err.message : String(err)}\n`);
     return;
   }
 
@@ -28,8 +30,8 @@ function cleanOldLogs(logDir: string): void {
     if (match && match[1]! < cutoffStr) {
       try {
         fs.unlinkSync(path.join(logDir, file));
-      } catch {
-        // ignore cleanup errors
+      } catch (err) {
+        process.stderr.write(`[logger] Failed to delete old log file "${file}": ${err instanceof Error ? err.message : String(err)}\n`);
       }
     }
   }
