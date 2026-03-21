@@ -39,10 +39,11 @@ const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _o
       parsedLimit = Math.min(parsedLimit, MAX_QUERY_LIMIT);
     }
 
-    return listNotifications(db, {
+    const result = listNotifications(db, {
       unreadOnly: unreadOnly === 'true',
       limit: parsedLimit,
     });
+    return reply.send(result);
   });
 
   fastify.get('/api/notifications/count', () => {
@@ -85,7 +86,7 @@ const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _o
     if (!result) {
       return reply.code(404).send({ error: 'Notification not found' });
     }
-    return { ok: true };
+    return reply.send({ ok: true });
   });
 
   fastify.patch('/api/notifications/read-all', () => {
@@ -101,7 +102,7 @@ const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _o
     if (!result) {
       return reply.code(404).send({ error: 'Notification not found' });
     }
-    return { ok: true };
+    return reply.send({ ok: true });
   });
 
   done();
