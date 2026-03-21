@@ -10,6 +10,9 @@ export type { DataTableProps, DataTableColumn } from './DataTable';
 export { CodeBlock } from './CodeBlock';
 export type { CodeBlockProps } from './CodeBlock';
 
+export { MarkdownRenderer } from './MarkdownRenderer';
+export type { MarkdownRendererProps } from './MarkdownRenderer';
+
 export { LogViewer } from './LogViewer';
 export type { LogViewerProps } from './LogViewer';
 
