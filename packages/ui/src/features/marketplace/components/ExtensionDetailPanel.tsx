@@ -108,18 +108,29 @@ function DocsTabs({ name }: Readonly<DocsTabsProps>) {
   const { data: readme, isLoading: readmeLoading } = useExtensionReadme(name);
   const { data: changelog, isLoading: changelogLoading } = useExtensionChangelog(name);
 
+  const hasReadme = readmeLoading || !!readme;
+  const hasChangelog = changelogLoading || !!changelog;
+
+  if (!hasReadme && !hasChangelog) return null;
+
+  const defaultTab = hasReadme ? 'readme' : 'changelog';
+
   return (
-    <Tabs defaultValue="readme" data-testid="docs-tabs">
+    <Tabs defaultValue={defaultTab} data-testid="docs-tabs">
       <TabsList>
-        <TabsTrigger value="readme">README</TabsTrigger>
-        <TabsTrigger value="changelog">Changelog</TabsTrigger>
+        {hasReadme && <TabsTrigger value="readme">README</TabsTrigger>}
+        {hasChangelog && <TabsTrigger value="changelog">Changelog</TabsTrigger>}
       </TabsList>
-      <TabsContent value="readme">
-        <DocContent data={readme} isLoading={readmeLoading} testIdPrefix="readme" />
-      </TabsContent>
-      <TabsContent value="changelog">
-        <DocContent data={changelog} isLoading={changelogLoading} testIdPrefix="changelog" />
-      </TabsContent>
+      {hasReadme && (
+        <TabsContent value="readme">
+          <DocContent data={readme} isLoading={readmeLoading} testIdPrefix="readme" />
+        </TabsContent>
+      )}
+      {hasChangelog && (
+        <TabsContent value="changelog">
+          <DocContent data={changelog} isLoading={changelogLoading} testIdPrefix="changelog" />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

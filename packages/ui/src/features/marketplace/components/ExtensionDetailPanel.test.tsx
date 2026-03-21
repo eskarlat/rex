@@ -154,11 +154,45 @@ describe('ExtensionDetailPanel', () => {
     expect(screen.queryByText('Installed Date')).not.toBeInTheDocument();
   });
 
-  it('renders docs tabs with README and Changelog', () => {
+  it('renders docs tabs with both README and Changelog when both exist', () => {
+    mockReadmeData.data = '# README';
+    mockReadmeData.isLoading = false;
+    mockChangelogData.data = '# Changelog';
+    mockChangelogData.isLoading = false;
     renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
     expect(screen.getByTestId('docs-tabs')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'README' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Changelog' })).toBeInTheDocument();
+  });
+
+  it('hides docs tabs entirely when neither readme nor changelog exist', () => {
+    mockReadmeData.data = null;
+    mockReadmeData.isLoading = false;
+    mockChangelogData.data = null;
+    mockChangelogData.isLoading = false;
+    renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
+    expect(screen.queryByTestId('docs-tabs')).not.toBeInTheDocument();
+  });
+
+  it('shows only README tab when changelog is absent', () => {
+    mockReadmeData.data = '# README content';
+    mockReadmeData.isLoading = false;
+    mockChangelogData.data = null;
+    mockChangelogData.isLoading = false;
+    renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
+    expect(screen.getByRole('tab', { name: 'README' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Changelog' })).not.toBeInTheDocument();
+  });
+
+  it('shows only Changelog tab when readme is absent', async () => {
+    mockReadmeData.data = null;
+    mockReadmeData.isLoading = false;
+    mockChangelogData.data = '## [1.0.0]';
+    mockChangelogData.isLoading = false;
+    renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
+    expect(screen.queryByRole('tab', { name: 'README' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Changelog' })).toBeInTheDocument();
+    expect(screen.getByTestId('changelog-content')).toBeInTheDocument();
   });
 
   it('renders readme content in the default tab', () => {
@@ -166,13 +200,6 @@ describe('ExtensionDetailPanel', () => {
     mockReadmeData.isLoading = false;
     renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
     expect(screen.getByTestId('readme-content')).toBeInTheDocument();
-  });
-
-  it('does not render readme content when no readme data', () => {
-    mockReadmeData.data = null;
-    mockReadmeData.isLoading = false;
-    renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
-    expect(screen.queryByTestId('readme-content')).not.toBeInTheDocument();
   });
 
   it('shows loading state for readme', () => {
@@ -183,6 +210,8 @@ describe('ExtensionDetailPanel', () => {
   });
 
   it('renders changelog content when Changelog tab is clicked', async () => {
+    mockReadmeData.data = '# README';
+    mockReadmeData.isLoading = false;
     mockChangelogData.data = '## [1.0.0]\n\n### Added\n\n- Feature one';
     mockChangelogData.isLoading = false;
     renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
@@ -191,16 +220,9 @@ describe('ExtensionDetailPanel', () => {
     expect(screen.getByTestId('changelog-content')).toBeInTheDocument();
   });
 
-  it('does not render changelog content when no changelog data', async () => {
-    mockChangelogData.data = null;
-    mockChangelogData.isLoading = false;
-    renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);
-
-    await userEvent.click(screen.getByRole('tab', { name: 'Changelog' }));
-    expect(screen.queryByTestId('changelog-content')).not.toBeInTheDocument();
-  });
-
   it('shows loading state for changelog', async () => {
+    mockReadmeData.data = '# README';
+    mockReadmeData.isLoading = false;
     mockChangelogData.data = null;
     mockChangelogData.isLoading = true;
     renderWithProviders(<ExtensionDetailPanel extension={fullExtension} />);

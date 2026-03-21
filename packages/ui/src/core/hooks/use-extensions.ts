@@ -56,34 +56,32 @@ export function useMarketplace(): UseQueryResult<MarketplaceResult> {
   });
 }
 
-export function useExtensionChangelog(
+export function useExtensionDoc(
   name: string | undefined,
+  docType: 'readme' | 'changelog',
 ): UseQueryResult<string | null> {
   return useQuery<string | null>({
-    queryKey: ['extension-changelog', name],
+    queryKey: [`extension-${docType}`, name],
     queryFn: async () => {
-      const result = await fetchApi<{ changelog: string }>(
-        `/api/extensions/${encodeURIComponent(name!)}/changelog`,
+      const result = await fetchApi<Record<string, string>>(
+        `/api/extensions/${encodeURIComponent(name!)}/${docType}`,
       );
-      return result.changelog;
+      return result[docType] ?? null;
     },
     enabled: !!name,
   });
 }
 
+export function useExtensionChangelog(
+  name: string | undefined,
+): UseQueryResult<string | null> {
+  return useExtensionDoc(name, 'changelog');
+}
+
 export function useExtensionReadme(
   name: string | undefined,
 ): UseQueryResult<string | null> {
-  return useQuery<string | null>({
-    queryKey: ['extension-readme', name],
-    queryFn: async () => {
-      const result = await fetchApi<{ readme: string }>(
-        `/api/extensions/${encodeURIComponent(name!)}/readme`,
-      );
-      return result.readme;
-    },
-    enabled: !!name,
-  });
+  return useExtensionDoc(name, 'readme');
 }
 
 export function useInstallExtension(): UseMutationResult<

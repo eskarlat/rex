@@ -15,6 +15,7 @@ vi.mock('@/core/hooks/use-toast', () => ({
 
 import {
   useMarketplace,
+  useExtensionDoc,
   useExtensionChangelog,
   useExtensionReadme,
   useInstallExtension,
@@ -81,6 +82,28 @@ describe('useMarketplace widget metadata', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.active[0]?.widgets).toHaveLength(1);
     expect(result.current.data?.active[0]?.widgets?.[0]?.id).toBe('status');
+  });
+});
+
+describe('useExtensionDoc', () => {
+  it('fetches doc by type and extracts the correct field', async () => {
+    mockFetchApi.mockResolvedValueOnce({ readme: '# Hello' });
+
+    const { result } = renderHook(() => useExtensionDoc('my-ext', 'readme'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/my-ext/readme');
+    expect(result.current.data).toBe('# Hello');
+  });
+
+  it('does not fetch when name is undefined', () => {
+    renderHook(() => useExtensionDoc(undefined, 'changelog'), {
+      wrapper: createWrapper(),
+    });
+
+    expect(mockFetchApi).not.toHaveBeenCalled();
   });
 });
 
