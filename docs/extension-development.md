@@ -297,6 +297,231 @@ The `HookContext` type is a type-only import (erased at compile time), so extens
 
 Both are optional. If your extension has no agent assets to deploy, you can omit `main` entirely.
 
+## Inter-Extension Events
+
+Extensions can communicate with each other through the inter-extension event bus. Events are routed through the dashboard server's WebSocket endpoint, enabling real-time cross-extension coordination.
+
+### Publishing events
+
+Use `sdk.events.publish()` to send events. Events are automatically namespaced to `ext:{extensionName}:{eventName}`:
+
+```typescript
+// In a UI panel
+sdk.events.publish('task-complete', { taskId: '123', status: 'done' });
+// Emitted as: ext:my-extension:task-complete
+```
+
+### Subscribing to events
+
+Use `sdk.events.on()` with pattern matching to receive events from other extensions:
+
+```typescript
+// Listen to a specific event
+sdk.events.on('ext:atlassian:ticket-created', (event) => {
+  console.log('New ticket:', event.data.ticketId);
+});
+
+// Wildcard: listen to all events from an extension
+sdk.events.on('ext:atlassian:*', (event) => {
+  console.log('Atlassian event:', event.type, event.data);
+});
+
+// Unsubscribe
+sdk.events.off('ext:atlassian:ticket-created', handler);
+```
+
+### React hook
+
+The `useEvents` hook provides a reactive interface for event subscriptions in UI panels:
+
+```typescript
+import { useEvents } from '@renre-kit/extension-sdk';
+
+function MyPanel() {
+  const { lastEvent, events } = useEvents('ext:atlassian:*');
+
+  return (
+    <div>
+      <p>Last event: {lastEvent?.type}</p>
+      <p>Total events received: {events.length}</p>
+    </div>
+  );
+}
+```
+
+### In lifecycle hooks
+
+Events are available in lifecycle hooks through `context.sdk.events`:
+
+```typescript
+export function onInit(context: HookContext): void {
+  // Publish an event
+  context.sdk.events.publish('initialized', { version: '1.0.0' });
+
+  // Subscribe to events from other extensions
+  context.sdk.events.on('ext:scheduler:task-complete', (event) => {
+    console.log('Task completed:', event.data);
+  });
+}
+```
+
+### MCP extensions
+
+MCP extensions receive events automatically as JSON-RPC `notifications/event` messages via their stdio/SSE transport. No additional subscription setup is needed — the ConnectionManager handles event routing.
+
+### Example: two extensions communicating
+
+**Publisher (atlassian extension):**
+
+```typescript
+// After syncing Jira issues
+sdk.events.publish('sync-complete', {
+  project: 'PROJ',
+  issuesUpdated: 3,
+  timestamp: new Date().toISOString(),
+});
+```
+
+**Subscriber (github extension):**
+
+```typescript
+sdk.events.on('ext:atlassian:sync-complete', (event) => {
+  const { project, issuesUpdated } = event.data;
+  console.log(`Atlassian synced ${issuesUpdated} issues in ${project}`);
+  // React: auto-link branches, update PRs, etc.
+});
+```
+
+> **Note:** The dashboard server must be running (`renre-kit ui`) for cross-extension events. In CLI-only mode, events remain local to the extension instance.
+
+## Notifications
+
+Extensions can send persistent notifications to the user through the dashboard notification center. Unlike toasts (which are ephemeral), notifications persist until the user dismisses them.
+
+### Sending notifications
+
+Use `sdk.notify()` to create a notification:
+
+```typescript
+sdk.notify({
+  title: 'Sync Complete',
+  message: '3 issues updated from Jira',
+  variant: 'success',
+  actionUrl: '/extensions/atlassian/panel',
+});
+```
+
+### Options
+
+| Field       | Type   | Required | Description                                      |
+| ----------- | ------ | -------- | ------------------------------------------------ |
+| `title`     | string | Yes      | Notification title                               |
+| `message`   | string | Yes      | Notification message body                        |
+| `variant`   | string | No       | `'info'` \| `'success'` \| `'warning'` \| `'error'` (default: `'info'`) |
+| `actionUrl` | string | No       | Relative dashboard path — clicking the notification navigates here |
+
+### In lifecycle hooks
+
+Notifications are available server-side through `context.sdk.notify()`:
+
+```typescript
+export function onInit(context: HookContext): void {
+  context.sdk.deployAgentAssets(context.extensionDir, context.projectDir, context.agentDir);
+
+  context.sdk.notify({
+    title: 'Extension Ready',
+    message: `${context.extensionDir} initialized successfully`,
+    variant: 'info',
+  });
+}
+```
+
+### Example: notification after a task completes
+
+```typescript
+async function runSync(sdk) {
+  try {
+    const result = await syncIssues();
+    sdk.notify({
+      title: 'Jira Sync Complete',
+      message: `${result.count} issues synced from ${result.project}`,
+      variant: 'success',
+      actionUrl: '/extensions/atlassian/panel',
+    });
+  } catch (error) {
+    sdk.notify({
+      title: 'Jira Sync Failed',
+      message: error.message,
+      variant: 'error',
+      actionUrl: '/extensions/atlassian/panel',
+    });
+  }
+}
+```
+
+Notifications are stored in SQLite and displayed in the dashboard toolbar's notification bell. Users can click a notification to navigate to the source extension, or dismiss it to remove it from the list.
+
+## LLM Agent Access
+
+LLM agents (via SKILL.md) can interact with the event system, notifications, and logs through CLI commands. These commands are **write-only** — agents can publish events, send notifications, and write logs but cannot read, subscribe, or query them.
+
+### Commands
+
+#### Publish an event
+
+```bash
+renre-kit events:publish <type> [--data '{}'] [--source <name>]
+```
+
+Publishes an event to the event bus. All subscribed extensions receive it. Requires the dashboard server to be running.
+
+```bash
+renre-kit events:publish ext:my-ext:analysis-done --data '{"files":15}' --source my-ext
+```
+
+#### Send a notification
+
+```bash
+renre-kit notify <title> <message> [--variant info] [--source <name>] [--action-url <path>]
+```
+
+Creates a persistent notification visible in the dashboard notification center.
+
+```bash
+renre-kit notify "Analysis Complete" "Processed 15 files" --variant success --source my-ext --action-url /extensions/my-ext/panel
+```
+
+#### Write a log entry
+
+```bash
+renre-kit logs:write <level> <source> <message> [--data '{}']
+```
+
+Writes a log entry visible in the dashboard Logs page. The source must start with `ext:`.
+
+```bash
+renre-kit logs:write info ext:my-ext "Processing started" --data '{"items":42}'
+```
+
+### SKILL.md example
+
+Extensions can reference these commands in their SKILL.md files to enable LLM agents to coordinate with other extensions and notify users:
+
+```markdown
+## After completing analysis
+
+1. Publish an event so other extensions can react:
+   `renre-kit events:publish ext:analyzer:complete --data '{"result":"pass"}' --source analyzer`
+
+2. Notify the user with the results:
+   `renre-kit notify "Analysis Done" "All checks passed" --variant success --source analyzer`
+
+3. Log the operation for diagnostics:
+   `renre-kit logs:write info ext:analyzer "Analysis completed successfully"`
+```
+
+> **Note:** These commands send HTTP requests to the dashboard server. The server must be running (`renre-kit ui`) for `events:publish` and `logs:write`. The `notify` command can also write directly to SQLite when the server is available.
+
 ## MCP Server Development
 
 MCP extensions run a JSON-RPC server over stdio. The server handles tool calls directly:

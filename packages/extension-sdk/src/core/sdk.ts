@@ -15,6 +15,7 @@ import type {
   SDKEventPayload,
   ToastOptions,
   ProjectContext,
+  NotificationOptions,
 } from './types';
 
 /** Callback type for toast notifications */
@@ -127,7 +128,10 @@ function createUIAPI(): DashboardUIAPI & {
  * Creates the cross-extension events capability group.
  * Uses an internal Map of handler sets, similar to the CLI EventBus.
  */
-function createEventsAPI(): EventsAPI & { clearAll: () => void } {
+function createEventsAPI(
+  client: ApiClient,
+  extensionName: string,
+): EventsAPI & { clearAll: () => void } {
   const handlers = new Map<SDKEventType, Set<SDKEventHandler>>();
 
   return {
@@ -154,6 +158,13 @@ function createEventsAPI(): EventsAPI & { clearAll: () => void } {
           });
         }
       }
+    },
+    async publish(event: string, data?: Record<string, unknown>) {
+      await client.publishEvent(
+        `ext:${extensionName}:${event}`,
+        `ext:${extensionName}`,
+        data ?? {},
+      );
     },
     clearAll() {
       handlers.clear();
@@ -267,22 +278,35 @@ export class RenreKitSDKImpl implements RenreKitSDK {
   readonly logger: LoggerAPI;
 
   private readonly internalEvents: EventsAPI & { clearAll: () => void };
+  private readonly client: ApiClient;
+  private readonly extName: string;
 
   constructor(config: SDKConfig, extensionName = 'default') {
-    const client = new ApiClient({
+    this.extName = extensionName;
+    this.client = new ApiClient({
       baseUrl: config.baseUrl,
       projectPath: config.projectPath,
     });
 
-    this.project = createProjectAPI(client, config);
-    this.exec = createExecAPI(client);
-    this.storage = createStorageAPI(client, extensionName);
+    this.project = createProjectAPI(this.client, config);
+    this.exec = createExecAPI(this.client);
+    this.storage = createStorageAPI(this.client, extensionName);
     this.ui = createUIAPI();
-    this.internalEvents = createEventsAPI();
+    this.internalEvents = createEventsAPI(this.client, extensionName);
     this.events = this.internalEvents;
-    this.scheduler = createSchedulerAPI(client);
+    this.scheduler = createSchedulerAPI(this.client);
     this.terminal = createTerminalAPI();
-    this.logger = createLoggerAPI(client, extensionName);
+    this.logger = createLoggerAPI(this.client, extensionName);
+  }
+
+  async notify(options: NotificationOptions): Promise<void> {
+    await this.client.createNotification({
+      extension_name: `ext:${this.extName}`,
+      title: options.title,
+      message: options.message ?? '',
+      variant: options.variant,
+      action_url: options.actionUrl,
+    });
   }
 
   destroy(): void {

@@ -84,6 +84,23 @@ export {
 } from './features/registry/registry-manager.js';
 export type { SearchOptions } from './features/registry/registry-manager.js';
 
+// Notifications
+export {
+  createNotification,
+  listNotifications,
+  countUnread,
+  markRead,
+  markAllRead,
+  deleteNotification,
+  cleanupNotifications,
+} from './features/notifications/notification-manager.js';
+export type { ListNotificationsOptions } from './features/notifications/notification-manager.js';
+export type {
+  NotificationRecord,
+  NotificationVariant,
+  CreateNotificationPayload,
+} from './features/notifications/notification.types.js';
+
 // Dashboard
 export { getDashboardLayout, saveDashboardLayout } from './features/dashboard/dashboard-layout.js';
 

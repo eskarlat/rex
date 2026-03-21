@@ -26,8 +26,9 @@ export interface StorageEntry {
   value: string;
 }
 
-/** Event types supported by the SDK */
-export type SDKEventType = 'project:init' | 'project:destroy' | 'ext:activate' | 'ext:deactivate';
+/** Event types supported by the SDK — widened to string for cross-extension events */
+// eslint-disable-next-line sonarjs/redundant-type-aliases -- kept as semantic alias for API clarity across SDK consumers
+export type SDKEventType = string;
 
 /** Event handler function */
 export type SDKEventHandler = (payload: SDKEventPayload) => void | Promise<void>;
@@ -75,6 +76,14 @@ export interface ToastOptions {
   variant?: 'default' | 'destructive';
 }
 
+/** Persistent notification options */
+export interface NotificationOptions {
+  title: string;
+  message?: string;
+  variant?: 'info' | 'success' | 'warning' | 'error';
+  actionUrl?: string;
+}
+
 /** SDK Configuration */
 export interface SDKConfig {
   baseUrl?: string;
@@ -114,6 +123,7 @@ export interface EventsAPI {
   on(event: SDKEventType, handler: SDKEventHandler): void;
   off(event: SDKEventType, handler: SDKEventHandler): void;
   emit(event: SDKEventType, payload: SDKEventPayload): void;
+  publish(event: string, data?: Record<string, unknown>): Promise<void>;
 }
 
 /** Scheduler capability group */
@@ -139,7 +149,7 @@ export interface LoggerAPI {
   error(message: string, data?: unknown): void;
 }
 
-/** Main SDK interface — 8 capability groups */
+/** Main SDK interface — 9 capability groups */
 export interface RenreKitSDK {
   readonly project: ProjectContextAPI;
   readonly exec: CommandExecutionAPI;
@@ -149,6 +159,7 @@ export interface RenreKitSDK {
   readonly scheduler: SchedulerAPI;
   readonly terminal: TerminalAPI;
   readonly logger: LoggerAPI;
+  notify(options: NotificationOptions): Promise<void>;
   destroy(): void;
 }
 

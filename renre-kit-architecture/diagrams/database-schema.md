@@ -8,6 +8,7 @@ This document describes the relational database schema for the Rex Kit architect
 erDiagram
     PROJECTS ||--o{ SCHEDULED_TASKS : "path"
     INSTALLED_EXTENSIONS ||--o{ SCHEDULED_TASKS : "name"
+    INSTALLED_EXTENSIONS ||--o{ NOTIFICATIONS : "name"
     SCHEDULED_TASKS ||--o{ TASK_HISTORY : "id"
 
     PROJECTS {
@@ -48,6 +49,17 @@ erDiagram
         TEXT status "NOT NULL"
         TEXT output
     }
+
+    NOTIFICATIONS {
+        INTEGER id PK "auto-increment"
+        TEXT extension_name "NOT NULL"
+        TEXT title "NOT NULL"
+        TEXT message "NOT NULL"
+        TEXT variant "info|success|warning|error, default info"
+        TEXT action_url "nullable, e.g. /extensions/atlassian/panel"
+        INTEGER read "0 or 1, default 0"
+        TEXT created_at "NOT NULL"
+    }
 ```
 
 ## Table Descriptions
@@ -68,8 +80,13 @@ Stores scheduled tasks that are associated with extensions and optionally with s
 
 Records the execution history of scheduled tasks. Links to scheduled_tasks with cascade delete semantics, storing execution duration, status, and output logs.
 
+### notifications
+
+Stores persistent notifications sent by extensions to the user. Each notification has a variant (info/success/warning/error), an optional action URL linking to the source extension panel, and a read/unread state. Notifications persist until dismissed by the user or cleaned up by the auto-delete policy (30 days for read notifications, 1000 entry hard cap).
+
 ## Relationships
 
 - **projects ↔ scheduled_tasks**: One-to-many relationship. A project can have multiple scheduled tasks, and tasks optionally reference a project via project_path.
 - **installed_extensions ↔ scheduled_tasks**: One-to-many relationship. An extension can have multiple scheduled tasks referencing it by name.
 - **scheduled_tasks ↔ task_history**: One-to-many relationship with cascade delete. A task can have many history records, and deleting a task removes its history.
+- **installed_extensions ↔ notifications**: One-to-many relationship. An extension can send multiple notifications, referenced by extension name.

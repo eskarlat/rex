@@ -14,6 +14,9 @@ import { PROJECT_DIR, MANIFEST_JSON, PLUGINS_JSON } from '../../../core/paths/pa
 import type { HookContext } from '@renre-kit/extension-sdk/node';
 import { deployAgentAssets, cleanupAgentAssets } from '../agent-deployer/agent-deployer.js';
 import { createExtensionLogger } from '../../../core/logger/extension-logger.js';
+import { createNotification } from '../../notifications/notification-manager.js';
+import { getDb } from '../../../core/database/database.js';
+import type { NotificationVariant } from '../../notifications/notification.types.js';
 
 export interface InstalledExtension {
   name: string;
@@ -86,6 +89,15 @@ async function runHook(
           deployAgentAssets: () => deployAgentAssets(extensionDir, projectDir, agentDir),
           cleanupAgentAssets: () => cleanupAgentAssets(extensionDir, projectDir, agentDir),
           logger: createExtensionLogger(extensionName),
+          notify: (options) => {
+            createNotification(getDb(), {
+              extension_name: extensionName,
+              title: options.title,
+              message: options.message ?? '',
+              variant: options.variant as NotificationVariant | undefined,
+              action_url: options.actionUrl,
+            });
+          },
         },
       });
     }
