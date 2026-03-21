@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { Extension } from '@/core/hooks/use-extensions';
 import { cn } from '@/lib/utils';
 
 interface ExtensionSidebarProps {
@@ -36,7 +37,7 @@ function SectionHeader({ label, count }: Readonly<SectionHeaderProps>) {
 
 interface ExtensionSectionProps {
   label: string;
-  extensions: Array<{ name: string }>;
+  extensions: Extension[];
   selectedName: string | null;
   onSelect: (name: string) => void;
 }

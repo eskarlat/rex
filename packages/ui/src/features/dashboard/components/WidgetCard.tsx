@@ -43,10 +43,10 @@ function clampSize(
 function buildWidgetStyle(
   isMobile: boolean,
   transformStr: string | undefined,
-  transition: string | null,
+  transition: string | undefined,
   size: { w: number; h: number },
 ): React.CSSProperties {
-  const base = { transform: transformStr, transition: transition ?? undefined };
+  const base = { transform: transformStr, transition };
   if (isMobile) return { ...base, minHeight: `${size.h * 100}px` };
   return { ...base, gridColumn: `span ${size.w}`, gridRow: `span ${size.h}` };
 }
