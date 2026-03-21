@@ -42,10 +42,14 @@ export function useBrowserNotifications(): void {
       if (n.id <= lastSeenId.current) break; // sorted desc — no need to check older
       if (n.read === 1) continue;
 
-      new Notification(n.title, {
-        body: n.message || undefined,
-        tag: `renre-kit-notification-${n.id}`,
-      });
+      try {
+        new Notification(n.title, {
+          body: n.message || undefined,
+          tag: `renre-kit-notification-${n.id}`,
+        });
+      } catch {
+        // Permission may have been revoked mid-session
+      }
     }
 
     lastSeenId.current = maxId;

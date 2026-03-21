@@ -22,14 +22,28 @@ interface CreateNotificationBody {
   action_url?: string;
 }
 
+const VALID_VARIANTS = ['info', 'success', 'warning', 'error'];
+const MAX_QUERY_LIMIT = 1000;
+
 const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
-  fastify.get('/api/notifications', (request: FastifyRequest) => {
+  fastify.get('/api/notifications', (request: FastifyRequest, reply: FastifyReply) => {
     const db = getDb();
     const { unreadOnly, limit } = request.query as { unreadOnly?: string; limit?: string };
-    return listNotifications(db, {
+
+    let parsedLimit: number | undefined;
+    if (limit) {
+      parsedLimit = parseInt(limit, 10);
+      if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
+        return reply.code(400).send({ error: 'limit must be a positive integer' });
+      }
+      parsedLimit = Math.min(parsedLimit, MAX_QUERY_LIMIT);
+    }
+
+    const result = listNotifications(db, {
       unreadOnly: unreadOnly === 'true',
-      limit: limit ? Number(limit) : undefined,
+      limit: parsedLimit,
     });
+    return reply.send(result);
   });
 
   fastify.get('/api/notifications/count', () => {
@@ -41,6 +55,10 @@ const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _o
     const body = request.body as CreateNotificationBody;
     if (!body.extension_name || !body.title || !body.message) {
       return reply.code(400).send({ error: 'extension_name, title, and message are required' });
+    }
+
+    if (body.variant && !VALID_VARIANTS.includes(body.variant)) {
+      return reply.code(400).send({ error: `Invalid variant. Must be one of: ${VALID_VARIANTS.join(', ')}` });
     }
 
     const db = getDb();
@@ -66,10 +84,9 @@ const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _o
     const db = getDb();
     const result = markRead(db, Number(params.id));
     if (!result) {
-      reply.code(404);
-      return { error: 'Notification not found' };
+      return reply.code(404).send({ error: 'Notification not found' });
     }
-    return { ok: true };
+    return reply.send({ ok: true });
   });
 
   fastify.patch('/api/notifications/read-all', () => {
@@ -83,10 +100,9 @@ const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _o
     const db = getDb();
     const result = deleteNotification(db, Number(params.id));
     if (!result) {
-      reply.code(404);
-      return { error: 'Notification not found' };
+      return reply.code(404).send({ error: 'Notification not found' });
     }
-    return { ok: true };
+    return reply.send({ ok: true });
   });
 
   done();

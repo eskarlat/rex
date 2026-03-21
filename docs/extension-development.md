@@ -307,7 +307,7 @@ Use `sdk.events.publish()` to send events. Events are automatically namespaced t
 
 ```typescript
 // In a UI panel
-sdk.events.publish('task-complete', { taskId: '123', status: 'done' });
+await sdk.events.publish('task-complete', { taskId: '123', status: 'done' });
 // Emitted as: ext:my-extension:task-complete
 ```
 
@@ -354,9 +354,9 @@ function MyPanel() {
 Events are available in lifecycle hooks through `context.sdk.events`:
 
 ```typescript
-export function onInit(context: HookContext): void {
+export async function onInit(context: HookContext): Promise<void> {
   // Publish an event
-  context.sdk.events.publish('initialized', { version: '1.0.0' });
+  await context.sdk.events.publish('initialized', { version: '1.0.0' });
 
   // Subscribe to events from other extensions
   context.sdk.events.on('ext:scheduler:task-complete', (event) => {
@@ -375,7 +375,7 @@ MCP extensions receive events automatically as JSON-RPC `notifications/event` me
 
 ```typescript
 // After syncing Jira issues
-sdk.events.publish('sync-complete', {
+await sdk.events.publish('sync-complete', {
   project: 'PROJ',
   issuesUpdated: 3,
   timestamp: new Date().toISOString(),
@@ -416,7 +416,7 @@ sdk.notify({
 | Field       | Type   | Required | Description                                      |
 | ----------- | ------ | -------- | ------------------------------------------------ |
 | `title`     | string | Yes      | Notification title                               |
-| `message`   | string | Yes      | Notification message body                        |
+| `message`   | string | No       | Notification message body (default: `''`)        |
 | `variant`   | string | No       | `'info'` \| `'success'` \| `'warning'` \| `'error'` (default: `'info'`) |
 | `actionUrl` | string | No       | Relative dashboard path — clicking the notification navigates here |
 

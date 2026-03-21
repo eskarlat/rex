@@ -33,8 +33,8 @@ export class EventBus {
         promises.push(
           Promise.resolve()
             .then(() => handler(payload))
-            .catch(() => {
-              // Errors in handlers are swallowed to prevent propagation
+            .catch((err: unknown) => {
+              console.error(`[EventBus] Handler for "${event}" failed:`, err);
             }),
         );
       }

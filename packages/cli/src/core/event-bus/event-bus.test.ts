@@ -64,7 +64,8 @@ describe('EventBus', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('should not propagate handler errors', async () => {
+  it('should not propagate handler errors but log them', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const errorHandler = vi.fn().mockRejectedValue(new Error('handler fail'));
     const goodHandler = vi.fn();
     bus.on('project:init', errorHandler);
@@ -77,6 +78,11 @@ describe('EventBus', () => {
       }),
     ).resolves.toBeUndefined();
     expect(goodHandler).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('project:init'),
+      expect.any(Error),
+    );
+    consoleSpy.mockRestore();
   });
 
   it('should handle async handlers', async () => {

@@ -83,28 +83,32 @@ export function deleteNotification(db: Database.Database, id: number): boolean {
 }
 
 export function cleanupNotifications(db: Database.Database): number {
-  let totalRemoved = 0;
+  const cleanup = db.transaction(() => {
+    let totalRemoved = 0;
 
-  // Remove read notifications older than 30 days
-  const cutoff = new Date(Date.now() - CLEANUP_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const ageResult = db
-    .prepare('DELETE FROM notifications WHERE read = 1 AND created_at < ?')
-    .run(cutoff);
-  totalRemoved += ageResult.changes;
+    // Remove read notifications older than 30 days
+    const cutoff = new Date(Date.now() - CLEANUP_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+    const ageResult = db
+      .prepare('DELETE FROM notifications WHERE read = 1 AND created_at < ?')
+      .run(cutoff);
+    totalRemoved += ageResult.changes;
 
-  // Enforce 1000 cap — delete oldest entries beyond the cap
-  const countRow = db.prepare('SELECT COUNT(*) as count FROM notifications').get() as {
-    count: number;
-  };
-  if (countRow.count > MAX_NOTIFICATIONS) {
-    const excess = countRow.count - MAX_NOTIFICATIONS;
-    const capResult = db
-      .prepare(
-        'DELETE FROM notifications WHERE id IN (SELECT id FROM notifications ORDER BY created_at ASC LIMIT ?)',
-      )
-      .run(excess);
-    totalRemoved += capResult.changes;
-  }
+    // Enforce 1000 cap — delete oldest entries beyond the cap
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM notifications').get() as {
+      count: number;
+    };
+    if (countRow.count > MAX_NOTIFICATIONS) {
+      const excess = countRow.count - MAX_NOTIFICATIONS;
+      const capResult = db
+        .prepare(
+          'DELETE FROM notifications WHERE id IN (SELECT id FROM notifications ORDER BY created_at ASC LIMIT ?)',
+        )
+        .run(excess);
+      totalRemoved += capResult.changes;
+    }
 
-  return totalRemoved;
+    return totalRemoved;
+  });
+
+  return cleanup();
 }

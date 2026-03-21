@@ -1,4 +1,5 @@
 import { Bell, Check, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,7 +44,7 @@ function NotificationItem({
   onDelete,
 }: {
   notification: NotificationRecord;
-  onRead: (id: number) => void;
+  onRead: (id: number, actionUrl: string | null) => void;
   onDelete: (id: number) => void;
 }) {
   return (
@@ -52,11 +53,14 @@ function NotificationItem({
         'flex items-start gap-3 px-3 py-2 hover:bg-muted/50 transition-colors cursor-pointer',
         notification.read === 0 && 'bg-muted/30',
       )}
-      onClick={() => onRead(notification.id)}
+      onClick={() => onRead(notification.id, notification.action_url)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onRead(notification.id);
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onRead(notification.id, notification.action_url);
+        }
       }}
     >
       <span
@@ -92,6 +96,7 @@ function NotificationItem({
 }
 
 export function NotificationCenter() {
+  const navigate = useNavigate();
   const { data: notifications } = useNotifications({ limit: 50 });
   const { data: countData } = useUnreadCount();
   const markRead = useMarkRead();
@@ -103,8 +108,11 @@ export function NotificationCenter() {
 
   const unreadCount = countData?.unread ?? 0;
 
-  const handleRead = (id: number) => {
+  const handleRead = (id: number, actionUrl: string | null) => {
     markRead.mutate(id);
+    if (actionUrl) {
+      navigate(actionUrl);
+    }
   };
 
   const handleDelete = (id: number) => {
