@@ -1,7 +1,6 @@
 import type { ExtensionLogger, PlatformInfo } from '@renre-kit/shared';
 
-export type { ExtensionLogger as SdkLogger } from '@renre-kit/shared';
-export type { OSType, ArchType, PlatformInfo } from '@renre-kit/shared';
+export type { ExtensionLogger, OSType, ArchType, PlatformInfo } from '@renre-kit/shared';
 
 export interface SdkMethods {
   deployAgentAssets: () => void;

@@ -6,7 +6,7 @@ export { jsonToMarkdown } from './json-to-markdown.js';
 export type { JsonToMarkdownOptions } from './json-to-markdown.js';
 export type {
   HookContext,
-  SdkLogger,
+  ExtensionLogger,
   SdkMethods,
   PlatformInfo,
   OSType,

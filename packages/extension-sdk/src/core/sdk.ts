@@ -9,7 +9,7 @@ import type {
   EventsAPI,
   SchedulerAPI,
   TerminalAPI,
-  LoggerAPI,
+  ExtensionLogger,
   SDKEventType,
   SDKEventHandler,
   SDKEventPayload,
@@ -237,7 +237,7 @@ function createTerminalAPI(): TerminalAPI & {
  * Creates the logger capability group.
  * Sends log entries to the dashboard API with ext:<name> source prefix.
  */
-function createLoggerAPI(client: ApiClient, extensionName: string): LoggerAPI {
+function createExtensionLogger(client: ApiClient, extensionName: string): ExtensionLogger {
   const source = `ext:${extensionName}`;
 
   return {
@@ -275,7 +275,7 @@ export class RenreKitSDKImpl implements RenreKitSDK {
     setCloseHandler: (handler: TerminalCloseCallback) => void;
     setSendHandler: (handler: TerminalSendCallback) => void;
   };
-  readonly logger: LoggerAPI;
+  readonly logger: ExtensionLogger;
 
   private readonly internalEvents: EventsAPI & { clearAll: () => void };
   private readonly client: ApiClient;
@@ -296,7 +296,7 @@ export class RenreKitSDKImpl implements RenreKitSDK {
     this.events = this.internalEvents;
     this.scheduler = createSchedulerAPI(this.client);
     this.terminal = createTerminalAPI();
-    this.logger = createLoggerAPI(this.client, extensionName);
+    this.logger = createExtensionLogger(this.client, extensionName);
   }
 
   async notify(options: NotificationOptions): Promise<void> {

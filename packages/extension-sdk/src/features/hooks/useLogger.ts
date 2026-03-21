@@ -1,7 +1,7 @@
 import { useSDK } from '../context/SDKProvider';
-import type { LoggerAPI } from '../../core/types';
+import type { ExtensionLogger } from '../../core/types';
 
-export function useLogger(): LoggerAPI {
+export function useLogger(): ExtensionLogger {
   const sdk = useSDK();
   return sdk.logger;
 }

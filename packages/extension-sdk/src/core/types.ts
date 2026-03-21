@@ -2,8 +2,7 @@
 
 import type { ExtensionLogger, CommandResult } from '@renre-kit/shared';
 
-export type { ExtensionLogger as LoggerAPI } from '@renre-kit/shared';
-export type { CommandResult } from '@renre-kit/shared';
+export type { ExtensionLogger, CommandResult } from '@renre-kit/shared';
 
 /** Props passed to extension UI panels and widgets by the dynamic loaders */
 export interface PanelProps {

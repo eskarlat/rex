@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createElement } from 'react';
-import type { RenreKitSDK, LoggerAPI } from '../../core/types';
+import type { RenreKitSDK, ExtensionLogger } from '../../core/types';
 import { SDKProvider } from '../context/SDKProvider';
 import { useLogger } from './useLogger';
 
@@ -39,7 +39,7 @@ describe('useLogger', () => {
 
   it('exposes debug, info, warn, error methods', () => {
     const { result } = renderHook(() => useLogger(), { wrapper });
-    const logger: LoggerAPI = result.current;
+    const logger: ExtensionLogger = result.current;
 
     expect(typeof logger.debug).toBe('function');
     expect(typeof logger.info).toBe('function');
