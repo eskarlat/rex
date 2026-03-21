@@ -31,7 +31,7 @@ import { handleSchedulerTrigger } from './features/scheduler/commands/scheduler-
 import { handleUi } from './features/ui/commands/ui.command.js';
 import { handleStop } from './features/ui/commands/stop.command.js';
 import { getDb } from './core/database/database.js';
-import { getExtensionDir, getManifestPath  } from './core/paths/paths.js';
+import { getExtensionDir, getManifestPath } from './core/paths/paths.js';
 import { ConnectionManager } from './features/extensions/mcp/connection-manager.js';
 import { loadGlobalConfig, resolveExtensionConfig } from './features/config/config-manager.js';
 import { listInstalled, getActivated } from './features/extensions/manager/extension-manager.js';

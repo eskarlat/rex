@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 function Table({ className, ref, ...props }: React.ComponentProps<'table'>) {
   return (
     <div className="relative w-full overflow-auto" role="region">
-      { }
       <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   );

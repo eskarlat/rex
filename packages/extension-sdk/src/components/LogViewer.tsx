@@ -12,8 +12,8 @@ export function LogViewer({ lines, className, maxHeight = '400px' }: Readonly<Lo
       className={cn('overflow-auto rounded-md border bg-muted p-4 font-mono text-sm', className)}
       style={{ maxHeight }}
     >
-      {lines.map((line) => (
-        <div key={line}>{line}</div>
+      {lines.map((line, index) => (
+        <div key={`${index}-${line}`}>{line}</div>
       ))}
     </div>
   );

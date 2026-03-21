@@ -30,7 +30,7 @@ export function DataTable({ columns, data, className }: Readonly<DataTableProps>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.map((row) => {
+        {data.map((row, rowIndex) => {
           const rowKey = columns
             .map((col) => {
               const v = row[col.key];
@@ -39,7 +39,7 @@ export function DataTable({ columns, data, className }: Readonly<DataTableProps>
             })
             .join('|');
           return (
-            <TableRow key={rowKey}>
+            <TableRow key={`${rowIndex}-${rowKey}`}>
               {columns.map((col) => {
                 const cellValue = row[col.key];
                 let display = '';

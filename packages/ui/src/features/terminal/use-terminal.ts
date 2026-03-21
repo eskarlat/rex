@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef, createElement  } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, createElement } from 'react';
 import type { ReactNode } from 'react';
 
 /** Sender function type for writing data to the terminal */

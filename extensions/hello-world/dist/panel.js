@@ -3033,7 +3033,7 @@ function TableCell({ className, ref, ...props }) {
 function DataTable({ columns, data, className }) {
   return /* @__PURE__ */ jsxs(Table, { className: cn(className), children: [
     /* @__PURE__ */ jsx(TableHeader, { children: /* @__PURE__ */ jsx(TableRow, { children: columns.map((col) => /* @__PURE__ */ jsx(TableHead, { children: col.label }, col.key)) }) }),
-    /* @__PURE__ */ jsx(TableBody, { children: data.map((row) => {
+    /* @__PURE__ */ jsx(TableBody, { children: data.map((row, rowIndex) => {
       const rowKey = columns.map((col) => {
         const v = row[col.key];
         if (v == null) return "";
@@ -3046,7 +3046,7 @@ function DataTable({ columns, data, className }) {
           display = typeof cellValue === "object" ? JSON.stringify(cellValue) : `${cellValue}`;
         }
         return /* @__PURE__ */ jsx(TableCell, { children: display }, col.key);
-      }) }, rowKey);
+      }) }, `${rowIndex}-${rowKey}`);
     }) })
   ] });
 }
