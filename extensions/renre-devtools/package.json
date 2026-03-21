@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@renre-kit/extension-sdk": "workspace:*",
@@ -15,6 +16,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "esbuild": "^0.21.0",
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "vitest": "^2.1.0"
   }
 }
