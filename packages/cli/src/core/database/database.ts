@@ -1,7 +1,9 @@
-import BetterSqlite3 from 'better-sqlite3';
-import type Database from 'better-sqlite3';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import BetterSqlite3 from 'better-sqlite3';
+import type Database from 'better-sqlite3';
+
 import { getLogger } from '../logger/index.js';
 
 let db: Database.Database | null = null;

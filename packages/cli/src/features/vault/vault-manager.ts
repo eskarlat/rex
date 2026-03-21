@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
+
 import { VAULT_PATH, GLOBAL_DIR } from '../../core/paths/paths.js';
 import {
   pathExistsSync,
@@ -9,8 +10,9 @@ import {
   ensureDirSync,
 } from '../../shared/fs-helpers.js';
 import { migrateFile, getSchemaVersion } from '../../shared/schema-migration.js';
-import { vaultMigrations } from './migrations/index.js';
 import { ExtensionError, ErrorCode } from '../../core/errors/extension-error.js';
+
+import { vaultMigrations } from './migrations/index.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;

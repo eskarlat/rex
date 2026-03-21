@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
 import { getLogger } from '@renre-kit/cli/lib';
+
 import { TerminalSessionManager } from './terminal-session-manager.js';
 
 interface WebSocketLike {

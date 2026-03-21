@@ -1,6 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+
 import { z } from 'zod';
+
 import type { ExtensionManifest } from '../types/extension.types.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 

@@ -1,4 +1,5 @@
 import type { DiagnosticCheck } from '../types.js';
+
 import { nodeVersionCheck } from './node-version.js';
 import { globalDirectoryCheck } from './global-directory.js';
 import { databaseCheck } from './database.js';

@@ -1,5 +1,9 @@
 import { Bell, Check, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+import { useBrowserNotifications } from './use-browser-notifications';
+import { useNotificationSocket } from './use-notification-socket';
+
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,8 +20,6 @@ import {
   useDeleteNotification,
 } from '@/core/hooks/use-notifications';
 import type { NotificationRecord } from '@/core/hooks/use-notifications';
-import { useBrowserNotifications } from './use-browser-notifications';
-import { useNotificationSocket } from './use-notification-socket';
 
 const VARIANT_COLORS: Record<string, string> = {
   info: 'bg-blue-500',
@@ -38,15 +40,13 @@ function formatRelativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
-function NotificationItem({
-  notification,
-  onRead,
-  onDelete,
-}: {
+interface NotificationItemProps {
   notification: NotificationRecord;
   onRead: (id: number, actionUrl: string | null) => void;
   onDelete: (id: number) => void;
-}) {
+}
+
+function NotificationItem({ notification, onRead, onDelete }: Readonly<NotificationItemProps>) {
   return (
     <div
       className={cn(

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+
 import { useNotifications } from '@/core/hooks/use-notifications';
 
 /**
@@ -28,7 +29,7 @@ function fireNewAlerts(items: NotificationItem[], lastSeen: number): void {
 
     try {
       new Notification(n.title, {
-        body: n.message || undefined, // eslint-disable-line sonarjs/prefer-nullish-coalescing -- empty string should map to undefined
+        body: n.message || undefined, // empty string should map to undefined
         tag: `renre-kit-notification-${n.id}`,
       });
     } catch {

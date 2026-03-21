@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { status } from '../manager/extension-manager.js';
 import { getDb } from '../../../core/database/database.js';
 import { readUpdateCache } from '../update-cache/update-cache.js';

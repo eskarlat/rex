@@ -9,7 +9,7 @@ interface WidgetPickerProps {
   addedWidgetIds: Set<string>;
 }
 
-export function WidgetPicker({ open, onOpenChange, onAdd, addedWidgetIds }: WidgetPickerProps) {
+export function WidgetPicker({ open, onOpenChange, onAdd, addedWidgetIds }: Readonly<WidgetPickerProps>) {
   const { data: marketplace } = useMarketplace();
 
   const availableWidgets = (marketplace?.active ?? []).flatMap((ext) =>

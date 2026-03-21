@@ -1,5 +1,12 @@
 import { useRef, useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
+
+import { useAutoScroll, useScrollToBottom, useStreamLifecycle } from '../hooks';
+
+import { LogEntry } from './LogEntry';
+import { LogToolbar } from './LogToolbar';
+import { LogFooter } from './LogFooter';
+
 import {
   Select,
   SelectContent,
@@ -16,10 +23,6 @@ import {
 } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { useLogSocket } from '@/core/api/websocket';
-import { useAutoScroll, useScrollToBottom, useStreamLifecycle } from '../hooks';
-import { LogEntry } from './LogEntry';
-import { LogToolbar } from './LogToolbar';
-import { LogFooter } from './LogFooter';
 
 export function ExtensionLogsTab() {
   const stream = useLogSocket();

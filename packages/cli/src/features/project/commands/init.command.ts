@@ -1,5 +1,7 @@
-import * as clack from '@clack/prompts';
 import path from 'node:path';
+
+import * as clack from '@clack/prompts';
+
 import { ProjectManager } from '../../../core/project/project-manager.js';
 import { EventBus } from '../../../core/event-bus/event-bus.js';
 import { getDb } from '../../../core/database/database.js';

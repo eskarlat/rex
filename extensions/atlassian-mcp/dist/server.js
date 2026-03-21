@@ -21448,10 +21448,10 @@ function isSingleValueObject(value) {
   return meaningfulEntries.length === 1 && isPrimitive(meaningfulEntries[0][1]);
 }
 function extractSingleValue(obj) {
-  const meaningful = Object.entries(obj).filter(
+  const meaningful = Object.entries(obj).find(
     ([key]) => key !== "id" && key !== "self" && key !== "iconUrl" && key !== "avatarUrls"
   );
-  return meaningful[0]?.[1] ?? Object.values(obj)[0];
+  return meaningful?.[1] ?? Object.values(obj)[0];
 }
 function findLabel(obj) {
   for (const key of ["key", "name", "title", "displayName", "summary", "label", "id"]) {

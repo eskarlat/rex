@@ -43,4 +43,18 @@ describe('ext-deactivate command', () => {
 
     expect(clack.log.error).toHaveBeenCalled();
   });
+
+  it('handles non-Error thrown during deactivation', async () => {
+    vi.mocked(extensionManager.deactivate).mockRejectedValue('string error');
+
+    await handleExtDeactivate({
+      name: 'my-ext',
+      projectPath: '/tmp/project',
+      extensionDir: '/path/to/ext',
+    });
+
+    expect(clack.log.error).toHaveBeenCalledWith(
+      expect.stringContaining('string error'),
+    );
+  });
 });

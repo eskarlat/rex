@@ -1,11 +1,14 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+
 import { simpleGit } from 'simple-git';
+
 import type { RegistryConfig, RegistryEntry } from '../../core/types/index.js';
 import type { PartialEngineConstraints } from '../extensions/types/extension.types.js';
-import { isStale as checkStale, updateTimestamp, getLastFetched } from './registry-cache.js';
 import { getLogger } from '../../core/logger/index.js';
+
+import { isStale as checkStale, updateTimestamp, getLastFetched } from './registry-cache.js';
 
 export interface RegistryStatus {
   name: string;

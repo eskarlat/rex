@@ -57,6 +57,7 @@ vi.mock('@renre-kit/cli/lib', () => ({
   resolveRegistryIcon: (...args: unknown[]) => mockResolveRegistryIcon(...args),
   CLI_VERSION: '0.0.1',
   SDK_VERSION: '0.0.1',
+  getLogger: () => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn() }),
 }));
 
 const { default: extensionsRoutes } = await import('./extensions.routes.js');
@@ -167,6 +168,53 @@ describe('extensions routes', () => {
         hasIcon: false,
         gitUrl: 'https://example.com/ext3.git',
       });
+    });
+
+    it('handles loadManifest failure gracefully for active extensions', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'broken-ext', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({ 'broken-ext': '1.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockGetExtensionDir.mockReturnValue('/fake/dir');
+      mockLoadManifest.mockImplementation(() => {
+        throw new Error('Manifest not found');
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active).toHaveLength(1);
+      expect(body.active[0].name).toBe('broken-ext');
+      expect(body.active[0].hasConfig).toBe(false);
+    });
+
+    it('handles loadManifest failure gracefully for installed extensions', async () => {
+      mockListInstalled.mockReturnValue([
+        { name: 'broken-ext', version: '1.0.0', type: 'standard' },
+      ]);
+      mockGetActivated.mockReturnValue({});
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockGetExtensionDir.mockReturnValue('/fake/dir');
+      mockLoadManifest.mockImplementation(() => {
+        throw 'non-error string';
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.installed).toHaveLength(1);
+      expect(body.installed[0].name).toBe('broken-ext');
     });
 
     it('passes tags through for available extensions', async () => {

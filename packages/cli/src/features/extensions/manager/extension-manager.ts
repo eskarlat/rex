@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import type Database from 'better-sqlite3';
+import type { HookContext } from '@renre-kit/extension-sdk/node';
+
 import type { PluginsJson, ProjectManifest } from '../../../core/types/index.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import type { EventBus } from '../../../core/event-bus/event-bus.js';
@@ -11,7 +14,6 @@ import { checkEngineCompat } from '../engine/engine-compat.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 import { CLI_VERSION, SDK_VERSION } from '../../../core/version.js';
 import { PROJECT_DIR, MANIFEST_JSON, PLUGINS_JSON } from '../../../core/paths/paths.js';
-import type { HookContext } from '@renre-kit/extension-sdk/node';
 import { deployAgentAssets, cleanupAgentAssets } from '../agent-deployer/agent-deployer.js';
 import { createExtensionLogger } from '../../../core/logger/extension-logger.js';
 import { createNotification } from '../../notifications/notification-manager.js';
@@ -89,7 +91,12 @@ async function runHook(
           deployAgentAssets: () => deployAgentAssets(extensionDir, projectDir, agentDir),
           cleanupAgentAssets: () => cleanupAgentAssets(extensionDir, projectDir, agentDir),
           logger: createExtensionLogger(extensionName),
-          notify: (options) => {
+          notify: (options: {
+            title: string;
+            message?: string;
+            variant?: string;
+            actionUrl?: string;
+          }) => {
             createNotification(getDb(), {
               extension_name: extensionName,
               title: options.title,

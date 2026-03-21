@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3';
+
 import type { NotificationRecord, CreateNotificationPayload } from './notification.types.js';
 
 const DEFAULT_LIMIT = 50;

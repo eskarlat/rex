@@ -296,10 +296,10 @@ function isSingleValueObject(value: unknown): boolean {
 }
 
 function extractSingleValue(obj: Record<string, unknown>): unknown {
-  const meaningful = Object.entries(obj).filter(
+  const meaningful = Object.entries(obj).find(
     ([key]) => key !== 'id' && key !== 'self' && key !== 'iconUrl' && key !== 'avatarUrls',
   );
-  return meaningful[0]?.[1] ?? Object.values(obj)[0];
+  return meaningful?.[1] ?? Object.values(obj)[0];
 }
 
 function findLabel(obj: Record<string, unknown>): string | null {

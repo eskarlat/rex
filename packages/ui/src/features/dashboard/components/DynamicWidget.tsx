@@ -5,7 +5,7 @@ interface DynamicWidgetProps {
   widgetId: string;
 }
 
-export function DynamicWidget({ extensionName, widgetId }: DynamicWidgetProps) {
+export function DynamicWidget({ extensionName, widgetId }: Readonly<DynamicWidgetProps>) {
   const widgetUrl = `/api/extensions/${extensionName}/widgets/${widgetId}.js`;
 
   return <DynamicUiAsset extensionName={extensionName} url={widgetUrl} label="widget" compact />;

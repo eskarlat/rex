@@ -1,4 +1,7 @@
 import { useState } from 'react';
+
+import { HistoryModal } from './HistoryModal';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -9,13 +12,12 @@ import {
   useTriggerTask,
   type ScheduledTask,
 } from '@/core/hooks/use-scheduler';
-import { HistoryModal } from './HistoryModal';
 
 interface TaskRowProps {
   task: ScheduledTask | undefined;
 }
 
-export function TaskRow({ task }: TaskRowProps) {
+export function TaskRow({ task }: Readonly<TaskRowProps>) {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const triggerTask = useTriggerTask();

@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
+
 import { cn } from '@/lib/utils';
 import { useMarketplace } from '@/core/hooks/use-extensions';
 import { Separator } from '@/components/ui/separator';

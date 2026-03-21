@@ -11,7 +11,7 @@ const sizeMap: Record<string, number> = {
   lg: 32,
 };
 
-export function Spinner({ size = 'md', className }: SpinnerProps) {
+export function Spinner({ size = 'md', className }: Readonly<SpinnerProps>) {
   const pixels = sizeMap[size] ?? 24;
 
   return (

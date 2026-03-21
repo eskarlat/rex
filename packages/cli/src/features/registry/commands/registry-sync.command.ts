@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import type { RegistryConfig } from '../../../core/types/index.js';
 import { syncAll } from '../registry-manager.js';
 import { refreshUpdateCache } from '../../extensions/update-cache/update-cache.js';

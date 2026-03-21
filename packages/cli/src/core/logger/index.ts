@@ -1,5 +1,6 @@
-import { Logger } from './logger.js';
 import { LOGS_DIR } from '../paths/paths.js';
+
+import { Logger } from './logger.js';
 
 export { Logger } from './logger.js';
 export type { LogLevel } from './logger.js';

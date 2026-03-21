@@ -7,7 +7,7 @@ export interface CodeBlockProps {
   className?: string;
 }
 
-export function CodeBlock({ code, language, className }: CodeBlockProps) {
+export function CodeBlock({ code, language, className }: Readonly<CodeBlockProps>) {
   return (
     <Card className={cn(className)}>
       <CardContent className="p-4">

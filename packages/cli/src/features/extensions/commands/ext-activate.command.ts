@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { activate } from '../manager/extension-manager.js';
 
 interface ExtActivateOptions {

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { useProjectContext } from '@/core/providers/ProjectProvider';
+
 import { useTerminal } from './use-terminal';
+
+import { useProjectContext } from '@/core/providers/ProjectProvider';
 import '@xterm/xterm/css/xterm.css';
 
 function buildWsUrl(): string {

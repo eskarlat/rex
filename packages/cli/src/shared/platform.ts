@@ -25,7 +25,7 @@ function getHardwareUUIDMacOS(): string | undefined {
     const output = execFileSync('/usr/sbin/ioreg', ['-d2', '-c', 'IOPlatformExpertDevice'], {
       encoding: 'utf-8',
     });
-    const match = /[A-F0-9-]{36}/i.exec(output);
+    const match = /[\da-f-]{36}/i.exec(output);
     return match?.[0];
   } catch {
     return undefined;

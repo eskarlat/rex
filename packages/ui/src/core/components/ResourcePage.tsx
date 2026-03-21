@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -45,7 +46,7 @@ export function ResourcePage({
   onSubmit,
   formContent,
   children,
-}: ResourcePageProps) {
+}: Readonly<ResourcePageProps>) {
   if (isLoading) {
     return (
       <div className="space-y-6">

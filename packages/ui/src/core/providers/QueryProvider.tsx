@@ -16,6 +16,6 @@ interface QueryProviderProps {
   client?: QueryClient;
 }
 
-export function QueryProvider({ children, client }: QueryProviderProps) {
+export function QueryProvider({ children, client }: Readonly<QueryProviderProps>) {
   return <QueryClientProvider client={client ?? queryClient}>{children}</QueryClientProvider>;
 }

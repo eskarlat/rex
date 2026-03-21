@@ -55,7 +55,7 @@ function transformFrontmatterName(content: string, extName: string): string {
   }
 
   const headerLen = 3 + firstLineBreak.length; // '---' + linebreak
-  const frontmatter = content.substring(headerLen, fmEnd);
+  const frontmatter = content.slice(headerLen, fmEnd);
   const lines = frontmatter.split(/\r?\n/);
   let transformed = false;
 
@@ -64,7 +64,7 @@ function transformFrontmatterName(content: string, extName: string): string {
     if (!line.startsWith(namePrefix)) {
       return line;
     }
-    const value = line.substring(namePrefix.length).trim();
+    const value = line.slice(namePrefix.length).trim();
     if (value.startsWith(`${extName}.`)) {
       return line;
     }
@@ -76,7 +76,7 @@ function transformFrontmatterName(content: string, extName: string): string {
     return content;
   }
 
-  return `---${firstLineBreak}${updatedLines.join(firstLineBreak)}${content.substring(fmEnd)}`;
+  return `---${firstLineBreak}${updatedLines.join(firstLineBreak)}${content.slice(Math.max(0, fmEnd))}`;
 }
 
 /**

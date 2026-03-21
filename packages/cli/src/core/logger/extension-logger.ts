@@ -1,5 +1,6 @@
-import { getLogger } from './index.js';
 import type { ExtensionLogger } from '../types/context.types.js';
+
+import { getLogger } from './index.js';
 
 export function createExtensionLogger(extensionName: string): ExtensionLogger {
   const source = `ext:${extensionName}`;

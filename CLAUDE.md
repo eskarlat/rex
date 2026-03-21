@@ -139,7 +139,10 @@ These are hard requirements, not suggestions:
 - **Duplication**: jscpd with threshold 5. Extract shared logic rather than copying.
 - **All lint warnings must be addressed** — never skip or suppress without justification.
 - **TDD**: Write tests first (`*.test.ts` co-located with source), then implementation.
-- **ESLint config**: `.eslintrc.cjs` at `packages/` level. Overrides relax `no-unsafe-*` rules for shadcn/ui components and React generic-heavy code.
+- **ESLint config**: `eslint.config.mjs` (ESLint v9 flat config) at root. Uses `typescript-eslint` unified package with `projectService`. Overrides relax `no-unsafe-*` rules for shadcn/ui components and React generic-heavy code.
+- **Import hygiene**: `eslint-plugin-import-x` enforces no circular deps, no duplicate imports, no extraneous deps, and import ordering.
+- **Modern JS idioms**: `eslint-plugin-unicorn` (cherry-picked rules) enforces `node:` protocol, `String#slice()`, `Number.parseInt`, etc.
+- **React hooks correctness**: `eslint-plugin-react-hooks` enforces rules-of-hooks and exhaustive-deps in UI/SDK packages.
 
 ## TypeScript Conventions
 

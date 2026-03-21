@@ -1,10 +1,12 @@
 import { type ChangeEvent, useState } from 'react';
+
+import { TaskRow } from './components/TaskRow';
+
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useScheduledTasks, useCreateTask } from '@/core/hooks/use-scheduler';
 import { ResourcePage } from '@/core/components/ResourcePage';
-import { TaskRow } from './components/TaskRow';
 
 export function ScheduledTasksPage(): React.ReactElement {
   const { data: tasks, isLoading } = useScheduledTasks();

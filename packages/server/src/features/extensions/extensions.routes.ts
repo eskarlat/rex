@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
+
 import semver from 'semver';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
 import {
@@ -25,6 +26,7 @@ import {
   resolveRegistryIcon,
   CLI_VERSION,
   SDK_VERSION,
+  getLogger,
 } from '@renre-kit/cli/lib';
 
 interface InstallBody {
@@ -152,6 +154,139 @@ const ICON_CONTENT_TYPES: Record<string, string> = {
   '.gif': 'image/gif',
 };
 
+interface ExtensionRow {
+  name: string;
+  version: string;
+  type: string;
+  installed_at: string;
+  registry_source?: string | null;
+}
+
+interface RegistryEntry {
+  name: string;
+  author?: string;
+  tags?: string[];
+  gitUrl?: string;
+}
+
+interface UpdateInfo {
+  updateAvailable: string | null;
+  engineCompatible: boolean;
+}
+
+interface ActiveManifestInfo {
+  hasConfig: boolean;
+  title?: string;
+  description?: string;
+  hasIcon: boolean;
+  panels: Array<{ id: string; title: string }>;
+  widgets: Array<{
+    id: string;
+    title: string;
+    defaultSize: { w: number; h: number };
+    minSize?: { w: number; h: number };
+    maxSize?: { w: number; h: number };
+  }>;
+  installPath?: string;
+}
+
+function loadActiveManifestInfo(name: string, version: string): ActiveManifestInfo {
+  const extDir = getExtensionDir(name, version);
+  const manifest = loadManifest(extDir);
+  return {
+    hasConfig: Object.keys(manifest.config?.schema ?? {}).length > 0,
+    title: manifest.title,
+    description: manifest.description,
+    hasIcon: !!manifest.icon && isIconSafe(extDir, manifest.icon),
+    panels: (manifest.ui?.panels ?? []).map((p) => ({ id: p.id, title: p.title })),
+    widgets: (manifest.ui?.widgets ?? []).map((w) => ({
+      id: w.id,
+      title: w.title,
+      defaultSize: w.defaultSize,
+      ...(w.minSize ? { minSize: w.minSize } : {}),
+      ...(w.maxSize ? { maxSize: w.maxSize } : {}),
+    })),
+    installPath: extDir,
+  };
+}
+
+function mapActiveExtension(
+  ext: ExtensionRow,
+  activatedPlugins: Record<string, string>,
+  registryMap: Map<string, RegistryEntry>,
+  getUpdateInfo: (name: string) => UpdateInfo,
+): Record<string, unknown> | null {
+  if (activatedPlugins[ext.name] !== ext.version) return null;
+
+  let info: ActiveManifestInfo = {
+    hasConfig: false,
+    hasIcon: false,
+    panels: [],
+    widgets: [],
+  };
+  try {
+    info = loadActiveManifestInfo(ext.name, ext.version);
+  } catch (err) {
+    getLogger().warn('extensions', `Failed to load manifest for ${ext.name}@${ext.version}`, {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+  const regEntry = registryMap.get(ext.name);
+  return {
+    name: ext.name,
+    version: ext.version,
+    type: ext.type,
+    status: 'active' as const,
+    ...info,
+    author: regEntry?.author,
+    tags: regEntry?.tags ?? [],
+    gitUrl: regEntry?.gitUrl,
+    installedAt: ext.installed_at,
+    registrySource: ext.registry_source ?? undefined,
+    ...getUpdateInfo(ext.name),
+  };
+}
+
+function mapInstalledExtension(
+  ext: ExtensionRow,
+  registryMap: Map<string, RegistryEntry>,
+  getUpdateInfo: (name: string) => UpdateInfo,
+): Record<string, unknown> {
+  let title: string | undefined;
+  let description: string | undefined;
+  let hasIcon = false;
+  let installPath: string | undefined;
+  try {
+    const extDir = getExtensionDir(ext.name, ext.version);
+    installPath = extDir;
+    const manifest = loadManifest(extDir);
+    title = manifest.title;
+    description = manifest.description;
+    hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
+  } catch (err) {
+    getLogger().warn('extensions', `Failed to load manifest for ${ext.name}@${ext.version}`, {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+  const regEntry = registryMap.get(ext.name);
+  return {
+    name: ext.name,
+    version: ext.version,
+    type: ext.type,
+    status: 'installed' as const,
+    title,
+    description,
+    hasIcon,
+    author: regEntry?.author,
+    tags: regEntry?.tags ?? [],
+    gitUrl: regEntry?.gitUrl,
+    installedAt: ext.installed_at,
+    registrySource: ext.registry_source ?? undefined,
+    installPath,
+    ...getUpdateInfo(ext.name),
+  };
+}
+
 function isIconSafe(extDir: string, iconField: string): boolean {
   const iconPath = resolve(extDir, iconField);
   const rel = relative(extDir, iconPath);
@@ -163,7 +298,7 @@ function readIconFromDir(extDir: string): { content: Buffer; contentType: string
   if (!manifest.icon) return null;
   if (!isIconSafe(extDir, manifest.icon)) return null;
   const iconPath = resolve(extDir, manifest.icon);
-  const ext = iconPath.substring(iconPath.lastIndexOf('.'));
+  const ext = iconPath.slice(Math.max(0, iconPath.lastIndexOf('.')));
   const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
   return { content: readFileSync(iconPath), contentType };
 }
@@ -220,97 +355,12 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     const registryMap = new Map(allRegistryEntries.map((e) => [e.name, e]));
 
     const active = installed
-      .filter((ext) => activatedPlugins[ext.name] === ext.version)
-      .map((ext) => {
-        let hasConfig = false;
-        let title: string | undefined;
-        let description: string | undefined;
-        let hasIcon = false;
-        let panels: Array<{ id: string; title: string }> = [];
-        let widgets: Array<{
-          id: string;
-          title: string;
-          defaultSize: { w: number; h: number };
-          minSize?: { w: number; h: number };
-          maxSize?: { w: number; h: number };
-        }> = [];
-        let installPath: string | undefined;
-        try {
-          const extDir = getExtensionDir(ext.name, ext.version);
-          installPath = extDir;
-          const manifest = loadManifest(extDir);
-          hasConfig = Object.keys(manifest.config?.schema ?? {}).length > 0;
-          title = manifest.title;
-          description = manifest.description;
-          hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
-          panels = (manifest.ui?.panels ?? []).map((p) => ({ id: p.id, title: p.title }));
-          widgets = (manifest.ui?.widgets ?? []).map((w) => ({
-            id: w.id,
-            title: w.title,
-            defaultSize: w.defaultSize,
-            ...(w.minSize ? { minSize: w.minSize } : {}),
-            ...(w.maxSize ? { maxSize: w.maxSize } : {}),
-          }));
-        } catch {
-          /* ignore */
-        }
-        const regEntry = registryMap.get(ext.name);
-        return {
-          name: ext.name,
-          version: ext.version,
-          type: ext.type,
-          status: 'active' as const,
-          hasConfig,
-          title,
-          description,
-          hasIcon,
-          panels,
-          widgets,
-          author: regEntry?.author,
-          tags: regEntry?.tags ?? [],
-          gitUrl: regEntry?.gitUrl,
-          installedAt: ext.installed_at,
-          registrySource: ext.registry_source ?? undefined,
-          installPath,
-          ...getUpdateInfo(ext.name),
-        };
-      });
+      .map((ext) => mapActiveExtension(ext, activatedPlugins, registryMap, getUpdateInfo))
+      .filter(Boolean);
 
     const installedOnly = installed
       .filter((ext) => activatedPlugins[ext.name] !== ext.version)
-      .map((ext) => {
-        let title: string | undefined;
-        let description: string | undefined;
-        let hasIcon = false;
-        let installPath: string | undefined;
-        try {
-          const extDir = getExtensionDir(ext.name, ext.version);
-          installPath = extDir;
-          const manifest = loadManifest(extDir);
-          title = manifest.title;
-          description = manifest.description;
-          hasIcon = !!manifest.icon && isIconSafe(extDir, manifest.icon);
-        } catch {
-          /* ignore */
-        }
-        const regEntry = registryMap.get(ext.name);
-        return {
-          name: ext.name,
-          version: ext.version,
-          type: ext.type,
-          status: 'installed' as const,
-          title,
-          description,
-          hasIcon,
-          author: regEntry?.author,
-          tags: regEntry?.tags ?? [],
-          gitUrl: regEntry?.gitUrl,
-          installedAt: ext.installed_at,
-          registrySource: ext.registry_source ?? undefined,
-          installPath,
-          ...getUpdateInfo(ext.name),
-        };
-      });
+      .map((ext) => mapInstalledExtension(ext, registryMap, getUpdateInfo));
 
     const installedNames = new Set(installed.map((ext) => ext.name));
     const availableEntries = allRegistryEntries.filter(
@@ -426,7 +476,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     const { registries } = loadGlobalConfig();
     const registryIconPath = resolveRegistryIcon(name, registries);
     if (registryIconPath) {
-      const ext = registryIconPath.substring(registryIconPath.lastIndexOf('.'));
+      const ext = registryIconPath.slice(Math.max(0, registryIconPath.lastIndexOf('.')));
       const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
       reply.header('Content-Type', contentType);
       reply.header('Cache-Control', 'public, max-age=3600');

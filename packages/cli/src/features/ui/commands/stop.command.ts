@@ -1,5 +1,7 @@
 import { existsSync, unlinkSync } from 'node:fs';
+
 import * as clack from '@clack/prompts';
+
 import { SERVER_PID_PATH } from '../../../core/paths/paths.js';
 import { isProcessRunning, readPidFile } from '../../../shared/process-utils.js';
 import { getLogger } from '../../../core/logger/index.js';

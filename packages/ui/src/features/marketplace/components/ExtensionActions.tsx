@@ -13,7 +13,12 @@ interface ExtensionActionsProps {
   extension: Extension;
 }
 
-function UpdateButton({ extension, isPending }: { extension: Extension; isPending: boolean }) {
+interface UpdateButtonProps {
+  extension: Extension;
+  isPending: boolean;
+}
+
+function UpdateButton({ extension, isPending }: Readonly<UpdateButtonProps>) {
   const update = useUpdateExtension();
 
   if (!extension.updateAvailable) return null;
@@ -42,7 +47,7 @@ function UpdateButton({ extension, isPending }: { extension: Extension; isPendin
   );
 }
 
-export function UpdateBadge({ extension }: ExtensionActionsProps) {
+export function UpdateBadge({ extension }: Readonly<ExtensionActionsProps>) {
   if (!extension.updateAvailable) return null;
 
   if (extension.engineCompatible === false) {
@@ -56,7 +61,7 @@ export function UpdateBadge({ extension }: ExtensionActionsProps) {
   return <Badge className="text-xs bg-blue-600">{extension.updateAvailable} available</Badge>;
 }
 
-export function ExtensionActions({ extension }: ExtensionActionsProps) {
+export function ExtensionActions({ extension }: Readonly<ExtensionActionsProps>) {
   const install = useInstallExtension();
   const activate = useActivateExtension();
   const deactivate = useDeactivateExtension();

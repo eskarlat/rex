@@ -1,10 +1,11 @@
 import { useMemo, useEffect } from 'react';
 import { RenreKitSDKImpl } from '@renre-kit/extension-sdk';
 import { useNavigate } from 'react-router-dom';
+import type { RenreKitSDK } from '@renre-kit/extension-sdk';
+
 import { useProjectContext } from '@/core/providers/ProjectProvider';
 import { showToast } from '@/core/hooks/use-toast';
 import { useTerminal } from '@/features/terminal/use-terminal';
-import type { RenreKitSDK } from '@renre-kit/extension-sdk';
 
 export function useExtensionSDK(extensionName: string): RenreKitSDK {
   const { activeProject } = useProjectContext();

@@ -1,8 +1,10 @@
 import { spawn, type ChildProcess } from 'node:child_process';
+
 import type { JsonRpcRequest, JsonRpcResponse, JsonRpcNotification } from '../types/mcp.types.js';
-import { parseResponse } from './json-rpc.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 import { getLogger } from '../../../core/logger/index.js';
+
+import { parseResponse } from './json-rpc.js';
 
 export interface McpStdioProcess {
   process: ChildProcess;

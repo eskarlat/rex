@@ -1,6 +1,8 @@
-import * as pty from 'node-pty';
 import { homedir } from 'node:os';
 import path from 'node:path';
+
+import * as pty from 'node-pty';
+
 import { OutputBuffer } from './output-buffer.js';
 
 export interface TerminalSocket {
@@ -160,7 +162,7 @@ export class TerminalSessionManager {
   }
 
   destroyAll(): void {
-    for (const key of [...this.sessions.keys()]) {
+    for (const key of this.sessions.keys()) {
       this.destroySession(key);
     }
   }

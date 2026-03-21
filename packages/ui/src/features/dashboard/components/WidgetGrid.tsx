@@ -2,12 +2,14 @@ import { useState, useCallback, useMemo } from 'react';
 import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
+
+import { WidgetCard } from './WidgetCard';
+import { WidgetPicker } from './WidgetPicker';
+
 import { Button } from '@/components/ui/button';
 import { useDashboardLayout, useSaveDashboardLayout } from '@/core/hooks/use-dashboard-layout';
 import type { DashboardLayout, WidgetPlacement } from '@/core/hooks/use-dashboard-layout';
 import { useMarketplace } from '@/core/hooks/use-extensions';
-import { WidgetCard } from './WidgetCard';
-import { WidgetPicker } from './WidgetPicker';
 
 interface WidgetConstraintsMap {
   [compositeId: string]: {
@@ -22,7 +24,7 @@ export function WidgetGrid() {
   const saveMutation = useSaveDashboardLayout();
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const allWidgets = layout?.widgets ?? [];
+  const allWidgets = useMemo(() => layout?.widgets ?? [], [layout?.widgets]);
 
   const { constraintsMap, titleMap, activeExtensionNames } = useMemo(() => {
     const constraints: WidgetConstraintsMap = {};

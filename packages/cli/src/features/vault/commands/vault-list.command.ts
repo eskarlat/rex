@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { listEntries } from '../vault-manager.js';
 
 export function handleVaultList(): void {

@@ -1,7 +1,8 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ActiveLogLevels } from './components/ActiveLogLevels';
 import { ExtensionLogsTab } from './components/ExtensionLogsTab';
 import { ServerConsoleTab } from './components/ServerConsoleTab';
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function LogsPage() {
   return (

@@ -117,6 +117,42 @@ describe('registry-manager', () => {
       expect(errors).toEqual([]);
       expect(mockGit.clone).toHaveBeenCalledTimes(2);
     });
+
+    it('collects errors from failed syncs', async () => {
+      const simpleGitModule = await import('simple-git');
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
+      mockGit.clone.mockRejectedValueOnce(new Error('Network timeout'));
+      const configs = [
+        makeConfig('fail-reg', 'https://git.example.com/fail.git', 1),
+        makeConfig('ok-reg', 'https://git.example.com/ok.git', 2),
+      ];
+
+      const errors = await syncAll(configs);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toContain('fail-reg');
+      expect(errors[0]).toContain('Network timeout');
+    });
+
+    it('handles non-Error thrown during sync', async () => {
+      const simpleGitModule = await import('simple-git');
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
+      mockGit.clone.mockRejectedValueOnce('string error');
+      const configs = [makeConfig('fail-reg', 'https://git.example.com/fail.git', 1)];
+
+      const errors = await syncAll(configs);
+
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toContain('string error');
+    });
   });
 
   describe('list', () => {
@@ -540,6 +576,20 @@ describe('registry-manager', () => {
 
       expect(mockGit.clone).not.toHaveBeenCalled();
       expect(mockGit.pull).not.toHaveBeenCalled();
+    });
+
+    it('catches sync errors and continues without throwing', async () => {
+      const simpleGitModule = await import('simple-git');
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
+      mockGit.clone.mockRejectedValueOnce(new Error('Network error'));
+
+      const configs = [makeConfig('broken-reg', 'https://git.example.com/broken.git', 1)];
+
+      await expect(ensureSynced(configs)).resolves.toBeUndefined();
     });
   });
 

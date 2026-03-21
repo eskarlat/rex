@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { setEntry } from '../vault-manager.js';
 
 interface VaultSetOptions {

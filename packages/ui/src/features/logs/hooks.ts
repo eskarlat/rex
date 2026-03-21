@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+
 import { fetchApi } from '@/core/api/client';
 
 interface StreamControls<T> {

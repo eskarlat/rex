@@ -1,6 +1,7 @@
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
+
 import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
@@ -8,6 +9,7 @@ import cookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import websocket from '@fastify/websocket';
 import { EventBus } from '@renre-kit/cli/lib';
+
 import { publishEvent } from './core/utils/event-hub.js';
 import projectScope from './core/middleware/project-scope.js';
 import errorHandler from './core/middleware/error-handler.js';

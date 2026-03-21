@@ -1,4 +1,5 @@
 import { existsSync, accessSync, constants } from 'node:fs';
+
 import { GLOBAL_DIR } from '../../../core/paths/paths.js';
 import type { DiagnosticCheck } from '../types.js';
 

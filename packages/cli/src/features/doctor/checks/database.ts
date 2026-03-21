@@ -1,5 +1,7 @@
 import { existsSync } from 'node:fs';
+
 import BetterSqlite3 from 'better-sqlite3';
+
 import { DB_PATH } from '../../../core/paths/paths.js';
 import type { DiagnosticCheck } from '../types.js';
 

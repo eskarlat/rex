@@ -1,12 +1,17 @@
 import type { ReactNode } from 'react';
 import { ArrowDown, Circle, Pause, Play, Search, Trash2 } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-function ConnectionStatus({ connected }: { connected: boolean }) {
+interface ConnectionStatusProps {
+  connected: boolean;
+}
+
+function ConnectionStatus({ connected }: Readonly<ConnectionStatusProps>) {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -53,7 +58,7 @@ export function LogToolbar({
   connected,
   placeholder,
   extra,
-}: LogToolbarProps) {
+}: Readonly<LogToolbarProps>) {
   return (
     <div className="flex items-center gap-2">
       <div className="relative max-w-sm flex-1">

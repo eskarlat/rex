@@ -1,4 +1,5 @@
 import { Component, Suspense, lazy, useMemo, type ReactNode } from 'react';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useProjectContext } from '@/core/providers/ProjectProvider';
@@ -30,7 +31,12 @@ class UiAssetErrorBoundary extends Component<UiAssetErrorBoundaryProps, UiAssetE
   }
 }
 
-function UiAssetError({ label, extensionName }: { label: string; extensionName: string }) {
+interface UiAssetErrorProps {
+  label: string;
+  extensionName: string;
+}
+
+function UiAssetError({ label, extensionName }: Readonly<UiAssetErrorProps>) {
   return (
     <Alert variant="destructive">
       <AlertTitle>Failed to load {label}</AlertTitle>
@@ -41,7 +47,11 @@ function UiAssetError({ label, extensionName }: { label: string; extensionName: 
   );
 }
 
-function UiAssetSkeleton({ compact }: { compact?: boolean }) {
+interface UiAssetSkeletonProps {
+  compact?: boolean;
+}
+
+function UiAssetSkeleton({ compact }: Readonly<UiAssetSkeletonProps>) {
   if (compact) {
     return (
       <div className="space-y-2 p-2">
@@ -66,7 +76,7 @@ interface DynamicUiAssetProps {
   compact?: boolean;
 }
 
-export function DynamicUiAsset({ extensionName, url, label, compact }: DynamicUiAssetProps) {
+export function DynamicUiAsset({ extensionName, url, label, compact }: Readonly<DynamicUiAssetProps>) {
   const { activeProject } = useProjectContext();
   const sdk = useExtensionSDK(extensionName);
 

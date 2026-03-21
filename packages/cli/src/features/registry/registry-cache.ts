@@ -10,7 +10,7 @@ export function getLastFetched(registryDir: string): Date | null {
   }
   const content = fs.readFileSync(filePath, 'utf-8').trim();
   const date = new Date(content);
-  if (isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime())) {
     return null;
   }
   return date;

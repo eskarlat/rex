@@ -128,4 +128,94 @@ describe('Logger', () => {
     warnSpy.mockRestore();
     errorSpy.mockRestore();
   });
+
+  it('should handle readdirSync failure in cleanOldLogs gracefully', () => {
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const readdirSpy = vi.spyOn(fs, 'readdirSync').mockImplementation(() => {
+      throw new Error('EACCES: permission denied');
+    });
+
+    // Creating a new logger triggers cleanOldLogs
+    const badDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renre-kit-log-err-'));
+    expect(() => new Logger(badDir)).not.toThrow();
+
+    expect(stderrSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to read log directory for cleanup'),
+    );
+
+    stderrSpy.mockRestore();
+    readdirSpy.mockRestore();
+    fs.rmSync(badDir, { recursive: true, force: true });
+  });
+
+  it('should handle non-Error thrown by readdirSync in cleanOldLogs', () => {
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const readdirSpy = vi.spyOn(fs, 'readdirSync').mockImplementation(() => {
+      throw 'string error';
+    });
+
+    const badDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renre-kit-log-nonstr-'));
+    expect(() => new Logger(badDir)).not.toThrow();
+
+    expect(stderrSpy).toHaveBeenCalledWith(
+      expect.stringContaining('string error'),
+    );
+
+    stderrSpy.mockRestore();
+    readdirSpy.mockRestore();
+    fs.rmSync(badDir, { recursive: true, force: true });
+  });
+
+  it('should handle unlinkSync failure in cleanOldLogs gracefully', () => {
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const badDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renre-kit-log-unlink-'));
+
+    // Create an old log file
+    const oldDate = new Date();
+    oldDate.setDate(oldDate.getDate() - 10);
+    const oldFileName = `renre-kit-${oldDate.toISOString().slice(0, 10)}.log`;
+    fs.writeFileSync(path.join(badDir, oldFileName), 'old log');
+
+    // Mock unlinkSync to throw
+    const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {
+      throw new Error('EACCES: permission denied');
+    });
+
+    expect(() => new Logger(badDir)).not.toThrow();
+
+    expect(stderrSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to delete old log file'),
+    );
+
+    stderrSpy.mockRestore();
+    unlinkSpy.mockRestore();
+    fs.rmSync(badDir, { recursive: true, force: true });
+  });
+
+  it('should handle non-Error thrown by unlinkSync in cleanOldLogs', () => {
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const badDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renre-kit-log-unlink-nonstr-'));
+
+    // Create an old log file
+    const oldDate = new Date();
+    oldDate.setDate(oldDate.getDate() - 10);
+    const oldFileName = `renre-kit-${oldDate.toISOString().slice(0, 10)}.log`;
+    fs.writeFileSync(path.join(badDir, oldFileName), 'old log');
+
+    const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => {
+      throw 'string error';
+    });
+
+    expect(() => new Logger(badDir)).not.toThrow();
+
+    expect(stderrSpy).toHaveBeenCalledWith(
+      expect.stringContaining('string error'),
+    );
+
+    stderrSpy.mockRestore();
+    unlinkSpy.mockRestore();
+    fs.rmSync(badDir, { recursive: true, force: true });
+  });
 });

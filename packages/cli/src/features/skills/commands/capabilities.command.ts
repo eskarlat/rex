@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { aggregateSkills } from '../capabilities-aggregator.js';
 
 interface CapabilitiesOptions {

@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { fetchApi, onAuthFailure } from '@/core/api/client';
+
 import { PinPrompt } from './PinPrompt';
+
+import { fetchApi, onAuthFailure } from '@/core/api/client';
 
 interface AuthStatusResponse {
   lanMode: boolean;
@@ -13,7 +15,7 @@ interface AuthGateProps {
   children: ReactNode;
 }
 
-export function AuthGate({ children }: AuthGateProps) {
+export function AuthGate({ children }: Readonly<AuthGateProps>) {
   const [authState, setAuthState] = useState<AuthState>('loading');
 
   useEffect(() => {

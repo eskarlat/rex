@@ -8,6 +8,7 @@ import {
   markAllRead,
   deleteNotification,
 } from '@renre-kit/cli/lib';
+
 import { publishEvent } from '../../core/utils/event-hub.js';
 
 interface NotificationIdParams {
@@ -32,7 +33,7 @@ const notificationsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _o
 
     let parsedLimit: number | undefined;
     if (limit) {
-      parsedLimit = parseInt(limit, 10);
+      parsedLimit = Number.parseInt(limit, 10);
       if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
         return reply.code(400).send({ error: 'limit must be a positive integer' });
       }

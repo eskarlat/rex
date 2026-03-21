@@ -1,5 +1,9 @@
 import type { McpConfig } from '../types/extension.types.js';
 import type { ConnectionState, McpConnection } from '../types/mcp.types.js';
+import { getLogger } from '../../../core/logger/index.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
+import { interpolate } from '../../../shared/interpolation.js';
+
 import {
   spawnProcess,
   sendRequest as stdioSendRequest,
@@ -7,12 +11,10 @@ import {
   killProcess,
 } from './mcp-stdio-transport.js';
 import type { McpStdioProcess } from './mcp-stdio-transport.js';
-import { getLogger } from '../../../core/logger/index.js';
 import { connect, sendRequest as sseSendRequest, disconnect } from './mcp-sse-transport.js';
 import type { McpSseConnection } from './mcp-sse-transport.js';
 import { buildToolCallRequest, buildInitializeRequest, buildNotification } from './json-rpc.js';
-import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
-import { interpolate } from '../../../shared/interpolation.js';
+
 
 interface InternalConnection {
   metadata: McpConnection;

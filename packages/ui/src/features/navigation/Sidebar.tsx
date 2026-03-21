@@ -1,6 +1,8 @@
 import { NavLink, useMatch } from 'react-router-dom';
 import { Home, Clock, Settings, Puzzle, ScrollText } from 'lucide-react';
+
 import { ProjectSwitcher } from './ProjectSwitcher';
+
 import { useMarketplace } from '@/core/hooks/use-extensions';
 import {
   Sidebar,
@@ -33,7 +35,7 @@ interface NavMenuItemProps {
   label: string;
 }
 
-function NavMenuItem({ to, end, icon: Icon, label }: NavMenuItemProps) {
+function NavMenuItem({ to, end, icon: Icon, label }: Readonly<NavMenuItemProps>) {
   const match = useMatch({ path: to, end });
   return (
     <SidebarMenuItem>
@@ -47,7 +49,12 @@ function NavMenuItem({ to, end, icon: Icon, label }: NavMenuItemProps) {
   );
 }
 
-function ExtensionIcon({ name, hasIcon }: { name: string; hasIcon?: boolean }) {
+interface ExtensionIconProps {
+  name: string;
+  hasIcon?: boolean;
+}
+
+function ExtensionIcon({ name, hasIcon }: Readonly<ExtensionIconProps>) {
   if (!hasIcon) return <Puzzle className="h-4 w-4 shrink-0" />;
 
   return (
@@ -65,7 +72,7 @@ interface ExtensionMenuItemProps {
   hasIcon?: boolean;
 }
 
-function ExtensionMenuItem({ name, title, hasIcon }: ExtensionMenuItemProps) {
+function ExtensionMenuItem({ name, title, hasIcon }: Readonly<ExtensionMenuItemProps>) {
   const label = title ?? name;
   const match = useMatch({ path: `/extensions/${name}`, end: false });
   return (

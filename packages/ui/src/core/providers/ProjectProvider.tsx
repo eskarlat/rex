@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+
 import { setActiveProjectPath } from '@/core/api/client';
 
 const STORAGE_KEY = 'renre-kit-active-project';
@@ -28,7 +29,7 @@ function readStoredProject(): string | null {
 // Set the header synchronously on module load so the first API call includes it
 setActiveProjectPath(readStoredProject());
 
-export function ProjectProvider({ children }: ProjectProviderProps): React.ReactElement {
+export function ProjectProvider({ children }: Readonly<ProjectProviderProps>): React.ReactElement {
   const [projectPath, setProjectPath] = useState<string | null>(readStoredProject);
 
   const handleSetActiveProject = useCallback((path: string | null): void => {

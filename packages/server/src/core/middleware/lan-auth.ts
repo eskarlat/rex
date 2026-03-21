@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
+
 import { generatePin } from '../utils/pin-generator.js';
 
 const COOKIE_NAME = 'renrekit-pin';

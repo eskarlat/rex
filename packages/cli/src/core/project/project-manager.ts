@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import type { ProjectRecord, ProjectManifest, PluginsJson } from '../types/index.js';
 import { getDb } from '../database/database.js';
 import type { EventBus } from '../event-bus/event-bus.js';

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import pino from 'pino';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';

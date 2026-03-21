@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import type { ConnectionState } from '../types/index.js';
 
 interface McpExtensionInfo {

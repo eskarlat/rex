@@ -11,5 +11,6 @@ coverage/
 *.tgz
 *.tsbuildinfo
 .DS_Store
+.eslintcache
 test-results/
 .e2e-home

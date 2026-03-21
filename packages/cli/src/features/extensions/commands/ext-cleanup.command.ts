@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import * as clack from '@clack/prompts';
 import type Database from 'better-sqlite3';
+
 import { EXTENSIONS_DIR } from '../../../core/paths/paths.js';
 import { getActivated } from '../manager/extension-manager.js';
 import { removeDirSync } from '../../../shared/fs-helpers.js';

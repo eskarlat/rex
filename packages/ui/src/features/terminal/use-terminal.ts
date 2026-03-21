@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, createElement } from 'react';
 import type { ReactNode } from 'react';
-import { createElement } from 'react';
 
 /** Sender function type for writing data to the terminal */
 export type TerminalSender = (data: string) => void;

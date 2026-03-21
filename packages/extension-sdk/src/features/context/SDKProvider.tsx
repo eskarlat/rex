@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
+
 import type { RenreKitSDK } from '../../core/types';
 
 const SDKContext = createContext<RenreKitSDK | null>(null);
@@ -9,7 +10,7 @@ export interface SDKProviderProps {
   children: ReactNode;
 }
 
-export function SDKProvider({ sdk, children }: SDKProviderProps) {
+export function SDKProvider({ sdk, children }: Readonly<SDKProviderProps>) {
   return <SDKContext value={sdk}>{children}</SDKContext>;
 }
 

@@ -1,5 +1,6 @@
-import { cn } from '@/lib/utils';
 import type { ReactNode } from 'react';
+
+import { cn } from '@/lib/utils';
 
 export interface FormFieldProps {
   label: string;
@@ -8,7 +9,7 @@ export interface FormFieldProps {
   className?: string;
 }
 
-export function FormField({ label, error, children, className }: FormFieldProps) {
+export function FormField({ label, error, children, className }: Readonly<FormFieldProps>) {
   return (
     <div className={cn('space-y-2', className)}>
       <label className="text-sm font-medium leading-none">{label}</label>

@@ -19,7 +19,7 @@ export interface DataTableProps {
   className?: string;
 }
 
-export function DataTable({ columns, data, className }: DataTableProps) {
+export function DataTable({ columns, data, className }: Readonly<DataTableProps>) {
   return (
     <Table className={cn(className)}>
       <TableHeader>
@@ -30,22 +30,30 @@ export function DataTable({ columns, data, className }: DataTableProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.map((row, rowIndex) => (
-          // eslint-disable-next-line sonarjs/no-array-index-key -- table rows have no natural unique key
-          <TableRow key={rowIndex}>
-            {columns.map((col) => {
-              const cellValue = row[col.key];
-              let display = '';
-              if (cellValue != null) {
-                display =
-                  typeof cellValue === 'object'
-                    ? JSON.stringify(cellValue)
-                    : `${cellValue as string | number | boolean}`;
-              }
-              return <TableCell key={col.key}>{display}</TableCell>;
-            })}
-          </TableRow>
-        ))}
+        {data.map((row, rowIndex) => {
+          const rowKey = columns
+            .map((col) => {
+              const v = row[col.key];
+              if (v == null) return '';
+              return typeof v === 'object' ? JSON.stringify(v) : String(v as string | number | boolean);
+            })
+            .join('|');
+          return (
+            <TableRow key={`${rowIndex}-${rowKey}`}>
+              {columns.map((col) => {
+                const cellValue = row[col.key];
+                let display = '';
+                if (cellValue != null) {
+                  display =
+                    typeof cellValue === 'object'
+                      ? JSON.stringify(cellValue)
+                      : `${cellValue as string | number | boolean}`;
+                }
+                return <TableCell key={col.key}>{display}</TableCell>;
+              })}
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

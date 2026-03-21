@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import type { ConfigSchemaField, ConfigMapping } from '../../../core/types/index.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import { getActivated } from '../manager/extension-manager.js';

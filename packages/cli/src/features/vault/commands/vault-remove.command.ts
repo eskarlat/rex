@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { removeEntry } from '../vault-manager.js';
 import { getReferencingExtensions } from '../../config/config-manager.js';
 

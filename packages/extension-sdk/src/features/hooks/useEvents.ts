@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+
 import { useSDK } from '../context/SDKProvider';
 import type { SDKEventType, SDKEventPayload } from '../../core/types';
 
