@@ -19,10 +19,20 @@
   "mcp": {
     "transport": "stdio",
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+    "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+    "env": {
+      "PUPPETEER_LAUNCH_OPTIONS": "{{puppeteerLaunchOptions}}"
+    }
   },
   "config": {
-    "schema": {}
+    "schema": {
+      "puppeteerLaunchOptions": {
+        "type": "string",
+        "description": "JSON string of Puppeteer launch options. To use your system Chrome profile, add --user-data-dir to args, e.g.: { \"defaultViewport\": null, \"args\": [\"--window-size=1280,900\", \"--user-data-dir=/home/YOU/.config/google-chrome\"] }",
+        "secret": false,
+        "default": "{ \"defaultViewport\": null, \"args\": [\"--window-size=1280,900\"] }"
+      }
+    }
   },
   "ui": {
     "panels": [

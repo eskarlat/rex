@@ -35,7 +35,7 @@ export default function BrowserWidget({ sdk, extensionName }: Partial<PanelProps
   const [installing, setInstalling] = useState(false);
   const loadingRef = useRef(false);
 
-  // Check Chrome availability on mount
+  // Check Chrome availability and browser state on mount (non-destructive — no navigation)
   useEffect(() => {
     if (!sdk) {
       setStatus('idle');
@@ -44,19 +44,26 @@ export default function BrowserWidget({ sdk, extensionName }: Partial<PanelProps
     let cancelled = false;
     void (async () => {
       try {
-        const result = await sdk.exec.run(`${extName}:puppeteer_navigate`, {
-          url: 'about:blank',
+        const result = await sdk.exec.run(`${extName}:puppeteer_evaluate`, {
+          script: 'JSON.stringify({ url: document.URL, title: document.title })',
         });
         if (cancelled) return;
         const { isError, text } = extractMcpText(result.output);
         if (isError && isChromeNotInstalled(text)) {
           setStatus('no-chrome');
         } else if (isError) {
-          setStatus('error');
+          // Chrome is present but browser is not running
+          setStatus('idle');
         } else {
+          // Browser is already running — show current page info
           setStatus('running');
-          setPageTitle('New Tab');
-          setCurrentUrl('about:blank');
+          try {
+            const info = JSON.parse(text) as { url?: string; title?: string };
+            setPageTitle(info.title || 'New Tab');
+            setCurrentUrl(info.url ?? null);
+          } catch {
+            setPageTitle('New Tab');
+          }
         }
       } catch (err) {
         if (cancelled) return;

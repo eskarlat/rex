@@ -17,7 +17,7 @@ function status(_context) {
       "renre-devtools v1.0.0",
       "Transport: stdio",
       "Command: npx -y @modelcontextprotocol/server-puppeteer",
-      "Mode: headed (visible browser window)",
+      "Mode: headed (visible browser window, configurable via puppeteerLaunchOptions)",
       `Tools: ${TOOLS.join(", ")}`,
       `Resources: ${RESOURCES.join(", ")}`,
       "Status: ready"

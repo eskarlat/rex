@@ -28,15 +28,24 @@ const CRASH_ERROR = Object.assign(new Error('MCP process exited unexpectedly wit
   body: { error: 'MCP process exited unexpectedly with code 1\nfatal: browser OOM', code: 'MCP_PROCESS_CRASHED' },
 });
 
-const CHROME_CHECK_RESPONSE = JSON.stringify({
-  content: [{ type: 'text', text: 'ping' }],
+// Mount check succeeds → browser is already running (evaluate returns page info)
+const CHROME_CHECK_RUNNING_RESPONSE = JSON.stringify({
+  content: [
+    { type: 'text', text: JSON.stringify({ url: 'about:blank', title: '' }) },
+  ],
+});
+
+// Mount check returns error → Chrome installed but no browser running
+const CHROME_CHECK_IDLE_RESPONSE = JSON.stringify({
+  content: [{ type: 'text', text: 'No active page to evaluate' }],
+  isError: true,
 });
 
 function createMockSdk(overrides: Record<string, unknown> = {}) {
   return {
     exec: {
-      // First call is the Chrome availability check on mount
-      run: vi.fn().mockResolvedValueOnce({ output: CHROME_CHECK_RESPONSE, exitCode: 0 }),
+      // First call is the Chrome/browser state check on mount — default: idle (no browser running)
+      run: vi.fn().mockResolvedValueOnce({ output: CHROME_CHECK_IDLE_RESPONSE, exitCode: 0 }),
     },
     storage: {
       get: vi.fn().mockResolvedValue(null),

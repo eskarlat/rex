@@ -11389,14 +11389,23 @@ function BrowserDevtoolsPanel({ sdk, extensionName }) {
     void (async () => {
       try {
         const result = await sdk.exec.run(`${extName}:puppeteer_evaluate`, {
-          script: '"ping"'
+          script: "JSON.stringify({ url: document.URL, title: document.title })"
         });
         if (cancelled) return;
         const { isError, text } = extractMcpText(result.output);
         if (isError && isChromeNotInstalled(text)) {
           setChromeInstalled(false);
+        } else if (isError) {
+          setChromeInstalled(true);
         } else {
           setChromeInstalled(true);
+          setBrowserRunning(true);
+          try {
+            const info = JSON.parse(text);
+            setCurrentUrl(info.url ?? null);
+            setPageTitle(info.title || null);
+          } catch {
+          }
         }
       } catch (err) {
         if (cancelled) return;

@@ -48,21 +48,33 @@ export default function BrowserDevtoolsPanel({ sdk, extensionName }: Partial<Pan
   const [crashed, setCrashed] = useState(false);
   const loadingRef = useRef(false);
 
-  // Check Chrome on mount — use a lightweight evaluate to test connectivity
+  // Check Chrome & browser state on mount — detect if browser is already running
   useEffect(() => {
     if (!sdk) return;
     let cancelled = false;
     void (async () => {
       try {
         const result = await sdk.exec.run(`${extName}:puppeteer_evaluate`, {
-          script: '"ping"',
+          script: 'JSON.stringify({ url: document.URL, title: document.title })',
         });
         if (cancelled) return;
         const { isError, text } = extractMcpText(result.output);
         if (isError && isChromeNotInstalled(text)) {
           setChromeInstalled(false);
-        } else {
+        } else if (isError) {
+          // Chrome is installed but browser is not running (evaluate failed on no page)
           setChromeInstalled(true);
+        } else {
+          // Browser is already running — evaluate succeeded
+          setChromeInstalled(true);
+          setBrowserRunning(true);
+          try {
+            const info = JSON.parse(text) as { url?: string; title?: string };
+            setCurrentUrl(info.url ?? null);
+            setPageTitle(info.title || null);
+          } catch {
+            // Page info parse failed — browser is running but page info unavailable
+          }
         }
       } catch (err) {
         if (cancelled) return;
