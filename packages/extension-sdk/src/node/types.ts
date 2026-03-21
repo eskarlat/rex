@@ -1,14 +1,11 @@
-export interface SdkLogger {
-  debug(message: string, data?: unknown): void;
-  info(message: string, data?: unknown): void;
-  warn(message: string, data?: unknown): void;
-  error(message: string, data?: unknown): void;
-}
+import type { ExtensionLogger, PlatformInfo } from '@renre-kit/shared';
+
+export type { ExtensionLogger, OSType, ArchType, PlatformInfo } from '@renre-kit/shared';
 
 export interface SdkMethods {
   deployAgentAssets: () => void;
   cleanupAgentAssets: () => void;
-  logger: SdkLogger;
+  logger: ExtensionLogger;
   notify: (options: { title: string; message?: string; variant?: string; actionUrl?: string }) => void;
 }
 
@@ -16,6 +13,7 @@ export interface HookContext {
   projectDir: string;
   agentDir: string;
   extensionDir: string;
+  platform?: PlatformInfo;
   sdk: SdkMethods;
 }
 

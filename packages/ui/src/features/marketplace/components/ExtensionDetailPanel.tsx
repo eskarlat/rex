@@ -3,6 +3,7 @@ import { ExternalLink, Puzzle } from 'lucide-react';
 import { ExtensionActions, UpdateBadge } from './ExtensionActions';
 
 import { Badge } from '@/components/ui/badge';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -91,12 +92,12 @@ function DocContent({ data, isLoading, testIdPrefix }: Readonly<DocContentProps>
   }
   if (data == null) return null;
   return (
-    <pre
-      data-testid={`${testIdPrefix}-content`}
-      className="max-h-[400px] overflow-auto whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-sm text-muted-foreground"
+    <MarkdownRenderer
+      testId={`${testIdPrefix}-content`}
+      className="max-h-[400px] overflow-auto rounded-md p-3"
     >
       {data}
-    </pre>
+    </MarkdownRenderer>
   );
 }
 
