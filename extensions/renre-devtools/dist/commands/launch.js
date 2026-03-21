@@ -1,8 +1,8 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
 // src/commands/launch.ts
-import puppeteer from "puppeteer";
 import { join as join2 } from "node:path";
+import puppeteer from "puppeteer";
 
 // src/shared/state.ts
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
@@ -48,7 +48,12 @@ async function launch(context) {
     };
   }
   const headless = context.config.headless === true || context.args.headless === true;
-  const port = typeof context.args.port === "number" ? context.args.port : typeof context.config.port === "number" ? context.config.port : 9222;
+  let port = 9222;
+  if (typeof context.args.port === "number") {
+    port = context.args.port;
+  } else if (typeof context.config.port === "number") {
+    port = context.config.port;
+  }
   const browser = await puppeteer.launch({
     headless,
     args: [
@@ -76,15 +81,17 @@ async function launch(context) {
   if (page) {
     await setupPageMonitoring(page, networkLogPath, consoleLogPath);
   }
-  browser.on("targetcreated", async (target) => {
-    if (target.type() === "page") {
-      const newPage = await target.page();
-      if (newPage) {
-        await setupPageMonitoring(newPage, networkLogPath, consoleLogPath);
-      }
+  browser.on("targetcreated", (target) => {
+    const targetType = target.type();
+    if (targetType === "page") {
+      void target.page().then((newPage) => {
+        if (newPage) {
+          void setupPageMonitoring(newPage, networkLogPath, consoleLogPath);
+        }
+      });
     }
   });
-  browser.disconnect();
+  void browser.disconnect();
   return {
     output: [
       "## Browser Launched",
@@ -101,8 +108,8 @@ async function launch(context) {
 }
 async function setupPageMonitoring(page, networkLogPath, consoleLogPath) {
   const { appendFileSync, existsSync: existsSync2, mkdirSync: mkdirSync2 } = await import("node:fs");
-  const { dirname } = await import("node:path");
-  const dir = dirname(networkLogPath);
+  const nodePath = await import("node:path");
+  const dir = nodePath.dirname(networkLogPath);
   if (!existsSync2(dir)) {
     mkdirSync2(dir, { recursive: true });
   }

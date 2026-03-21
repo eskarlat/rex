@@ -27,6 +27,6 @@ export default async function tab(context: ExecutionContext): Promise<CommandRes
       exitCode: 0,
     };
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }

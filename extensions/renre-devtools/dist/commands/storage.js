@@ -47,7 +47,7 @@ async function withBrowser(projectPath, fn) {
     const page = await getActivePage(browser);
     return await fn(browser, page);
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }
 

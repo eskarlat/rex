@@ -50,7 +50,7 @@ export default async function styles(context: ExecutionContext): Promise<Command
 
         if (showAll) {
           for (let i = 0; i < cs.length; i++) {
-            const prop = cs[i]!;
+            const prop = cs[i];
             result.push({ property: prop, value: cs.getPropertyValue(prop) });
           }
         } else {

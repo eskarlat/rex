@@ -2,6 +2,28 @@ import { withBrowser } from '../shared/connection.js';
 import { markdownTable, truncate } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
+function queryElements(sel: string): Array<{
+  index: number;
+  tag: string;
+  id: string;
+  classes: string;
+  text: string;
+  attrs: string;
+}> {
+  const els = document.querySelectorAll(sel);
+  return Array.from(els).map((el, i) => ({
+    index: i,
+    tag: el.tagName.toLowerCase(),
+    id: el.id || '',
+    classes: Array.from(el.classList).join(' '),
+    text: (el.textContent?.trim() ?? '').slice(0, 80),
+    attrs: Array.from(el.attributes)
+      .filter((a) => !['id', 'class'].includes(a.name))
+      .map((a) => `${a.name}="${a.value}"`)
+      .join(', '),
+  }));
+}
+
 export default async function select(context: ExecutionContext): Promise<CommandResult> {
   const selector = context.args.selector;
   if (typeof selector !== 'string' || selector.length === 0) {
@@ -9,20 +31,7 @@ export default async function select(context: ExecutionContext): Promise<Command
   }
 
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const elements = await page.evaluate((sel) => {
-      const els = document.querySelectorAll(sel);
-      return Array.from(els).map((el, i) => ({
-        index: i,
-        tag: el.tagName.toLowerCase(),
-        id: el.id || '',
-        classes: Array.from(el.classList).join(' '),
-        text: (el.textContent?.trim() ?? '').slice(0, 80),
-        attrs: Array.from(el.attributes)
-          .filter((a) => !['id', 'class'].includes(a.name))
-          .map((a) => `${a.name}="${a.value}"`)
-          .join(', '),
-      }));
-    }, selector);
+    const elements = await page.evaluate(queryElements, selector);
 
     if (elements.length === 0) {
       return {

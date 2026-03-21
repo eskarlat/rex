@@ -47,7 +47,7 @@ async function withBrowser(projectPath, fn) {
     const page = await getActivePage(browser);
     return await fn(browser, page);
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }
 
@@ -67,23 +67,24 @@ function truncate(text, maxLength) {
 }
 
 // src/commands/select.ts
+function queryElements(sel) {
+  const els = document.querySelectorAll(sel);
+  return Array.from(els).map((el, i) => ({
+    index: i,
+    tag: el.tagName.toLowerCase(),
+    id: el.id || "",
+    classes: Array.from(el.classList).join(" "),
+    text: (el.textContent?.trim() ?? "").slice(0, 80),
+    attrs: Array.from(el.attributes).filter((a) => !["id", "class"].includes(a.name)).map((a) => `${a.name}="${a.value}"`).join(", ")
+  }));
+}
 async function select(context) {
   const selector = context.args.selector;
   if (typeof selector !== "string" || selector.length === 0) {
     return { output: "Error: --selector is required", exitCode: 1 };
   }
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const elements = await page.evaluate((sel) => {
-      const els = document.querySelectorAll(sel);
-      return Array.from(els).map((el, i) => ({
-        index: i,
-        tag: el.tagName.toLowerCase(),
-        id: el.id || "",
-        classes: Array.from(el.classList).join(" "),
-        text: (el.textContent?.trim() ?? "").slice(0, 80),
-        attrs: Array.from(el.attributes).filter((a) => !["id", "class"].includes(a.name)).map((a) => `${a.name}="${a.value}"`).join(", ")
-      }));
-    }, selector);
+    const elements = await page.evaluate(queryElements, selector);
     if (elements.length === 0) {
       return {
         output: `No elements found for selector: \`${selector}\``,

@@ -12,7 +12,7 @@ export default async function tabs(context: ExecutionContext): Promise<CommandRe
     const rows: string[][] = [];
 
     for (let i = 0; i < pages.length; i++) {
-      const page = pages[i]!;
+      const page = pages[i];
       const title = await page.title();
       rows.push([String(i), truncate(title, 40), truncate(page.url(), 60)]);
     }
@@ -24,6 +24,6 @@ export default async function tabs(context: ExecutionContext): Promise<CommandRe
       exitCode: 0,
     };
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }

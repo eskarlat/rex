@@ -67,7 +67,7 @@ async function tabs(context) {
       exitCode: 0
     };
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }
 export {

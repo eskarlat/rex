@@ -50,7 +50,7 @@ async function withBrowser(projectPath, fn) {
     const page = await getActivePage(browser);
     return await fn(browser, page);
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }
 
@@ -72,7 +72,14 @@ async function evalCommand(context) {
   }
   return withBrowser(context.projectPath, async (_browser, page) => {
     const result = await page.evaluate(code);
-    const formatted = typeof result === "string" ? result : typeof result === "undefined" ? "undefined" : JSON.stringify(result, null, 2);
+    let formatted;
+    if (typeof result === "string") {
+      formatted = result;
+    } else if (result === void 0) {
+      formatted = "undefined";
+    } else {
+      formatted = JSON.stringify(result, null, 2);
+    }
     return {
       output: ["## Eval Result", "", markdownCodeBlock(formatted, "json")].join("\n"),
       exitCode: 0

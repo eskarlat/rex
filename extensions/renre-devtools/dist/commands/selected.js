@@ -162,7 +162,7 @@ async function selected(context) {
     );
     return { output: lines.join("\n"), exitCode: 0 };
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }
 export {

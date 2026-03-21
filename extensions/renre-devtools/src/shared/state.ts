@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
+
 import type { BrowserState } from './types.js';
 
 function getStorageDir(projectPath: string): string {

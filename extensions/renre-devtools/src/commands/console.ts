@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+
 import { ensureBrowserRunning } from '../shared/state.js';
 import { markdownTable, truncate, formatTimestamp } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult, ConsoleEntry } from '../shared/types.js';

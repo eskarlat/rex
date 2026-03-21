@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+
 import { withBrowser } from '../shared/connection.js';
 import { markdownCodeBlock } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
@@ -17,12 +18,14 @@ export default async function evalCommand(context: ExecutionContext): Promise<Co
   return withBrowser(context.projectPath, async (_browser, page) => {
     const result = await page.evaluate(code);
 
-    const formatted =
-      typeof result === 'string'
-        ? result
-        : typeof result === 'undefined'
-          ? 'undefined'
-          : JSON.stringify(result, null, 2);
+    let formatted: string;
+    if (typeof result === 'string') {
+      formatted = result;
+    } else if (result === undefined) {
+      formatted = 'undefined';
+    } else {
+      formatted = JSON.stringify(result, null, 2);
+    }
 
     return {
       output: ['## Eval Result', '', markdownCodeBlock(formatted, 'json')].join('\n'),

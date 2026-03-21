@@ -1,5 +1,9 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
+// src/commands/close.ts
+import { existsSync as existsSync2, unlinkSync as unlinkSync2 } from "node:fs";
+import { join as join2 } from "node:path";
+
 // src/shared/state.ts
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
@@ -42,8 +46,6 @@ async function connectBrowser(projectPath) {
 }
 
 // src/commands/close.ts
-import { existsSync as existsSync2, unlinkSync as unlinkSync2 } from "node:fs";
-import { join as join2 } from "node:path";
 async function close(context) {
   const state = readState(context.projectPath);
   if (!state) {

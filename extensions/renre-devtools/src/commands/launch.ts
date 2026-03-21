@@ -1,5 +1,7 @@
-import puppeteer from 'puppeteer';
 import { join } from 'node:path';
+
+import puppeteer from 'puppeteer';
+
 import { readState, writeState, getLogDir } from '../shared/state.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
@@ -21,12 +23,12 @@ export default async function launch(context: ExecutionContext): Promise<Command
   }
 
   const headless = context.config.headless === true || context.args.headless === true;
-  const port =
-    typeof context.args.port === 'number'
-      ? context.args.port
-      : typeof context.config.port === 'number'
-        ? context.config.port
-        : 9222;
+  let port = 9222;
+  if (typeof context.args.port === 'number') {
+    port = context.args.port;
+  } else if (typeof context.config.port === 'number') {
+    port = context.config.port;
+  }
 
   const browser = await puppeteer.launch({
     headless,
@@ -62,17 +64,19 @@ export default async function launch(context: ExecutionContext): Promise<Command
   }
 
   // Monitor new pages (tabs) for network/console too
-  browser.on('targetcreated', async (target) => {
-    if (target.type() === 'page') {
-      const newPage = await target.page();
-      if (newPage) {
-        await setupPageMonitoring(newPage, networkLogPath, consoleLogPath);
-      }
+  browser.on('targetcreated', (target) => {
+    const targetType: string = target.type();
+    if (targetType === 'page') {
+      void target.page().then((newPage) => {
+        if (newPage) {
+          void setupPageMonitoring(newPage, networkLogPath, consoleLogPath);
+        }
+      });
     }
   });
 
   // Disconnect (don't close) so the browser stays alive
-  browser.disconnect();
+  void browser.disconnect();
 
   return {
     output: [
@@ -95,9 +99,9 @@ async function setupPageMonitoring(
   consoleLogPath: string
 ): Promise<void> {
   const { appendFileSync, existsSync, mkdirSync } = await import('node:fs');
-  const { dirname } = await import('node:path');
+  const nodePath = await import('node:path');
 
-  const dir = dirname(networkLogPath);
+  const dir = nodePath.dirname(networkLogPath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }

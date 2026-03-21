@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer';
 import type { Browser, Page } from 'puppeteer';
+
 import { ensureBrowserRunning } from './state.js';
 
 export async function connectBrowser(projectPath: string): Promise<Browser> {
@@ -34,6 +35,6 @@ export async function withBrowser<T>(
     const page = await getActivePage(browser);
     return await fn(browser, page);
   } finally {
-    browser.disconnect();
+    void browser.disconnect();
   }
 }
