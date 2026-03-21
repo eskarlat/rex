@@ -78,7 +78,11 @@ const eventsWebsocket: FastifyPluginCallback = (fastify: FastifyInstance, _opts,
       if (state.patterns.length === 0) return;
       const matched = state.patterns.some((p) => matchesPattern(p, event.type));
       if (matched) {
-        socket.send(JSON.stringify({ action: 'event', event }));
+        try {
+          socket.send(JSON.stringify({ action: 'event', event }));
+        } catch {
+          // Socket may be closed; cleanup will happen via onclose
+        }
       }
     }
 

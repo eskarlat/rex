@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-const RECONNECT_DELAY_MS = 3000;
+const INITIAL_RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_DELAY_MS = 30000;
+const MAX_RECONNECT_ATTEMPTS = 10;
 
 interface EventMessage {
   action: string;
@@ -27,9 +29,11 @@ export function useNotificationSocket(): void {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unmounted = useRef(false);
+  const reconnectAttempts = useRef(0);
 
   useEffect(() => {
     unmounted.current = false;
+    reconnectAttempts.current = 0;
 
     function connect(): void {
       if (unmounted.current) return;
@@ -38,6 +42,7 @@ export function useNotificationSocket(): void {
       const ws = new WebSocket(`${protocol}//${window.location.host}/api/events`);
 
       ws.onopen = () => {
+        reconnectAttempts.current = 0;
         ws.send(JSON.stringify({ action: 'subscribe', patterns: ['system:notification:*'] }));
       };
 
@@ -56,8 +61,13 @@ export function useNotificationSocket(): void {
 
       ws.onclose = () => {
         wsRef.current = null;
-        if (!unmounted.current) {
-          reconnectTimer.current = setTimeout(connect, RECONNECT_DELAY_MS);
+        if (!unmounted.current && reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+          const delay = Math.min(
+            INITIAL_RECONNECT_DELAY_MS * Math.pow(2, reconnectAttempts.current),
+            MAX_RECONNECT_DELAY_MS,
+          );
+          reconnectAttempts.current += 1;
+          reconnectTimer.current = setTimeout(connect, delay);
         }
       };
 

@@ -59,6 +59,36 @@ describe('notifications routes', () => {
         limit: 10,
       });
     });
+
+    it('returns 400 for non-numeric limit', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/notifications?limit=abc',
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('returns 400 for negative limit', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/notifications?limit=-5',
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('caps limit at 1000', async () => {
+      mockListNotifications.mockReturnValue([]);
+
+      await app.inject({
+        method: 'GET',
+        url: '/api/notifications?limit=9999',
+      });
+
+      expect(mockListNotifications).toHaveBeenCalledWith(mockDb, {
+        unreadOnly: false,
+        limit: 1000,
+      });
+    });
   });
 
   describe('GET /api/notifications/count', () => {
@@ -94,6 +124,22 @@ describe('notifications routes', () => {
       });
 
       expect(response.statusCode).toBe(400);
+    });
+
+    it('returns 400 for invalid variant', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/notifications',
+        payload: {
+          extension_name: 'ext:test',
+          title: 'Hello',
+          message: 'World',
+          variant: 'invalid',
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toContain('Invalid variant');
     });
   });
 

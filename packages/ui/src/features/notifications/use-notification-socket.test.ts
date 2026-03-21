@@ -140,7 +140,7 @@ describe('useNotificationSocket', () => {
     expect(mockWs.close).toHaveBeenCalled();
   });
 
-  it('reconnects after close with backoff', () => {
+  it('reconnects after close with exponential backoff', () => {
     vi.useFakeTimers();
     const { wrapper } = createWrapper();
     renderHook(() => useNotificationSocket(), { wrapper });
@@ -149,17 +149,33 @@ describe('useNotificationSocket', () => {
       mockWs.onopen?.();
     });
 
-    // Simulate unexpected close
+    // First close — reconnect after 3s (initial delay)
     act(() => {
       mockWs.onclose?.();
     });
 
-    // Should reconnect after delay
     act(() => {
       vi.advanceTimersByTime(3000);
     });
 
     expect(WebSocket).toHaveBeenCalledTimes(2);
+
+    // Second close — reconnect after 6s (doubled)
+    const ws2 = mockWs;
+    act(() => {
+      ws2.onclose?.();
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(5999);
+    });
+    expect(WebSocket).toHaveBeenCalledTimes(2); // Not yet
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(WebSocket).toHaveBeenCalledTimes(3);
+
     vi.useRealTimers();
   });
 });
