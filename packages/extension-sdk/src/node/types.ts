@@ -28,3 +28,19 @@ export interface BuildPanelOptions {
   outdir: string;
   minify?: boolean;
 }
+
+export interface BuildExtensionEntry {
+  in: string;
+  out: string;
+}
+
+export interface BuildExtensionOptions {
+  /** Node.js entry points to bundle (hooks, commands, MCP server) */
+  entryPoints: BuildExtensionEntry[];
+  /** Output directory (typically 'dist') */
+  outdir: string;
+  /** Packages to keep as external imports (not bundled) */
+  external?: string[];
+  /** Enable minification */
+  minify?: boolean;
+}

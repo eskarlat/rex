@@ -26,6 +26,7 @@ describe('scaffoldExtension', () => {
       expect(await fse.pathExists(path.join(extDir, 'src', 'index.ts'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'commands', 'hello.ts'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'tsconfig.json'))).toBe(true);
+      expect(await fse.pathExists(path.join(extDir, 'build.js'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'SKILL.md'))).toBe(true);
     });
 
@@ -99,6 +100,7 @@ describe('scaffoldExtension', () => {
       expect(await fse.pathExists(path.join(extDir, 'manifest.json'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'src', 'server.ts'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'tsconfig.json'))).toBe(true);
+      expect(await fse.pathExists(path.join(extDir, 'build.js'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'SKILL.md'))).toBe(true);
     });
 

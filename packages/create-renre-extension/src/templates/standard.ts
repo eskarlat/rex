@@ -7,10 +7,14 @@ export function getStandardPackageJson(name: string): string {
     main: './dist/index.js',
     types: './dist/index.d.ts',
     scripts: {
-      build: 'tsc',
+      build: 'node build.js',
       dev: 'tsc --watch',
     },
+    dependencies: {
+      '@renre-kit/extension-sdk': '>=0.0.1',
+    },
     devDependencies: {
+      esbuild: '^0.21.0',
       typescript: '^5.7.0',
     },
   };
@@ -68,6 +72,19 @@ export default function hello(_context: ExecutionContext): { output: string; exi
 }
 
 export { getTsconfig as getStandardTsconfig } from './shared.js';
+
+export function getStandardBuildJs(): string {
+  return `import { buildExtension } from '@renre-kit/extension-sdk/node';
+
+await buildExtension({
+  entryPoints: [
+    { in: 'src/index.ts', out: 'index' },
+    { in: 'src/commands/hello.ts', out: 'commands/hello' },
+  ],
+  outdir: 'dist',
+});
+`;
+}
 
 export function getStandardSkillMd(name: string): string {
   return `---

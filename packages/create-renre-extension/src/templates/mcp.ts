@@ -7,10 +7,14 @@ export function getMcpPackageJson(name: string): string {
     main: './dist/server.js',
     types: './dist/server.d.ts',
     scripts: {
-      build: 'tsc',
+      build: 'node build.js',
       dev: 'tsc --watch',
     },
+    dependencies: {
+      '@renre-kit/extension-sdk': '>=0.0.1',
+    },
     devDependencies: {
+      esbuild: '^0.21.0',
       typescript: '^5.7.0',
     },
   };
@@ -92,6 +96,18 @@ rl.on('line', (line: string) => {
 }
 
 export { getTsconfig as getMcpTsconfig } from './shared.js';
+
+export function getMcpBuildJs(): string {
+  return `import { buildExtension } from '@renre-kit/extension-sdk/node';
+
+await buildExtension({
+  entryPoints: [
+    { in: 'src/server.ts', out: 'server' },
+  ],
+  outdir: 'dist',
+});
+`;
+}
 
 export function getMcpSkillMd(name: string): string {
   return `---
