@@ -35,7 +35,7 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -78,9 +78,7 @@ describe('GeneralPage', () => {
 
   it('renders Save Settings button', () => {
     renderWithProviders(<GeneralPage />);
-    expect(
-      screen.getByRole('button', { name: 'Save Settings' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save Settings' })).toBeInTheDocument();
   });
 
   it('shows loading skeleton when isLoading', () => {
@@ -89,18 +87,14 @@ describe('GeneralPage', () => {
       isLoading: true,
     };
     renderWithProviders(<GeneralPage />);
-    expect(
-      screen.queryByRole('button', { name: 'Save Settings' })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save Settings' })).not.toBeInTheDocument();
   });
 
   it('form submit saves logLevels without theme', async () => {
     const user = userEvent.setup();
     renderWithProviders(<GeneralPage />);
 
-    await user.click(
-      screen.getByRole('button', { name: 'Save Settings' })
-    );
+    await user.click(screen.getByRole('button', { name: 'Save Settings' }));
 
     expect(mockMutate).toHaveBeenCalledWith({
       registries: [],
@@ -152,8 +146,6 @@ describe('GeneralPage', () => {
   it('shows "Saving..." when isPending', () => {
     mockIsPending = true;
     renderWithProviders(<GeneralPage />);
-    expect(
-      screen.getByRole('button', { name: 'Saving...' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Saving...' })).toBeInTheDocument();
   });
 });

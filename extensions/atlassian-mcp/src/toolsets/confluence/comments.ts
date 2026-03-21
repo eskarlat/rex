@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createConfluenceCommentsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -53,7 +53,7 @@ export function createConfluenceCommentsToolset(client: ConfluenceClient): Tools
             (args['limit'] as number | undefined) ?? 25,
             (args['start'] as number | undefined) ?? 0,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -61,7 +61,7 @@ export function createConfluenceCommentsToolset(client: ConfluenceClient): Tools
       confluence_add_comment: async (args) => {
         try {
           const data = await client.addComment(args['pageId'] as string, args['body'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -73,7 +73,7 @@ export function createConfluenceCommentsToolset(client: ConfluenceClient): Tools
             args['parentCommentId'] as string,
             args['body'] as string,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

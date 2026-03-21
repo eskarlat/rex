@@ -18,28 +18,16 @@ export default function StatusWidget({ sdk, extensionName }: Partial<PanelProps>
   }
 
   return (
-    <div style={{ padding: '8px' }}>
-      <p style={{ fontSize: '14px', fontWeight: 500, marginBottom: '8px' }}>
-        {extName}
-      </p>
+    <div className="p-2">
+      <p className="mb-2 text-sm font-medium">{extName}</p>
       <button
         onClick={handleQuickGreet}
         disabled={loading || !sdk}
-        style={{
-          padding: '4px 12px',
-          borderRadius: '4px',
-          border: '1px solid #ccc',
-          cursor: loading ? 'wait' : 'pointer',
-          fontSize: '13px',
-        }}
+        className="inline-flex h-8 items-center rounded border border-border px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? 'Greeting...' : 'Quick Greet'}
       </button>
-      {output && (
-        <p style={{ fontSize: '13px', marginTop: '8px', color: '#666' }}>
-          {output}
-        </p>
-      )}
+      {output && <p className="mt-2 text-xs text-muted-foreground">{output}</p>}
     </div>
   );
 }

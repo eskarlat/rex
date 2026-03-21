@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createCommentsToolset(client) {
     return {
         name: 'jira_comments',
@@ -43,7 +43,7 @@ export function createCommentsToolset(client) {
                         ],
                     };
                     const data = await client.addComment(args['issueKey'], adfBody);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -62,7 +62,7 @@ export function createCommentsToolset(client) {
                         ],
                     };
                     const data = await client.editComment(args['issueKey'], args['commentId'], adfBody);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

@@ -10,7 +10,8 @@ export default function AnalyticsPanel({ sdk, extensionName }: Partial<PanelProp
   useEffect(() => {
     if (!sdk) return;
     setLoading(true);
-    sdk.scheduler.list()
+    sdk.scheduler
+      .list()
       .then((all) => setTasks(all.filter((t) => t.name === extName)))
       .catch(() => setTasks([]))
       .finally(() => setLoading(false));
@@ -31,13 +32,12 @@ export default function AnalyticsPanel({ sdk, extensionName }: Partial<PanelProp
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel
-        title="Scheduled Tasks"
-        description={`Active scheduled tasks for ${extName}.`}
-      >
+      <Panel title="Scheduled Tasks" description={`Active scheduled tasks for ${extName}.`}>
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => { handleRefresh().catch(() => {}); }}
+            onClick={() => {
+              handleRefresh().catch(() => {});
+            }}
             disabled={loading}
             className="inline-flex h-9 w-fit items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
           >
@@ -66,11 +66,10 @@ export default function AnalyticsPanel({ sdk, extensionName }: Partial<PanelProp
         </div>
       </Panel>
 
-      <Panel
-        title="Debug Info"
-        description="Raw extension state for debugging."
-      >
-        <CodeBlock code={JSON.stringify({ extensionName: extName, taskCount: tasks.length, tasks }, null, 2)} />
+      <Panel title="Debug Info" description="Raw extension state for debugging.">
+        <CodeBlock
+          code={JSON.stringify({ extensionName: extName, taskCount: tasks.length, tasks }, null, 2)}
+        />
       </Panel>
     </div>
   );

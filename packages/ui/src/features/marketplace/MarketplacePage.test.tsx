@@ -34,6 +34,8 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   useDeactivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveExtension: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateExtension: () => ({ mutate: vi.fn(), isPending: false }),
+  useExtensionChangelog: () => ({ data: null, isLoading: false }),
+  useExtensionReadme: () => ({ data: null, isLoading: false }),
 }));
 
 function renderWithProviders(ui: React.ReactElement) {
@@ -43,112 +45,34 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
 describe('MarketplacePage', () => {
-  it('renders marketplace heading', () => {
+  it('renders sidebar with extension list', () => {
     renderWithProviders(<MarketplacePage />);
-    expect(screen.getByText('Marketplace')).toBeInTheDocument();
+    expect(screen.getByTestId('extension-sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('ext-item-active-ext')).toBeInTheDocument();
+    expect(screen.getByTestId('ext-item-installed-ext')).toBeInTheDocument();
   });
 
-  it('shows tab counts', () => {
-    renderWithProviders(<MarketplacePage />);
-    expect(screen.getByText('Active (1)')).toBeInTheDocument();
-    expect(screen.getByText('Installed (1)')).toBeInTheDocument();
-    expect(screen.getByText('Available (0)')).toBeInTheDocument();
-  });
-
-  it('shows active extensions by default', () => {
-    renderWithProviders(<MarketplacePage />);
-    expect(screen.getByText('active-ext')).toBeInTheDocument();
-  });
-
-  it('renders search input', () => {
+  it('renders search input in sidebar', () => {
     renderWithProviders(<MarketplacePage />);
     expect(screen.getByPlaceholderText('Search extensions...')).toBeInTheDocument();
   });
 
-  it('does not show tag chips when no available extensions have tags', () => {
+  it('auto-selects first extension and shows detail panel', () => {
     renderWithProviders(<MarketplacePage />);
-    expect(screen.queryByTestId('tag-filter')).not.toBeInTheDocument();
-  });
-});
-
-describe('MarketplacePage with tags and available extensions', () => {
-  beforeEach(() => {
-    vi.resetModules();
+    expect(screen.getByTestId('detail-panel')).toBeInTheDocument();
+    // First extension is active-ext — description appears in detail panel
+    expect(screen.getByText('An active extension')).toBeInTheDocument();
   });
 
-  it('shows tag filter and available extensions', async () => {
-    vi.doMock('@/core/hooks/use-extensions', () => ({
-      useMarketplace: () => ({
-        data: {
-          active: [],
-          installed: [],
-          available: [
-            {
-              name: 'avail-ext',
-              version: '1.0.0',
-              type: 'standard',
-              status: 'available',
-              description: 'Available one',
-              tags: ['automation', 'tools'],
-            },
-            {
-              name: 'avail-ext-2',
-              version: '2.0.0',
-              type: 'standard',
-              status: 'available',
-              description: 'Another available',
-              tags: ['tools'],
-            },
-          ],
-        },
-        isLoading: false,
-      }),
-      useInstallExtension: () => ({ mutate: vi.fn(), isPending: false }),
-      useActivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
-      useDeactivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
-      useRemoveExtension: () => ({ mutate: vi.fn(), isPending: false }),
-      useUpdateExtension: () => ({ mutate: vi.fn(), isPending: false }),
-    }));
-
-    const { MarketplacePage: TagPage } = await import('./MarketplacePage');
-    const { default: userEvent } = await import('@testing-library/user-event');
-    const { within } = await import('@testing-library/react');
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <TagPage />
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
-
-    // Tag filter should appear
-    const tagFilter = screen.getByTestId('tag-filter');
-    expect(tagFilter).toBeInTheDocument();
-    expect(within(tagFilter).getByText('automation')).toBeInTheDocument();
-    expect(within(tagFilter).getByText('tools')).toBeInTheDocument();
-
-    // Switch to Available tab to render available extensions
-    await userEvent.click(screen.getByText(/^Available/));
-    expect(screen.getByText('avail-ext')).toBeInTheDocument();
-    expect(screen.getByText('avail-ext-2')).toBeInTheDocument();
-
-    // Click the automation tag badge in the tag filter to filter
-    await userEvent.click(within(tagFilter).getByText('automation'));
-    // After filtering, only avail-ext should match (it has the 'automation' tag)
-    expect(screen.getByText('avail-ext')).toBeInTheDocument();
-
-    // Click same tag again to deselect
-    await userEvent.click(within(tagFilter).getByText('automation'));
-    expect(screen.getByText('avail-ext-2')).toBeInTheDocument();
+  it('renders section headers with counts', () => {
+    renderWithProviders(<MarketplacePage />);
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Installed')).toBeInTheDocument();
   });
 });
 
@@ -180,8 +104,7 @@ describe('MarketplacePage loading', () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByText('Marketplace')).toBeInTheDocument();
-    // When loading, skeletons are rendered instead of tabs
-    expect(screen.queryByText('Active (0)')).not.toBeInTheDocument();
+    // When loading, sidebar is not rendered
+    expect(screen.queryByTestId('extension-sidebar')).not.toBeInTheDocument();
   });
 });

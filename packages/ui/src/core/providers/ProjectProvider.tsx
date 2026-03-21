@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { setActiveProjectPath } from '@/core/api/client';
 
 const STORAGE_KEY = 'renre-kit-active-project';
@@ -54,12 +47,10 @@ export function ProjectProvider({ children }: ProjectProviderProps): React.React
 
   const value = useMemo(
     () => ({ activeProject: projectPath, setActiveProject: handleSetActiveProject }),
-    [projectPath, handleSetActiveProject]
+    [projectPath, handleSetActiveProject],
   );
 
-  return (
-    <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>
-  );
+  return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
 }
 
 export function useProjectContext(): ProjectContextValue {

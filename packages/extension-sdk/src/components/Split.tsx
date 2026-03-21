@@ -10,10 +10,7 @@ export interface SplitProps {
 
 export function Split({ left, right, className, ratio = '1fr 1fr' }: SplitProps) {
   return (
-    <div
-      className={cn('grid gap-4', className)}
-      style={{ gridTemplateColumns: ratio }}
-    >
+    <div className={cn('grid gap-4', className)} style={{ gridTemplateColumns: ratio }}>
       <div>{left}</div>
       <div>{right}</div>
     </div>

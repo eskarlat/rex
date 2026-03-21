@@ -42,16 +42,21 @@ const mockWriteFileSync = vi.fn();
 const mockUnlinkSync = vi.fn();
 const mockMkdirSync = vi.fn();
 
+const mockReadFileSync = vi.fn();
+
 vi.mock('node:fs', () => ({
   existsSync: () => true,
   mkdirSync: (...args: unknown[]) => mockMkdirSync(...args),
   writeFileSync: (...args: unknown[]) => mockWriteFileSync(...args),
+  readFileSync: (...args: unknown[]) => mockReadFileSync(...args),
   unlinkSync: (...args: unknown[]) => mockUnlinkSync(...args),
 }));
 
 vi.mock('../../../core/paths/paths.js', () => ({
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   SERVER_PID_PATH: '/tmp/test-server.pid',
+  // eslint-disable-next-line sonarjs/publicly-writable-directories
+  LAN_PIN_PATH: '/tmp/test-renre-kit/lan-pin',
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   GLOBAL_DIR: '/tmp/test-renre-kit',
 }));
@@ -140,11 +145,7 @@ describe('ui command', () => {
   it('writes PID file after spawn', async () => {
     await handleUi({ noBrowser: true });
 
-    expect(mockWriteFileSync).toHaveBeenCalledWith(
-      '/tmp/test-server.pid',
-      '42',
-      'utf-8',
-    );
+    expect(mockWriteFileSync).toHaveBeenCalledWith('/tmp/test-server.pid', '42', 'utf-8');
   });
 
   it('unrefs the child process', async () => {
@@ -177,6 +178,20 @@ describe('ui command', () => {
       }),
     );
     expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('localhost'));
+  });
+
+  it('displays LAN PIN when lan mode is active', async () => {
+    mockReadFileSync.mockReturnValue('7392');
+
+    await handleUi({ lan: true, noBrowser: true });
+
+    expect(mockLogInfo).toHaveBeenCalledWith('LAN PIN: 7392');
+  });
+
+  it('does not display LAN PIN when lan mode is off', async () => {
+    await handleUi({ noBrowser: true });
+
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 
   it('sets NO_SLEEP env when noSleep is true', async () => {
@@ -216,9 +231,7 @@ describe('ui command', () => {
 
     await handleUi({ noBrowser: true });
 
-    expect(mockLogWarn).toHaveBeenCalledWith(
-      expect.stringContaining('already running'),
-    );
+    expect(mockLogWarn).toHaveBeenCalledWith(expect.stringContaining('already running'));
     // Server should not be spawned
     expect(mockSpawn).not.toHaveBeenCalled();
   });
@@ -320,8 +333,6 @@ describe('ui command', () => {
     await handleUi({ noBrowser: true });
 
     expect(mockSpinnerStop).toHaveBeenCalledWith('Failed to start server.');
-    expect(mockLogError).toHaveBeenCalledWith(
-      expect.stringContaining('exited unexpectedly'),
-    );
+    expect(mockLogError).toHaveBeenCalledWith(expect.stringContaining('exited unexpectedly'));
   });
 });

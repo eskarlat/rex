@@ -3,20 +3,15 @@ import type { ConnectionState, McpConnection } from '../types/mcp.types.js';
 import {
   spawnProcess,
   sendRequest as stdioSendRequest,
+  sendNotification,
   killProcess,
 } from './mcp-stdio-transport.js';
 import type { McpStdioProcess } from './mcp-stdio-transport.js';
-import {
-  connect,
-  sendRequest as sseSendRequest,
-  disconnect,
-} from './mcp-sse-transport.js';
+import { getLogger } from '../../../core/logger/index.js';
+import { connect, sendRequest as sseSendRequest, disconnect } from './mcp-sse-transport.js';
 import type { McpSseConnection } from './mcp-sse-transport.js';
-import { buildToolCallRequest } from './json-rpc.js';
-import {
-  ExtensionError,
-  ErrorCode,
-} from '../../../core/errors/extension-error.js';
+import { buildToolCallRequest, buildInitializeRequest, buildNotification } from './json-rpc.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 import { interpolate } from '../../../shared/interpolation.js';
 
 interface InternalConnection {
@@ -28,6 +23,7 @@ interface InternalConnection {
   lastActivity: number;
   idleTimer?: ReturnType<typeof setTimeout>;
   requestId: number;
+  initPromise?: Promise<void>;
 }
 
 type LifecycleMode = 'cli' | 'dashboard';
@@ -92,17 +88,25 @@ export class ConnectionManager {
     toolName: string,
     args: Record<string, unknown>,
   ): Promise<unknown> {
+    // Ensure MCP handshake is complete for stdio connections
+    if (internal.config.transport === 'stdio' && internal.stdioProcess && !internal.initPromise) {
+      internal.initPromise = this.performHandshake(extensionName, internal);
+    }
+    if (internal.initPromise) {
+      await internal.initPromise;
+    }
+
     const requestId = ++internal.requestId;
     const request = buildToolCallRequest(toolName, args, requestId);
 
     if (internal.config.transport === 'stdio' && internal.stdioProcess) {
       const response = await stdioSendRequest(internal.stdioProcess, request);
-      return response.result;
+      return this.extractResult(extensionName, response);
     }
 
     if (internal.config.transport === 'sse' && internal.sseConnection) {
       const response = await sseSendRequest(internal.sseConnection, request);
-      return response.result;
+      return this.extractResult(extensionName, response);
     }
 
     throw new ExtensionError(
@@ -112,6 +116,42 @@ export class ConnectionManager {
     );
   }
 
+  private extractResult(
+    extensionName: string,
+    response: { result?: unknown; error?: { code: number; message: string; data?: unknown } },
+  ): unknown {
+    if (response.error) {
+      throw new ExtensionError(
+        extensionName,
+        ErrorCode.MCP_REQUEST_FAILED,
+        `MCP error ${response.error.code}: ${response.error.message}`,
+      );
+    }
+    return response.result;
+  }
+
+  private async performHandshake(
+    extensionName: string,
+    internal: InternalConnection,
+  ): Promise<void> {
+    const proc = internal.stdioProcess;
+    if (!proc) return;
+
+    const requestId = ++internal.requestId;
+    const initRequest = buildInitializeRequest(requestId);
+    const response = await stdioSendRequest(proc, initRequest);
+
+    if (response.error) {
+      throw new ExtensionError(
+        extensionName,
+        ErrorCode.MCP_CONNECTION_FAILED,
+        `MCP initialization failed: ${response.error.message}`,
+      );
+    }
+
+    sendNotification(proc, buildNotification('notifications/initialized'));
+  }
+
   private async retryWithBackoff(
     extensionName: string,
     internal: InternalConnection,
@@ -119,9 +159,13 @@ export class ConnectionManager {
     args: Record<string, unknown>,
   ): Promise<unknown> {
     let retries = 0;
+    let lastErr: unknown;
     while (retries < MAX_RETRIES) {
       retries++;
       internal.metadata.retryCount = retries;
+      getLogger().warn('extensions', `Retrying MCP connection for ${extensionName}`, {
+        attempt: retries,
+      });
       const delay = this.backoffBaseMs * Math.pow(2, retries - 1);
       await sleep(delay);
 
@@ -133,6 +177,7 @@ export class ConnectionManager {
       );
       internal.stdioProcess = restarted.stdioProcess;
       internal.sseConnection = restarted.sseConnection;
+      internal.initPromise = undefined;
       internal.metadata.state = 'running';
 
       try {
@@ -141,12 +186,17 @@ export class ConnectionManager {
         this.resetIdleTimer(extensionName);
         return result;
       } catch (err) {
+        lastErr = err;
         if (!isCrashError(err)) {
           throw err;
         }
       }
     }
 
+    getLogger().error('extensions', `MCP process for ${extensionName} crashed`, {
+      retries: MAX_RETRIES,
+      lastError: String(lastErr),
+    });
     internal.metadata.state = 'errored';
     internal.metadata.lastError = `Failed after ${MAX_RETRIES} restart attempts`;
     throw new ExtensionError(
@@ -237,12 +287,7 @@ export class ConnectionManager {
     cwd?: string,
   ): McpStdioProcess {
     const env = resolveEnv(mcpConfig.env ?? {}, resolvedConfig ?? {});
-    return spawnProcess(
-      mcpConfig.command ?? '',
-      mcpConfig.args ?? [],
-      env,
-      cwd ?? process.cwd(),
-    );
+    return spawnProcess(mcpConfig.command ?? '', mcpConfig.args ?? [], env, cwd ?? process.cwd());
   }
 
   private createSseConnection(
@@ -258,10 +303,7 @@ export class ConnectionManager {
     return connect(resolvedUrl, resolvedHeaders);
   }
 
-  private async stopConnection(
-    _name: string,
-    internal: InternalConnection,
-  ): Promise<void> {
+  private async stopConnection(_name: string, internal: InternalConnection): Promise<void> {
     if (internal.idleTimer) {
       clearTimeout(internal.idleTimer);
     }
@@ -304,7 +346,9 @@ function isCrashError(err: unknown): boolean {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, ms); });
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function resolveEnv(

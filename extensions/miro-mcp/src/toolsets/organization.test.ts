@@ -62,9 +62,7 @@ describe('createOrganizationToolset', () => {
 
   it('returns error result on failure', async () => {
     const client = createMockClient();
-    (client.getOrganization as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('Not found'),
-    );
+    (client.getOrganization as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Not found'));
     const toolset = createOrganizationToolset(client);
     const result = await toolset.handlers['miro_get_organization']!({ orgId: 'bad' });
     expect(result.isError).toBe(true);

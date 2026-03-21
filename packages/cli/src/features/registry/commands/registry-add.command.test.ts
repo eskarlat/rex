@@ -51,7 +51,12 @@ describe('registry:add command', () => {
       extensionConfigs: {},
     });
 
-    handleRegistryAdd({ name: 'custom', url: 'https://example.com/reg.git', priority: 10, cacheTTL: 7200 });
+    handleRegistryAdd({
+      name: 'custom',
+      url: 'https://example.com/reg.git',
+      priority: 10,
+      cacheTTL: 7200,
+    });
 
     const saved = mockSaveGlobalConfig.mock.calls[0]?.[0];
     expect(saved.registries[0]).toMatchObject({ priority: 10, cacheTTL: 7200 });
@@ -59,7 +64,9 @@ describe('registry:add command', () => {
 
   it('warns and does not save when registry name already exists', () => {
     mockLoadGlobalConfig.mockReturnValue({
-      registries: [{ name: 'internal', url: 'https://old.com/reg.git', priority: 50, cacheTTL: 3600 }],
+      registries: [
+        { name: 'internal', url: 'https://old.com/reg.git', priority: 50, cacheTTL: 3600 },
+      ],
       settings: {},
       extensionConfigs: {},
     });

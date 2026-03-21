@@ -22,11 +22,9 @@ export function getOSType(): OSType {
 
 function getHardwareUUIDMacOS(): string | undefined {
   try {
-    const output = execFileSync(
-      '/usr/sbin/ioreg',
-      ['-d2', '-c', 'IOPlatformExpertDevice'],
-      { encoding: 'utf-8' },
-    );
+    const output = execFileSync('/usr/sbin/ioreg', ['-d2', '-c', 'IOPlatformExpertDevice'], {
+      encoding: 'utf-8',
+    });
     const match = /[A-F0-9-]{36}/i.exec(output);
     return match?.[0];
   } catch {
@@ -51,12 +49,16 @@ function getHardwareUUIDLinux(): string | undefined {
 
 function getHardwareUUIDWindows(): string | undefined {
   try {
-    const wmicPath = path.join(process.env['SYSTEMROOT'] ?? 'C:\\Windows', 'System32', 'wbem', 'wmic.exe');
-    const output = execFileSync(
-      wmicPath,
-      ['csproduct', 'get', 'UUID'],
-      { encoding: 'utf-8', windowsHide: true },
+    const wmicPath = path.join(
+      process.env['SYSTEMROOT'] ?? 'C:\\Windows',
+      'System32',
+      'wbem',
+      'wmic.exe',
     );
+    const output = execFileSync(wmicPath, ['csproduct', 'get', 'UUID'], {
+      encoding: 'utf-8',
+      windowsHide: true,
+    });
     const lines = output.trim().split(/\r?\n/);
     const uuidLine = lines[1]?.trim();
     if (uuidLine && uuidLine.length > 0) {
@@ -71,10 +73,7 @@ function getHardwareUUIDWindows(): string | undefined {
 function getFallbackUUID(): string {
   const hostname = os.hostname();
   const homedir = os.homedir();
-  return crypto
-    .createHash('sha256')
-    .update(`${hostname}:${homedir}`)
-    .digest('hex');
+  return crypto.createHash('sha256').update(`${hostname}:${homedir}`).digest('hex');
 }
 
 export function getHardwareUUID(): string {

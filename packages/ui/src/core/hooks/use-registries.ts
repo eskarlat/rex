@@ -27,11 +27,7 @@ interface AddRegistryVariables {
   priority?: number;
 }
 
-export function useAddRegistry(): UseMutationResult<
-  void,
-  Error,
-  AddRegistryVariables
-> {
+export function useAddRegistry(): UseMutationResult<void, Error, AddRegistryVariables> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, AddRegistryVariables>({
     mutationFn: (data: AddRegistryVariables) =>

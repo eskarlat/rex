@@ -52,7 +52,14 @@ describe('SchedulerRunner', () => {
 
   it('executes due task commands', () => {
     const dueTasks = [
-      { id: 1, name: 'task1', command: 'echo hello', cron: '0 * * * *', enabled: 1, next_run_at: '2024-01-01T00:00:00Z' },
+      {
+        id: 1,
+        name: 'task1',
+        command: 'echo hello',
+        cron: '0 * * * *',
+        enabled: 1,
+        next_run_at: '2024-01-01T00:00:00Z',
+      },
     ];
 
     // For tick: SELECT due tasks
@@ -73,10 +80,19 @@ describe('SchedulerRunner', () => {
 
   it('handles command execution failure', () => {
     const dueTasks = [
-      { id: 1, name: 'task1', command: 'badcmd', cron: '0 * * * *', enabled: 1, next_run_at: '2024-01-01T00:00:00Z' },
+      {
+        id: 1,
+        name: 'task1',
+        command: 'badcmd',
+        cron: '0 * * * *',
+        enabled: 1,
+        next_run_at: '2024-01-01T00:00:00Z',
+      },
     ];
 
-    vi.mocked(execFileSync).mockImplementationOnce(() => { throw new Error('command not found'); });
+    vi.mocked(execFileSync).mockImplementationOnce(() => {
+      throw new Error('command not found');
+    });
     mockPrepare.mockReturnValueOnce({ all: () => dueTasks });
     mockPrepare.mockReturnValueOnce({ run: vi.fn() });
     mockPrepare.mockReturnValueOnce({ run: vi.fn() });
@@ -101,7 +117,14 @@ describe('SchedulerRunner', () => {
   it('handles invalid cron expression during task execution', async () => {
     const { Cron } = await import('croner');
     const dueTasks = [
-      { id: 2, name: 'bad-cron', command: 'echo ok', cron: 'invalid', enabled: 1, next_run_at: '2024-01-01T00:00:00Z' },
+      {
+        id: 2,
+        name: 'bad-cron',
+        command: 'echo ok',
+        cron: 'invalid',
+        enabled: 1,
+        next_run_at: '2024-01-01T00:00:00Z',
+      },
     ];
 
     mockPrepare.mockReturnValueOnce({ all: () => dueTasks });

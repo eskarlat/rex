@@ -43,28 +43,24 @@ describe('platform', () => {
       vi.stubGlobal('process', { ...process, platform: 'win32' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('windows');
-
     });
 
     it('should return "macos" when platform is darwin', async () => {
       vi.stubGlobal('process', { ...process, platform: 'darwin' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('macos');
-
     });
 
     it('should return "linux" when platform is linux', async () => {
       vi.stubGlobal('process', { ...process, platform: 'linux' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('linux');
-
     });
 
     it('should return "linux" for unknown platforms', async () => {
       vi.stubGlobal('process', { ...process, platform: 'freebsd' });
       const { getOSType } = await import('./platform.js');
       expect(getOSType()).toBe('linux');
-
     });
   });
 
@@ -77,7 +73,6 @@ describe('platform', () => {
       );
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('A1B2C3D4-E5F6-7890-ABCD-EF1234567890');
-
     });
 
     it('should return fallback on macOS when ioreg fails', async () => {
@@ -88,18 +83,14 @@ describe('platform', () => {
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890fallbackhash');
-
     });
 
     it('should return machine-id on Linux from /etc/machine-id', async () => {
       vi.stubGlobal('process', { ...process, platform: 'linux' });
       const fs = await import('node:fs');
-      vi.mocked(fs.default.readFileSync).mockReturnValue(
-        'abcdef1234567890abcdef1234567890\n',
-      );
+      vi.mocked(fs.default.readFileSync).mockReturnValue('abcdef1234567890abcdef1234567890\n');
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890abcdef1234567890');
-
     });
 
     it('should try /var/lib/dbus/machine-id when /etc/machine-id fails on Linux', async () => {
@@ -115,7 +106,6 @@ describe('platform', () => {
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('dbus-machine-id-value');
-
     });
 
     it('should return fallback on Linux when both machine-id files fail', async () => {
@@ -126,18 +116,14 @@ describe('platform', () => {
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890fallbackhash');
-
     });
 
     it('should return UUID from wmic on Windows', async () => {
       vi.stubGlobal('process', { ...process, platform: 'win32' });
       const { execFileSync } = await import('node:child_process');
-      vi.mocked(execFileSync).mockReturnValue(
-        'UUID\r\nA1B2C3D4-E5F6-7890-ABCD-EF1234567890\r\n',
-      );
+      vi.mocked(execFileSync).mockReturnValue('UUID\r\nA1B2C3D4-E5F6-7890-ABCD-EF1234567890\r\n');
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('A1B2C3D4-E5F6-7890-ABCD-EF1234567890');
-
     });
 
     it('should return fallback on Windows when wmic fails', async () => {
@@ -148,7 +134,6 @@ describe('platform', () => {
       });
       const { getHardwareUUID } = await import('./platform.js');
       expect(getHardwareUUID()).toBe('abcdef1234567890fallbackhash');
-
     });
   });
 

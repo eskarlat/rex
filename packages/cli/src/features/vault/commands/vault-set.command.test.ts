@@ -29,7 +29,12 @@ describe('vault-set command', () => {
     const { handleVaultSet } = await import('./vault-set.command.js');
     const { setEntry } = await import('../vault-manager.js');
 
-    await handleVaultSet({ key: 'token', value: 'secret123', secret: true, tags: ['jira', 'auth'] });
+    await handleVaultSet({
+      key: 'token',
+      value: 'secret123',
+      secret: true,
+      tags: ['jira', 'auth'],
+    });
 
     expect(setEntry).toHaveBeenCalledWith('token', 'secret123', true, ['jira', 'auth']);
   });

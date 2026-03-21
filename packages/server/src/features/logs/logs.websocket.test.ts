@@ -8,9 +8,17 @@ import path from 'node:path';
 
 const mockSubscribeConsole = vi.fn(() => vi.fn());
 
+const mockLoggerInstance = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+};
+
 vi.mock('@renre-kit/cli/lib', () => ({
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   LOGS_DIR: '/tmp/renre-kit-test-logs',
+  getLogger: vi.fn().mockReturnValue(mockLoggerInstance),
 }));
 
 vi.mock('../../core/utils/console-capture.js', async (importOriginal) => {
@@ -21,7 +29,11 @@ vi.mock('../../core/utils/console-capture.js', async (importOriginal) => {
   };
 });
 
-const { default: logsWebsocket, readNewLines, getLogFilePath } = await import('./logs.websocket.js');
+const {
+  default: logsWebsocket,
+  readNewLines,
+  getLogFilePath,
+} = await import('./logs.websocket.js');
 
 describe('readNewLines', () => {
   const tmpDir = path.join(os.tmpdir(), 'renre-kit-log-test');
@@ -114,7 +126,11 @@ describe('logs websocket plugin', () => {
     const logFile = getLogFilePath();
     const dir = path.dirname(logFile);
     fs.mkdirSync(dir, { recursive: true });
-    const logLine = JSON.stringify({ level: 'info', msg: 'test log', time: '2024-01-01T00:00:00Z' });
+    const logLine = JSON.stringify({
+      level: 'info',
+      msg: 'test log',
+      time: '2024-01-01T00:00:00Z',
+    });
     fs.writeFileSync(logFile, logLine + '\n');
 
     const response = await app.inject({ method: 'GET', url: '/api/logs/entries' });
@@ -237,7 +253,9 @@ describe('logs websocket plugin', () => {
 
     // Simulate a console entry callback
     expect(mockSubscribeConsole).toHaveBeenCalled();
-    const callback = mockSubscribeConsole.mock.calls[0]?.[0] as ((entry: unknown) => void) | undefined;
+    const callback = mockSubscribeConsole.mock.calls[0]?.[0] as
+      | ((entry: unknown) => void)
+      | undefined;
     if (callback) {
       callback({ level: 'info', msg: 'hello', time: new Date().toISOString() });
     }
@@ -249,6 +267,86 @@ describe('logs websocket plugin', () => {
     // Trigger close
     closeListeners.forEach((cb) => cb());
     expect(unsubscribeFn).toHaveBeenCalled();
+  });
+
+  describe('POST /api/logs/write', () => {
+    it('writes a log entry and returns 204', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/logs/write',
+        payload: { level: 'info', source: 'ext:my-ext', message: 'hello from extension' },
+      });
+      expect(response.statusCode).toBe(204);
+      expect(mockLoggerInstance.info).toHaveBeenCalledWith(
+        'ext:my-ext',
+        'hello from extension',
+        undefined,
+      );
+    });
+
+    it('passes data to logger when provided', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/logs/write',
+        payload: {
+          level: 'warn',
+          source: 'ext:test',
+          message: 'warning msg',
+          data: { key: 'value' },
+        },
+      });
+      expect(response.statusCode).toBe(204);
+      expect(mockLoggerInstance.warn).toHaveBeenCalledWith('ext:test', 'warning msg', {
+        key: 'value',
+      });
+    });
+
+    it('returns 400 when level is missing', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/logs/write',
+        payload: { source: 'ext:my-ext', message: 'hello' },
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('returns 400 when source is missing', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/logs/write',
+        payload: { level: 'info', message: 'hello' },
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('returns 400 when message is missing', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/logs/write',
+        payload: { level: 'info', source: 'ext:my-ext' },
+      });
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('returns 400 for invalid log level', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/logs/write',
+        payload: { level: 'trace', source: 'ext:my-ext', message: 'hello' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toHaveProperty('error');
+    });
+
+    it('returns 400 when source does not start with ext:', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/logs/write',
+        payload: { level: 'info', source: 'core', message: 'hello' },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toContain('ext:');
+    });
   });
 
   it('websocket /api/logs handles missing log file at connection time', () => {

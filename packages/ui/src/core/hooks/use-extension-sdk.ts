@@ -20,7 +20,9 @@ export function useExtensionSDK(extensionName: string): RenreKitSDK {
       showToast(options);
     });
     instance.ui.setNavigateHandler((path) => {
-      Promise.resolve(navigate(path)).catch(() => { /* navigation error */ });
+      Promise.resolve(navigate(path)).catch(() => {
+        /* navigation error */
+      });
     });
     instance.terminal.setOpenHandler(() => {
       openTerminal();

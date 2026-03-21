@@ -14,10 +14,7 @@ interface UiAssetErrorBoundaryState {
   error: Error | null;
 }
 
-class UiAssetErrorBoundary extends Component<
-  UiAssetErrorBoundaryProps,
-  UiAssetErrorBoundaryState
-> {
+class UiAssetErrorBoundary extends Component<UiAssetErrorBoundaryProps, UiAssetErrorBoundaryState> {
   constructor(props: UiAssetErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -73,10 +70,7 @@ export function DynamicUiAsset({ extensionName, url, label, compact }: DynamicUi
   const { activeProject } = useProjectContext();
   const sdk = useExtensionSDK(extensionName);
 
-  const LazyComponent = useMemo(
-    () => lazy(() => import(/* @vite-ignore */ url)),
-    [url],
-  );
+  const LazyComponent = useMemo(() => lazy(() => import(/* @vite-ignore */ url)), [url]);
 
   return (
     <UiAssetErrorBoundary
@@ -84,11 +78,7 @@ export function DynamicUiAsset({ extensionName, url, label, compact }: DynamicUi
       fallback={<UiAssetError label={label} extensionName={extensionName} />}
     >
       <Suspense fallback={<UiAssetSkeleton compact={compact} />}>
-        <LazyComponent
-          sdk={sdk}
-          extensionName={extensionName}
-          projectPath={activeProject}
-        />
+        <LazyComponent sdk={sdk} extensionName={extensionName} projectPath={activeProject} />
       </Suspense>
     </UiAssetErrorBoundary>
   );

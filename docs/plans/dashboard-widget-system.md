@@ -13,11 +13,13 @@ The dashboard HomePage is currently a static page showing only an active extensi
 ### Save plan to project
 
 **`docs/plans/dashboard-widget-system.md`**
+
 - Copy this plan file into the project's docs/plans/ folder for team reference
 
 ### Files to create
 
 **`renre-kit-architecture/adr/dashboard/ADR-006-extension-widget-dashboard.md`**
+
 - ADR documenting the widget system decision
 - Sections: Status (Accepted), Context, Decision, Consequences (Positive/Negative)
 - Key decisions to document:
@@ -28,6 +30,7 @@ The dashboard HomePage is currently a static page showing only an active extensi
   - Widgets declared in manifest `ui.widgets[]` alongside `ui.panels[]`
 
 **`renre-kit-architecture/diagrams/widget-dashboard-dfd.md`**
+
 - Data Flow Diagram (Mermaid flowchart, same style as `dfd-overview.md`)
 - Flows to diagram:
   1. **Widget Loading Flow** — Browser → WidgetGrid → DynamicWidget → `import(/api/extensions/{name}/widgets/{id}.js)` → Server → `findExtensionUiAsset` → manifest lookup → file read → JS response → Browser renders component with SDK props
@@ -35,6 +38,7 @@ The dashboard HomePage is currently a static page showing only an active extensi
   3. **Widget Discovery Flow** — WidgetPicker → `useMarketplace()` → `GET /api/marketplace` → Server loads manifests → extracts `ui.widgets[]` metadata → returns to UI → WidgetPicker shows available widgets
 
 **`renre-kit-architecture/diagrams/widget-dashboard-seq.md`**
+
 - Sequence Diagrams (Mermaid sequenceDiagram syntax)
 - Sequences to diagram:
   1. **Dashboard page load** — Browser → HomePage → WidgetGrid → useDashboardLayout → GET /api/dashboard/layout → Server → getDashboardLayout → .renre-kit/dashboard-layout.json → response → for each widget: DynamicWidget → import(widget URL) → Server serves JS → render
@@ -59,6 +63,7 @@ The dashboard HomePage is currently a static page showing only an active extensi
 ### Files to modify
 
 **`packages/cli/src/features/extensions/types/extension.types.ts`**
+
 - Add `WidgetSize { w: number; h: number }` interface
   - `w` = number of grid columns (1–12, where 12 = full dashboard width)
   - `h` = number of grid rows (each row = 100px, so h:2 = 200px tall)
@@ -66,15 +71,18 @@ The dashboard HomePage is currently a static page showing only an active extensi
 - Add `widgets: UiWidget[]` to `ExtensionManifest.ui` (alongside existing `panels`)
 
 **`packages/cli/src/features/extensions/types/index.ts`**
+
 - Re-export `UiWidget`, `WidgetSize`
 
 **`packages/cli/src/features/extensions/manifest/manifest-loader.ts`**
+
 - Add `widgetSizeSchema = z.object({ w: z.number(), h: z.number() })`
 - Add `uiWidgetSchema = z.object({ id, title, entry, defaultSize, minSize?, maxSize? })`
 - Update `ui` field: `panels: z.array(uiPanelSchema).default([])`, `widgets: z.array(uiWidgetSchema).default([])`
   - Note: changing `panels` from required to `.default([])` is backward-compatible
 
 **`packages/cli/src/features/extensions/manifest/manifest-loader.test.ts`** (TDD — write first)
+
 - `should load manifest with widgets array`
 - `should accept widget with all size fields`
 - `should accept widget with only required fields`
@@ -84,6 +92,7 @@ The dashboard HomePage is currently a static page showing only an active extensi
 - `should accept manifest with widgets but no panels` (verifies `.default([])` on panels)
 
 **`packages/cli/src/lib.ts`**
+
 - Add `UiWidget, WidgetSize` to type exports (line 41)
 
 ### Validation
@@ -114,18 +123,22 @@ The dashboard HomePage is currently a static page showing only an active extensi
 ### Files to create
 
 **`packages/cli/src/core/types/dashboard.types.ts`**
+
 ```typescript
 export interface WidgetPlacement {
-  id: string;              // "extensionName:widgetId"
+  id: string; // "extensionName:widgetId"
   extensionName: string;
   widgetId: string;
   position: { x: number; y: number };
   size: { w: number; h: number };
 }
-export interface DashboardLayout { widgets: WidgetPlacement[]; }
+export interface DashboardLayout {
+  widgets: WidgetPlacement[];
+}
 ```
 
 **`packages/cli/src/features/dashboard/dashboard-layout.test.ts`** (TDD — write first)
+
 - `returns empty layout when file does not exist`
 - `reads and returns layout from file`
 - `saves layout to file`
@@ -136,10 +149,12 @@ export interface DashboardLayout { widgets: WidgetPlacement[]; }
 Pattern: use `mkdtempSync` + temp dir like `manifest-loader.test.ts` (lines 9-17)
 
 **`packages/cli/src/features/dashboard/dashboard-layout.ts`**
+
 - `getDashboardLayout(projectPath): DashboardLayout` — read file, return `{ widgets: [] }` on missing/malformed
 - `saveDashboardLayout(projectPath, layout): void` — write JSON, mkdir if needed
 
 **`packages/cli/src/lib.ts`**
+
 - Add exports: `getDashboardLayout`, `saveDashboardLayout`, types `DashboardLayout`, `WidgetPlacement`
 
 ### Validation
@@ -168,11 +183,13 @@ Pattern: use `mkdtempSync` + temp dir like `manifest-loader.test.ts` (lines 9-17
 ### Files to modify
 
 **`packages/server/src/features/extensions/extensions.routes.ts`**
+
 - Refactor `findExtensionPanel` → generic `findExtensionUiAsset(name, projectPath, assetType: 'panels' | 'widgets', assetId?)` to avoid jscpd duplication. Reuse for both panel and widget routes.
 - Add route: `GET /api/extensions/:name/widgets/:widgetId.js` — serves widget JS (mirrors panel route at line 171)
 - Update marketplace response (line 99-105): add `widgets` field with `{ id, title, defaultSize, minSize?, maxSize? }` for active extensions
 
 **`packages/server/src/features/extensions/extensions.routes.test.ts`** (TDD — write first)
+
 - `GET /api/extensions/:name/widgets/:widgetId.js` — serves widget by ID (200), returns 404 for unknown
 - Marketplace returns `widgets` metadata for active extensions
 - Marketplace returns empty `widgets` when manifest has no widgets
@@ -180,6 +197,7 @@ Pattern: use `mkdtempSync` + temp dir like `manifest-loader.test.ts` (lines 9-17
 ### Files to create
 
 **`packages/server/src/features/dashboard/dashboard.routes.test.ts`** (TDD — write first)
+
 - `GET /api/dashboard/layout` — returns layout for project
 - `GET /api/dashboard/layout` — returns empty layout when no project
 - `PUT /api/dashboard/layout` — saves layout, calls `saveDashboardLayout`
@@ -188,11 +206,13 @@ Pattern: use `mkdtempSync` + temp dir like `manifest-loader.test.ts` (lines 9-17
 Mock pattern: follow `extensions.routes.test.ts` — mock `@renre-kit/cli/lib` with `mockGetDashboardLayout`, `mockSaveDashboardLayout`
 
 **`packages/server/src/features/dashboard/dashboard.routes.ts`**
+
 - `GET /api/dashboard/layout` → `getDashboardLayout(projectPath)`
 - `PUT /api/dashboard/layout` → `saveDashboardLayout(projectPath, body)`
 - Pattern: follow `settings.routes.ts` — Fastify plugin callback, `done()`, project from `request.projectPath ?? fastify.activeProjectPath`
 
 **`packages/server/src/server.ts`**
+
 - Import and register `dashboardRoutes` (line 64 area)
 
 ### Validation
@@ -222,6 +242,7 @@ Mock pattern: follow `extensions.routes.test.ts` — mock `@renre-kit/cli/lib` w
 **Goal:** `@dnd-kit` grid on HomePage with DynamicWidget loading. Largest phase.
 
 ### Step 4a: Install dependency
+
 ```bash
 pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 ```
@@ -229,19 +250,23 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ### Step 4b: Extend marketplace types
 
 **`packages/ui/src/core/hooks/use-extensions.ts`**
+
 - Add `ExtensionWidget { id, title, defaultSize, minSize?, maxSize? }` interface
 - Add `widgets?: ExtensionWidget[]` to `Extension` interface
 
 **`packages/ui/src/core/hooks/use-extensions.test.ts`**
+
 - Add test: marketplace response includes widget metadata
 
 ### Step 4c: Dashboard layout hook
 
 **`packages/ui/src/core/hooks/use-dashboard-layout.test.ts`** (TDD)
+
 - Fetches `/api/dashboard/layout`, returns data
 - PUT saves layout, invalidates query
 
 **`packages/ui/src/core/hooks/use-dashboard-layout.ts`**
+
 - `useDashboardLayout()` — React Query for `GET /api/dashboard/layout`
 - `useSaveDashboardLayout()` — mutation for `PUT /api/dashboard/layout`, invalidates `['dashboard-layout']`
 - Export `WidgetPlacement`, `DashboardLayout` interfaces (UI-side copies)
@@ -249,20 +274,24 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ### Step 4d: Shared ErrorBoundary
 
 **`packages/ui/src/core/components/UiAssetErrorBoundary.tsx`**
+
 - Extract `PanelErrorBoundary` from `DynamicPanel.tsx` (lines 22-39) into shared component
 - Avoids jscpd duplication between DynamicPanel and DynamicWidget
 
 **`packages/ui/src/features/extensions/components/DynamicPanel.tsx`**
+
 - Import `UiAssetErrorBoundary` instead of inline `PanelErrorBoundary`
 
 ### Step 4e: DynamicWidget
 
 **`packages/ui/src/features/dashboard/components/DynamicWidget.test.tsx`** (TDD)
+
 - Renders container on load
 - Shows error when widget fails to load
 - Pattern: mirror `DynamicPanel.test.tsx` exactly
 
 **`packages/ui/src/features/dashboard/components/DynamicWidget.tsx`**
+
 - Same pattern as `DynamicPanel.tsx`: `React.lazy(() => import(url))` + Suspense + ErrorBoundary
 - URL: `/api/extensions/${extensionName}/widgets/${widgetId}.js`
 - Props passed to loaded component: `sdk`, `extensionName`, `projectPath` (same `PanelProps`)
@@ -270,12 +299,14 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ### Step 4f: WidgetCard
 
 **`packages/ui/src/features/dashboard/components/WidgetCard.test.tsx`** (TDD)
+
 - Renders widget title
 - Renders DynamicWidget with correct props
 - Calls onRemove on remove button click
 - Has drag handle element
 
 **`packages/ui/src/features/dashboard/components/WidgetCard.tsx`**
+
 - Uses `useSortable` from `@dnd-kit/sortable`
 - Card with: drag handle (GripVertical icon), title, remove button (X icon), DynamicWidget in CardContent
 - `gridColumn: span ${size.w}`, `gridRow: span ${size.h}` for CSS grid sizing
@@ -283,12 +314,14 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ### Step 4g: WidgetPicker
 
 **`packages/ui/src/features/dashboard/components/WidgetPicker.test.tsx`** (TDD)
+
 - Shows dialog when open
 - Lists available widgets from active extensions (via `useMarketplace`)
 - Disables already-added widgets
 - Calls onAdd with extensionName, widgetId, defaultSize
 
 **`packages/ui/src/features/dashboard/components/WidgetPicker.tsx`**
+
 - Uses shadcn `Dialog` component
 - Reads `useMarketplace()` → flatMaps `ext.widgets` from active extensions
 - Shows extension title, widget title, Add/Added button per widget
@@ -296,12 +329,14 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ### Step 4h: WidgetGrid
 
 **`packages/ui/src/features/dashboard/components/WidgetGrid.test.tsx`** (TDD)
+
 - Renders empty state when no widgets
 - Renders WidgetCard for each widget
 - Shows "Add Widget" button
 - Remove callback filters widget from layout and saves
 
 **`packages/ui/src/features/dashboard/components/WidgetGrid.tsx`**
+
 - `DndContext` + `SortableContext` from `@dnd-kit`
 - 12-column CSS grid: `grid grid-cols-12 gap-4 auto-rows-[100px]` (each column = 1/12 width, each row = 100px)
 - `handleDragEnd`: reorders widgets array, saves
@@ -312,14 +347,17 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ### Step 4i: Update HomePage
 
 **`packages/ui/src/features/home/HomePage.tsx`**
+
 - Import and render `<WidgetGrid />` after the stats cards section
 
 **`packages/ui/src/features/home/HomePage.test.tsx`**
+
 - Mock `WidgetGrid` with `vi.mock()`, assert it renders via test-id
 
 ### Step 4j: SDK type alias
 
 **`packages/extension-sdk/src/core/types.ts`**
+
 - Add `export type WidgetProps = PanelProps;` (semantic alias, no behavior change)
 
 ### Validation
@@ -367,6 +405,7 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ### Files to modify
 
 **`extensions/hello-world/manifest.json`**
+
 - Add to `ui.widgets`:
   ```json
   {
@@ -378,16 +417,19 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
     "maxSize": { "w": 6, "h": 4 }
   }
   ```
+
   - `w:4` = 4/12 columns = ~33% of dashboard width
   - `h:2` = 2 rows × 100px = 200px tall
 
 **`extensions/hello-world/build-panel.js`**
+
 - Add `buildPanel('src/ui/status-widget.tsx', 'dist/status-widget.js')` to the build array
 - `buildPanel` works identically for widgets (same ESM + React globals)
 
 ### Files to create
 
 **`extensions/hello-world/src/ui/status-widget.tsx`**
+
 - Simple widget: shows extension name, "Quick Greet" button that calls `sdk.exec.run('hello-world:greet')`
 - Uses `PanelProps` interface
 
@@ -431,6 +473,7 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
    - Layout persists after page reload
 
 ### Known risks to address
+
 1. **jscpd duplication** — `DynamicWidget` vs `DynamicPanel`: mitigated by extracting shared `UiAssetErrorBoundary` in Phase 4d. If still flagged, extract `WidgetSkeleton`/`PanelSkeleton` into shared component.
 2. **jscpd duplication** — `findExtensionUiAsset` refactor in Phase 3 eliminates panel/widget candidate resolution duplication.
 3. **Coverage (86%)** — `@dnd-kit` drag interactions are hard to test in jsdom. Focus tests on callback logic (remove, add, reorder) by mocking dnd-kit hooks. DynamicWidget error cases tested via error boundary (same as DynamicPanel).
@@ -441,51 +484,54 @@ pnpm --filter @renre-kit/ui add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utiliti
 ## File Inventory
 
 ### New files (20)
-| File | Purpose |
-|------|---------|
-| `renre-kit-architecture/adr/dashboard/ADR-006-extension-widget-dashboard.md` | ADR for widget system |
-| `renre-kit-architecture/diagrams/widget-dashboard-dfd.md` | Data flow diagrams |
-| `renre-kit-architecture/diagrams/widget-dashboard-seq.md` | Sequence diagrams |
-| `packages/cli/src/core/types/dashboard.types.ts` | WidgetPlacement, DashboardLayout types |
-| `packages/cli/src/features/dashboard/dashboard-layout.ts` | Read/write dashboard-layout.json |
-| `packages/cli/src/features/dashboard/dashboard-layout.test.ts` | Tests |
-| `packages/server/src/features/dashboard/dashboard.routes.ts` | GET/PUT /api/dashboard/layout |
-| `packages/server/src/features/dashboard/dashboard.routes.test.ts` | Tests |
-| `packages/ui/src/core/hooks/use-dashboard-layout.ts` | React Query hook for layout |
-| `packages/ui/src/core/hooks/use-dashboard-layout.test.ts` | Tests |
-| `packages/ui/src/core/components/UiAssetErrorBoundary.tsx` | Shared error boundary |
-| `packages/ui/src/features/dashboard/components/DynamicWidget.tsx` | Lazy-loading widget |
-| `packages/ui/src/features/dashboard/components/DynamicWidget.test.tsx` | Tests |
-| `packages/ui/src/features/dashboard/components/WidgetCard.tsx` | Draggable card wrapper |
-| `packages/ui/src/features/dashboard/components/WidgetCard.test.tsx` | Tests |
-| `packages/ui/src/features/dashboard/components/WidgetGrid.tsx` | @dnd-kit grid container |
-| `packages/ui/src/features/dashboard/components/WidgetGrid.test.tsx` | Tests |
-| `packages/ui/src/features/dashboard/components/WidgetPicker.tsx` | Widget picker dialog |
-| `packages/ui/src/features/dashboard/components/WidgetPicker.test.tsx` | Tests |
-| `extensions/hello-world/src/ui/status-widget.tsx` | Reference widget |
+
+| File                                                                         | Purpose                                |
+| ---------------------------------------------------------------------------- | -------------------------------------- |
+| `renre-kit-architecture/adr/dashboard/ADR-006-extension-widget-dashboard.md` | ADR for widget system                  |
+| `renre-kit-architecture/diagrams/widget-dashboard-dfd.md`                    | Data flow diagrams                     |
+| `renre-kit-architecture/diagrams/widget-dashboard-seq.md`                    | Sequence diagrams                      |
+| `packages/cli/src/core/types/dashboard.types.ts`                             | WidgetPlacement, DashboardLayout types |
+| `packages/cli/src/features/dashboard/dashboard-layout.ts`                    | Read/write dashboard-layout.json       |
+| `packages/cli/src/features/dashboard/dashboard-layout.test.ts`               | Tests                                  |
+| `packages/server/src/features/dashboard/dashboard.routes.ts`                 | GET/PUT /api/dashboard/layout          |
+| `packages/server/src/features/dashboard/dashboard.routes.test.ts`            | Tests                                  |
+| `packages/ui/src/core/hooks/use-dashboard-layout.ts`                         | React Query hook for layout            |
+| `packages/ui/src/core/hooks/use-dashboard-layout.test.ts`                    | Tests                                  |
+| `packages/ui/src/core/components/UiAssetErrorBoundary.tsx`                   | Shared error boundary                  |
+| `packages/ui/src/features/dashboard/components/DynamicWidget.tsx`            | Lazy-loading widget                    |
+| `packages/ui/src/features/dashboard/components/DynamicWidget.test.tsx`       | Tests                                  |
+| `packages/ui/src/features/dashboard/components/WidgetCard.tsx`               | Draggable card wrapper                 |
+| `packages/ui/src/features/dashboard/components/WidgetCard.test.tsx`          | Tests                                  |
+| `packages/ui/src/features/dashboard/components/WidgetGrid.tsx`               | @dnd-kit grid container                |
+| `packages/ui/src/features/dashboard/components/WidgetGrid.test.tsx`          | Tests                                  |
+| `packages/ui/src/features/dashboard/components/WidgetPicker.tsx`             | Widget picker dialog                   |
+| `packages/ui/src/features/dashboard/components/WidgetPicker.test.tsx`        | Tests                                  |
+| `extensions/hello-world/src/ui/status-widget.tsx`                            | Reference widget                       |
 
 ### Modified files (14)
-| File | Change |
-|------|--------|
-| `packages/cli/src/features/extensions/types/extension.types.ts` | Add UiWidget, WidgetSize |
-| `packages/cli/src/features/extensions/types/index.ts` | Re-export new types |
-| `packages/cli/src/features/extensions/manifest/manifest-loader.ts` | Widget Zod schema |
-| `packages/cli/src/features/extensions/manifest/manifest-loader.test.ts` | Widget validation tests |
-| `packages/cli/src/lib.ts` | Export dashboard + widget types |
-| `packages/server/src/features/extensions/extensions.routes.ts` | Widget serving, refactor findExtensionUiAsset, marketplace widgets |
-| `packages/server/src/features/extensions/extensions.routes.test.ts` | Widget route + marketplace tests |
-| `packages/server/src/server.ts` | Register dashboard routes |
-| `packages/ui/src/core/hooks/use-extensions.ts` | ExtensionWidget type |
-| `packages/ui/src/core/hooks/use-extensions.test.ts` | Widget marketplace test |
-| `packages/ui/src/features/home/HomePage.tsx` | Add WidgetGrid |
-| `packages/ui/src/features/home/HomePage.test.tsx` | Mock WidgetGrid |
-| `packages/ui/src/features/extensions/components/DynamicPanel.tsx` | Use shared ErrorBoundary |
-| `packages/ui/package.json` | Add @dnd-kit deps |
-| `packages/extension-sdk/src/core/types.ts` | Add WidgetProps alias |
-| `extensions/hello-world/manifest.json` | Add widgets array |
-| `extensions/hello-world/build-panel.js` | Build status-widget |
+
+| File                                                                    | Change                                                             |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `packages/cli/src/features/extensions/types/extension.types.ts`         | Add UiWidget, WidgetSize                                           |
+| `packages/cli/src/features/extensions/types/index.ts`                   | Re-export new types                                                |
+| `packages/cli/src/features/extensions/manifest/manifest-loader.ts`      | Widget Zod schema                                                  |
+| `packages/cli/src/features/extensions/manifest/manifest-loader.test.ts` | Widget validation tests                                            |
+| `packages/cli/src/lib.ts`                                               | Export dashboard + widget types                                    |
+| `packages/server/src/features/extensions/extensions.routes.ts`          | Widget serving, refactor findExtensionUiAsset, marketplace widgets |
+| `packages/server/src/features/extensions/extensions.routes.test.ts`     | Widget route + marketplace tests                                   |
+| `packages/server/src/server.ts`                                         | Register dashboard routes                                          |
+| `packages/ui/src/core/hooks/use-extensions.ts`                          | ExtensionWidget type                                               |
+| `packages/ui/src/core/hooks/use-extensions.test.ts`                     | Widget marketplace test                                            |
+| `packages/ui/src/features/home/HomePage.tsx`                            | Add WidgetGrid                                                     |
+| `packages/ui/src/features/home/HomePage.test.tsx`                       | Mock WidgetGrid                                                    |
+| `packages/ui/src/features/extensions/components/DynamicPanel.tsx`       | Use shared ErrorBoundary                                           |
+| `packages/ui/package.json`                                              | Add @dnd-kit deps                                                  |
+| `packages/extension-sdk/src/core/types.ts`                              | Add WidgetProps alias                                              |
+| `extensions/hello-world/manifest.json`                                  | Add widgets array                                                  |
+| `extensions/hello-world/build-panel.js`                                 | Build status-widget                                                |
 
 ### Dependency order
+
 ```
 Phase 0 (ADR + Diagrams) → Phase 1 (CLI Types + Zod) → Phase 2 (Layout Manager) → Phase 3 (Server Routes) → Phase 4 (UI) → Phase 5 (Reference Ext) → Phase 6 (Cleanup)
 ```

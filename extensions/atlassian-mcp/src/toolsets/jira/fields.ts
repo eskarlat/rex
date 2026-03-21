@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createFieldsToolset(client: JiraClient): Toolset {
   return {
@@ -28,7 +28,7 @@ export function createFieldsToolset(client: JiraClient): Toolset {
       jira_search_fields: async () => {
         try {
           const data = await client.getFields();
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -39,7 +39,7 @@ export function createFieldsToolset(client: JiraClient): Toolset {
             args['fieldId'] as string,
             args['contextId'] as string,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

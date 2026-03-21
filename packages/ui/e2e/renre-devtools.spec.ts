@@ -35,9 +35,7 @@ const devtoolsMarketplace = {
 async function setupDevtoolsAPIMocks(page: Page): Promise<void> {
   await setupAPIMocks(page);
   // Override the marketplace route to include renre-devtools
-  await page.route('**/api/marketplace', (route) =>
-    route.fulfill({ json: devtoolsMarketplace }),
-  );
+  await page.route('**/api/marketplace', (route) => route.fulfill({ json: devtoolsMarketplace }));
 }
 
 /**
@@ -48,21 +46,11 @@ async function setupIsolatedMocks(
   page: Page,
   marketplace: { active: unknown[]; installed: unknown[]; available: unknown[] },
 ): Promise<void> {
-  await page.route('**/api/projects', (route) =>
-    route.fulfill({ json: [] }),
-  );
-  await page.route('**/api/project', (route) =>
-    route.fulfill({ json: null }),
-  );
-  await page.route('**/api/marketplace', (route) =>
-    route.fulfill({ json: marketplace }),
-  );
-  await page.route('**/api/extensions/install', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
-  await page.route('**/api/extensions/activate', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route('**/api/projects', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/project', (route) => route.fulfill({ json: null }));
+  await page.route('**/api/marketplace', (route) => route.fulfill({ json: marketplace }));
+  await page.route('**/api/extensions/install', (route) => route.fulfill({ json: { ok: true } }));
+  await page.route('**/api/extensions/activate', (route) => route.fulfill({ json: { ok: true } }));
   await page.route('**/api/extensions/deactivate', (route) =>
     route.fulfill({ json: { ok: true } }),
   );
@@ -89,9 +77,7 @@ test.describe('Renre Devtools — Extension Panel Page', () => {
 
   test('displays extension name as heading', async ({ page }) => {
     await page.goto('/extensions/renre-devtools');
-    await expect(
-      page.getByRole('heading', { name: 'renre-devtools' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'renre-devtools' })).toBeVisible();
   });
 
   test('shows extension panel subtitle', async ({ page }) => {
@@ -127,16 +113,12 @@ test.describe('Renre Devtools — Marketplace', () => {
   test('shows mcp type badge for renre-devtools', async ({ page }) => {
     await page.getByRole('tab', { name: /active/i }).click();
     // Scope to the renre-devtools card area
-    await expect(
-      page.getByText(/browser automation and debugging/i),
-    ).toBeVisible();
+    await expect(page.getByText(/browser automation and debugging/i)).toBeVisible();
   });
 
   test('shows extension description', async ({ page }) => {
     await page.getByRole('tab', { name: /active/i }).click();
-    await expect(
-      page.getByText(/browser automation and debugging/i),
-    ).toBeVisible();
+    await expect(page.getByText(/browser automation and debugging/i)).toBeVisible();
   });
 
   test('has deactivate button for renre-devtools', async ({ page }) => {
@@ -298,9 +280,7 @@ test.describe('Renre Devtools — Install Flow', () => {
     });
 
     await page.goto('/extensions/renre-devtools');
-    await expect(
-      page.getByRole('heading', { name: 'renre-devtools' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'renre-devtools' })).toBeVisible();
     await expect(page.getByText('Extension panel')).toBeVisible();
   });
 });

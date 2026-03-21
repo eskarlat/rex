@@ -27,11 +27,7 @@ export interface StorageEntry {
 }
 
 /** Event types supported by the SDK */
-export type SDKEventType =
-  | 'project:init'
-  | 'project:destroy'
-  | 'ext:activate'
-  | 'ext:deactivate';
+export type SDKEventType = 'project:init' | 'project:destroy' | 'ext:activate' | 'ext:deactivate';
 
 /** Event handler function */
 export type SDKEventHandler = (payload: SDKEventPayload) => void | Promise<void>;
@@ -135,7 +131,15 @@ export interface TerminalAPI {
   send(data: string): void;
 }
 
-/** Main SDK interface — 7 capability groups */
+/** Logger capability group */
+export interface LoggerAPI {
+  debug(message: string, data?: unknown): void;
+  info(message: string, data?: unknown): void;
+  warn(message: string, data?: unknown): void;
+  error(message: string, data?: unknown): void;
+}
+
+/** Main SDK interface — 8 capability groups */
 export interface RenreKitSDK {
   readonly project: ProjectContextAPI;
   readonly exec: CommandExecutionAPI;
@@ -144,6 +148,7 @@ export interface RenreKitSDK {
   readonly events: EventsAPI;
   readonly scheduler: SchedulerAPI;
   readonly terminal: TerminalAPI;
+  readonly logger: LoggerAPI;
   destroy(): void;
 }
 

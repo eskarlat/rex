@@ -23,6 +23,7 @@ export type {
   EventsAPI,
   SchedulerAPI,
   TerminalAPI,
+  LoggerAPI,
   RenreKitSDK,
 } from './core/types';
 
@@ -41,3 +42,4 @@ export { useStorage } from './features/hooks/useStorage';
 export { useEvents } from './features/hooks/useEvents';
 export { useScheduler } from './features/hooks/useScheduler';
 export { useExtension } from './features/hooks/useExtension';
+export { useLogger } from './features/hooks/useLogger';

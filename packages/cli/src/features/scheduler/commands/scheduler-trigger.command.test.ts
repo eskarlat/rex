@@ -30,7 +30,12 @@ describe('parseCommandString', () => {
   });
 
   it('handles mixed quotes and args', () => {
-    expect(parseCommandString('cmd --msg "hello world" --flag')).toEqual(['cmd', '--msg', 'hello world', '--flag']);
+    expect(parseCommandString('cmd --msg "hello world" --flag')).toEqual([
+      'cmd',
+      '--msg',
+      'hello world',
+      '--flag',
+    ]);
   });
 
   it('returns empty array for empty string', () => {
@@ -87,7 +92,9 @@ describe('scheduler-trigger command', () => {
     });
     const mockRun = vi.fn();
     mockDb.prepare.mockReturnValue({ get: mockGet, run: mockRun });
-    vi.mocked(execFileSync).mockImplementation(() => { throw new Error('command failed'); });
+    vi.mocked(execFileSync).mockImplementation(() => {
+      throw new Error('command failed');
+    });
 
     handleSchedulerTrigger({ taskId: 'bad-task', db: mockDb as never });
 

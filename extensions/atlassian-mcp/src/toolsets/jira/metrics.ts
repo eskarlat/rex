@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createMetricsToolset(client: JiraClient): Toolset {
   return {
@@ -8,8 +8,7 @@ export function createMetricsToolset(client: JiraClient): Toolset {
     tools: [
       {
         name: 'jira_get_issue_dates',
-        description:
-          'Get key date fields for a Jira issue (created, updated, resolved, due date).',
+        description: 'Get key date fields for a Jira issue (created, updated, resolved, due date).',
         inputSchema: {
           type: 'object',
           properties: {
@@ -34,7 +33,7 @@ export function createMetricsToolset(client: JiraClient): Toolset {
       jira_get_issue_dates: async (args) => {
         try {
           const data = await client.getIssueDateFields(args['issueKey'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -42,7 +41,7 @@ export function createMetricsToolset(client: JiraClient): Toolset {
       jira_get_issue_sla: async (args) => {
         try {
           const data = await client.getIssueSla(args['issueKey'] as string);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

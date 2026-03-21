@@ -34,7 +34,15 @@ describe('projects routes', () => {
 
   describe('GET /api/projects', () => {
     it('returns list of projects', async () => {
-      const projects = [{ id: 1, name: 'test', path: '/test', created_at: '2024-01-01', last_accessed_at: '2024-01-01' }];
+      const projects = [
+        {
+          id: 1,
+          name: 'test',
+          path: '/test',
+          created_at: '2024-01-01',
+          last_accessed_at: '2024-01-01',
+        },
+      ];
       mockList.mockReturnValue(projects);
 
       const response = await app.inject({ method: 'GET', url: '/api/projects' });
@@ -73,7 +81,13 @@ describe('projects routes', () => {
 
   describe('GET /api/project', () => {
     it('returns project details with header', async () => {
-      const project = { id: 1, name: 'test', path: '/test', created_at: '2024-01-01', last_accessed_at: '2024-01-01' };
+      const project = {
+        id: 1,
+        name: 'test',
+        path: '/test',
+        created_at: '2024-01-01',
+        last_accessed_at: '2024-01-01',
+      };
       mockGet.mockReturnValue(project);
 
       const response = await app.inject({

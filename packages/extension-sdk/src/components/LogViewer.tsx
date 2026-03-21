@@ -6,17 +6,10 @@ export interface LogViewerProps {
   maxHeight?: string;
 }
 
-export function LogViewer({
-  lines,
-  className,
-  maxHeight = '400px',
-}: LogViewerProps) {
+export function LogViewer({ lines, className, maxHeight = '400px' }: LogViewerProps) {
   return (
     <div
-      className={cn(
-        'overflow-auto rounded-md border bg-muted p-4 font-mono text-sm',
-        className
-      )}
+      className={cn('overflow-auto rounded-md border bg-muted p-4 font-mono text-sm', className)}
       style={{ maxHeight }}
     >
       {lines.map((line, index) => (

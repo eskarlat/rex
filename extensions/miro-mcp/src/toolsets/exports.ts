@@ -47,10 +47,7 @@ export function createExportsToolset(client: MiroClient): Toolset {
 
   const handlers = {
     miro_create_export_job: createHandler((args) =>
-      client.createExportJob(
-        args['boardId'] as string,
-        args['data'] as Record<string, unknown>,
-      ),
+      client.createExportJob(args['boardId'] as string, args['data'] as Record<string, unknown>),
     ),
     miro_get_export_job_status: createHandler((args) =>
       client.getExportJobStatus(args['boardId'] as string, args['jobId'] as string),

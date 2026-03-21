@@ -30,45 +30,35 @@ describe('database', () => {
 
   it('should create _migrations table', () => {
     const row = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='_migrations'",
-      )
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='_migrations'")
       .get() as { name: string } | undefined;
     expect(row?.name).toBe('_migrations');
   });
 
   it('should create projects table', () => {
     const row = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='projects'",
-      )
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'")
       .get() as { name: string } | undefined;
     expect(row?.name).toBe('projects');
   });
 
   it('should create installed_extensions table', () => {
     const row = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='installed_extensions'",
-      )
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='installed_extensions'")
       .get() as { name: string } | undefined;
     expect(row?.name).toBe('installed_extensions');
   });
 
   it('should create scheduled_tasks table', () => {
     const row = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_tasks'",
-      )
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_tasks'")
       .get() as { name: string } | undefined;
     expect(row?.name).toBe('scheduled_tasks');
   });
 
   it('should create task_history table', () => {
     const row = db
-      .prepare(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='task_history'",
-      )
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='task_history'")
       .get() as { name: string } | undefined;
     expect(row?.name).toBe('task_history');
   });
@@ -130,14 +120,14 @@ describe('database', () => {
     db.prepare(
       'INSERT INTO scheduled_tasks (id, name, type, project_path, cron, command, next_run_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     ).run('task-1', 'ext-a', 'manual', '/tmp', '* * * * *', 'run', '2024-01-01', '2024-01-01');
-    db.prepare(
-      'INSERT INTO task_history (task_id, started_at, status) VALUES (?, ?, ?)',
-    ).run('task-1', '2024-01-01', 'success');
+    db.prepare('INSERT INTO task_history (task_id, started_at, status) VALUES (?, ?, ?)').run(
+      'task-1',
+      '2024-01-01',
+      'success',
+    );
 
     db.prepare('DELETE FROM scheduled_tasks WHERE id = ?').run('task-1');
-    const rows = db
-      .prepare('SELECT * FROM task_history WHERE task_id = ?')
-      .all('task-1');
+    const rows = db.prepare('SELECT * FROM task_history WHERE task_id = ?').all('task-1');
     expect(rows.length).toBe(0);
   });
 
@@ -211,10 +201,7 @@ describe('runMigrations', () => {
     runMigrations(testDb, migrationsDir);
 
     // Second migration has invalid SQL
-    fs.writeFileSync(
-      path.join(migrationsDir, '002-bad.sql'),
-      'INVALID SQL STATEMENT;',
-    );
+    fs.writeFileSync(path.join(migrationsDir, '002-bad.sql'), 'INVALID SQL STATEMENT;');
 
     expect(() => runMigrations(testDb, migrationsDir)).toThrow(/Migration "002-bad.sql" failed/);
 
@@ -227,10 +214,7 @@ describe('runMigrations', () => {
   });
 
   it('should include backup path in error message on failure', () => {
-    fs.writeFileSync(
-      path.join(migrationsDir, '001-bad.sql'),
-      'INVALID SQL;',
-    );
+    fs.writeFileSync(path.join(migrationsDir, '001-bad.sql'), 'INVALID SQL;');
 
     const backupPath = `${testDb.name}.bak`;
     expect(() => runMigrations(testDb, migrationsDir)).toThrow(

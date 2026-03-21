@@ -103,9 +103,7 @@ describe('ScheduledTasksPage', () => {
     renderWithProviders(<ScheduledTasksPage />);
     await userEvent.click(screen.getByText('Create Task'));
     expect(screen.getByText('Create Scheduled Task')).toBeInTheDocument();
-    expect(
-      screen.getByText('Schedule a recurring extension command.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Schedule a recurring extension command.')).toBeInTheDocument();
   });
 
   it('dialog contains all three input fields', async () => {
@@ -147,10 +145,7 @@ describe('ScheduledTasksPage', () => {
     await userEvent.click(screen.getByText('Create Task'));
     await userEvent.type(screen.getByLabelText('Task Name'), 'db-tools');
     await userEvent.type(screen.getByLabelText('Command'), 'backup');
-    await userEvent.type(
-      screen.getByLabelText('Cron Expression'),
-      '0 2 * * *',
-    );
+    await userEvent.type(screen.getByLabelText('Cron Expression'), '0 2 * * *');
     await userEvent.click(screen.getByRole('button', { name: 'Create' }));
     expect(mockCreateMutate).toHaveBeenCalledWith(
       {
@@ -182,9 +177,7 @@ describe('ScheduledTasksPage loading state', () => {
       useTaskHistory: () => ({ data: [], isLoading: false }),
     }));
 
-    const { ScheduledTasksPage: LoadingPage } = await import(
-      './ScheduledTasksPage'
-    );
+    const { ScheduledTasksPage: LoadingPage } = await import('./ScheduledTasksPage');
 
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -222,9 +215,7 @@ describe('ScheduledTasksPage empty state', () => {
       useTaskHistory: () => ({ data: [], isLoading: false }),
     }));
 
-    const { ScheduledTasksPage: EmptyPage } = await import(
-      './ScheduledTasksPage'
-    );
+    const { ScheduledTasksPage: EmptyPage } = await import('./ScheduledTasksPage');
 
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },

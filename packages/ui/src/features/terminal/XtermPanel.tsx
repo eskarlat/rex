@@ -60,12 +60,16 @@ export function XtermPanel() {
     fitAddonRef.current = fitAddon;
 
     requestAnimationFrame(() => {
-      fitAddon.fit();
+      if (container.clientWidth > 0 && container.clientHeight > 0) {
+        fitAddon.fit();
+      }
     });
 
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(() => {
-        fitAddon.fit();
+        if (container.clientWidth > 0 && container.clientHeight > 0) {
+          fitAddon.fit();
+        }
       });
     });
     resizeObserver.observe(container);

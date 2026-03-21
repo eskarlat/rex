@@ -55,9 +55,7 @@ describe('VaultPage', () => {
 
   it('renders description text', () => {
     renderWithProviders(<VaultPage />);
-    expect(
-      screen.getByText('Manage encrypted secrets and keys.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Manage encrypted secrets and keys.')).toBeInTheDocument();
   });
 
   it('shows vault entries in the table', () => {
@@ -107,9 +105,7 @@ describe('VaultPage', () => {
     renderWithProviders(<VaultPage />);
     await userEvent.click(screen.getByText('Add Entry'));
     expect(screen.getByText('Add Vault Entry')).toBeInTheDocument();
-    expect(
-      screen.getByText('Store a new encrypted secret in the vault.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Store a new encrypted secret in the vault.')).toBeInTheDocument();
   });
 
   it('dialog contains Key, Value, and Tags inputs', async () => {
@@ -141,10 +137,7 @@ describe('VaultPage', () => {
     await userEvent.click(screen.getByText('Add Entry'));
     await userEvent.type(screen.getByLabelText('Key'), 'NEW_SECRET');
     await userEvent.type(screen.getByLabelText('Value'), 'secret123');
-    await userEvent.type(
-      screen.getByLabelText('Tags (comma-separated)'),
-      'tag1, tag2',
-    );
+    await userEvent.type(screen.getByLabelText('Tags (comma-separated)'), 'tag1, tag2');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(mockSetMutate).toHaveBeenCalledWith(
       { key: 'NEW_SECRET', value: 'secret123', secret: true, tags: ['tag1', 'tag2'] },

@@ -112,10 +112,7 @@ export function createComplianceToolset(client: MiroClient): Toolset {
       client.getComplianceCase(args['orgId'] as string, args['caseId'] as string),
     ),
     miro_create_compliance_case: createHandler((args) =>
-      client.createComplianceCase(
-        args['orgId'] as string,
-        args['data'] as Record<string, unknown>,
-      ),
+      client.createComplianceCase(args['orgId'] as string, args['data'] as Record<string, unknown>),
     ),
     miro_update_compliance_case: createHandler((args) =>
       client.updateComplianceCase(
@@ -124,14 +121,9 @@ export function createComplianceToolset(client: MiroClient): Toolset {
         args['data'] as Record<string, unknown>,
       ),
     ),
-    miro_list_legal_holds: createHandler((args) =>
-      client.listLegalHolds(args['orgId'] as string),
-    ),
+    miro_list_legal_holds: createHandler((args) => client.listLegalHolds(args['orgId'] as string)),
     miro_create_legal_hold: createHandler((args) =>
-      client.createLegalHold(
-        args['orgId'] as string,
-        args['data'] as Record<string, unknown>,
-      ),
+      client.createLegalHold(args['orgId'] as string, args['data'] as Record<string, unknown>),
     ),
     miro_get_content_logs: createHandler((args) =>
       client.getContentLogs(

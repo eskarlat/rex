@@ -1,8 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
-import {
-  getDashboardLayout,
-  saveDashboardLayout,
-} from '@renre-kit/cli/lib';
+import { getDashboardLayout, saveDashboardLayout } from '@renre-kit/cli/lib';
 import type { DashboardLayout } from '@renre-kit/cli/lib';
 
 const dashboardRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {

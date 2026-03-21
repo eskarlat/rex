@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 
 export function createServiceDeskToolset(client: JiraClient): Toolset {
   return {
@@ -39,7 +39,7 @@ export function createServiceDeskToolset(client: JiraClient): Toolset {
       jira_get_service_desk_for_project: async () => {
         try {
           const data = await client.getServiceDesks();
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -47,7 +47,7 @@ export function createServiceDeskToolset(client: JiraClient): Toolset {
       jira_get_service_desk_queues: async (args) => {
         try {
           const data = await client.getServiceDeskQueues(args['serviceDeskId'] as number);
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }
@@ -58,7 +58,7 @@ export function createServiceDeskToolset(client: JiraClient): Toolset {
             args['serviceDeskId'] as number,
             args['queueId'] as number,
           );
-          return textResult(data);
+          return markdownResult(data);
         } catch (err) {
           return errorResult(err instanceof Error ? err.message : String(err));
         }

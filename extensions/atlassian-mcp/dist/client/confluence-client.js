@@ -6,7 +6,7 @@ export class ConfluenceClient extends AtlassianBaseClient {
     // --- Pages ---
     async search(cql, limit = 25, start = 0) {
         const params = new URLSearchParams({ cql, limit: String(limit), start: String(start) });
-        return this.request('GET', `/wiki/rest/api/content/search?${params.toString()}`);
+        return this.request('GET', `/wiki/rest/api/search?${params.toString()}`);
     }
     async getPage(pageId, expand = 'body.storage,version') {
         return this.request('GET', `/wiki/rest/api/content/${pageId}?expand=${encodeURIComponent(expand)}`);
@@ -67,18 +67,35 @@ export class ConfluenceClient extends AtlassianBaseClient {
         return this.request('GET', `/wiki/rest/api/search/user?cql=${encodeURIComponent(`user.fullname~"${query}"`)}`);
     }
     // --- Analytics ---
-    async getPageViews(pageId) {
-        return this.request('GET', `/wiki/rest/api/content/${pageId}/history`);
+    async getPageViews(pageId, fromDate) {
+        const params = fromDate ? `?fromDate=${encodeURIComponent(fromDate)}` : '';
+        return this.request('GET', `/wiki/rest/api/analytics/content/${pageId}/views${params}`);
+    }
+    async getPageViewers(pageId, fromDate) {
+        const params = fromDate ? `?fromDate=${encodeURIComponent(fromDate)}` : '';
+        return this.request('GET', `/wiki/rest/api/analytics/content/${pageId}/viewers${params}`);
     }
     // --- Attachments ---
     async uploadAttachment(pageId, filename, content) {
-        return this.request('POST', `/wiki/rest/api/content/${pageId}/child/attachment`, { filename, content }, { 'X-Atlassian-Token': 'nocheck' });
+        const formData = new FormData();
+        const blob = new Blob([content]);
+        formData.append('file', blob, filename);
+        return this.requestFormData(`/wiki/rest/api/content/${pageId}/child/attachment`, formData);
     }
     async getAttachments(pageId, limit = 25, start = 0) {
         return this.request('GET', `/wiki/rest/api/content/${pageId}/child/attachment?limit=${limit}&start=${start}`);
     }
     async downloadAttachment(pageId, filename) {
-        return this.requestRaw('GET', `/wiki/download/attachments/${pageId}/${encodeURIComponent(filename)}`);
+        const data = (await this.getAttachments(pageId, 100));
+        const results = (data['results'] ?? []);
+        const attachment = results.find((a) => a['title'] === filename);
+        if (!attachment) {
+            throw new Error(`Attachment "${filename}" not found on page ${pageId}`);
+        }
+        return this.requestRaw('GET', `/wiki/rest/api/content/${attachment['id']}/download`);
+    }
+    async downloadAttachmentById(attachmentId) {
+        return this.requestRaw('GET', `/wiki/rest/api/content/${attachmentId}/download`);
     }
     async deleteAttachment(attachmentId) {
         return this.request('DELETE', `/wiki/rest/api/content/${attachmentId}`);

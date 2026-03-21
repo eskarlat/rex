@@ -10,9 +10,11 @@ Show extension version and description.
 ## Commands
 
 ### hello-world:info
+
 Show extension version and description.
 
 **Example:**
+
 ```
 renre-kit hello-world:info
 ```

@@ -50,24 +50,18 @@ function StatusWidget({ sdk, extensionName }) {
       setLoading(false);
     }
   }
-  return /* @__PURE__ */ jsxs("div", { style: { padding: "8px" }, children: [
-    /* @__PURE__ */ jsx("p", { style: { fontSize: "14px", fontWeight: 500, marginBottom: "8px" }, children: extName }),
+  return /* @__PURE__ */ jsxs("div", { className: "p-2", children: [
+    /* @__PURE__ */ jsx("p", { className: "mb-2 text-sm font-medium", children: extName }),
     /* @__PURE__ */ jsx(
       "button",
       {
         onClick: handleQuickGreet,
         disabled: loading || !sdk,
-        style: {
-          padding: "4px 12px",
-          borderRadius: "4px",
-          border: "1px solid #ccc",
-          cursor: loading ? "wait" : "pointer",
-          fontSize: "13px"
-        },
+        className: "inline-flex h-8 items-center rounded border border-border px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50",
         children: loading ? "Greeting..." : "Quick Greet"
       }
     ),
-    output && /* @__PURE__ */ jsx("p", { style: { fontSize: "13px", marginTop: "8px", color: "#666" }, children: output })
+    output && /* @__PURE__ */ jsx("p", { className: "mt-2 text-xs text-muted-foreground", children: output })
   ] });
 }
 export {

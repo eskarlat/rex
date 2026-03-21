@@ -8,7 +8,9 @@ export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelPro
   const [loading, setLoading] = useState(false);
   const [cronTask, setCronTask] = useState<ScheduledTask | null>(null);
   const [cronLoading, setCronLoading] = useState(false);
-  const [history, setHistory] = useState<Array<{ name: string; response: string; time: string }>>([]);
+  const [history, setHistory] = useState<Array<{ name: string; response: string; time: string }>>(
+    [],
+  );
 
   const extName = extensionName ?? 'hello-world';
 
@@ -43,16 +45,19 @@ export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelPro
   // Poll for task execution and show toasts
   const pollTask = useCallback(() => {
     if (!sdk || !cronTask) return;
-    sdk.scheduler.list().then((tasks) => {
-      const current = tasks.find((t) => t.id === cronTask.id);
-      if (current && current.last_run_at !== cronTask.last_run_at) {
-        setCronTask(current);
-        sdk.ui.toast({
-          title: 'Cron tick',
-          description: `Task ran at ${current.last_run_at ?? 'unknown'}`,
-        });
-      }
-    }).catch(() => {});
+    sdk.scheduler
+      .list()
+      .then((tasks) => {
+        const current = tasks.find((t) => t.id === cronTask.id);
+        if (current && current.last_run_at !== cronTask.last_run_at) {
+          setCronTask(current);
+          sdk.ui.toast({
+            title: 'Cron tick',
+            description: `Task ran at ${current.last_run_at ?? 'unknown'}`,
+          });
+        }
+      })
+      .catch(() => {});
   }, [sdk, cronTask]);
 
   useEffect(() => {
@@ -79,7 +84,11 @@ export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelPro
         sdk.ui.toast({ title: 'Cron started', description: 'Running every 3 seconds' });
       }
     } catch {
-      sdk.ui.toast({ title: 'Cron error', description: 'Failed to toggle cron task', variant: 'destructive' });
+      sdk.ui.toast({
+        title: 'Cron error',
+        description: 'Failed to toggle cron task',
+        variant: 'destructive',
+      });
     } finally {
       setCronLoading(false);
     }
@@ -109,11 +118,15 @@ export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelPro
                 placeholder="Enter a name..."
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleGreet().catch(() => {}); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleGreet().catch(() => {});
+                }}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <button
-                onClick={() => { handleGreet().catch(() => {}); }}
+                onClick={() => {
+                  handleGreet().catch(() => {});
+                }}
                 disabled={loading}
                 className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
               >
@@ -137,7 +150,9 @@ export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelPro
             Show Toast
           </button>
           <button
-            onClick={() => { handleCronToggle().catch(() => {}); }}
+            onClick={() => {
+              handleCronToggle().catch(() => {});
+            }}
             disabled={cronLoading}
             className={
               cronTask
@@ -150,22 +165,18 @@ export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelPro
         </div>
       </Panel>
 
-      <Panel
-        title="Extension Info"
-        description="View extension version and metadata."
-      >
+      <Panel title="Extension Info" description="View extension version and metadata.">
         <button
-          onClick={() => { handleInfo().catch(() => {}); }}
+          onClick={() => {
+            handleInfo().catch(() => {});
+          }}
           className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
         >
           Show Info
         </button>
       </Panel>
 
-      <Panel
-        title="Commands"
-        description="Available CLI commands for this extension."
-      >
+      <Panel title="Commands" description="Available CLI commands for this extension.">
         <DataTable
           columns={[
             { key: 'command', label: 'Command' },
@@ -179,10 +190,7 @@ export default function HelloWorldPanel({ sdk, extensionName }: Partial<PanelPro
       </Panel>
 
       {history.length > 0 && (
-        <Panel
-          title="Greeting History"
-          description="Recent greetings from this session."
-        >
+        <Panel title="Greeting History" description="Recent greetings from this session.">
           <DataTable
             columns={[
               { key: 'time', label: 'Time' },

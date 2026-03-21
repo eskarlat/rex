@@ -23,11 +23,7 @@ function createWrapper() {
     defaultOptions: { queries: { retry: false } },
   });
   return function Wrapper({ children }: { children: ReactNode }) {
-    return React.createElement(
-      QueryClientProvider,
-      { client: queryClient },
-      children
-    );
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
   };
 }
 
@@ -93,7 +89,7 @@ describe('useCreateTask', () => {
       expect(mockFetchApi).toHaveBeenCalledWith('/api/scheduler', {
         method: 'POST',
         body: input,
-      })
+      }),
     );
   });
 });
@@ -115,7 +111,7 @@ describe('useUpdateTask', () => {
       expect(mockFetchApi).toHaveBeenCalledWith('/api/scheduler/5', {
         method: 'PUT',
         body: { enabled: 0, cron: '*/5 * * * *' },
-      })
+      }),
     );
   });
 });
@@ -135,7 +131,7 @@ describe('useDeleteTask', () => {
     await waitFor(() =>
       expect(mockFetchApi).toHaveBeenCalledWith('/api/scheduler/3', {
         method: 'DELETE',
-      })
+      }),
     );
   });
 });
@@ -155,7 +151,7 @@ describe('useTriggerTask', () => {
     await waitFor(() =>
       expect(mockFetchApi).toHaveBeenCalledWith('/api/scheduler/7/trigger', {
         method: 'POST',
-      })
+      }),
     );
   });
 });

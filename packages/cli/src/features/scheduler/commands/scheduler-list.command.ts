@@ -21,12 +21,10 @@ interface SchedulerListOptions {
 
 export function handleSchedulerList(options: SchedulerListOptions): void {
   const tasks = options.projectPath
-    ? options.db
+    ? (options.db
         .prepare('SELECT * FROM scheduled_tasks WHERE project_path = ? OR project_path IS NULL')
-        .all(options.projectPath) as ScheduledTask[]
-    : options.db
-        .prepare('SELECT * FROM scheduled_tasks')
-        .all() as ScheduledTask[];
+        .all(options.projectPath) as ScheduledTask[])
+    : (options.db.prepare('SELECT * FROM scheduled_tasks').all() as ScheduledTask[]);
 
   if (tasks.length === 0) {
     clack.log.info('No scheduled tasks.');

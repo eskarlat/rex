@@ -10,7 +10,10 @@ export interface TaskExecResult {
   finishedAt: string;
 }
 
-export function executeTaskCommand(command: string, parseCommand: (input: string) => string[]): TaskExecResult {
+export function executeTaskCommand(
+  command: string,
+  parseCommand: (input: string) => string[],
+): TaskExecResult {
   const startedAt = new Date().toISOString();
   const start = Date.now();
   let status: 'success' | 'error' = 'success';

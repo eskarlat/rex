@@ -95,9 +95,7 @@ test.describe('Marketplace Page', () => {
     await emptyPage.route('**/api/marketplace', (route) =>
       route.fulfill({ json: { active: [], installed: [], available: [] } }),
     );
-    await emptyPage.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
+    await emptyPage.route('**/api/projects', (route) => route.fulfill({ json: [] }));
     await emptyPage.route('**/api/project', (route) =>
       route.fulfill({ json: { name: 'test', path: '/tmp/test' } }),
     );

@@ -1,4 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
 vi.mock('@clack/prompts', () => ({
   log: { info: vi.fn(), success: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -18,8 +21,9 @@ vi.mock('../../../core/database/database.js', () => ({
   getDb: vi.fn().mockReturnValue({ prepare: (...args: unknown[]) => mockPrepare(...args) }),
 }));
 
+let mockExtDir = '/mock/extensions/my-ext@1.0.0';
 vi.mock('../../../core/paths/paths.js', () => ({
-  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
+  getExtensionDir: vi.fn().mockImplementation(() => mockExtDir),
 }));
 
 import * as clack from '@clack/prompts';
@@ -27,9 +31,16 @@ import { handleExtRemove } from './ext-remove.command.js';
 import * as extensionManager from '../manager/extension-manager.js';
 
 describe('ext-remove command', () => {
+  let tmpDir: string;
+
   beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renre-ext-remove-'));
     vi.clearAllMocks();
     mockPrepare.mockReturnValue({ all: vi.fn().mockReturnValue([]) });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it('removes extension from DB', async () => {
@@ -68,11 +79,36 @@ describe('ext-remove command', () => {
     expect(extensionManager.remove).toHaveBeenCalled();
   });
 
+  it('removes extension directory from filesystem', async () => {
+    const extDir = path.join(tmpDir, 'my-ext@1.0.0');
+    fs.mkdirSync(extDir, { recursive: true });
+    fs.writeFileSync(path.join(extDir, 'manifest.json'), '{}');
+    mockExtDir = extDir;
+
+    await handleExtRemove({
+      name: 'my-ext',
+      version: '1.0.0',
+      projectPath: null,
+    });
+
+    expect(fs.existsSync(extDir)).toBe(false);
+  });
+
+  it('does not throw when extension directory does not exist', async () => {
+    mockExtDir = path.join(tmpDir, 'nonexistent@1.0.0');
+
+    await expect(
+      handleExtRemove({
+        name: 'nonexistent',
+        version: '1.0.0',
+        projectPath: null,
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it('warns when other projects use the extension', async () => {
     mockPrepare.mockReturnValue({
-      all: vi.fn().mockReturnValue([
-        { name: 'other-project', path: '/other/project' },
-      ]),
+      all: vi.fn().mockReturnValue([{ name: 'other-project', path: '/other/project' }]),
     });
     vi.mocked(extensionManager.getActivated).mockReturnValue({ 'my-ext': '1.0.0' });
 

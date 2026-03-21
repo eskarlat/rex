@@ -9,9 +9,7 @@ describe('EmptyState', () => {
   });
 
   it('renders optional description', () => {
-    render(
-      <EmptyState title="Empty" description="Try adding some items" />
-    );
+    render(<EmptyState title="Empty" description="Try adding some items" />);
     expect(screen.getByText('Try adding some items')).toBeInTheDocument();
   });
 
@@ -21,9 +19,7 @@ describe('EmptyState', () => {
   });
 
   it('renders optional icon', () => {
-    render(
-      <EmptyState title="Empty" icon={<span data-testid="icon">Icon</span>} />
-    );
+    render(<EmptyState title="Empty" icon={<span data-testid="icon">Icon</span>} />);
     expect(screen.getByTestId('icon')).toBeInTheDocument();
   });
 
@@ -33,9 +29,7 @@ describe('EmptyState', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(
-      <EmptyState title="Empty" className="custom-empty" />
-    );
+    const { container } = render(<EmptyState title="Empty" className="custom-empty" />);
     expect(container.firstChild).toHaveClass('custom-empty');
   });
 });

@@ -23,64 +23,31 @@ export default function AtlassianPanel({ sdk, extensionName }: Partial<PanelProp
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ padding: '1.5rem', border: '1px solid var(--border, #e5e7eb)', borderRadius: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-          Atlassian MCP
-        </h2>
-        <p style={{ color: 'var(--muted-foreground, #6b7280)', fontSize: '0.875rem' }}>
+    <div className="flex flex-col gap-4">
+      <div className="rounded-lg border border-border p-6">
+        <h2 className="mb-2 text-xl font-semibold">Atlassian MCP</h2>
+        <p className="text-sm text-muted-foreground">
           Jira and Confluence integration — 72 tools across 21 toolsets.
         </p>
-        <div style={{ marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-          <span
-            style={{
-              width: '0.5rem',
-              height: '0.5rem',
-              borderRadius: '50%',
-              background: '#0052CC',
-              display: 'inline-block',
-            }}
-          />
-          <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground, #6b7280)' }}>
-            MCP stdio transport
-          </span>
+        <div className="mt-2 inline-flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-[#0052CC]" />
+          <span className="text-xs text-muted-foreground">MCP stdio transport</span>
         </div>
       </div>
 
-      <div style={{ padding: '1.5rem', border: '1px solid var(--border, #e5e7eb)', borderRadius: '0.5rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 500, marginBottom: '0.75rem' }}>
-          Connection Status
-        </h3>
+      <div className="rounded-lg border border-border p-6">
+        <h3 className="mb-3 text-base font-medium">Connection Status</h3>
         <button
-          onClick={() => { handleCheckStatus().catch(() => {}); }}
-          disabled={loading}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '0.375rem',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            background: 'var(--primary, #0052CC)',
-            color: 'var(--primary-foreground, #fff)',
-            border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.5 : 1,
+          onClick={() => {
+            handleCheckStatus().catch(() => {});
           }}
+          disabled={loading}
+          className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? 'Checking...' : 'Check Status'}
         </button>
         {status && (
-          <pre
-            style={{
-              marginTop: '0.75rem',
-              padding: '0.75rem 1rem',
-              background: 'var(--muted, #f3f4f6)',
-              borderRadius: '0.375rem',
-              fontSize: '0.8125rem',
-              fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap',
-              margin: '0.75rem 0 0 0',
-            }}
-          >
+          <pre className="mt-3 whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-[13px]">
             {status}
           </pre>
         )}

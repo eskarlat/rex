@@ -5,15 +5,47 @@ import type { MarketplaceResult } from '@/core/hooks/use-extensions';
 
 const marketplace: MarketplaceResult = {
   active: [
-    { name: 'figma', version: '1.0.0', type: 'standard', status: 'active', description: 'Figma integration' },
+    {
+      name: 'figma',
+      version: '1.0.0',
+      type: 'standard',
+      status: 'active',
+      description: 'Figma integration',
+    },
   ],
   installed: [
-    { name: 'slack', version: '2.0.0', type: 'standard', status: 'installed', description: 'Slack integration' },
+    {
+      name: 'slack',
+      version: '2.0.0',
+      type: 'standard',
+      status: 'installed',
+      description: 'Slack integration',
+    },
   ],
   available: [
-    { name: 'hello-world', version: '1.0.0', type: 'standard', status: 'available', description: 'A hello extension', tags: ['example', 'greeting'] },
-    { name: 'weather-mcp', version: '1.0.0', type: 'mcp-stdio', status: 'available', description: 'A weather server', tags: ['example', 'mcp'] },
-    { name: 'analytics', version: '2.0.0', type: 'standard', status: 'available', description: 'Track usage' },
+    {
+      name: 'hello-world',
+      version: '1.0.0',
+      type: 'standard',
+      status: 'available',
+      description: 'A hello extension',
+      tags: ['example', 'greeting'],
+    },
+    {
+      name: 'weather-mcp',
+      version: '1.0.0',
+      type: 'mcp-stdio',
+      status: 'available',
+      description: 'A weather server',
+      tags: ['example', 'mcp'],
+    },
+    {
+      name: 'analytics',
+      version: '2.0.0',
+      type: 'standard',
+      status: 'available',
+      description: 'Track usage',
+    },
   ],
 };
 
@@ -104,5 +136,25 @@ describe('useMarketplaceFilter', () => {
     expect(result.current.filteredAvailable).toHaveLength(1);
     act(() => result.current.setSelectedTag(null));
     expect(result.current.filteredAvailable).toHaveLength(3);
+  });
+
+  it('allFiltered concatenates active, installed, and available', () => {
+    const { result } = renderHook(() => useMarketplaceFilter(marketplace));
+    expect(result.current.allFiltered).toHaveLength(5);
+    expect(result.current.allFiltered[0]?.name).toBe('figma');
+    expect(result.current.allFiltered[1]?.name).toBe('slack');
+    expect(result.current.allFiltered[2]?.name).toBe('hello-world');
+  });
+
+  it('allFiltered respects search query filter', () => {
+    const { result } = renderHook(() => useMarketplaceFilter(marketplace));
+    act(() => result.current.setSearchQuery('figma'));
+    expect(result.current.allFiltered).toHaveLength(1);
+    expect(result.current.allFiltered[0]?.name).toBe('figma');
+  });
+
+  it('allFiltered is empty when marketplace is undefined', () => {
+    const { result } = renderHook(() => useMarketplaceFilter(undefined));
+    expect(result.current.allFiltered).toEqual([]);
   });
 });

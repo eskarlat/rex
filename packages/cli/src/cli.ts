@@ -35,12 +35,16 @@ import { listInstalled, getActivated } from './features/extensions/manager/exten
 import { ProjectManager } from './core/project/project-manager.js';
 import { EventBus } from './core/event-bus/event-bus.js';
 import { loadManifest } from './features/extensions/manifest/manifest-loader.js';
-import { loadCommandHandler, executeCommand } from './features/extensions/runtime/standard-runtime.js';
+import {
+  loadCommandHandler,
+  executeCommand,
+} from './features/extensions/runtime/standard-runtime.js';
 import { getManifestPath } from './core/paths/paths.js';
 import { pathExistsSync, readJsonSync } from './shared/fs-helpers.js';
 import { parseCliArgs } from './shared/cli-args.js';
 import type { ProjectManifest } from './core/types/project.types.js';
 import { CLI_VERSION } from './core/version.js';
+import { createExtensionLogger } from './core/logger/extension-logger.js';
 
 function detectProject(): string | null {
   const bus = new EventBus();
@@ -92,6 +96,33 @@ interface McpExtensionEntry {
   extDir: string;
 }
 
+function formatCommandResult(result: unknown): string {
+  if (typeof result === 'string') return result;
+  if (
+    result !== null &&
+    typeof result === 'object' &&
+    'output' in result &&
+    typeof (result as Record<string, unknown>).output === 'string'
+  ) {
+    return (result as Record<string, unknown>).output as string;
+  }
+  return JSON.stringify(result, null, 2);
+}
+
+function formatMcpResult(result: unknown): string {
+  if (typeof result === 'string') return result;
+  if (result !== null && typeof result === 'object' && 'content' in result) {
+    const obj = result as Record<string, unknown>;
+    if (Array.isArray(obj.content)) {
+      const texts = (obj.content as Record<string, unknown>[])
+        .filter((item) => item.type === 'text')
+        .map((item) => String(item.text));
+      if (texts.length > 0) return texts.join('\n');
+    }
+  }
+  return JSON.stringify(result, null, 2);
+}
+
 function registerExtensionCommands(
   program: Command,
   projectPath: string,
@@ -136,12 +167,13 @@ function registerExtensionCommands(
             projectPath,
             args: { _positional: args, ...parsedOpts },
             config: resolvedConfig,
+            logger: createExtensionLogger(extName),
           };
 
           const handler = await loadCommandHandler(extDir, cmdDef.handler);
           const result = await executeCommand(handler, context);
           if (result !== undefined) {
-            process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
+            process.stdout.write(formatCommandResult(result));
             process.stdout.write('\n');
           }
         });
@@ -160,15 +192,33 @@ function registerExtensionCommands(
         if (entry && tool) {
           const rawArgs = process.argv.slice(3);
           const parsedArgs = parseCliArgs(rawArgs);
-          connectionManager.getConnection(extName, entry.mcpConfig, entry.resolvedConfig, entry.extDir);
+          connectionManager.getConnection(
+            extName,
+            entry.mcpConfig,
+            entry.resolvedConfig,
+            entry.extDir,
+          );
           connectionManager.executeToolCall(extName, tool, parsedArgs).then(
             (result) => {
               if (result !== undefined) {
-                process.stdout.write(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-                process.stdout.write('\n');
+                const text = formatMcpResult(result);
+                const isError =
+                  typeof result === 'object' &&
+                  result !== null &&
+                  (result as Record<string, unknown>).isError === true;
+                if (isError) {
+                  process.stderr.write(text + '\n');
+                  process.exitCode = 1;
+                } else {
+                  process.stdout.write(text + '\n');
+                }
               }
             },
-            () => { /* MCP tool call failures are reported by ConnectionManager */ },
+            (err: unknown) => {
+              const message = err instanceof Error ? err.message : String(err);
+              process.stderr.write(`Error: ${message}\n`);
+              process.exitCode = 1;
+            },
           );
           return;
         }
@@ -444,7 +494,12 @@ export function createProgram(): Command {
     .option('--tags <tags>', 'Comma-separated tags', '')
     .option('--value <value>', 'Value to store (prompted if omitted)')
     .action(async (key: string, opts: { secret?: boolean; tags: string; value?: string }) => {
-      const tags = opts.tags ? opts.tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+      const tags = opts.tags
+        ? opts.tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
       await handleVaultSet({
         key,
         value: opts.value,

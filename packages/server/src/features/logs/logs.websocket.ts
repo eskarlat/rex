@@ -1,7 +1,8 @@
-import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
 import fs from 'node:fs';
 import path from 'node:path';
-import { LOGS_DIR } from '@renre-kit/cli/lib';
+import { LOGS_DIR, getLogger } from '@renre-kit/cli/lib';
+import type { LogLevel } from '@renre-kit/cli/lib';
 import { getConsoleEntries, subscribeConsole } from '../../core/utils/console-capture.js';
 
 interface SocketLike {
@@ -114,6 +115,37 @@ const logsWebsocket: FastifyPluginCallback = (fastify: FastifyInstance, _opts, d
     socket.on('close', () => {
       unsubscribe();
     });
+  });
+
+  // REST endpoint: POST /api/logs/write — write a log entry from an extension
+  fastify.post('/api/logs/write', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as {
+      level?: string;
+      source?: string;
+      message?: string;
+      data?: unknown;
+    };
+
+    if (!body.level || !body.source || !body.message) {
+      reply.code(400);
+      return { error: 'level, source, and message are required' };
+    }
+
+    const validLevels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+    if (!validLevels.includes(body.level as LogLevel)) {
+      reply.code(400);
+      return { error: `Invalid level: ${body.level}. Must be one of: ${validLevels.join(', ')}` };
+    }
+
+    if (!body.source.startsWith('ext:')) {
+      reply.code(400);
+      return { error: 'source must start with "ext:" prefix' };
+    }
+
+    const logger = getLogger();
+    logger[body.level as LogLevel](body.source, body.message, body.data);
+
+    return reply.code(204).send();
   });
 
   done();

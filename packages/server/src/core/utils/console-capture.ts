@@ -25,9 +25,7 @@ function addEntry(entry: ConsoleEntry): void {
 }
 
 function push(level: string, args: unknown[]): void {
-  const msg = args
-    .map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))
-    .join(' ');
+  const msg = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
   addEntry({ level, msg, time: new Date().toISOString() });
 }
 

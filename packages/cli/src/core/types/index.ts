@@ -1,8 +1,4 @@
-export type {
-  ProjectRecord,
-  ProjectManifest,
-  PluginsJson,
-} from './project.types.js';
+export type { ProjectRecord, ProjectManifest, PluginsJson } from './project.types.js';
 
 export type {
   GlobalConfig,
@@ -21,6 +17,6 @@ export type {
   ExtDeactivatePayload,
 } from './events.types.js';
 
-export type { ExecutionContext } from './context.types.js';
+export type { ExecutionContext, ExtensionLogger } from './context.types.js';
 
 export { ErrorCode, ProjectAlreadyInitializedError } from './errors.types.js';

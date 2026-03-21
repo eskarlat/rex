@@ -56,7 +56,10 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
       } else if (status >= 400) {
         level = 'warn';
       }
-      pushConsoleEntry(level, `${request.method} ${url} ${status} ${reply.elapsedTime?.toFixed(0) ?? 0}ms`);
+      pushConsoleEntry(
+        level,
+        `${request.method} ${url} ${status} ${reply.elapsedTime?.toFixed(0) ?? 0}ms`,
+      );
     }
     done();
   });
@@ -86,7 +89,13 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
     fastify.setNotFoundHandler((request, reply) => {
       const pathname = new URL(request.url, 'http://localhost').pathname;
       if (pathname === '/api' || pathname.startsWith('/api/')) {
-        return reply.status(404).send({ message: `Route ${request.method}:${request.url} not found`, error: 'Not Found', statusCode: 404 });
+        return reply
+          .status(404)
+          .send({
+            message: `Route ${request.method}:${request.url} not found`,
+            error: 'Not Found',
+            statusCode: 404,
+          });
       }
       const method = request.method;
       const accept = request.headers.accept ?? '';

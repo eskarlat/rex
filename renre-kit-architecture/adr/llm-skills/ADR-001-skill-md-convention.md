@@ -1,13 +1,17 @@
 # ADR-001: Use Markdown SKILL.md Files for LLM Skill Definitions
 
 ## Status
+
 Accepted
 
 ## Context
+
 Extensions need to teach LLM agents how to use their commands and capabilities. LLM agents (like Claude) need natural language descriptions of what commands do, what arguments they accept, and when to use them. There must be a way to distribute these skill definitions with extensions and make them discoverable to LLM systems.
 
 ## Decision
+
 Adopt a convention-based approach using markdown files:
+
 1. Extensions define skills in `skills/SKILL.md` in their source tree
 2. Core SDK copies `skills/SKILL.md` to `.agents/skills/{extensionName}/SKILL.md` when extension is activated
 3. LLM agents scan `.agents/skills/*/SKILL.md` to discover available skills
@@ -27,6 +31,7 @@ This is a convention, not a rigid schema. LLMs can parse natural language flexib
 ## Consequences
 
 ### Positive
+
 - **Natural language guidance**: Extensions can provide rich, contextual instructions
 - **No RenreKit-specific format**: Pure markdown; portable, version-controllable
 - **Flexible**: Each extension structures skills as makes sense
@@ -36,6 +41,7 @@ This is a convention, not a rigid schema. LLMs can parse natural language flexib
 - **Version-controlled**: Skills tracked alongside extension code
 
 ### Negative
+
 - **Inconsistent structure**: Different extensions may format skills differently, confusing LLMs
 - **Quality dependent on author**: Vague or incomplete SKILL.md files are still accepted
 - **No machine verification**: LLMs may misunderstand instructions if written ambiguously

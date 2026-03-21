@@ -84,12 +84,7 @@ function transformFrontmatterName(content: string, extName: string): string {
  * For categories in FRONTMATTER_CATEGORIES (and skills), the `name` field
  * in YAML frontmatter gets prefixed with `{extName}:`.
  */
-function deployFile(
-  src: string,
-  dest: string,
-  extName: string,
-  transformName: boolean,
-): void {
+function deployFile(src: string, dest: string, extName: string, transformName: boolean): void {
   if (!existsSync(src)) {
     return;
   }

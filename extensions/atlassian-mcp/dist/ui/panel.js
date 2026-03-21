@@ -21,30 +21,7 @@ export default function AtlassianPanel({ sdk, extensionName }) {
             setLoading(false);
         }
     }
-    return (_jsxs("div", { style: { display: 'flex', flexDirection: 'column', gap: '1rem' }, children: [_jsxs("div", { style: { padding: '1.5rem', border: '1px solid var(--border, #e5e7eb)', borderRadius: '0.5rem' }, children: [_jsx("h2", { style: { fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }, children: "Atlassian MCP" }), _jsx("p", { style: { color: 'var(--muted-foreground, #6b7280)', fontSize: '0.875rem' }, children: "Jira and Confluence integration \u2014 72 tools across 21 toolsets." }), _jsxs("div", { style: { marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }, children: [_jsx("span", { style: {
-                                    width: '0.5rem',
-                                    height: '0.5rem',
-                                    borderRadius: '50%',
-                                    background: '#0052CC',
-                                    display: 'inline-block',
-                                } }), _jsx("span", { style: { fontSize: '0.75rem', color: 'var(--muted-foreground, #6b7280)' }, children: "MCP stdio transport" })] })] }), _jsxs("div", { style: { padding: '1.5rem', border: '1px solid var(--border, #e5e7eb)', borderRadius: '0.5rem' }, children: [_jsx("h3", { style: { fontSize: '1rem', fontWeight: 500, marginBottom: '0.75rem' }, children: "Connection Status" }), _jsx("button", { onClick: () => { handleCheckStatus().catch(() => { }); }, disabled: loading, style: {
-                            padding: '0.5rem 1rem',
-                            borderRadius: '0.375rem',
-                            fontSize: '0.875rem',
-                            fontWeight: 500,
-                            background: 'var(--primary, #0052CC)',
-                            color: 'var(--primary-foreground, #fff)',
-                            border: 'none',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            opacity: loading ? 0.5 : 1,
-                        }, children: loading ? 'Checking...' : 'Check Status' }), status && (_jsx("pre", { style: {
-                            marginTop: '0.75rem',
-                            padding: '0.75rem 1rem',
-                            background: 'var(--muted, #f3f4f6)',
-                            borderRadius: '0.375rem',
-                            fontSize: '0.8125rem',
-                            fontFamily: 'monospace',
-                            whiteSpace: 'pre-wrap',
-                            margin: '0.75rem 0 0 0',
-                        }, children: status }))] })] }));
+    return (_jsxs("div", { className: "flex flex-col gap-4", children: [_jsxs("div", { className: "rounded-lg border border-border p-6", children: [_jsx("h2", { className: "mb-2 text-xl font-semibold", children: "Atlassian MCP" }), _jsx("p", { className: "text-sm text-muted-foreground", children: "Jira and Confluence integration \u2014 72 tools across 21 toolsets." }), _jsxs("div", { className: "mt-2 inline-flex items-center gap-1.5", children: [_jsx("span", { className: "inline-block h-2 w-2 rounded-full bg-[#0052CC]" }), _jsx("span", { className: "text-xs text-muted-foreground", children: "MCP stdio transport" })] })] }), _jsxs("div", { className: "rounded-lg border border-border p-6", children: [_jsx("h3", { className: "mb-3 text-base font-medium", children: "Connection Status" }), _jsx("button", { onClick: () => {
+                            handleCheckStatus().catch(() => { });
+                        }, disabled: loading, className: "inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50", children: loading ? 'Checking...' : 'Check Status' }), status && (_jsx("pre", { className: "mt-3 whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-[13px]", children: status }))] })] }));
 }

@@ -32,13 +32,14 @@ import { removeDirSync } from '../../../shared/fs-helpers.js';
 function mockDb(projects: Array<{ path: string }>): never {
   return {
     prepare: () => ({
-      all: () => projects.map((p, i) => ({
-        id: i + 1,
-        name: `project-${i}`,
-        path: p.path,
-        created_at: '2026-01-01',
-        last_accessed_at: '2026-01-01',
-      })),
+      all: () =>
+        projects.map((p, i) => ({
+          id: i + 1,
+          name: `project-${i}`,
+          path: p.path,
+          created_at: '2026-01-01',
+          last_accessed_at: '2026-01-01',
+        })),
     }),
   } as never;
 }
@@ -49,19 +50,19 @@ describe('ext-cleanup command', () => {
   });
 
   it('should remove versions not referenced by any project', () => {
-    const db = mockDb([
-      { path: '/tmp/project-a' },
-      { path: '/tmp/project-b' },
-    ]);
+    const db = mockDb([{ path: '/tmp/project-a' }, { path: '/tmp/project-b' }]);
 
     vi.mocked(getActivated)
       .mockReturnValueOnce({ jira: '1.1.0' })
       .mockReturnValueOnce({ jira: '1.0.0', github: '2.0.0' });
 
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValueOnce(
-      ['jira@1.0.0', 'jira@1.1.0', 'jira@0.9.0', 'github@2.0.0'] as unknown as ReturnType<typeof fs.readdirSync>,
-    );
+    vi.mocked(fs.readdirSync).mockReturnValueOnce([
+      'jira@1.0.0',
+      'jira@1.1.0',
+      'jira@0.9.0',
+      'github@2.0.0',
+    ] as unknown as ReturnType<typeof fs.readdirSync>);
 
     handleExtCleanup({ db });
 
@@ -76,9 +77,9 @@ describe('ext-cleanup command', () => {
     const db = mockDb([{ path: '/tmp/project-a' }]);
     vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValueOnce(
-      ['jira@1.0.0'] as unknown as ReturnType<typeof fs.readdirSync>,
-    );
+    vi.mocked(fs.readdirSync).mockReturnValueOnce(['jira@1.0.0'] as unknown as ReturnType<
+      typeof fs.readdirSync
+    >);
 
     handleExtCleanup({ db });
 
@@ -98,9 +99,9 @@ describe('ext-cleanup command', () => {
   it('should handle no projects in database', () => {
     const db = mockDb([]);
     vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readdirSync).mockReturnValueOnce(
-      ['jira@1.0.0'] as unknown as ReturnType<typeof fs.readdirSync>,
-    );
+    vi.mocked(fs.readdirSync).mockReturnValueOnce(['jira@1.0.0'] as unknown as ReturnType<
+      typeof fs.readdirSync
+    >);
 
     handleExtCleanup({ db });
 

@@ -8,7 +8,12 @@ export interface SearchBarProps {
   className?: string;
 }
 
-export function SearchBar({ value, onChange, placeholder = 'Search...', className }: SearchBarProps) {
+export function SearchBar({
+  value,
+  onChange,
+  placeholder = 'Search...',
+  className,
+}: SearchBarProps) {
   return (
     <div className={cn('relative', className)}>
       <svg

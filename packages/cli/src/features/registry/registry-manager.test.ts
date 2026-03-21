@@ -48,18 +48,18 @@ describe('registry-manager', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  function makeConfig(
-    name: string,
-    url: string,
-    priority: number,
-  ): RegistryConfig {
+  function makeConfig(name: string, url: string, priority: number): RegistryConfig {
     return { name, url, priority, cacheTTL: 3600 };
   }
 
   describe('sync', () => {
     it('clones registry on first sync (dir does not exist)', async () => {
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
       const config = makeConfig('default', 'https://git.example.com/registry.git', 1);
 
       await sync('default', config);
@@ -71,7 +71,11 @@ describe('registry-manager', () => {
 
     it('pulls on subsequent sync (dir exists)', async () => {
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
       const config = makeConfig('default', 'https://git.example.com/registry.git', 1);
 
       const regDir = path.join(tmpDir, 'registries', 'default');
@@ -97,7 +101,11 @@ describe('registry-manager', () => {
   describe('syncAll', () => {
     it('syncs all provided registries', async () => {
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
       const configs = [
         makeConfig('reg1', 'https://git.example.com/r1.git', 1),
         makeConfig('reg2', 'https://git.example.com/r2.git', 2),
@@ -259,10 +267,17 @@ describe('registry-manager', () => {
       fs.writeFileSync(
         path.join(regDir, 'extensions.json'),
         JSON.stringify({
-          extensions: [{
-            name: 'my-ext', description: '', gitUrl: '', latestVersion: '1.0.0',
-            type: 'standard', icon: 'icons/my-ext.svg', author: 'test',
-          }],
+          extensions: [
+            {
+              name: 'my-ext',
+              description: '',
+              gitUrl: '',
+              latestVersion: '1.0.0',
+              type: 'standard',
+              icon: 'icons/my-ext.svg',
+              author: 'test',
+            },
+          ],
         }),
       );
       fs.writeFileSync(path.join(iconsDir, 'my-ext.svg'), '<svg></svg>');
@@ -279,10 +294,17 @@ describe('registry-manager', () => {
       fs.writeFileSync(
         path.join(regDir, 'extensions.json'),
         JSON.stringify({
-          extensions: [{
-            name: 'my-ext', description: '', gitUrl: '', latestVersion: '1.0.0',
-            type: 'standard', icon: '', author: 'test',
-          }],
+          extensions: [
+            {
+              name: 'my-ext',
+              description: '',
+              gitUrl: '',
+              latestVersion: '1.0.0',
+              type: 'standard',
+              icon: '',
+              author: 'test',
+            },
+          ],
         }),
       );
 
@@ -312,8 +334,24 @@ describe('registry-manager', () => {
         path.join(regDir, 'extensions.json'),
         JSON.stringify({
           extensions: [
-            { name: 'ext-a', description: 'A', gitUrl: 'https://example.com/a.git', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test' },
-            { name: 'ext-b', description: 'B', gitUrl: 'https://example.com/b.git', latestVersion: '2.0.0', type: 'mcp', icon: 'star', author: 'test' },
+            {
+              name: 'ext-a',
+              description: 'A',
+              gitUrl: 'https://example.com/a.git',
+              latestVersion: '1.0.0',
+              type: 'standard',
+              icon: '',
+              author: 'test',
+            },
+            {
+              name: 'ext-b',
+              description: 'B',
+              gitUrl: 'https://example.com/b.git',
+              latestVersion: '2.0.0',
+              type: 'mcp',
+              icon: 'star',
+              author: 'test',
+            },
           ],
         }),
       );
@@ -336,7 +374,15 @@ describe('registry-manager', () => {
           path.join(regDir, 'extensions.json'),
           JSON.stringify({
             extensions: [
-              { name: 'shared-ext', description: `From ${cfg.name}`, gitUrl: `https://example.com/${cfg.name}.git`, latestVersion: '1.0.0', type: 'standard', icon: '', author: cfg.name },
+              {
+                name: 'shared-ext',
+                description: `From ${cfg.name}`,
+                gitUrl: `https://example.com/${cfg.name}.git`,
+                latestVersion: '1.0.0',
+                type: 'standard',
+                icon: '',
+                author: cfg.name,
+              },
             ],
           }),
         );
@@ -361,9 +407,35 @@ describe('registry-manager', () => {
     }
 
     const sampleEntries = [
-      { name: 'hello-world', description: 'A simple hello extension', gitUrl: 'https://example.com/hw.git', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test', tags: ['example', 'greeting'] },
-      { name: 'weather-mcp', description: 'A weather MCP server', gitUrl: 'https://example.com/weather.git', latestVersion: '1.0.0', type: 'mcp', icon: '', author: 'test', tags: ['example', 'mcp'] },
-      { name: 'analytics', description: 'Track usage analytics', gitUrl: 'https://example.com/analytics.git', latestVersion: '2.0.0', type: 'standard', icon: '', author: 'test' },
+      {
+        name: 'hello-world',
+        description: 'A simple hello extension',
+        gitUrl: 'https://example.com/hw.git',
+        latestVersion: '1.0.0',
+        type: 'standard',
+        icon: '',
+        author: 'test',
+        tags: ['example', 'greeting'],
+      },
+      {
+        name: 'weather-mcp',
+        description: 'A weather MCP server',
+        gitUrl: 'https://example.com/weather.git',
+        latestVersion: '1.0.0',
+        type: 'mcp',
+        icon: '',
+        author: 'test',
+        tags: ['example', 'mcp'],
+      },
+      {
+        name: 'analytics',
+        description: 'Track usage analytics',
+        gitUrl: 'https://example.com/analytics.git',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        icon: '',
+        author: 'test',
+      },
     ];
 
     it('returns all extensions when no filters are provided', () => {
@@ -436,7 +508,11 @@ describe('registry-manager', () => {
   describe('ensureSynced', () => {
     it('syncs registries that have not been fetched yet', async () => {
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
       const configs = [makeConfig('new-reg', 'https://git.example.com/reg.git', 1)];
 
       await ensureSynced(configs);
@@ -446,7 +522,11 @@ describe('registry-manager', () => {
 
     it('skips registries that are already synced and fresh', async () => {
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
 
       // Create a fresh registry dir with recent timestamp
       const regDir = path.join(tmpDir, 'registries', 'fresh-reg');
@@ -465,7 +545,11 @@ describe('registry-manager', () => {
   describe('installExtension — local paths', () => {
     it('copies local extension directory instead of git clone', async () => {
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
 
       // Create a registry with a local extension
       const regDir = path.join(tmpDir, 'registries', 'local-reg');
@@ -494,7 +578,11 @@ describe('registry-manager', () => {
       process.env['HOME'] = tmpDir;
 
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
       const config = makeConfig('fallback-reg', 'https://git.example.com/reg.git', 1);
 
       await sync('fallback-reg', config);
@@ -513,7 +601,11 @@ describe('registry-manager', () => {
       process.env['HOME'] = tmpDir;
 
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
 
       const resultPath = await installExtension(
         'fallback-ext',
@@ -547,7 +639,11 @@ describe('registry-manager', () => {
   describe('installExtension', () => {
     it('clones extension at specified version', async () => {
       const simpleGitModule = await import('simple-git');
-      const mockGit = (simpleGitModule as unknown as { __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> } }).__mockGit;
+      const mockGit = (
+        simpleGitModule as unknown as {
+          __mockGit: { clone: ReturnType<typeof vi.fn>; pull: ReturnType<typeof vi.fn> };
+        }
+      ).__mockGit;
 
       const resultPath = await installExtension(
         'my-ext',

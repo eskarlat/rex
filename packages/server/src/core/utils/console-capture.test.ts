@@ -77,10 +77,18 @@ describe('console-capture', () => {
       const patchedDebug = console.debug;
 
       // Override with quiet versions that still call the patched capture logic
-      console.log = (...args: unknown[]) => { patchedLog(...args); };
-      console.warn = (...args: unknown[]) => { patchedWarn(...args); };
-      console.error = (...args: unknown[]) => { patchedError(...args); };
-      console.debug = (...args: unknown[]) => { patchedDebug(...args); };
+      console.log = (...args: unknown[]) => {
+        patchedLog(...args);
+      };
+      console.warn = (...args: unknown[]) => {
+        patchedWarn(...args);
+      };
+      console.error = (...args: unknown[]) => {
+        patchedError(...args);
+      };
+      console.debug = (...args: unknown[]) => {
+        patchedDebug(...args);
+      };
 
       // Test all four levels
       patchedLog('captured log');

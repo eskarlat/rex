@@ -19,7 +19,16 @@ describe('registry-search command', () => {
 
   it('displays matching extensions', () => {
     vi.mocked(registryManager.searchAvailable).mockReturnValue([
-      { name: 'hello-world', description: 'A hello extension', gitUrl: '', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test', tags: ['example'] },
+      {
+        name: 'hello-world',
+        description: 'A hello extension',
+        gitUrl: '',
+        latestVersion: '1.0.0',
+        type: 'standard',
+        icon: '',
+        author: 'test',
+        tags: ['example'],
+      },
     ]);
 
     handleRegistrySearch({
@@ -27,10 +36,11 @@ describe('registry-search command', () => {
       configs: [{ name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 }],
     });
 
-    expect(registryManager.searchAvailable).toHaveBeenCalledWith(
-      expect.any(Array),
-      { query: 'hello', type: undefined, tag: undefined },
-    );
+    expect(registryManager.searchAvailable).toHaveBeenCalledWith(expect.any(Array), {
+      query: 'hello',
+      type: undefined,
+      tag: undefined,
+    });
     expect(clack.log.info).toHaveBeenCalledWith(expect.stringContaining('Found 1 extension'));
   });
 
@@ -43,10 +53,11 @@ describe('registry-search command', () => {
       configs: [],
     });
 
-    expect(registryManager.searchAvailable).toHaveBeenCalledWith(
-      expect.any(Array),
-      { query: undefined, type: 'mcp', tag: 'example' },
-    );
+    expect(registryManager.searchAvailable).toHaveBeenCalledWith(expect.any(Array), {
+      query: undefined,
+      type: 'mcp',
+      tag: 'example',
+    });
   });
 
   it('shows no-results message when nothing matches', () => {
@@ -62,7 +73,16 @@ describe('registry-search command', () => {
 
   it('displays tags in output when present', () => {
     vi.mocked(registryManager.searchAvailable).mockReturnValue([
-      { name: 'ext1', description: 'Desc', gitUrl: '', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test', tags: ['tag1', 'tag2'] },
+      {
+        name: 'ext1',
+        description: 'Desc',
+        gitUrl: '',
+        latestVersion: '1.0.0',
+        type: 'standard',
+        icon: '',
+        author: 'test',
+        tags: ['tag1', 'tag2'],
+      },
     ]);
 
     handleRegistrySearch({ configs: [] });
@@ -73,7 +93,15 @@ describe('registry-search command', () => {
 
   it('omits tag brackets when extension has no tags', () => {
     vi.mocked(registryManager.searchAvailable).mockReturnValue([
-      { name: 'ext1', description: 'Desc', gitUrl: '', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test' },
+      {
+        name: 'ext1',
+        description: 'Desc',
+        gitUrl: '',
+        latestVersion: '1.0.0',
+        type: 'standard',
+        icon: '',
+        author: 'test',
+      },
     ]);
 
     handleRegistrySearch({ configs: [] });

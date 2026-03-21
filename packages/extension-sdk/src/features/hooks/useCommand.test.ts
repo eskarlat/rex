@@ -14,6 +14,8 @@ function createMockSDK(overrides?: Partial<RenreKitSDK>): RenreKitSDK {
     ui: { toast: vi.fn(), confirm: vi.fn(), navigate: vi.fn() },
     events: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
     scheduler: { list: vi.fn(), register: vi.fn(), unregister: vi.fn(), update: vi.fn() },
+    terminal: { open: vi.fn(), close: vi.fn(), send: vi.fn() },
+    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     destroy: vi.fn(),
     ...overrides,
   };
@@ -31,89 +33,92 @@ describe('useCommand', () => {
   }
 
   it('starts with default state', () => {
-    const { result } = renderHook(() => useCommand(), { wrapper });
-    expect(result.current.output).toBeNull();
-    expect(result.current.isRunning).toBe(false);
+    const { result } = renderHook(() => useCommand('my-ext', 'status'), { wrapper });
+    expect(result.current.result).toBeNull();
+    expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
-  it('run updates output on success', async () => {
+  it('execute calls sdk with namespaced command', async () => {
     const commandResult: CommandResult = { output: 'hello world', exitCode: 0 };
     vi.mocked(mockSDK.exec.run).mockResolvedValue(commandResult);
 
-    const { result } = renderHook(() => useCommand(), { wrapper });
+    const { result } = renderHook(() => useCommand('my-ext', 'greet'), { wrapper });
 
     await act(async () => {
-      await result.current.run('echo hello');
+      await result.current.execute();
     });
 
-    expect(mockSDK.exec.run).toHaveBeenCalledWith('echo hello', undefined);
-    expect(result.current.output).toBe('hello world');
-    expect(result.current.isRunning).toBe(false);
+    expect(mockSDK.exec.run).toHaveBeenCalledWith('my-ext:greet', undefined);
+    expect(result.current.result).toEqual(commandResult);
+    expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
-  it('run passes args to sdk.exec.run', async () => {
+  it('execute passes args to sdk.exec.run', async () => {
     const commandResult: CommandResult = { output: 'done', exitCode: 0 };
     vi.mocked(mockSDK.exec.run).mockResolvedValue(commandResult);
 
-    const { result } = renderHook(() => useCommand(), { wrapper });
+    const { result } = renderHook(() => useCommand('my-ext', 'build'), { wrapper });
 
     await act(async () => {
-      await result.current.run('build', { verbose: true });
+      await result.current.execute({ verbose: true });
     });
 
-    expect(mockSDK.exec.run).toHaveBeenCalledWith('build', { verbose: true });
+    expect(mockSDK.exec.run).toHaveBeenCalledWith('my-ext:build', { verbose: true });
   });
 
-  it('run sets error on failure', async () => {
+  it('execute sets error on failure', async () => {
     vi.mocked(mockSDK.exec.run).mockRejectedValue(new Error('command failed'));
 
-    const { result } = renderHook(() => useCommand(), { wrapper });
+    const { result } = renderHook(() => useCommand('my-ext', 'bad'), { wrapper });
 
     await act(async () => {
-      await result.current.run('bad-command');
+      await result.current.execute();
     });
 
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe('command failed');
-    expect(result.current.output).toBeNull();
-    expect(result.current.isRunning).toBe(false);
+    expect(result.current.result).toBeNull();
+    expect(result.current.loading).toBe(false);
   });
 
-  it('run wraps non-Error thrown values into Error', async () => {
+  it('execute wraps non-Error thrown values into Error', async () => {
     vi.mocked(mockSDK.exec.run).mockRejectedValue('string error');
 
-    const { result } = renderHook(() => useCommand(), { wrapper });
+    const { result } = renderHook(() => useCommand('my-ext', 'bad'), { wrapper });
 
     await act(async () => {
-      await result.current.run('bad-command');
+      await result.current.execute();
     });
 
     expect(result.current.error).toBeInstanceOf(Error);
     expect(result.current.error?.message).toBe('string error');
   });
 
-  it('isRunning toggles during execution', async () => {
+  it('loading toggles during execution', async () => {
     let resolveRun!: (value: CommandResult) => void;
     vi.mocked(mockSDK.exec.run).mockImplementation(
-      () => new Promise((resolve) => { resolveRun = resolve; }),
+      () =>
+        new Promise((resolve) => {
+          resolveRun = resolve;
+        }),
     );
 
-    const { result } = renderHook(() => useCommand(), { wrapper });
+    const { result } = renderHook(() => useCommand('my-ext', 'slow'), { wrapper });
 
     let runPromise: Promise<void>;
     await act(async () => {
-      runPromise = result.current.run('slow-command');
+      runPromise = result.current.execute();
     });
 
-    expect(result.current.isRunning).toBe(true);
+    expect(result.current.loading).toBe(true);
 
     await act(async () => {
       resolveRun({ output: 'done', exitCode: 0 });
       await runPromise!;
     });
 
-    expect(result.current.isRunning).toBe(false);
+    expect(result.current.loading).toBe(false);
   });
 });

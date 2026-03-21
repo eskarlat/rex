@@ -96,10 +96,7 @@ export function createImagesToolset(client: MiroClient): Toolset {
 
   const handlers = {
     miro_create_image_from_url: createHandler((args) =>
-      client.createImageFromUrl(
-        args['boardId'] as string,
-        args['data'] as Record<string, unknown>,
-      ),
+      client.createImageFromUrl(args['boardId'] as string, args['data'] as Record<string, unknown>),
     ),
     miro_create_image_from_file: createHandler(async (args) => {
       const formData = new FormData();
@@ -128,9 +125,7 @@ export function createImagesToolset(client: MiroClient): Toolset {
     miro_delete_image: createHandler((args) =>
       client.deleteImage(args['boardId'] as string, args['itemId'] as string),
     ),
-    miro_list_images: createHandler((args) =>
-      client.listImagesByBoard(args['boardId'] as string),
-    ),
+    miro_list_images: createHandler((args) => client.listImagesByBoard(args['boardId'] as string)),
   };
 
   return { name: 'miro_images', tools, handlers };

@@ -11,7 +11,8 @@ export default function SettingsPanel({ sdk, extensionName }: Partial<PanelProps
 
   useEffect(() => {
     if (!sdk) return;
-    sdk.storage.get('custom-greeting')
+    sdk.storage
+      .get('custom-greeting')
       .then((val) => {
         if (val) {
           setSavedGreeting(String(val));
@@ -42,7 +43,11 @@ export default function SettingsPanel({ sdk, extensionName }: Partial<PanelProps
       setSavedGreeting(greeting);
       sdk.ui.toast({ title: 'Saved', description: 'Custom greeting updated.' });
     } catch {
-      sdk.ui.toast({ title: 'Error', description: 'Failed to save greeting.', variant: 'destructive' });
+      sdk.ui.toast({
+        title: 'Error',
+        description: 'Failed to save greeting.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -50,13 +55,12 @@ export default function SettingsPanel({ sdk, extensionName }: Partial<PanelProps
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel
-        title="Extension Info"
-        description={`View metadata and status for ${extName}.`}
-      >
+      <Panel title="Extension Info" description={`View metadata and status for ${extName}.`}>
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => { handleLoadInfo().catch(() => {}); }}
+            onClick={() => {
+              handleLoadInfo().catch(() => {});
+            }}
             disabled={loading}
             className="inline-flex h-9 w-fit items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
           >
@@ -81,7 +85,9 @@ export default function SettingsPanel({ sdk, extensionName }: Partial<PanelProps
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <button
-                onClick={() => { handleSaveGreeting().catch(() => {}); }}
+                onClick={() => {
+                  handleSaveGreeting().catch(() => {});
+                }}
                 disabled={loading}
                 className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
               >

@@ -91,9 +91,7 @@ export function createGroupsToolset(client: MiroClient): Toolset {
   ];
 
   const handlers = {
-    miro_list_groups: createHandler((args) =>
-      client.listGroups(args['boardId'] as string),
-    ),
+    miro_list_groups: createHandler((args) => client.listGroups(args['boardId'] as string)),
     miro_get_group: createHandler((args) =>
       client.getGroup(args['boardId'] as string, args['groupId'] as string),
     ),

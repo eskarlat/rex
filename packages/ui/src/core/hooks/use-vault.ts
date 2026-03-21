@@ -28,11 +28,7 @@ interface SetVaultEntryVariables {
   tags?: string[];
 }
 
-export function useSetVaultEntry(): UseMutationResult<
-  void,
-  Error,
-  SetVaultEntryVariables
-> {
+export function useSetVaultEntry(): UseMutationResult<void, Error, SetVaultEntryVariables> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, SetVaultEntryVariables>({
     mutationFn: (data: SetVaultEntryVariables) =>
@@ -53,11 +49,7 @@ interface UpdateVaultEntryVariables {
   tags?: string[];
 }
 
-export function useUpdateVaultEntry(): UseMutationResult<
-  void,
-  Error,
-  UpdateVaultEntryVariables
-> {
+export function useUpdateVaultEntry(): UseMutationResult<void, Error, UpdateVaultEntryVariables> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, UpdateVaultEntryVariables>({
     mutationFn: (data: UpdateVaultEntryVariables) =>
@@ -71,11 +63,7 @@ export function useUpdateVaultEntry(): UseMutationResult<
   });
 }
 
-export function useRemoveVaultEntry(): UseMutationResult<
-  void,
-  Error,
-  string
-> {
+export function useRemoveVaultEntry(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: (key: string) =>

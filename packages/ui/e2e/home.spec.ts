@@ -67,9 +67,7 @@ test.describe('Home Page', () => {
     await newPage.route('**/api/marketplace', () => {
       // Never fulfill - keeps loading
     });
-    await newPage.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
+    await newPage.route('**/api/projects', (route) => route.fulfill({ json: [] }));
     await newPage.route('**/api/project', (route) =>
       route.fulfill({ json: { name: 'test', path: '/tmp/test' } }),
     );

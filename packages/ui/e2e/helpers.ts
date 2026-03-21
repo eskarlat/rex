@@ -170,25 +170,15 @@ export async function setupAPIMocks(page: Page): Promise<void> {
     return route.fulfill({ status: 200, json: { ok: true } });
   });
 
-  await page.route('**/api/project', (route) =>
-    route.fulfill({ json: mockActiveProject }),
-  );
+  await page.route('**/api/project', (route) => route.fulfill({ json: mockActiveProject }));
 
-  await page.route('**/api/projects/active', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route('**/api/projects/active', (route) => route.fulfill({ json: { ok: true } }));
 
-  await page.route('**/api/marketplace', (route) =>
-    route.fulfill({ json: mockMarketplace }),
-  );
+  await page.route('**/api/marketplace', (route) => route.fulfill({ json: mockMarketplace }));
 
-  await page.route('**/api/extensions/install', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route('**/api/extensions/install', (route) => route.fulfill({ json: { ok: true } }));
 
-  await page.route('**/api/extensions/activate', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route('**/api/extensions/activate', (route) => route.fulfill({ json: { ok: true } }));
 
   await page.route('**/api/extensions/deactivate', (route) =>
     route.fulfill({ json: { ok: true } }),
@@ -201,9 +191,7 @@ export async function setupAPIMocks(page: Page): Promise<void> {
     return route.fulfill({ json: { ok: true } });
   });
 
-  await page.route('**/api/vault/*', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route('**/api/vault/*', (route) => route.fulfill({ json: { ok: true } }));
 
   await page.route('**/api/scheduler', (route) => {
     if (route.request().method() === 'GET') {
@@ -216,15 +204,11 @@ export async function setupAPIMocks(page: Page): Promise<void> {
     route.fulfill({ json: mockTaskHistory }),
   );
 
-  await page.route('**/api/scheduler/*/trigger', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route('**/api/scheduler/*/trigger', (route) => route.fulfill({ json: { ok: true } }));
 
   // Catch-all for scheduler task operations (PUT, DELETE on /api/scheduler/:id)
   // Must be registered AFTER more specific routes above
-  await page.route(/\/api\/scheduler\/\d+$/, (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route(/\/api\/scheduler\/\d+$/, (route) => route.fulfill({ json: { ok: true } }));
 
   await page.route('**/api/settings', (route) => {
     if (route.request().method() === 'GET') {
@@ -240,9 +224,7 @@ export async function setupAPIMocks(page: Page): Promise<void> {
     return route.fulfill({ json: { ok: true } });
   });
 
-  await page.route('**/api/registries/*', (route) =>
-    route.fulfill({ json: { ok: true } }),
-  );
+  await page.route('**/api/registries/*', (route) => route.fulfill({ json: { ok: true } }));
 
   await page.route('**/api/dashboard/layout', (route) => {
     if (route.request().method() === 'GET') {

@@ -65,7 +65,11 @@ describe('settings routes', () => {
 
     it('applies log level change when logLevels are provided', async () => {
       const { getLogger } = await import('@renre-kit/cli/lib');
-      const config = { registries: [], settings: { logLevels: ['warn', 'error'] }, extensionConfigs: {} };
+      const config = {
+        registries: [],
+        settings: { logLevels: ['warn', 'error'] },
+        extensionConfigs: {},
+      };
       const response = await app.inject({
         method: 'PUT',
         url: '/api/settings',
@@ -110,7 +114,10 @@ describe('settings routes', () => {
         payload: { fieldName: 'apiKey', mapping: { source: 'vault', value: 'my-key' } },
       });
       expect(response.statusCode).toBe(200);
-      expect(mockSetExtensionConfig).toHaveBeenCalledWith('my-ext', 'apiKey', { source: 'vault', value: 'my-key' });
+      expect(mockSetExtensionConfig).toHaveBeenCalledWith('my-ext', 'apiKey', {
+        source: 'vault',
+        value: 'my-key',
+      });
     });
 
     it('returns 400 when fieldName or mapping is missing', async () => {

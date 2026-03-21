@@ -23,10 +23,12 @@ describe('ext-status command', () => {
   });
 
   it('shows MCP connection states', () => {
-    handleExtStatus(new Map([
-      ['ext-a', 'running'],
-      ['ext-b', 'stopped'],
-    ]));
+    handleExtStatus(
+      new Map([
+        ['ext-a', 'running'],
+        ['ext-b', 'stopped'],
+      ]),
+    );
 
     expect(clack.log.info).toHaveBeenCalled();
   });

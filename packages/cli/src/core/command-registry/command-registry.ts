@@ -34,9 +34,7 @@ export class CommandRegistry {
     this.commands.set(key, { namespace, command, handler, metadata });
   }
 
-  resolve(
-    input: string,
-  ): { handler: CommandHandler; metadata: CommandMetadata } | undefined {
+  resolve(input: string): { handler: CommandHandler; metadata: CommandMetadata } | undefined {
     const colonIdx = input.indexOf(':');
     let key: string;
     if (colonIdx === -1) {
@@ -98,11 +96,7 @@ function levenshtein(a: string, b: string): number {
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i]![j] = Math.min(
-        dp[i - 1]![j]! + 1,
-        dp[i]![j - 1]! + 1,
-        dp[i - 1]![j - 1]! + cost,
-      );
+      dp[i]![j] = Math.min(dp[i - 1]![j]! + 1, dp[i]![j - 1]! + 1, dp[i - 1]![j - 1]! + cost);
     }
   }
 

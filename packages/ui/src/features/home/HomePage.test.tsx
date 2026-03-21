@@ -36,7 +36,7 @@ function renderWithProviders(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>{ui}</MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -48,9 +48,7 @@ describe('HomePage', () => {
 
   it('shows active project path', () => {
     renderWithProviders(<HomePage />);
-    expect(
-      screen.getByText('Project: /home/user/my-project')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Project: /home/user/my-project')).toBeInTheDocument();
   });
 
   it('shows active extensions count', () => {
@@ -92,7 +90,7 @@ describe('HomePage no project', () => {
         <MemoryRouter>
           <NoProjectPage />
         </MemoryRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     expect(screen.getByText('No project selected')).toBeInTheDocument();

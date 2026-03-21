@@ -25,7 +25,9 @@ vi.mock('../../extensions/manager/extension-manager.js', () => ({
 }));
 
 vi.mock('../../../core/paths/paths.js', () => ({
-  getExtensionDir: vi.fn().mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
+  getExtensionDir: vi
+    .fn()
+    .mockImplementation((name: string, version: string) => `/mock/extensions/${name}@${version}`),
   getManifestPath: vi.fn().mockReturnValue('/tmp/test/.renre-kit/manifest.json'),
 }));
 

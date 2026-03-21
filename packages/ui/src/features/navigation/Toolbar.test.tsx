@@ -2,7 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { Toolbar } from './Toolbar';
+
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => false,
+}));
 
 const mockMarketplace = vi.fn();
 vi.mock('@/core/hooks/use-extensions', () => ({
@@ -30,9 +35,11 @@ function renderToolbar(route = '/') {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
-        <Toolbar />
+        <SidebarProvider defaultOpen={true}>
+          <Toolbar />
+        </SidebarProvider>
       </MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -93,9 +100,11 @@ describe('Toolbar', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/settings/extensions/my-ext']}>
-          <Routes>
-            <Route path="/settings/extensions/:name" element={<Toolbar />} />
-          </Routes>
+          <SidebarProvider defaultOpen={true}>
+            <Routes>
+              <Route path="/settings/extensions/:name" element={<Toolbar />} />
+            </Routes>
+          </SidebarProvider>
         </MemoryRouter>
       </QueryClientProvider>,
     );
@@ -113,9 +122,11 @@ describe('Toolbar', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/extensions/hello-world']}>
-          <Routes>
-            <Route path="/extensions/:name" element={<Toolbar />} />
-          </Routes>
+          <SidebarProvider defaultOpen={true}>
+            <Routes>
+              <Route path="/extensions/:name" element={<Toolbar />} />
+            </Routes>
+          </SidebarProvider>
         </MemoryRouter>
       </QueryClientProvider>,
     );
@@ -142,9 +153,11 @@ describe('Toolbar', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/extensions/my-ext/settings']}>
-          <Routes>
-            <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
-          </Routes>
+          <SidebarProvider defaultOpen={true}>
+            <Routes>
+              <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
+            </Routes>
+          </SidebarProvider>
         </MemoryRouter>
       </QueryClientProvider>,
     );
@@ -162,9 +175,11 @@ describe('Toolbar', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/extensions/my-ext/unknown']}>
-          <Routes>
-            <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
-          </Routes>
+          <SidebarProvider defaultOpen={true}>
+            <Routes>
+              <Route path="/extensions/:name/:panelId" element={<Toolbar />} />
+            </Routes>
+          </SidebarProvider>
         </MemoryRouter>
       </QueryClientProvider>,
     );

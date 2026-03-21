@@ -12,35 +12,91 @@ describe('buildPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('calls esbuild.build with correct default options', async () => {
-    const { build } = await import('esbuild');
-    await buildPanel('src/panel.tsx', 'dist/panel.js');
+  describe('legacy single-entry signature', () => {
+    it('calls esbuild.build with correct default options', async () => {
+      const { build } = await import('esbuild');
+      await buildPanel('src/panel.tsx', 'dist/panel.js');
 
-    expect(build).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entryPoints: ['src/panel.tsx'],
-        bundle: true,
-        format: 'esm',
-        outfile: 'dist/panel.js',
-        target: 'es2022',
-        jsx: 'automatic',
-        plugins: expect.arrayContaining([
-          expect.objectContaining({ name: 'react-global' }),
-        ]),
-      }),
-    );
+      expect(build).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entryPoints: ['src/panel.tsx'],
+          bundle: true,
+          format: 'esm',
+          outfile: 'dist/panel.js',
+          target: 'es2022',
+          jsx: 'automatic',
+          plugins: expect.arrayContaining([expect.objectContaining({ name: 'react-global' })]),
+        }),
+      );
+    });
+
+    it('merges additional esbuild options', async () => {
+      const { build } = await import('esbuild');
+      await buildPanel('src/panel.tsx', 'dist/panel.js', { minify: true });
+
+      expect(build).toHaveBeenCalledWith(
+        expect.objectContaining({
+          minify: true,
+          entryPoints: ['src/panel.tsx'],
+        }),
+      );
+    });
   });
 
-  it('merges additional esbuild options', async () => {
-    const { build } = await import('esbuild');
-    await buildPanel('src/panel.tsx', 'dist/panel.js', { minify: true });
+  describe('multi-entry signature', () => {
+    it('calls esbuild.build with entryPoints and outdir', async () => {
+      const { build } = await import('esbuild');
+      await buildPanel({
+        entryPoints: [
+          { in: 'src/ui/panel.tsx', out: 'panel' },
+          { in: 'src/ui/status-widget.tsx', out: 'status-widget' },
+        ],
+        outdir: 'dist',
+      });
 
-    expect(build).toHaveBeenCalledWith(
-      expect.objectContaining({
+      expect(build).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entryPoints: [
+            { in: 'src/ui/panel.tsx', out: 'panel' },
+            { in: 'src/ui/status-widget.tsx', out: 'status-widget' },
+          ],
+          bundle: true,
+          format: 'esm',
+          outdir: 'dist',
+          target: 'es2022',
+          jsx: 'automatic',
+          plugins: expect.arrayContaining([expect.objectContaining({ name: 'react-global' })]),
+        }),
+      );
+    });
+
+    it('passes minify option when set', async () => {
+      const { build } = await import('esbuild');
+      await buildPanel({
+        entryPoints: [{ in: 'src/ui/panel.tsx', out: 'panel' }],
+        outdir: 'dist',
         minify: true,
-        entryPoints: ['src/panel.tsx'],
-      }),
-    );
+      });
+
+      expect(build).toHaveBeenCalledWith(
+        expect.objectContaining({
+          minify: true,
+          outdir: 'dist',
+        }),
+      );
+    });
+
+    it('does not include outfile when using multi-entry', async () => {
+      const { build } = await import('esbuild');
+      await buildPanel({
+        entryPoints: [{ in: 'src/ui/panel.tsx', out: 'panel' }],
+        outdir: 'dist',
+      });
+
+      const call = vi.mocked(build).mock.calls[0];
+      const opts = call?.[0];
+      expect(opts).not.toHaveProperty('outfile');
+    });
   });
 
   it('registers react-global plugin that handles react import', async () => {

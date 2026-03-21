@@ -24,7 +24,11 @@ describe('ext-deactivate command', () => {
       extensionDir: '/path/to/ext',
     });
 
-    expect(extensionManager.deactivate).toHaveBeenCalledWith('my-ext', '/tmp/project', '/path/to/ext');
+    expect(extensionManager.deactivate).toHaveBeenCalledWith(
+      'my-ext',
+      '/tmp/project',
+      '/path/to/ext',
+    );
     expect(clack.log.success).toHaveBeenCalled();
   });
 

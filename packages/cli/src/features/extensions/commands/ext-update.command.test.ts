@@ -46,10 +46,20 @@ describe('ext-update command', () => {
 
   it('should update a single extension', async () => {
     vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.0.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
+      {
+        name: 'jira',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '2026-01-01',
+        type: 'standard',
+      },
     ]);
     vi.mocked(resolve).mockReturnValue({
-      name: 'jira', gitUrl: 'https://github.com/ext-jira', latestVersion: '1.1.0', type: 'standard', registryName: 'default',
+      name: 'jira',
+      gitUrl: 'https://github.com/ext-jira',
+      latestVersion: '1.1.0',
+      type: 'standard',
+      registryName: 'default',
     });
     vi.mocked(getActivated).mockReturnValue({ jira: '1.0.0' });
 
@@ -61,7 +71,12 @@ describe('ext-update command', () => {
       db: {} as never,
     });
 
-    expect(installExtension).toHaveBeenCalledWith('jira', 'https://github.com/ext-jira', '1.1.0', 'default');
+    expect(installExtension).toHaveBeenCalledWith(
+      'jira',
+      'https://github.com/ext-jira',
+      '1.1.0',
+      'default',
+    );
     expect(install).toHaveBeenCalledWith('jira', '1.1.0', 'default', 'standard', expect.anything());
     expect(activate).toHaveBeenCalledWith('jira', '1.1.0', '/tmp/project', '/tmp/ext');
     expect(clack.log.success).toHaveBeenCalled();
@@ -70,10 +85,20 @@ describe('ext-update command', () => {
 
   it('should skip when extension is already up to date', async () => {
     vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.0.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
+      {
+        name: 'jira',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '2026-01-01',
+        type: 'standard',
+      },
     ]);
     vi.mocked(resolve).mockReturnValue({
-      name: 'jira', gitUrl: '', latestVersion: '1.0.0', type: 'standard', registryName: 'default',
+      name: 'jira',
+      gitUrl: '',
+      latestVersion: '1.0.0',
+      type: 'standard',
+      registryName: 'default',
     });
 
     await handleExtUpdate({
@@ -104,12 +129,38 @@ describe('ext-update command', () => {
 
   it('should update all extensions when --all flag is used', async () => {
     vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.0.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
-      { name: 'github', version: '2.0.0', registry_source: 'default', installed_at: '2026-01-01', type: 'mcp' },
+      {
+        name: 'jira',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '2026-01-01',
+        type: 'standard',
+      },
+      {
+        name: 'github',
+        version: '2.0.0',
+        registry_source: 'default',
+        installed_at: '2026-01-01',
+        type: 'mcp',
+      },
     ]);
     vi.mocked(resolve).mockImplementation((name: string) => {
-      if (name === 'jira') return { name: 'jira', gitUrl: 'https://jira', latestVersion: '1.1.0', type: 'standard', registryName: 'default' };
-      if (name === 'github') return { name: 'github', gitUrl: 'https://github', latestVersion: '2.1.0', type: 'mcp', registryName: 'default' };
+      if (name === 'jira')
+        return {
+          name: 'jira',
+          gitUrl: 'https://jira',
+          latestVersion: '1.1.0',
+          type: 'standard',
+          registryName: 'default',
+        };
+      if (name === 'github')
+        return {
+          name: 'github',
+          gitUrl: 'https://github',
+          latestVersion: '2.1.0',
+          type: 'mcp',
+          registryName: 'default',
+        };
       return null;
     });
     vi.mocked(getActivated).mockReturnValue({});
@@ -127,10 +178,20 @@ describe('ext-update command', () => {
 
   it('blocks update when engine is incompatible and no --force', async () => {
     vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.0.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
+      {
+        name: 'jira',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '2026-01-01',
+        type: 'standard',
+      },
     ]);
     vi.mocked(resolve).mockReturnValue({
-      name: 'jira', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+      name: 'jira',
+      gitUrl: '',
+      latestVersion: '2.0.0',
+      type: 'standard',
+      registryName: 'default',
       engines: { 'renre-kit': '>=5.0.0' },
     });
     vi.mocked(checkEngineConstraints).mockReturnValue({
@@ -153,10 +214,20 @@ describe('ext-update command', () => {
 
   it('allows update with --force despite engine incompatibility', async () => {
     vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.0.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
+      {
+        name: 'jira',
+        version: '1.0.0',
+        registry_source: 'default',
+        installed_at: '2026-01-01',
+        type: 'standard',
+      },
     ]);
     vi.mocked(resolve).mockReturnValue({
-      name: 'jira', gitUrl: 'https://github.com/ext-jira', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+      name: 'jira',
+      gitUrl: 'https://github.com/ext-jira',
+      latestVersion: '2.0.0',
+      type: 'standard',
+      registryName: 'default',
       engines: { 'renre-kit': '>=5.0.0' },
     });
     vi.mocked(checkEngineConstraints).mockReturnValue({
@@ -181,10 +252,20 @@ describe('ext-update command', () => {
 
   it('uses semver.gt for comparison (1.9.0 vs 1.10.0)', async () => {
     vi.mocked(listInstalled).mockReturnValue([
-      { name: 'jira', version: '1.9.0', registry_source: 'default', installed_at: '2026-01-01', type: 'standard' },
+      {
+        name: 'jira',
+        version: '1.9.0',
+        registry_source: 'default',
+        installed_at: '2026-01-01',
+        type: 'standard',
+      },
     ]);
     vi.mocked(resolve).mockReturnValue({
-      name: 'jira', gitUrl: 'https://github.com/ext-jira', latestVersion: '1.10.0', type: 'standard', registryName: 'default',
+      name: 'jira',
+      gitUrl: 'https://github.com/ext-jira',
+      latestVersion: '1.10.0',
+      type: 'standard',
+      registryName: 'default',
     });
     vi.mocked(getActivated).mockReturnValue({});
 

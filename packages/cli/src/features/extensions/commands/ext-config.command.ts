@@ -3,10 +3,7 @@ import type { ConfigSchemaField, ConfigMapping } from '../../../core/types/index
 import { loadManifest } from '../manifest/manifest-loader.js';
 import { getActivated } from '../manager/extension-manager.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';
-import {
-  setExtensionConfig,
-  getExtensionConfigMappings,
-} from '../../config/config-manager.js';
+import { setExtensionConfig, getExtensionConfigMappings } from '../../config/config-manager.js';
 import { listKeys, getEntriesByTag, setEntry as setVaultEntry } from '../../vault/vault-manager.js';
 
 interface ExtConfigOptions {
@@ -144,10 +141,7 @@ interface SortedVaultKey {
   hint?: string;
 }
 
-function sortVaultKeysByHint(
-  vaultKeys: string[],
-  vaultHint?: string,
-): SortedVaultKey[] {
+function sortVaultKeysByHint(vaultKeys: string[], vaultHint?: string): SortedVaultKey[] {
   if (!vaultHint) {
     return vaultKeys.map((k) => ({ key: k }));
   }
@@ -219,9 +213,9 @@ async function buildMapping(
   const value = fieldSchema.secret
     ? await clack.password({ message: `Enter value for "${field}":` })
     : await clack.text({
-      message: `Enter value for "${field}":`,
-      defaultValue: fieldSchema.default !== undefined ? String(fieldSchema.default) : undefined,
-    });
+        message: `Enter value for "${field}":`,
+        defaultValue: fieldSchema.default !== undefined ? String(fieldSchema.default) : undefined,
+      });
 
   if (isCancel(value)) {
     return undefined;

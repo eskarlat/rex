@@ -1,14 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
+import { DndContext, closestCenter, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardLayout, useSaveDashboardLayout } from '@/core/hooks/use-dashboard-layout';
@@ -83,9 +75,7 @@ export function WidgetGrid() {
 
   const handleResize = useCallback(
     (widgetId: string, newSize: { w: number; h: number }) => {
-      const updated = widgets.map((w) =>
-        w.id === widgetId ? { ...w, size: newSize } : w,
-      );
+      const updated = widgets.map((w) => (w.id === widgetId ? { ...w, size: newSize } : w));
       saveLayout({ widgets: updated });
     },
     [widgets, saveLayout],

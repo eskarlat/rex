@@ -9,6 +9,7 @@ import type {
   EventsAPI,
   SchedulerAPI,
   TerminalAPI,
+  LoggerAPI,
   SDKEventType,
   SDKEventHandler,
   SDKEventPayload,
@@ -148,7 +149,9 @@ function createEventsAPI(): EventsAPI & { clearAll: () => void } {
       const set = handlers.get(event);
       if (set) {
         for (const handler of set) {
-          Promise.resolve(handler(payload)).catch(() => { /* swallow handler errors */ });
+          Promise.resolve(handler(payload)).catch(() => {
+            /* swallow handler errors */
+          });
         }
       }
     },
@@ -220,8 +223,31 @@ function createTerminalAPI(): TerminalAPI & {
 }
 
 /**
+ * Creates the logger capability group.
+ * Sends log entries to the dashboard API with ext:<name> source prefix.
+ */
+function createLoggerAPI(client: ApiClient, extensionName: string): LoggerAPI {
+  const source = `ext:${extensionName}`;
+
+  return {
+    debug(message: string, data?: unknown): void {
+      void client.writeLog('debug', source, message, data);
+    },
+    info(message: string, data?: unknown): void {
+      void client.writeLog('info', source, message, data);
+    },
+    warn(message: string, data?: unknown): void {
+      void client.writeLog('warn', source, message, data);
+    },
+    error(message: string, data?: unknown): void {
+      void client.writeLog('error', source, message, data);
+    },
+  };
+}
+
+/**
  * Concrete implementation of the RenreKitSDK interface.
- * Composes 7 capability groups backed by an ApiClient.
+ * Composes 8 capability groups backed by an ApiClient.
  */
 export class RenreKitSDKImpl implements RenreKitSDK {
   readonly project: ProjectContextAPI;
@@ -238,6 +264,7 @@ export class RenreKitSDKImpl implements RenreKitSDK {
     setCloseHandler: (handler: TerminalCloseCallback) => void;
     setSendHandler: (handler: TerminalSendCallback) => void;
   };
+  readonly logger: LoggerAPI;
 
   private readonly internalEvents: EventsAPI & { clearAll: () => void };
 
@@ -255,6 +282,7 @@ export class RenreKitSDKImpl implements RenreKitSDK {
     this.events = this.internalEvents;
     this.scheduler = createSchedulerAPI(client);
     this.terminal = createTerminalAPI();
+    this.logger = createLoggerAPI(client, extensionName);
   }
 
   destroy(): void {

@@ -20,7 +20,12 @@ function renderForm(overrides: Partial<Parameters<typeof ConfigForm>[0]> = {}) {
     apiUrl: { type: 'string', description: 'The base URL for the API' },
     port: { type: 'number', description: 'Server port number' },
     enabled: { type: 'boolean', description: 'Enable or disable' },
-    secretKey: { type: 'string', description: 'A secret value', secret: true, vaultHint: 'my.secret' },
+    secretKey: {
+      type: 'string',
+      description: 'A secret value',
+      secret: true,
+      vaultHint: 'my.secret',
+    },
   };
   const values: Record<string, unknown> = {
     apiUrl: 'https://api.example.com',
@@ -33,7 +38,7 @@ function renderForm(overrides: Partial<Parameters<typeof ConfigForm>[0]> = {}) {
     ...render(
       <QueryClientProvider client={queryClient}>
         <ConfigForm {...props} />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     ),
     onSave: props.onSave,
   };
@@ -63,7 +68,10 @@ describe('ConfigForm', () => {
     await userEvent.click(screen.getByText('Save'));
     expect(onSave).toHaveBeenCalledWith(
       expect.arrayContaining([
-        expect.objectContaining({ fieldName: 'apiUrl', mapping: { source: 'direct', value: 'https://api.example.com' } }),
+        expect.objectContaining({
+          fieldName: 'apiUrl',
+          mapping: { source: 'direct', value: 'https://api.example.com' },
+        }),
       ]),
     );
   });
@@ -176,7 +184,10 @@ describe('ConfigForm', () => {
     await userEvent.click(screen.getByText('Save'));
     expect(onSave).toHaveBeenCalledWith(
       expect.arrayContaining([
-        expect.objectContaining({ fieldName: 'enabled', mapping: { source: 'direct', value: 'false' } }),
+        expect.objectContaining({
+          fieldName: 'enabled',
+          mapping: { source: 'direct', value: 'false' },
+        }),
       ]),
     );
   });

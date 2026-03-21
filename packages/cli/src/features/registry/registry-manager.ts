@@ -37,10 +37,7 @@ function getRegistryPath(name: string): string {
   return path.join(getRegistriesDir(), name);
 }
 
-export async function sync(
-  registryName: string,
-  config: RegistryConfig,
-): Promise<void> {
+export async function sync(registryName: string, config: RegistryConfig): Promise<void> {
   const regDir = getRegistryPath(registryName);
 
   if (fs.existsSync(regDir)) {

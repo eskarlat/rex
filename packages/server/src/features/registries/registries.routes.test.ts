@@ -36,24 +36,45 @@ describe('registries routes', () => {
 
   describe('GET /api/registries', () => {
     it('returns list of registries with last_synced', async () => {
-      const registries = [{ name: 'default', url: 'https://example.com', priority: 100, cacheTTL: 3600 }];
+      const registries = [
+        { name: 'default', url: 'https://example.com', priority: 100, cacheTTL: 3600 },
+      ];
       mockLoadGlobalConfig.mockReturnValue({ registries });
       mockListRegistries.mockReturnValue([
-        { name: 'default', url: 'https://example.com', priority: 100, lastFetched: new Date('2024-01-01T00:00:00Z'), isStale: false },
+        {
+          name: 'default',
+          url: 'https://example.com',
+          priority: 100,
+          lastFetched: new Date('2024-01-01T00:00:00Z'),
+          isStale: false,
+        },
       ]);
 
       const response = await app.inject({ method: 'GET', url: '/api/registries' });
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual([
-        { name: 'default', url: 'https://example.com', priority: 100, last_synced: '2024-01-01T00:00:00.000Z' },
+        {
+          name: 'default',
+          url: 'https://example.com',
+          priority: 100,
+          last_synced: '2024-01-01T00:00:00.000Z',
+        },
       ]);
     });
 
     it('returns undefined last_synced when never fetched', async () => {
-      const registries = [{ name: 'default', url: 'https://example.com', priority: 100, cacheTTL: 3600 }];
+      const registries = [
+        { name: 'default', url: 'https://example.com', priority: 100, cacheTTL: 3600 },
+      ];
       mockLoadGlobalConfig.mockReturnValue({ registries });
       mockListRegistries.mockReturnValue([
-        { name: 'default', url: 'https://example.com', priority: 100, lastFetched: null, isStale: true },
+        {
+          name: 'default',
+          url: 'https://example.com',
+          priority: 100,
+          lastFetched: null,
+          isStale: true,
+        },
       ]);
 
       const response = await app.inject({ method: 'GET', url: '/api/registries' });
@@ -127,7 +148,12 @@ describe('registries routes', () => {
 
   describe('POST /api/registries/:name/sync', () => {
     it('syncs a registry', async () => {
-      const registry = { name: 'default', url: 'https://example.com', priority: 100, cacheTTL: 3600 };
+      const registry = {
+        name: 'default',
+        url: 'https://example.com',
+        priority: 100,
+        cacheTTL: 3600,
+      };
       mockLoadGlobalConfig.mockReturnValue({ registries: [registry] });
       mockSync.mockResolvedValue(undefined);
 

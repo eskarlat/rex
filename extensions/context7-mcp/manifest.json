@@ -39,8 +39,6 @@
     ]
   },
   "agent": {
-    "skills": [
-      { "name": "context7", "path": "agent/skills/context7" }
-    ]
+    "skills": [{ "name": "context7", "path": "agent/skills/context7" }]
   }
 }

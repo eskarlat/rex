@@ -6,12 +6,33 @@ import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.
 vi.mock('./mcp-stdio-transport.js');
 vi.mock('./mcp-sse-transport.js');
 vi.mock('../../../shared/interpolation.js', async (importOriginal) => {
-  const actual = await importOriginal() as Record<string, unknown>;
+  const actual = (await importOriginal()) as Record<string, unknown>;
   return { ...actual };
 });
+const mockLogger = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+};
+vi.mock('../../../core/logger/index.js', () => ({
+  getLogger: () => mockLogger,
+}));
 
-import { spawnProcess, sendRequest as stdioSendRequest, killProcess } from './mcp-stdio-transport.js';
+import {
+  spawnProcess,
+  sendRequest as stdioSendRequest,
+  sendNotification,
+  killProcess,
+} from './mcp-stdio-transport.js';
 import { connect, sendRequest as sseSendRequest, disconnect } from './mcp-sse-transport.js';
+import { getLogger } from '../../../core/logger/index.js';
+
+const INIT_RESULT = {
+  protocolVersion: '2024-11-05',
+  capabilities: {},
+  serverInfo: { name: 'test-server', version: '1.0.0' },
+};
 
 describe('connection-manager', () => {
   let manager: ConnectionManager;
@@ -40,12 +61,17 @@ describe('connection-manager', () => {
         stdin: { write: vi.fn() },
       } as never,
       buffer: '',
+      stderrBuffer: '',
     });
-    vi.mocked(stdioSendRequest).mockResolvedValue({
-      jsonrpc: '2.0',
-      result: { content: [{ text: 'ok' }] },
-      id: 1,
-    });
+    vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => ({
+      jsonrpc: '2.0' as const,
+      result:
+        request.method === 'initialize'
+          ? INIT_RESULT
+          : { content: [{ text: 'ok' }] },
+      id: request.id,
+    }));
+    vi.mocked(sendNotification).mockReturnValue(undefined);
     vi.mocked(killProcess).mockResolvedValue(undefined);
 
     vi.mocked(connect).mockReturnValue({
@@ -115,9 +141,7 @@ describe('connection-manager', () => {
     });
 
     it('should throw when extension has no connection', async () => {
-      await expect(
-        manager.executeToolCall('nonexistent', 'tool', {}),
-      ).rejects.toThrow();
+      await expect(manager.executeToolCall('nonexistent', 'tool', {})).rejects.toThrow();
     });
   });
 
@@ -235,13 +259,10 @@ describe('connection-manager', () => {
 
       manager.getConnection('ext-sse-cfg', sseWithConfig, resolvedConfig);
 
-      expect(connect).toHaveBeenCalledWith(
-        'http://figma.local:3845/sse',
-        {
-          Authorization: 'Bearer my-secret-token',
-          'X-Custom': 'static-value',
-        },
-      );
+      expect(connect).toHaveBeenCalledWith('http://figma.local:3845/sse', {
+        Authorization: 'Bearer my-secret-token',
+        'X-Custom': 'static-value',
+      });
     });
 
     it('should pass raw url when no resolvedConfig provided', () => {
@@ -253,10 +274,7 @@ describe('connection-manager', () => {
 
       manager.getConnection('ext-sse-raw', sseRaw);
 
-      expect(connect).toHaveBeenCalledWith(
-        'http://localhost:3000/mcp',
-        {},
-      );
+      expect(connect).toHaveBeenCalledWith('http://localhost:3000/mcp', {});
     });
   });
 
@@ -277,56 +295,235 @@ describe('connection-manager', () => {
     });
 
     it('should retry on process crash and succeed', async () => {
-      manager.getConnection('ext-a', stdioConfig);
+      let toolCallCount = 0;
       const crashError = new ExtensionError('ext-a', ErrorCode.MCP_PROCESS_CRASHED, 'crashed');
-      vi.mocked(stdioSendRequest)
-        .mockRejectedValueOnce(crashError)
-        .mockResolvedValueOnce({ jsonrpc: '2.0', result: 'recovered', id: 2 });
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        toolCallCount++;
+        if (toolCallCount === 1) throw crashError;
+        return { jsonrpc: '2.0' as const, result: 'recovered', id: request.id };
+      });
 
+      manager.getConnection('ext-a', stdioConfig);
       const result = await manager.executeToolCall('ext-a', 'tool', {});
       expect(result).toBe('recovered');
       expect(spawnProcess).toHaveBeenCalledTimes(2);
     });
 
     it('should mark errored after max retries', async () => {
-      manager.getConnection('ext-a', stdioConfig);
       const crashError = new ExtensionError('ext-a', ErrorCode.MCP_PROCESS_CRASHED, 'crashed');
-      vi.mocked(stdioSendRequest).mockRejectedValue(crashError);
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        throw crashError;
+      });
 
-      await expect(
-        manager.executeToolCall('ext-a', 'tool', {}),
-      ).rejects.toThrow('failed to restart after 3 attempts');
+      manager.getConnection('ext-a', stdioConfig);
+      await expect(manager.executeToolCall('ext-a', 'tool', {})).rejects.toThrow(
+        'failed to restart after 3 attempts',
+      );
 
       const status = manager.status();
       expect(status.get('ext-a')).toBe('errored');
     });
 
     it('should not retry on non-crash errors', async () => {
-      manager.getConnection('ext-a', stdioConfig);
-      vi.mocked(stdioSendRequest).mockRejectedValueOnce(new Error('timeout'));
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        throw new Error('timeout');
+      });
 
-      await expect(
-        manager.executeToolCall('ext-a', 'tool', {}),
-      ).rejects.toThrow('timeout');
+      manager.getConnection('ext-a', stdioConfig);
+      await expect(manager.executeToolCall('ext-a', 'tool', {})).rejects.toThrow('timeout');
       expect(spawnProcess).toHaveBeenCalledTimes(1);
     });
 
     it('should reset retry count on successful recovery', async () => {
-      manager.getConnection('ext-a', stdioConfig);
+      let toolCallCount = 0;
       const crashError = new ExtensionError('ext-a', ErrorCode.MCP_PROCESS_CRASHED, 'crashed');
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        toolCallCount++;
+        // Calls 1, 3 crash; calls 2, 4 succeed
+        if (toolCallCount === 1 || toolCallCount === 3) throw crashError;
+        return { jsonrpc: '2.0' as const, result: `ok${toolCallCount}`, id: request.id };
+      });
+
+      manager.getConnection('ext-a', stdioConfig);
 
       // First crash + recovery
-      vi.mocked(stdioSendRequest)
-        .mockRejectedValueOnce(crashError)
-        .mockResolvedValueOnce({ jsonrpc: '2.0', result: 'ok', id: 2 });
       await manager.executeToolCall('ext-a', 'tool', {});
 
       // Second crash + recovery (should have fresh retry count)
-      vi.mocked(stdioSendRequest)
-        .mockRejectedValueOnce(crashError)
-        .mockResolvedValueOnce({ jsonrpc: '2.0', result: 'ok2', id: 4 });
       const result = await manager.executeToolCall('ext-a', 'tool', {});
-      expect(result).toBe('ok2');
+      expect(result).toBe('ok4');
+    });
+
+    it('should log crash details when retries exhausted', async () => {
+      const crashError = new ExtensionError(
+        'ext-a',
+        ErrorCode.MCP_PROCESS_CRASHED,
+        'crashed\nfatal: segfault',
+      );
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        throw crashError;
+      });
+
+      manager.getConnection('ext-a', stdioConfig);
+      await expect(manager.executeToolCall('ext-a', 'tool', {})).rejects.toThrow();
+
+      const logger = getLogger();
+      expect(logger.error).toHaveBeenCalledWith(
+        'extensions',
+        'MCP process for ext-a crashed',
+        expect.objectContaining({
+          retries: 3,
+          lastError: expect.stringContaining('segfault'),
+        }),
+      );
+    });
+
+    it('should log warn on each retry attempt', async () => {
+      let toolCallCount = 0;
+      const crashError = new ExtensionError('ext-a', ErrorCode.MCP_PROCESS_CRASHED, 'crashed');
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        toolCallCount++;
+        if (toolCallCount <= 2) throw crashError;
+        return { jsonrpc: '2.0' as const, result: 'ok', id: request.id };
+      });
+
+      manager.getConnection('ext-a', stdioConfig);
+      await manager.executeToolCall('ext-a', 'tool', {});
+
+      const logger = getLogger();
+      expect(logger.warn).toHaveBeenCalledWith(
+        'extensions',
+        'Retrying MCP connection for ext-a',
+        { attempt: 1 },
+      );
+      expect(logger.warn).toHaveBeenCalledWith(
+        'extensions',
+        'Retrying MCP connection for ext-a',
+        { attempt: 2 },
+      );
+    });
+  });
+
+  describe('MCP initialization handshake', () => {
+    it('should send initialize request before first tool call', async () => {
+      manager.getConnection('ext-a', stdioConfig);
+      await manager.executeToolCall('ext-a', 'search', { query: 'test' });
+
+      const calls = vi.mocked(stdioSendRequest).mock.calls;
+      const initCall = calls.find(
+        (c) => (c[1] as { method: string }).method === 'initialize',
+      );
+      expect(initCall).toBeDefined();
+      const initRequest = initCall![1] as { params: Record<string, unknown> };
+      expect(initRequest.params.protocolVersion).toBe('2024-11-05');
+    });
+
+    it('should send initialized notification after successful handshake', async () => {
+      manager.getConnection('ext-a', stdioConfig);
+      await manager.executeToolCall('ext-a', 'search', { query: 'test' });
+
+      expect(sendNotification).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ method: 'notifications/initialized' }),
+      );
+    });
+
+    it('should only perform handshake once for multiple tool calls', async () => {
+      manager.getConnection('ext-a', stdioConfig);
+      await manager.executeToolCall('ext-a', 'tool1', {});
+      await manager.executeToolCall('ext-a', 'tool2', {});
+
+      const initCalls = vi.mocked(stdioSendRequest).mock.calls.filter(
+        (c) => (c[1] as { method: string }).method === 'initialize',
+      );
+      expect(initCalls).toHaveLength(1);
+    });
+
+    it('should throw when initialization returns an error response', async () => {
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return {
+            jsonrpc: '2.0' as const,
+            error: { code: -32600, message: 'Unsupported protocol' },
+            id: request.id,
+          };
+        }
+        return { jsonrpc: '2.0' as const, result: 'ok', id: request.id };
+      });
+
+      manager.getConnection('ext-a', stdioConfig);
+      await expect(manager.executeToolCall('ext-a', 'tool', {})).rejects.toThrow(
+        'MCP initialization failed',
+      );
+    });
+  });
+
+  describe('JSON-RPC error handling', () => {
+    it('should throw on error response from tool call', async () => {
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        return {
+          jsonrpc: '2.0' as const,
+          error: { code: -32603, message: 'Internal error: tool failed' },
+          id: request.id,
+        };
+      });
+
+      manager.getConnection('ext-a', stdioConfig);
+      await expect(manager.executeToolCall('ext-a', 'tool', {})).rejects.toThrow(
+        'Internal error: tool failed',
+      );
+    });
+
+    it('should throw on SSE error response', async () => {
+      vi.mocked(sseSendRequest).mockResolvedValue({
+        jsonrpc: '2.0',
+        error: { code: -32601, message: 'Method not found' },
+        id: 1,
+      });
+
+      manager.getConnection('ext-b', sseConfig);
+      await expect(manager.executeToolCall('ext-b', 'tool', {})).rejects.toThrow(
+        'Method not found',
+      );
+    });
+
+    it('should include error code in the thrown error message', async () => {
+      vi.mocked(stdioSendRequest).mockImplementation(async (_proc, request) => {
+        if (request.method === 'initialize') {
+          return { jsonrpc: '2.0' as const, result: INIT_RESULT, id: request.id };
+        }
+        return {
+          jsonrpc: '2.0' as const,
+          error: { code: -32000, message: 'Custom server error' },
+          id: request.id,
+        };
+      });
+
+      manager.getConnection('ext-a', stdioConfig);
+      await expect(manager.executeToolCall('ext-a', 'tool', {})).rejects.toThrow(
+        'MCP error -32000: Custom server error',
+      );
     });
   });
 });

@@ -14,7 +14,7 @@ describe('QueryProvider', () => {
     render(
       <QueryProvider>
         <span>child content</span>
-      </QueryProvider>
+      </QueryProvider>,
     );
     expect(screen.getByText('child content')).toBeInTheDocument();
   });
@@ -26,7 +26,7 @@ describe('QueryProvider', () => {
     render(
       <QueryProvider client={customClient}>
         <QueryClientInspector />
-      </QueryProvider>
+      </QueryProvider>,
     );
     expect(screen.getByTestId('stale-time').textContent).toBe('99999');
   });
@@ -35,7 +35,7 @@ describe('QueryProvider', () => {
     render(
       <QueryProvider>
         <QueryClientInspector />
-      </QueryProvider>
+      </QueryProvider>,
     );
     expect(screen.getByTestId('stale-time').textContent).toBe('30000');
   });

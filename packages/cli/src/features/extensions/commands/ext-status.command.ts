@@ -7,8 +7,6 @@ export function handleExtStatus(connections: Map<string, ConnectionState>): void
     return;
   }
 
-  const lines = Array.from(connections.entries()).map(
-    ([name, state]) => `  ${name}: ${state}`,
-  );
+  const lines = Array.from(connections.entries()).map(([name, state]) => `  ${name}: ${state}`);
   clack.log.info(`MCP connection status:\n${lines.join('\n')}`);
 }

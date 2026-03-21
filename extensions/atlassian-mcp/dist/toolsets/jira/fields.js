@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createFieldsToolset(client) {
     return {
         name: 'jira_fields',
@@ -25,7 +25,7 @@ export function createFieldsToolset(client) {
             jira_search_fields: async () => {
                 try {
                     const data = await client.getFields();
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -34,7 +34,7 @@ export function createFieldsToolset(client) {
             jira_get_field_options: async (args) => {
                 try {
                     const data = await client.getFieldOptions(args['fieldId'], args['contextId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

@@ -17,7 +17,13 @@ vi.mock('@/core/hooks/use-extensions', () => ({
         {
           name: 'ext',
           widgets: [
-            { id: 'w1', title: 'Widget 1', defaultSize: { w: 4, h: 2 }, minSize: { w: 2, h: 1 }, maxSize: { w: 6, h: 4 } },
+            {
+              id: 'w1',
+              title: 'Widget 1',
+              defaultSize: { w: 4, h: 2 },
+              minSize: { w: 2, h: 1 },
+              maxSize: { w: 6, h: 4 },
+            },
             { id: 'w2', title: 'Widget 2', defaultSize: { w: 4, h: 2 } },
           ],
         },
@@ -30,7 +36,14 @@ vi.mock('@/core/hooks/use-extensions', () => ({
 }));
 
 vi.mock('./WidgetCard', () => ({
-  WidgetCard: ({ id, title, onRemove, onResize, size, constraints }: {
+  WidgetCard: ({
+    id,
+    title,
+    onRemove,
+    onResize,
+    size,
+    constraints,
+  }: {
     id: string;
     title: string;
     onRemove: () => void;
@@ -40,28 +53,56 @@ vi.mock('./WidgetCard', () => ({
   }) => (
     <div data-testid={`widget-card-${id}`}>
       <span>{title}</span>
-      <span data-testid={`size-${id}`}>{size.w}x{size.h}</span>
-      {constraints?.minSize && <span data-testid={`min-${id}`}>{constraints.minSize.w}x{constraints.minSize.h}</span>}
-      {constraints?.maxSize && <span data-testid={`max-${id}`}>{constraints.maxSize.w}x{constraints.maxSize.h}</span>}
-      <button data-testid={`remove-${id}`} onClick={onRemove}>Remove</button>
-      <button data-testid={`resize-${id}`} onClick={() => onResize({ w: 5, h: 3 })}>Resize</button>
+      <span data-testid={`size-${id}`}>
+        {size.w}x{size.h}
+      </span>
+      {constraints?.minSize && (
+        <span data-testid={`min-${id}`}>
+          {constraints.minSize.w}x{constraints.minSize.h}
+        </span>
+      )}
+      {constraints?.maxSize && (
+        <span data-testid={`max-${id}`}>
+          {constraints.maxSize.w}x{constraints.maxSize.h}
+        </span>
+      )}
+      <button data-testid={`remove-${id}`} onClick={onRemove}>
+        Remove
+      </button>
+      <button data-testid={`resize-${id}`} onClick={() => onResize({ w: 5, h: 3 })}>
+        Resize
+      </button>
     </div>
   ),
 }));
 
-let capturedOnAdd: ((extensionName: string, widgetId: string, defaultSize: { w: number; h: number }) => void) | undefined;
+let capturedOnAdd:
+  | ((extensionName: string, widgetId: string, defaultSize: { w: number; h: number }) => void)
+  | undefined;
 
 vi.mock('./WidgetPicker', () => ({
-  WidgetPicker: ({ onAdd }: { onAdd: (extensionName: string, widgetId: string, defaultSize: { w: number; h: number }) => void }) => {
+  WidgetPicker: ({
+    onAdd,
+  }: {
+    onAdd: (extensionName: string, widgetId: string, defaultSize: { w: number; h: number }) => void;
+  }) => {
     capturedOnAdd = onAdd;
     return null;
   },
 }));
 
-let capturedOnDragEnd: ((event: { active: { id: string }; over: { id: string } | null }) => void) | undefined;
+let capturedOnDragEnd:
+  | ((event: { active: { id: string }; over: { id: string } | null }) => void)
+  | undefined;
 
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children, onDragEnd }: { children: React.ReactNode; onDragEnd: (event: { active: { id: string }; over: { id: string } | null }) => void }) => {
+  DndContext: ({
+    children,
+    onDragEnd,
+  }: {
+    children: React.ReactNode;
+    onDragEnd: (event: { active: { id: string }; over: { id: string } | null }) => void;
+  }) => {
     capturedOnDragEnd = onDragEnd;
     return <div>{children}</div>;
   },
@@ -109,8 +150,20 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
-          { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
+          {
+            id: 'ext:w2',
+            extensionName: 'ext',
+            widgetId: 'w2',
+            position: { x: 4, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -131,8 +184,20 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
-          { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
+          {
+            id: 'ext:w2',
+            extensionName: 'ext',
+            widgetId: 'w2',
+            position: { x: 4, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -140,7 +205,13 @@ describe('WidgetGrid', () => {
     fireEvent.click(screen.getByTestId('remove-ext:w1'));
     expect(mockMutate).toHaveBeenCalledWith({
       widgets: [
-        { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+        {
+          id: 'ext:w2',
+          extensionName: 'ext',
+          widgetId: 'w2',
+          position: { x: 4, y: 0 },
+          size: { w: 4, h: 2 },
+        },
       ],
     });
   });
@@ -149,7 +220,13 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -157,7 +234,13 @@ describe('WidgetGrid', () => {
     fireEvent.click(screen.getByTestId('resize-ext:w1'));
     expect(mockMutate).toHaveBeenCalledWith({
       widgets: [
-        { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 5, h: 3 } },
+        {
+          id: 'ext:w1',
+          extensionName: 'ext',
+          widgetId: 'w1',
+          position: { x: 0, y: 0 },
+          size: { w: 5, h: 3 },
+        },
       ],
     });
   });
@@ -166,7 +249,13 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -179,7 +268,13 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w2',
+            extensionName: 'ext',
+            widgetId: 'w2',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -192,8 +287,20 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
-          { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
+          {
+            id: 'ext:w2',
+            extensionName: 'ext',
+            widgetId: 'w2',
+            position: { x: 4, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -201,8 +308,20 @@ describe('WidgetGrid', () => {
     capturedOnDragEnd?.({ active: { id: 'ext:w1' }, over: { id: 'ext:w2' } });
     expect(mockMutate).toHaveBeenCalledWith({
       widgets: [
-        { id: 'ext:w2', extensionName: 'ext', widgetId: 'w2', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
-        { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        {
+          id: 'ext:w2',
+          extensionName: 'ext',
+          widgetId: 'w2',
+          position: { x: 4, y: 0 },
+          size: { w: 4, h: 2 },
+        },
+        {
+          id: 'ext:w1',
+          extensionName: 'ext',
+          widgetId: 'w1',
+          position: { x: 0, y: 0 },
+          size: { w: 4, h: 2 },
+        },
       ],
     });
   });
@@ -211,7 +330,13 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -225,7 +350,13 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -239,7 +370,13 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);
@@ -258,7 +395,13 @@ describe('WidgetGrid', () => {
     capturedOnAdd?.('ext', 'w1', { w: 4, h: 2 });
     expect(mockMutate).toHaveBeenCalledWith({
       widgets: [
-        { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
+        {
+          id: 'ext:w1',
+          extensionName: 'ext',
+          widgetId: 'w1',
+          position: { x: 0, y: 0 },
+          size: { w: 4, h: 2 },
+        },
       ],
     });
   });
@@ -267,8 +410,20 @@ describe('WidgetGrid', () => {
     vi.mocked(useDashboardLayout).mockReturnValue({
       data: {
         widgets: [
-          { id: 'ext:w1', extensionName: 'ext', widgetId: 'w1', position: { x: 0, y: 0 }, size: { w: 4, h: 2 } },
-          { id: 'deactivated-ext:w1', extensionName: 'deactivated-ext', widgetId: 'w1', position: { x: 4, y: 0 }, size: { w: 4, h: 2 } },
+          {
+            id: 'ext:w1',
+            extensionName: 'ext',
+            widgetId: 'w1',
+            position: { x: 0, y: 0 },
+            size: { w: 4, h: 2 },
+          },
+          {
+            id: 'deactivated-ext:w1',
+            extensionName: 'deactivated-ext',
+            widgetId: 'w1',
+            position: { x: 4, y: 0 },
+            size: { w: 4, h: 2 },
+          },
         ],
       },
     } as ReturnType<typeof useDashboardLayout>);

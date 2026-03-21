@@ -1,12 +1,15 @@
 # ADR-010: Mandatory Engine Constraints
 
 ## Status
+
 Proposed (supersedes optionality in ADR-009)
 
 ## Context
+
 ADR-009 introduced the `engines` field in extension manifests for version compatibility checks. Both `engines` itself and its sub-keys (`renre-kit`, `extension-sdk`) were made **optional** to maintain backward compatibility with existing extensions.
 
 Since then, the project's position has changed:
+
 - **Pre-publish**: There are no third-party extensions in the wild. The only reference extension (`hello-world`) is in the repo. There is no backward compatibility concern.
 - **Scaffolding already stamps engines**: `create-renre-extension` generates manifests with `engines` populated from the current CLI and SDK versions. New extensions already have the field.
 - **Optional engines undermine compatibility checks**: If `engines` is missing, `checkEngineCompat()` returns early with "compatible" — meaning the entire engine checking system can be silently bypassed by omitting a field. This defeats the purpose of ADR-009.
@@ -23,13 +26,13 @@ The pre-publish window is the right time to make this a hard requirement. Doing 
 engines: z.object({
   'renre-kit': z.string().optional(),
   'extension-sdk': z.string().optional(),
-}).optional()
+}).optional();
 
 // After:
 engines: z.object({
   'renre-kit': z.string(),
   'extension-sdk': z.string(),
-})
+});
 ```
 
 ### 2. Update the TypeScript interface
@@ -105,6 +108,7 @@ After ADR-005 (build-time version constants) is implemented, update `create-renr
 ## Consequences
 
 ### Positive
+
 - **No silent compatibility bypass**: Every extension must declare what it needs. The compatibility check always runs with real data.
 - **Cleaner code**: No optional chaining, no early returns, no "engines might be undefined" branches. The types enforce presence.
 - **Zero migration cost**: No third-party extensions exist yet. The reference extension already has the field.
@@ -112,16 +116,19 @@ After ADR-005 (build-time version constants) is implemented, update `create-renr
 - **Better error messages**: Instead of "no engines field, skipping check", users get definitive pass/fail results.
 
 ### Negative
+
 - **Strictness for extension authors**: Every extension must declare engine constraints, even if the author doesn't care about version compatibility. Mitigation: scaffolding stamps defaults, so authors get valid values without manual effort.
 - **Supersedes part of ADR-009**: Changes the optionality decision made in ADR-009. The ADR trail must be clear about this evolution.
 - **No escape hatch**: Unlike ADR-009's `--force` flag concept, incompatibility is a hard stop. This is intentional for pre-1.0 but may need revisiting if edge cases arise post-publish.
 
 ## Alternatives Considered
+
 - **Keep optional, add lint warning**: A lint rule could warn about missing `engines` in registries. But this is advisory — extensions can still ship without it and bypass compatibility checks at runtime.
 - **Required in registry, optional locally**: Only enforce `engines` when publishing to a registry, allow local development without it. Adds complexity with two validation modes. Since scaffolding stamps it automatically, there's no real burden in requiring it everywhere.
 - **Wait until post-1.0**: Make it required only after a stable release. But post-1.0 it becomes a breaking change for the extension ecosystem. The pre-publish window is the cheapest time to enforce this.
 
 ## Related Decisions
+
 - extensions/ADR-009: Engine-Based Version Compatibility — this ADR supersedes ADR-009's optionality stance while preserving all other design decisions (minimum-only constraints, semver comparison, enforcement points)
 - core/ADR-005: Build-Time Version Constants — provides accurate version values for engine checks and scaffolding
 - core/ADR-007: Doctor Diagnostic Command — doctor's engine constraint check (check #9) benefits from non-optional types

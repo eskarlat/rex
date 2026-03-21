@@ -59,7 +59,10 @@ describe('extension-manager', () => {
   describe('install', () => {
     it('inserts extension into database', () => {
       install('my-ext', '1.0.0', 'default', 'standard', db);
-      const rows = db.prepare('SELECT * FROM installed_extensions').all() as Array<{ name: string; version: string }>;
+      const rows = db.prepare('SELECT * FROM installed_extensions').all() as Array<{
+        name: string;
+        version: string;
+      }>;
       expect(rows).toHaveLength(1);
       expect(rows[0]!.name).toBe('my-ext');
       expect(rows[0]!.version).toBe('1.0.0');
@@ -67,7 +70,9 @@ describe('extension-manager', () => {
 
     it('stores registry_source and type', () => {
       install('mcp-ext', '2.0.0', 'community', 'mcp', db);
-      const row = db.prepare('SELECT * FROM installed_extensions WHERE name = ?').get('mcp-ext') as { registry_source: string; type: string };
+      const row = db
+        .prepare('SELECT * FROM installed_extensions WHERE name = ?')
+        .get('mcp-ext') as { registry_source: string; type: string };
       expect(row.registry_source).toBe('community');
       expect(row.type).toBe('mcp');
     });
@@ -164,9 +169,7 @@ describe('extension-manager', () => {
         }),
       );
 
-      await expect(
-        activate('ext-nohook', '1.0.0', projectDir, extDir),
-      ).resolves.toBeDefined();
+      await expect(activate('ext-nohook', '1.0.0', projectDir, extDir)).resolves.toBeDefined();
     });
 
     it('runs onInit hook from main entry point', { timeout: 10_000 }, async () => {
@@ -210,9 +213,7 @@ describe('extension-manager', () => {
         }),
       );
 
-      await expect(
-        activate('ext-no-main', '1.0.0', projectDir, extDir),
-      ).resolves.toBeDefined();
+      await expect(activate('ext-no-main', '1.0.0', projectDir, extDir)).resolves.toBeDefined();
     });
 
     it('emits ext:activate event when bus is provided', async () => {
@@ -231,7 +232,13 @@ describe('extension-manager', () => {
       );
 
       const mockBus = { emit: vi.fn().mockResolvedValue(undefined) };
-      await activate('ext-bus', '1.0.0', projectDir, extDir, mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus);
+      await activate(
+        'ext-bus',
+        '1.0.0',
+        projectDir,
+        extDir,
+        mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus,
+      );
 
       expect(mockBus.emit).toHaveBeenCalledWith('ext:activate', {
         type: 'ext:activate',
@@ -243,10 +250,7 @@ describe('extension-manager', () => {
 
     it('preserves existing plugins when activating new one', async () => {
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
-      fs.writeFileSync(
-        pluginsPath,
-        JSON.stringify({ existing: '1.0.0' }),
-      );
+      fs.writeFileSync(pluginsPath, JSON.stringify({ existing: '1.0.0' }));
 
       const extDir = path.join(tmpDir, 'new-ext@2.0.0');
       fs.mkdirSync(extDir, { recursive: true });
@@ -285,9 +289,9 @@ describe('extension-manager', () => {
         }),
       );
 
-      await expect(
-        activate('ext-engine', '1.0.0', projectDir, extDir),
-      ).rejects.toThrow(/ENGINE_INCOMPATIBLE|Engine incompatibility/);
+      await expect(activate('ext-engine', '1.0.0', projectDir, extDir)).rejects.toThrow(
+        /ENGINE_INCOMPATIBLE|Engine incompatibility/,
+      );
 
       // Activation should NOT have written plugins.json
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
@@ -309,9 +313,7 @@ describe('extension-manager', () => {
         }),
       );
 
-      await expect(
-        activate('ext-compat', '1.0.0', projectDir, extDir),
-      ).resolves.toBeDefined();
+      await expect(activate('ext-compat', '1.0.0', projectDir, extDir)).resolves.toBeDefined();
     });
 
     it('passes enriched HookContext with sdk to onInit', { timeout: 10_000 }, async () => {
@@ -339,6 +341,11 @@ export function onInit(ctx) {
     hasAgentDir: typeof ctx.agentDir === 'string',
     hasDeployFn: typeof ctx.sdk.deployAgentAssets === 'function',
     hasCleanupFn: typeof ctx.sdk.cleanupAgentAssets === 'function',
+    hasLogger: typeof ctx.sdk.logger === 'object',
+    hasLoggerInfo: typeof ctx.sdk.logger.info === 'function',
+    hasLoggerDebug: typeof ctx.sdk.logger.debug === 'function',
+    hasLoggerWarn: typeof ctx.sdk.logger.warn === 'function',
+    hasLoggerError: typeof ctx.sdk.logger.error === 'function',
   };
   fs.writeFileSync(path.join(ctx.projectDir, '.ctx-check'), JSON.stringify(info));
 }`,
@@ -346,14 +353,17 @@ export function onInit(ctx) {
 
       await activate('ext-ctx', '1.0.0', projectDir, extDir);
 
-      const ctxCheck = JSON.parse(
-        fs.readFileSync(path.join(projectDir, '.ctx-check'), 'utf-8'),
-      );
+      const ctxCheck = JSON.parse(fs.readFileSync(path.join(projectDir, '.ctx-check'), 'utf-8'));
       expect(ctxCheck).toEqual({
         hasExtensionDir: true,
         hasAgentDir: true,
         hasDeployFn: true,
         hasCleanupFn: true,
+        hasLogger: true,
+        hasLoggerInfo: true,
+        hasLoggerDebug: true,
+        hasLoggerWarn: true,
+        hasLoggerError: true,
       });
     });
 
@@ -413,7 +423,14 @@ export function onInit(ctx) {
       await activate('no-deploy', '1.0.0', projectDir, extDir);
 
       // Core does NOT auto-deploy — extensions handle this in onInit hooks
-      const skillPath = path.join(projectDir, '.agents', 'skills', 'no-deploy', 'greet', 'SKILL.md');
+      const skillPath = path.join(
+        projectDir,
+        '.agents',
+        'skills',
+        'no-deploy',
+        'greet',
+        'SKILL.md',
+      );
       expect(fs.existsSync(skillPath)).toBe(false);
     });
   });
@@ -421,10 +438,7 @@ export function onInit(ctx) {
   describe('deactivate', () => {
     it('removes extension from plugins.json', async () => {
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
-      fs.writeFileSync(
-        pluginsPath,
-        JSON.stringify({ 'ext-a': '1.0.0', 'ext-b': '2.0.0' }),
-      );
+      fs.writeFileSync(pluginsPath, JSON.stringify({ 'ext-a': '1.0.0', 'ext-b': '2.0.0' }));
 
       const extDir = path.join(tmpDir, 'ext-a@1.0.0');
       fs.mkdirSync(extDir, { recursive: true });
@@ -466,7 +480,12 @@ export function onInit(ctx) {
       );
 
       const mockBus = { emit: vi.fn().mockResolvedValue(undefined) };
-      await deactivate('ext-bus', projectDir, extDir, mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus);
+      await deactivate(
+        'ext-bus',
+        projectDir,
+        extDir,
+        mockBus as unknown as import('../../../core/event-bus/event-bus.js').EventBus,
+      );
 
       expect(mockBus.emit).toHaveBeenCalledWith('ext:deactivate', {
         type: 'ext:deactivate',
@@ -520,9 +539,7 @@ export function onInit(ctx) {
         }),
       );
 
-      await expect(
-        deactivate('ext-a', projectDir, extDir),
-      ).resolves.toBeUndefined();
+      await expect(deactivate('ext-a', projectDir, extDir)).resolves.toBeUndefined();
     });
   });
 
@@ -536,10 +553,7 @@ export function onInit(ctx) {
 
     it('reads and returns plugins.json content', () => {
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
-      fs.writeFileSync(
-        pluginsPath,
-        JSON.stringify({ 'my-ext': '1.0.0' }),
-      );
+      fs.writeFileSync(pluginsPath, JSON.stringify({ 'my-ext': '1.0.0' }));
 
       const result = getActivated(projectDir);
       expect(result['my-ext']).toBe('1.0.0');
@@ -579,10 +593,7 @@ export function onInit(ctx) {
       install('ext-b', '2.0.0', 'community', 'mcp', db);
 
       const pluginsPath = path.join(projectDir, '.renre-kit', 'plugins.json');
-      fs.writeFileSync(
-        pluginsPath,
-        JSON.stringify({ 'ext-a': '1.0.0' }),
-      );
+      fs.writeFileSync(pluginsPath, JSON.stringify({ 'ext-a': '1.0.0' }));
 
       const result = status(projectDir, db);
       expect(result).toHaveLength(2);

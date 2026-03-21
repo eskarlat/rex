@@ -33,6 +33,8 @@ function createMockSDK(): RenreKitSDK {
       unregister: vi.fn().mockResolvedValue(undefined),
       update: vi.fn().mockResolvedValue(mockTask),
     },
+    terminal: { open: vi.fn(), close: vi.fn(), send: vi.fn() },
+    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     destroy: vi.fn(),
   };
 }
@@ -87,7 +89,7 @@ describe('useScheduler', () => {
     expect(result.current.tasks).toEqual([mockTask]);
   });
 
-  it('unregister calls SDK and refreshes list', async () => {
+  it('remove calls SDK unregister and refreshes list', async () => {
     vi.mocked(mockSDK.scheduler.list).mockResolvedValue([mockTask]);
 
     const { result } = renderHook(() => useScheduler(), { wrapper });
@@ -99,11 +101,27 @@ describe('useScheduler', () => {
     vi.mocked(mockSDK.scheduler.list).mockResolvedValue([]);
 
     await act(async () => {
-      await result.current.unregister('task-1');
+      await result.current.remove('task-1');
     });
 
     expect(mockSDK.scheduler.unregister).toHaveBeenCalledWith('task-1');
     expect(result.current.tasks).toEqual([]);
+  });
+
+  it('trigger calls SDK update and refreshes list', async () => {
+    vi.mocked(mockSDK.scheduler.list).mockResolvedValue([mockTask]);
+
+    const { result } = renderHook(() => useScheduler(), { wrapper });
+
+    await act(async () => {
+      // Let mount effect resolve
+    });
+
+    await act(async () => {
+      await result.current.trigger('task-1');
+    });
+
+    expect(mockSDK.scheduler.update).toHaveBeenCalledWith('task-1', {});
   });
 
   it('update calls SDK and refreshes list', async () => {

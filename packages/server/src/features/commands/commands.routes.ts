@@ -8,6 +8,7 @@ import {
   ConnectionManager,
   resolveExtensionConfig,
   getLogger,
+  createExtensionLogger,
 } from '@renre-kit/cli/lib';
 import type { ExtensionManifest } from '@renre-kit/cli/lib';
 
@@ -33,7 +34,13 @@ type CommandResolution = { ok: true; value: ResolvedCommand } | { ok: false; val
 function resolveCommand(command: string, projectPath: string): CommandResolution {
   const colonIdx = command.indexOf(':');
   if (colonIdx <= 0) {
-    return { ok: false, value: { error: `Invalid command format: '${command}'. Expected 'extension:command'.`, status: 400 } };
+    return {
+      ok: false,
+      value: {
+        error: `Invalid command format: '${command}'. Expected 'extension:command'.`,
+        status: 400,
+      },
+    };
   }
 
   const extName = command.substring(0, colonIdx);
@@ -42,7 +49,10 @@ function resolveCommand(command: string, projectPath: string): CommandResolution
   const version = plugins[extName];
 
   if (!version) {
-    return { ok: false, value: { error: `Extension '${extName}' is not activated in this project`, status: 404 } };
+    return {
+      ok: false,
+      value: { error: `Extension '${extName}' is not activated in this project`, status: 404 },
+    };
   }
 
   const extDir = getExtensionDir(extName, version);
@@ -88,14 +98,38 @@ async function executeResolvedCommand(
 
   const cmdDef = manifest.commands[cmdName];
   if (cmdDef) {
-    getLogger().info('commands', `Executing ${body.command}`, { type: 'standard', handler: cmdDef.handler });
+    getLogger().info('commands', `Executing ${body.command}`, {
+      type: 'standard',
+      handler: cmdDef.handler,
+    });
     const handler = await loadCommandHandler(extDir, cmdDef.handler);
-    return executeCommand(handler, { projectName: '', projectPath, args, config: resolvedConfig });
+    return executeCommand(handler, {
+      projectName: '',
+      projectPath,
+      args,
+      config: resolvedConfig,
+      logger: createExtensionLogger(extName),
+    });
   }
 
   if (manifest.type === 'mcp' && manifest.mcp) {
     getLogger().info('commands', `Executing ${body.command}`, { type: 'mcp', tool: cmdName });
-    return executeMcpTool(connectionManager, extName, cmdName, extDir, manifest, projectPath, args);
+    try {
+      return await executeMcpTool(
+        connectionManager,
+        extName,
+        cmdName,
+        extDir,
+        manifest,
+        projectPath,
+        args,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      getLogger().error('commands', `MCP tool call failed: ${message}`, { tool: cmdName });
+      reply.code(502);
+      return { error: `MCP tool call failed: ${message}`, exitCode: 1 };
+    }
   }
 
   reply.code(404);
@@ -104,6 +138,7 @@ async function executeResolvedCommand(
 
 const commandsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts, done) => {
   const connectionManager = new ConnectionManager();
+  connectionManager.setMode('dashboard');
 
   fastify.post('/api/run', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as RunBody;

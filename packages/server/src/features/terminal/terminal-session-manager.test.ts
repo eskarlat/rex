@@ -147,7 +147,9 @@ describe('TerminalSessionManager', () => {
       throw new Error('spawn failed');
     });
 
-    expect(() => manager.getOrCreateSession('proj-a', '/tmp/proj-a', 80, 24)).toThrow('spawn failed');
+    expect(() => manager.getOrCreateSession('proj-a', '/tmp/proj-a', 80, 24)).toThrow(
+      'spawn failed',
+    );
     expect(manager.getReplayData('proj-a')).toBe('');
   });
 

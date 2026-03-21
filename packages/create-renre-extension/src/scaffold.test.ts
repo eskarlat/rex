@@ -33,7 +33,7 @@ describe('scaffoldExtension', () => {
       await scaffoldExtension('my-plugin', 'standard', tmpDir);
 
       const pkgPath = path.join(tmpDir, 'my-plugin', 'package.json');
-      const pkg = await fse.readJson(pkgPath) as Record<string, unknown>;
+      const pkg = (await fse.readJson(pkgPath)) as Record<string, unknown>;
       expect(pkg['name']).toBe('my-plugin');
       expect(pkg['version']).toBe('0.0.1');
       expect(pkg['type']).toBe('module');
@@ -44,7 +44,7 @@ describe('scaffoldExtension', () => {
       await scaffoldExtension('my-plugin', 'standard', tmpDir);
 
       const manifestPath = path.join(tmpDir, 'my-plugin', 'manifest.json');
-      const manifest = await fse.readJson(manifestPath) as Record<string, unknown>;
+      const manifest = (await fse.readJson(manifestPath)) as Record<string, unknown>;
       expect(manifest['name']).toBe('my-plugin');
       expect(manifest['type']).toBe('standard');
       expect(manifest['main']).toBe('dist/index.js');
@@ -56,7 +56,7 @@ describe('scaffoldExtension', () => {
       await scaffoldExtension('my-plugin', 'standard', tmpDir);
 
       const manifestPath = path.join(tmpDir, 'my-plugin', 'manifest.json');
-      const manifest = await fse.readJson(manifestPath) as Record<string, unknown>;
+      const manifest = (await fse.readJson(manifestPath)) as Record<string, unknown>;
       const engines = manifest['engines'] as Record<string, string>;
       expect(engines).toBeDefined();
       expect(engines['renre-kit']).toBe('>=0.0.1');
@@ -106,7 +106,7 @@ describe('scaffoldExtension', () => {
       await scaffoldExtension('mcp-ext', 'mcp', tmpDir);
 
       const manifestPath = path.join(tmpDir, 'mcp-ext', 'manifest.json');
-      const manifest = await fse.readJson(manifestPath) as Record<string, unknown>;
+      const manifest = (await fse.readJson(manifestPath)) as Record<string, unknown>;
       expect(manifest['name']).toBe('mcp-ext');
       expect(manifest['type']).toBe('mcp');
       expect(manifest['main']).toBe('dist/index.js');
@@ -117,7 +117,7 @@ describe('scaffoldExtension', () => {
       await scaffoldExtension('mcp-ext', 'mcp', tmpDir);
 
       const manifestPath = path.join(tmpDir, 'mcp-ext', 'manifest.json');
-      const manifest = await fse.readJson(manifestPath) as Record<string, string>;
+      const manifest = (await fse.readJson(manifestPath)) as Record<string, string>;
       const engines = manifest['engines'] as unknown as Record<string, string>;
       expect(engines).toBeDefined();
       expect(engines['renre-kit']).toBe('>=0.0.1');
@@ -139,7 +139,7 @@ describe('scaffoldExtension', () => {
       await scaffoldExtension('mcp-ext', 'mcp', tmpDir);
 
       const pkgPath = path.join(tmpDir, 'mcp-ext', 'package.json');
-      const pkg = await fse.readJson(pkgPath) as Record<string, unknown>;
+      const pkg = (await fse.readJson(pkgPath)) as Record<string, unknown>;
       expect(pkg['main']).toBe('./dist/server.js');
     });
   });
@@ -148,9 +148,9 @@ describe('scaffoldExtension', () => {
     it('should throw if directory already exists', async () => {
       await fse.ensureDir(path.join(tmpDir, 'existing-ext'));
 
-      await expect(
-        scaffoldExtension('existing-ext', 'standard', tmpDir),
-      ).rejects.toThrow('Directory "existing-ext" already exists');
+      await expect(scaffoldExtension('existing-ext', 'standard', tmpDir)).rejects.toThrow(
+        'Directory "existing-ext" already exists',
+      );
     });
   });
 });

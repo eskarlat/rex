@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createAgileToolset(client) {
     return {
         name: 'jira_agile',
@@ -105,7 +105,7 @@ export function createAgileToolset(client) {
             jira_get_agile_boards: async (args) => {
                 try {
                     const data = await client.getBoards(args['startAt'] ?? 0, args['maxResults'] ?? 50);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -114,7 +114,7 @@ export function createAgileToolset(client) {
             jira_get_board_issues: async (args) => {
                 try {
                     const data = await client.getBoardIssues(args['boardId'], args['startAt'] ?? 0, args['maxResults'] ?? 50);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -123,7 +123,7 @@ export function createAgileToolset(client) {
             jira_get_sprints_from_board: async (args) => {
                 try {
                     const data = await client.getSprintsFromBoard(args['boardId'], args['startAt'] ?? 0, args['maxResults'] ?? 50);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -132,7 +132,7 @@ export function createAgileToolset(client) {
             jira_get_sprint_issues: async (args) => {
                 try {
                     const data = await client.getSprintIssues(args['sprintId'], args['startAt'] ?? 0, args['maxResults'] ?? 50);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -151,7 +151,7 @@ export function createAgileToolset(client) {
                     if (args['goal'])
                         sprint['goal'] = args['goal'];
                     const data = await client.createSprint(sprint);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -172,7 +172,7 @@ export function createAgileToolset(client) {
                     if (args['goal'])
                         update['goal'] = args['goal'];
                     const data = await client.updateSprint(sprintId, update);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -181,7 +181,7 @@ export function createAgileToolset(client) {
             jira_add_issues_to_sprint: async (args) => {
                 try {
                     const data = await client.addIssuesToSprint(args['sprintId'], args['issueKeys']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

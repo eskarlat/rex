@@ -4,12 +4,8 @@ import type { MiroClient } from '../client/miro-client.js';
 
 function createMockClient(): MiroClient {
   return {
-    createItemsInBulk: vi
-      .fn()
-      .mockResolvedValue([{ id: 'item1' }, { id: 'item2' }]),
-    createItemsInBulkUsingFile: vi
-      .fn()
-      .mockResolvedValue({ status: 'created', count: 5 }),
+    createItemsInBulk: vi.fn().mockResolvedValue([{ id: 'item1' }, { id: 'item2' }]),
+    createItemsInBulkUsingFile: vi.fn().mockResolvedValue({ status: 'created', count: 5 }),
   } as unknown as MiroClient;
 }
 

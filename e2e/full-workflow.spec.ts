@@ -40,16 +40,12 @@ let helloWorldRepoDir: string;
 
 function runCli(args: string[], options: { cwd?: string } = {}): string {
   const home = getE2EHome();
-  return childProcess.execFileSync(
-    process.execPath,
-    [CLI_BIN, ...args],
-    {
-      encoding: 'utf-8',
-      timeout: 30_000,
-      cwd: options.cwd ?? projectDir,
-      env: { ...process.env, HOME: home, RENRE_KIT_HOME: path.join(home, '.renre-kit') },
-    },
-  );
+  return childProcess.execFileSync(process.execPath, [CLI_BIN, ...args], {
+    encoding: 'utf-8',
+    timeout: 30_000,
+    cwd: options.cwd ?? projectDir,
+    env: { ...process.env, HOME: home, RENRE_KIT_HOME: path.join(home, '.renre-kit') },
+  });
 }
 
 function gitInit(dir: string): void {

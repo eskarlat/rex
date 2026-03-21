@@ -22,6 +22,12 @@ export interface JsonRpcError {
 
 export type ConnectionState = 'stopped' | 'starting' | 'running' | 'errored';
 
+export interface JsonRpcNotification {
+  jsonrpc: '2.0';
+  method: string;
+  params?: Record<string, unknown>;
+}
+
 export interface McpConnection {
   extensionName: string;
   transport: McpTransport;

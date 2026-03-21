@@ -1,10 +1,13 @@
 # ADR-005: Build-Time Version Constants
 
 ## Status
+
 Proposed
 
 ## Context
+
 The CLI and extension SDK each expose a version string used for:
+
 - `--version` flag output
 - Engine compatibility checks (ADR-009)
 - User-Agent headers in registry requests
@@ -72,9 +75,7 @@ The CLI package also needs the SDK version for engine compatibility checks. It r
 
 ```typescript
 // packages/cli/tsup.config.ts
-const sdkPkg = JSON.parse(
-  readFileSync('../extension-sdk/package.json', 'utf-8')
-);
+const sdkPkg = JSON.parse(readFileSync('../extension-sdk/package.json', 'utf-8'));
 
 export default defineConfig({
   define: {
@@ -113,21 +114,25 @@ export default defineConfig({
 ## Consequences
 
 ### Positive
+
 - **Single source of truth**: Version is defined in `package.json` only — no drift possible
 - **Zero manual steps**: Bumping `package.json` version (via `npm version` or manually) automatically propagates to all runtime code
 - **Build-time cost only**: The `define` replacement happens during bundling; no runtime file reads or `require()` calls
 - **CI safety net**: The grep check catches accidental reintroduction of hardcoded versions
 
 ### Negative
+
 - **Build required for accurate version**: Running `tsx` directly (e.g., during development without `pnpm dev`) would see `undefined` for version constants. Mitigation: dev mode uses `pnpm dev` which runs tsup in watch mode.
 - **Cross-package dependency**: CLI's tsup config reads SDK's `package.json` at build time. If the relative path changes, the build breaks. Mitigation: Turborepo's dependency graph ensures SDK builds first.
 - **Test version is synthetic**: Tests see `0.0.0-test` instead of the real version. Acceptable because tests should not depend on the exact version string.
 
 ## Alternatives Considered
+
 - **Runtime `require('../package.json')`**: Works but adds a filesystem read on every CLI invocation. Also fragile when the package is bundled — the relative path to `package.json` may not survive bundling.
 - **`genversion` package**: Generates a `version.ts` file from `package.json` as a prebuild step. Adds a dependency and a generated file that must be gitignored. tsup `define` achieves the same result with zero dependencies.
 - **Environment variable**: Set `CLI_VERSION` via env in the build script. Less reliable — env vars can be unset or overridden accidentally.
 
 ## Related Decisions
+
 - extensions/ADR-009: Engine-Based Version Compatibility — consumes CLI_VERSION and SDK_VERSION for compatibility checks
 - → extensions/ADR-010: Mandatory Engine Constraints — depends on accurate version constants for hard-fail enforcement

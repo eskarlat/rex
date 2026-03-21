@@ -118,10 +118,7 @@ export default function FigmaPanel({ sdk, extensionName }: Partial<PanelProps>) 
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel
-        title="Figma"
-        description="Figma design file tools via MCP server."
-      >
+      <Panel title="Figma" description="Figma design file tools via MCP server.">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
           MCP SSE transport
@@ -137,7 +134,9 @@ export default function FigmaPanel({ sdk, extensionName }: Partial<PanelProps>) 
                 placeholder="Enter Figma file key (e.g. abc123XYZ)"
                 value={fileKey}
                 onChange={(e) => setFileKey(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') void handleGetFile(); }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleGetFile();
+                }}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <button

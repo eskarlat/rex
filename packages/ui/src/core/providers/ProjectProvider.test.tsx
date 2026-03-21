@@ -32,7 +32,7 @@ describe('ProjectProvider', () => {
     render(
       <ProjectProvider>
         <span>child content</span>
-      </ProjectProvider>
+      </ProjectProvider>,
     );
     expect(screen.getByText('child content')).toBeInTheDocument();
   });
@@ -42,7 +42,7 @@ describe('ProjectProvider', () => {
     render(
       <ProjectProvider>
         <TestConsumer />
-      </ProjectProvider>
+      </ProjectProvider>,
     );
     expect(screen.getByTestId('project').textContent).toBe('/stored/path');
   });
@@ -51,7 +51,7 @@ describe('ProjectProvider', () => {
     render(
       <ProjectProvider>
         <TestConsumer />
-      </ProjectProvider>
+      </ProjectProvider>,
     );
     act(() => {
       screen.getByText('set').click();
@@ -65,7 +65,7 @@ describe('ProjectProvider', () => {
     render(
       <ProjectProvider>
         <TestConsumer />
-      </ProjectProvider>
+      </ProjectProvider>,
     );
     act(() => {
       screen.getByText('clear').click();
@@ -78,7 +78,7 @@ describe('ProjectProvider', () => {
     render(
       <ProjectProvider>
         <TestConsumer />
-      </ProjectProvider>
+      </ProjectProvider>,
     );
     act(() => {
       screen.getByText('set').click();

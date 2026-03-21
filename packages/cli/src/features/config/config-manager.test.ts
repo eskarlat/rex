@@ -42,7 +42,10 @@ describe('config-manager', () => {
       const config = loadGlobalConfig();
 
       expect(config.registries).toHaveLength(1);
-      expect(config.registries[0]).toMatchObject({ name: 'default', url: 'https://github.com/eskarlat/rex.git' });
+      expect(config.registries[0]).toMatchObject({
+        name: 'default',
+        url: 'https://github.com/eskarlat/rex.git',
+      });
       expect(config.settings).toEqual({});
       expect(config.extensionConfigs).toEqual({});
     });
@@ -143,12 +146,14 @@ describe('config-manager', () => {
     });
 
     it('should set a direct config field', async () => {
-      const { pathExistsSync, writeJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, writeJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(false);
 
       const { setExtensionConfig } = await import('./config-manager.js');
-      setExtensionConfig('jira', 'baseUrl', { source: 'direct', value: 'https://jira.example.com' });
+      setExtensionConfig('jira', 'baseUrl', {
+        source: 'direct',
+        value: 'https://jira.example.com',
+      });
 
       const call = vi.mocked(writeJsonSync).mock.calls[0];
       const written = call?.[1] as { extensionConfigs: Record<string, Record<string, unknown>> };
@@ -161,8 +166,7 @@ describe('config-manager', () => {
 
   describe('resolveExtensionConfig', () => {
     it('should resolve vault-mapped field to decrypted value', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         registries: [],
@@ -185,8 +189,7 @@ describe('config-manager', () => {
     });
 
     it('should resolve direct field to its value', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         registries: [],
@@ -237,8 +240,7 @@ describe('config-manager', () => {
     });
 
     it('should use project override when available', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockImplementation((filePath: string) => {
         if (filePath === '/tmp/test-config.json') {
@@ -273,8 +275,7 @@ describe('config-manager', () => {
 
   describe('getReferencingExtensions', () => {
     it('should return extensions that reference a vault key', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         registries: [],
@@ -293,8 +294,7 @@ describe('config-manager', () => {
     });
 
     it('should return empty array when no extensions reference key', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         registries: [],
@@ -309,8 +309,7 @@ describe('config-manager', () => {
 
   describe('getExtensionConfigMappings', () => {
     it('should return mappings for a specific extension', async () => {
-      const { pathExistsSync, readJsonSync } =
-        await import('../../shared/fs-helpers.js');
+      const { pathExistsSync, readJsonSync } = await import('../../shared/fs-helpers.js');
       vi.mocked(pathExistsSync).mockReturnValue(true);
       vi.mocked(readJsonSync).mockReturnValue({
         registries: [],

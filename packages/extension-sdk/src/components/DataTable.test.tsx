@@ -35,7 +35,7 @@ describe('DataTable', () => {
 
   it('applies custom className', () => {
     const { container } = render(
-      <DataTable columns={columns} data={data} className="custom-table" />
+      <DataTable columns={columns} data={data} className="custom-table" />,
     );
     const table = container.querySelector('table');
     expect(table).toHaveClass('custom-table');

@@ -8,7 +8,13 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   useMarketplace: () => ({
     data: {
       active: [
-        { name: 'hello-world', version: 'dev', type: 'standard', status: 'active', hasConfig: true },
+        {
+          name: 'hello-world',
+          version: 'dev',
+          type: 'standard',
+          status: 'active',
+          hasConfig: true,
+        },
       ],
       installed: [],
       available: [],
@@ -25,7 +31,7 @@ function renderWithProviders() {
       <MemoryRouter initialEntries={['/settings']}>
         <SettingsLayout />
       </MemoryRouter>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -33,9 +39,7 @@ describe('SettingsLayout', () => {
   it('renders Settings heading', () => {
     renderWithProviders();
     expect(screen.getByText('Settings')).toBeInTheDocument();
-    expect(
-      screen.getByText('Manage your RenreKit configuration.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Manage your RenreKit configuration.')).toBeInTheDocument();
   });
 
   it('renders navigation links', () => {

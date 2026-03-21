@@ -52,8 +52,6 @@
     ]
   },
   "agent": {
-    "skills": [
-      { "name": "miro", "path": "agent/skills/miro" }
-    ]
+    "skills": [{ "name": "miro", "path": "agent/skills/miro" }]
   }
 }

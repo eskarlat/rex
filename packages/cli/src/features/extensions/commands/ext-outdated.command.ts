@@ -21,7 +21,10 @@ interface ExtOutdatedOptions {
   db: Database.Database;
 }
 
-function checkExtension(ext: InstalledExtension, registryConfigs: RegistryConfig[]): OutdatedEntry | null {
+function checkExtension(
+  ext: InstalledExtension,
+  registryConfigs: RegistryConfig[],
+): OutdatedEntry | null {
   if (!semver.valid(ext.version)) return null;
 
   const resolved = resolve(ext.name, registryConfigs);

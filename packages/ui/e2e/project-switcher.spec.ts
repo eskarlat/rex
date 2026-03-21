@@ -83,9 +83,7 @@ test.describe('Project Switcher', () => {
     await page.getByRole('option', { name: 'test-project' }).click();
 
     // Check localStorage was set
-    const stored = await page.evaluate(() =>
-      localStorage.getItem('renre-kit-active-project'),
-    );
+    const stored = await page.evaluate(() => localStorage.getItem('renre-kit-active-project'));
     expect(stored).toBe('/tmp/test-project');
   });
 
@@ -106,9 +104,7 @@ test.describe('Project Switcher', () => {
     await newPage.route('**/api/marketplace', (route) =>
       route.fulfill({ json: { active: [], installed: [], available: [] } }),
     );
-    await newPage.route('**/api/project', (route) =>
-      route.fulfill({ json: null }),
-    );
+    await newPage.route('**/api/project', (route) => route.fulfill({ json: null }));
     await newPage.goto('/');
     // Page should render without crashing
     await expect(newPage.getByRole('heading', { name: 'Dashboard' })).toBeVisible();

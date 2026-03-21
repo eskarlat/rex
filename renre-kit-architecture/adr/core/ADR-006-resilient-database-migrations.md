@@ -1,9 +1,11 @@
 # ADR-006: Resilient Database Migrations
 
 ## Status
+
 Proposed
 
 ## Context
+
 The CLI uses SQLite (via better-sqlite3) with migration files applied sequentially on startup. The current migration runner executes raw SQL statements but does **not** wrap them in transactions. If a migration partially succeeds — for example, a `CREATE TABLE` succeeds but a subsequent `CREATE INDEX` fails — the database is left in an inconsistent state: some schema changes applied, others not, and the migration is not recorded as complete. Re-running the migration then fails because the already-created table conflicts.
 
 Additionally, there is no pre-migration backup. A failed migration requires manual intervention (deleting the database and losing all project/extension data) because there is no rollback path.
@@ -25,8 +27,10 @@ function runMigrations(db: Database): void {
   for (const migration of pending) {
     const runInTransaction = db.transaction(() => {
       db.exec(migration.sql);
-      db.prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)')
-        .run(migration.name, new Date().toISOString());
+      db.prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)').run(
+        migration.name,
+        new Date().toISOString(),
+      );
     });
 
     runInTransaction();
@@ -87,6 +91,7 @@ This table is created by the migration runner itself if it does not exist. Each 
 ### 4. Error reporting
 
 If a migration fails after rollback, the error message includes:
+
 - Which migration failed (file name)
 - The SQLite error message
 - The backup file path for manual recovery
@@ -98,8 +103,8 @@ try {
   const message = err instanceof Error ? err.message : String(err);
   throw new Error(
     `Migration "${migration.name}" failed: ${message}. ` +
-    `Database has been rolled back. ` +
-    `Pre-migration backup available at: ${backupPath}`
+      `Database has been rolled back. ` +
+      `Pre-migration backup available at: ${backupPath}`,
   );
 }
 ```
@@ -107,6 +112,7 @@ try {
 ## Consequences
 
 ### Positive
+
 - **Atomic migrations**: A failed migration leaves the database exactly as it was before the attempt — no half-applied schema changes
 - **Recoverable**: The `.bak` file provides a manual recovery path even in catastrophic scenarios (e.g., a bug in the migration runner itself)
 - **Minimal overhead**: `BEGIN IMMEDIATE` / `COMMIT` is essentially free in SQLite for DDL-only migrations
@@ -114,16 +120,19 @@ try {
 - **No new dependencies**: better-sqlite3 already provides `transaction()` — this is a usage change, not an architectural one
 
 ### Negative
+
 - **Backup disk usage**: Each migration run creates a full copy of the database. For the expected database sizes (< 1 MB), this is negligible.
 - **Single `.bak` file**: Only the most recent backup is kept. If a user runs migrations, modifies data, then runs more migrations that fail, the intermediate state is lost. Acceptable for the CLI's use case; not suitable for a production database server.
 - **DDL in transactions**: SQLite supports transactional DDL (unlike MySQL/PostgreSQL), so this works. But developers familiar with other databases may be surprised that `CREATE TABLE` can be rolled back.
 
 ## Alternatives Considered
+
 - **WAL mode journaling**: SQLite's WAL mode provides crash recovery but not logical rollback of partial migrations. It protects against power loss, not application-level errors.
 - **Numbered backup files** (`db.sqlite.bak.1`, `.bak.2`, etc.): More recovery points but adds complexity for managing old backups. Not justified for a CLI tool's small database.
 - **Down migrations**: Generating reverse SQL for each migration (like Prisma or Flyway). Significant complexity for a tool that primarily adds tables/columns and rarely removes them. The backup approach is simpler and covers more failure modes.
 
 ## Related Decisions
+
 - core/ADR-002: SQLite Project Registry — defines the database and table structure
 - → core/ADR-004: Schema Versioning & Migration Framework — complementary; ADR-004 covers JSON file migrations, this ADR covers SQLite
 - → core/ADR-007: Doctor Diagnostic Command — doctor verifies no pending migrations and database integrity

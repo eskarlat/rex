@@ -19,10 +19,12 @@ export declare class ConfluenceClient extends AtlassianBaseClient {
         name: string;
     }>): Promise<unknown>;
     searchUser(query: string): Promise<unknown>;
-    getPageViews(pageId: string): Promise<unknown>;
+    getPageViews(pageId: string, fromDate?: string): Promise<unknown>;
+    getPageViewers(pageId: string, fromDate?: string): Promise<unknown>;
     uploadAttachment(pageId: string, filename: string, content: string): Promise<unknown>;
     getAttachments(pageId: string, limit?: number, start?: number): Promise<unknown>;
     downloadAttachment(pageId: string, filename: string): Promise<Response>;
+    downloadAttachmentById(attachmentId: string): Promise<Response>;
     deleteAttachment(attachmentId: string): Promise<unknown>;
     getPageImages(pageId: string): Promise<unknown>;
 }

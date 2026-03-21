@@ -108,9 +108,7 @@ export function createTagsToolset(client: MiroClient): Toolset {
   ];
 
   const handlers = {
-    miro_list_tags: createHandler((args) =>
-      client.listTags(args['boardId'] as string),
-    ),
+    miro_list_tags: createHandler((args) => client.listTags(args['boardId'] as string)),
     miro_create_tag: createHandler((args) =>
       client.createTag(args['boardId'] as string, args['data'] as Record<string, unknown>),
     ),

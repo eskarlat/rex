@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { CLI_VERSION } from '../../../core/version.js';
 import {
   buildRequest,
   parseResponse,
   buildToolCallRequest,
+  buildInitializeRequest,
+  buildNotification,
   isNotification,
 } from './json-rpc.js';
 import { ErrorCode } from '../../../core/errors/extension-error.js';
@@ -126,15 +129,46 @@ describe('json-rpc', () => {
     });
   });
 
+  describe('buildInitializeRequest', () => {
+    it('should build an initialize request with protocol version and capabilities', () => {
+      const req = buildInitializeRequest(1);
+      expect(req.method).toBe('initialize');
+      expect(req.id).toBe(1);
+      expect(req.jsonrpc).toBe('2.0');
+      const params = req.params as Record<string, unknown>;
+      expect(params.protocolVersion).toBe('2024-11-05');
+      expect(params.capabilities).toEqual({});
+      expect(params.clientInfo).toEqual({ name: 'renre-kit', version: CLI_VERSION });
+    });
+
+    it('should use the provided id', () => {
+      const req = buildInitializeRequest(42);
+      expect(req.id).toBe(42);
+    });
+  });
+
+  describe('buildNotification', () => {
+    it('should build a notification without params', () => {
+      const notif = buildNotification('notifications/initialized');
+      expect(notif.jsonrpc).toBe('2.0');
+      expect(notif.method).toBe('notifications/initialized');
+      expect(notif.params).toBeUndefined();
+    });
+
+    it('should build a notification with params', () => {
+      const notif = buildNotification('notifications/progress', { progress: 50 });
+      expect(notif.method).toBe('notifications/progress');
+      expect(notif.params).toEqual({ progress: 50 });
+    });
+  });
+
   describe('isNotification', () => {
     it('should return true for a message without id', () => {
       expect(isNotification({ jsonrpc: '2.0', method: 'notify' })).toBe(true);
     });
 
     it('should return false for a message with id', () => {
-      expect(
-        isNotification({ jsonrpc: '2.0', method: 'request', id: 1 }),
-      ).toBe(false);
+      expect(isNotification({ jsonrpc: '2.0', method: 'request', id: 1 })).toBe(false);
     });
 
     it('should return false for null', () => {

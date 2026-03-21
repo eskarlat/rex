@@ -35,31 +35,34 @@ const registriesRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     }));
   });
 
-  fastify.post('/api/registries', (request: FastifyRequest, reply: FastifyReply): Record<string, unknown> => {
-    const body = request.body as AddRegistryBody;
-    if (!body.name || !body.url) {
-      reply.code(400);
-      return { error: 'name and url are required' };
-    }
+  fastify.post(
+    '/api/registries',
+    (request: FastifyRequest, reply: FastifyReply): Record<string, unknown> => {
+      const body = request.body as AddRegistryBody;
+      if (!body.name || !body.url) {
+        reply.code(400);
+        return { error: 'name and url are required' };
+      }
 
-    const config = loadGlobalConfig();
-    const existing = config.registries.find((r) => r.name === body.name);
-    if (existing) {
-      reply.code(409);
-      return { error: `Registry '${body.name}' already exists` };
-    }
+      const config = loadGlobalConfig();
+      const existing = config.registries.find((r) => r.name === body.name);
+      if (existing) {
+        reply.code(409);
+        return { error: `Registry '${body.name}' already exists` };
+      }
 
-    const entry: RegistryConfig = {
-      name: body.name,
-      url: body.url,
-      priority: body.priority ?? DEFAULT_PRIORITY,
-      cacheTTL: body.cacheTTL ?? DEFAULT_CACHE_TTL,
-    };
-    config.registries.push(entry);
-    saveGlobalConfig(config);
-    reply.code(201);
-    return entry as unknown as Record<string, unknown>;
-  });
+      const entry: RegistryConfig = {
+        name: body.name,
+        url: body.url,
+        priority: body.priority ?? DEFAULT_PRIORITY,
+        cacheTTL: body.cacheTTL ?? DEFAULT_CACHE_TTL,
+      };
+      config.registries.push(entry);
+      saveGlobalConfig(config);
+      reply.code(201);
+      return entry as unknown as Record<string, unknown>;
+    },
+  );
 
   fastify.delete('/api/registries/:name', (request: FastifyRequest, reply: FastifyReply) => {
     const params = request.params as RegistryNameParams;
@@ -74,18 +77,21 @@ const registriesRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     return { ok: true };
   });
 
-  fastify.post('/api/registries/:name/sync', async (request: FastifyRequest, reply: FastifyReply) => {
-    const params = request.params as RegistryNameParams;
-    const config = loadGlobalConfig();
-    const registry = config.registries.find((r) => r.name === params.name);
-    if (!registry) {
-      reply.code(404);
-      return { error: `Registry '${params.name}' not found` };
-    }
-    await sync(params.name, registry);
-    refreshUpdateCache(getDb(), config.registries);
-    return { ok: true };
-  });
+  fastify.post(
+    '/api/registries/:name/sync',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const params = request.params as RegistryNameParams;
+      const config = loadGlobalConfig();
+      const registry = config.registries.find((r) => r.name === params.name);
+      if (!registry) {
+        reply.code(404);
+        return { error: `Registry '${params.name}' not found` };
+      }
+      await sync(params.name, registry);
+      refreshUpdateCache(getDb(), config.registries);
+      return { ok: true };
+    },
+  );
 
   done();
 };

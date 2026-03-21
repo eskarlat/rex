@@ -2,10 +2,7 @@ import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import type { ExecutionContext } from '../../../core/types/context.types.js';
-import {
-  ExtensionError,
-  ErrorCode,
-} from '../../../core/errors/extension-error.js';
+import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 
 export type CommandHandler = (context: ExecutionContext) => Promise<unknown>;
 

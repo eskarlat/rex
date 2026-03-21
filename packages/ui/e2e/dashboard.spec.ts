@@ -1,5 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
-import { setupAPIMocks, mockDashboardLayout, mockEmptyDashboardLayout, mockMarketplace } from './helpers';
+import {
+  setupAPIMocks,
+  mockDashboardLayout,
+  mockEmptyDashboardLayout,
+  mockMarketplace,
+} from './helpers';
 
 /**
  * Set up mocks with an empty dashboard layout.
@@ -48,7 +53,10 @@ async function setupWithLayoutAndCapture(
   });
   return {
     getSavedLayout: () => savedLayout,
-    waitForSave: () => new Promise<void>((resolve) => { resolveSave = resolve; }),
+    waitForSave: () =>
+      new Promise<void>((resolve) => {
+        resolveSave = resolve;
+      }),
   };
 }
 
@@ -146,12 +154,17 @@ test.describe('Widget Picker Dialog', () => {
   });
 
   test('clicking Add triggers layout save API call', async ({ page }) => {
-    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(
+      page,
+      mockDashboardLayout,
+    );
     await page.goto('/');
 
     const savePromise = waitForSave();
     await page.getByRole('button', { name: /add widget/i }).click();
-    const addBtn = page.getByTestId('widget-picker-list').getByRole('button', { name: 'Add', exact: true });
+    const addBtn = page
+      .getByTestId('widget-picker-list')
+      .getByRole('button', { name: 'Add', exact: true });
     await addBtn.click();
 
     await savePromise;
@@ -160,7 +173,9 @@ test.describe('Widget Picker Dialog', () => {
 
   test('dialog closes after adding a widget', async ({ page }) => {
     await page.getByRole('button', { name: /add widget/i }).click();
-    const addBtn = page.getByTestId('widget-picker-list').getByRole('button', { name: 'Add', exact: true });
+    const addBtn = page
+      .getByTestId('widget-picker-list')
+      .getByRole('button', { name: 'Add', exact: true });
     await addBtn.click();
     await expect(page.getByRole('heading', { name: 'Add Widget' })).not.toBeVisible({
       timeout: 3000,
@@ -185,9 +200,7 @@ test.describe('Widget Picker Dialog', () => {
         },
       }),
     );
-    await emptyPage.route('**/api/projects', (route) =>
-      route.fulfill({ json: [] }),
-    );
+    await emptyPage.route('**/api/projects', (route) => route.fulfill({ json: [] }));
     await emptyPage.route('**/api/project', (route) =>
       route.fulfill({ json: { name: 'test', path: '/tmp/test' } }),
     );
@@ -210,7 +223,10 @@ test.describe('Widget Picker Dialog', () => {
 
 test.describe('Widget Removal', () => {
   test('clicking remove triggers layout save without the widget', async ({ page }) => {
-    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(
+      page,
+      mockDashboardLayout,
+    );
     await page.goto('/');
 
     const savePromise = waitForSave();
@@ -275,16 +291,11 @@ test.describe('Widget Drag and Drop', () => {
 
     if (firstBox && secondBox) {
       const savePromise = waitForSave();
-      await page.mouse.move(
-        firstBox.x + firstBox.width / 2,
-        firstBox.y + firstBox.height / 2,
-      );
+      await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + firstBox.height / 2);
       await page.mouse.down();
-      await page.mouse.move(
-        secondBox.x + secondBox.width / 2,
-        secondBox.y + secondBox.height / 2,
-        { steps: 10 },
-      );
+      await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height / 2, {
+        steps: 10,
+      });
       await page.mouse.up();
 
       await savePromise;
@@ -335,7 +346,10 @@ test.describe('Widget Resize', () => {
   });
 
   test('clicking grow saves layout with increased size', async ({ page }) => {
-    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(
+      page,
+      mockDashboardLayout,
+    );
     await page.goto('/');
 
     const savePromise = waitForSave();
@@ -350,7 +364,10 @@ test.describe('Widget Resize', () => {
   });
 
   test('clicking shrink saves layout with decreased size', async ({ page }) => {
-    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(
+      page,
+      mockDashboardLayout,
+    );
     await page.goto('/');
 
     const savePromise = waitForSave();
@@ -372,13 +389,15 @@ test.describe('Widget Resize', () => {
 test.describe('Widget Min/Max Size Constraints', () => {
   test('shrink is disabled when widget is at minimum size', async ({ page }) => {
     const atMinLayout = {
-      widgets: [{
-        id: 'hello-world:status-widget',
-        extensionName: 'hello-world',
-        widgetId: 'status-widget',
-        position: { x: 0, y: 0 },
-        size: { w: 3, h: 2 },
-      }],
+      widgets: [
+        {
+          id: 'hello-world:status-widget',
+          extensionName: 'hello-world',
+          widgetId: 'status-widget',
+          position: { x: 0, y: 0 },
+          size: { w: 3, h: 2 },
+        },
+      ],
     };
     await setupWithLayout(page, atMinLayout);
     await page.goto('/');
@@ -388,13 +407,15 @@ test.describe('Widget Min/Max Size Constraints', () => {
 
   test('grow is disabled when widget is at maximum size', async ({ page }) => {
     const atMaxLayout = {
-      widgets: [{
-        id: 'hello-world:status-widget',
-        extensionName: 'hello-world',
-        widgetId: 'status-widget',
-        position: { x: 0, y: 0 },
-        size: { w: 6, h: 4 },
-      }],
+      widgets: [
+        {
+          id: 'hello-world:status-widget',
+          extensionName: 'hello-world',
+          widgetId: 'status-widget',
+          position: { x: 0, y: 0 },
+          size: { w: 6, h: 4 },
+        },
+      ],
     };
     await setupWithLayout(page, atMaxLayout);
     await page.goto('/');
@@ -413,13 +434,15 @@ test.describe('Widget Min/Max Size Constraints', () => {
 
   test('grow clamps to max size', async ({ page }) => {
     const nearMaxLayout = {
-      widgets: [{
-        id: 'hello-world:status-widget',
-        extensionName: 'hello-world',
-        widgetId: 'status-widget',
-        position: { x: 0, y: 0 },
-        size: { w: 5, h: 3 },
-      }],
+      widgets: [
+        {
+          id: 'hello-world:status-widget',
+          extensionName: 'hello-world',
+          widgetId: 'status-widget',
+          position: { x: 0, y: 0 },
+          size: { w: 5, h: 3 },
+        },
+      ],
     };
     const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, nearMaxLayout);
     await page.goto('/');
@@ -436,13 +459,15 @@ test.describe('Widget Min/Max Size Constraints', () => {
 
   test('shrink clamps to min size', async ({ page }) => {
     const nearMinLayout = {
-      widgets: [{
-        id: 'hello-world:status-widget',
-        extensionName: 'hello-world',
-        widgetId: 'status-widget',
-        position: { x: 0, y: 0 },
-        size: { w: 4, h: 3 },
-      }],
+      widgets: [
+        {
+          id: 'hello-world:status-widget',
+          extensionName: 'hello-world',
+          widgetId: 'status-widget',
+          position: { x: 0, y: 0 },
+          size: { w: 4, h: 3 },
+        },
+      ],
     };
     const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, nearMinLayout);
     await page.goto('/');
@@ -459,13 +484,15 @@ test.describe('Widget Min/Max Size Constraints', () => {
 
   test('widget without constraints has both buttons enabled', async ({ page }) => {
     const noConstraintsLayout = {
-      widgets: [{
-        id: 'hello-world:info-widget',
-        extensionName: 'hello-world',
-        widgetId: 'info-widget',
-        position: { x: 0, y: 0 },
-        size: { w: 3, h: 2 },
-      }],
+      widgets: [
+        {
+          id: 'hello-world:info-widget',
+          extensionName: 'hello-world',
+          widgetId: 'info-widget',
+          position: { x: 0, y: 0 },
+          size: { w: 3, h: 2 },
+        },
+      ],
     };
     await setupWithLayout(page, noConstraintsLayout);
     await page.goto('/');
@@ -487,12 +514,18 @@ test.describe('Dashboard Layout API Integration', () => {
   });
 
   test('PUT /api/dashboard/layout sends correct payload when adding widget', async ({ page }) => {
-    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(page, mockDashboardLayout);
+    const { getSavedLayout, waitForSave } = await setupWithLayoutAndCapture(
+      page,
+      mockDashboardLayout,
+    );
     await page.goto('/');
 
     const savePromise = waitForSave();
     await page.getByRole('button', { name: /add widget/i }).click();
-    await page.getByTestId('widget-picker-list').getByRole('button', { name: 'Add', exact: true }).click();
+    await page
+      .getByTestId('widget-picker-list')
+      .getByRole('button', { name: 'Add', exact: true })
+      .click();
 
     await savePromise;
     const saved = getSavedLayout() as { widgets: unknown[] };

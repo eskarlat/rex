@@ -83,9 +83,7 @@ export function createClientFromEnv(): MiroClientConfig {
   const accessToken = process.env['MIRO_ACCESS_TOKEN'];
 
   if (!accessToken) {
-    throw new Error(
-      'Missing Miro configuration. Set MIRO_ACCESS_TOKEN environment variable.',
-    );
+    throw new Error('Missing Miro configuration. Set MIRO_ACCESS_TOKEN environment variable.');
   }
 
   return { accessToken };

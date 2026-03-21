@@ -1,8 +1,4 @@
-export type EventType =
-  | 'project:init'
-  | 'project:destroy'
-  | 'ext:activate'
-  | 'ext:deactivate';
+export type EventType = 'project:init' | 'project:destroy' | 'ext:activate' | 'ext:deactivate';
 
 export interface ProjectInitPayload {
   type: 'project:init';

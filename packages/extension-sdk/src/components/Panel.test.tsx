@@ -13,7 +13,7 @@ describe('Panel', () => {
     render(
       <Panel title="Title" description="A description">
         Content
-      </Panel>
+      </Panel>,
     );
     expect(screen.getByText('A description')).toBeInTheDocument();
   });
@@ -27,7 +27,7 @@ describe('Panel', () => {
     const { container } = render(
       <Panel title="Title" className="custom-class">
         Content
-      </Panel>
+      </Panel>,
     );
     expect(container.firstChild).toHaveClass('custom-class');
   });

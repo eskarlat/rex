@@ -1,9 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  useExtensionSettings,
-  useUpdateExtensionSettings,
-} from '@/core/hooks/use-settings';
+import { useExtensionSettings, useUpdateExtensionSettings } from '@/core/hooks/use-settings';
 import { ConfigForm } from './components/ConfigForm';
 import type { ConfigFormResult } from './components/ConfigForm';
 import type { ConfigField } from '@/core/hooks/use-settings';
@@ -12,11 +9,7 @@ export function ExtensionSettingsPage() {
   const { name } = useParams<{ name: string }>();
 
   if (!name) {
-    return (
-      <div className="text-muted-foreground">
-        No extension specified.
-      </div>
-    );
+    return <div className="text-muted-foreground">No extension specified.</div>;
   }
 
   return <ExtensionSettingsContent name={name} />;
@@ -37,18 +30,12 @@ function ExtensionSettingsContent({ name }: { name: string }) {
 
   if (!config) {
     return (
-      <div className="text-muted-foreground">
-        No configuration available for this extension.
-      </div>
+      <div className="text-muted-foreground">No configuration available for this extension.</div>
     );
   }
 
-  const schema = config.schema as
-    | Record<string, ConfigField>
-    | undefined;
-  const values = config.values as
-    | Record<string, unknown>
-    | undefined;
+  const schema = config.schema as Record<string, ConfigField> | undefined;
+  const values = config.values as Record<string, unknown> | undefined;
 
   function handleSave(results: ConfigFormResult[]) {
     for (const { fieldName, mapping } of results) {

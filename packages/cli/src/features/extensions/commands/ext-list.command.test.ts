@@ -29,8 +29,20 @@ describe('ext-list command', () => {
 
   it('displays installed extensions and status', () => {
     vi.mocked(extensionManager.status).mockReturnValue([
-      { name: 'ext-a', version: '1.0.0', type: 'standard', activatedInProject: true, activatedVersion: '1.0.0' },
-      { name: 'ext-b', version: '2.0.0', type: 'mcp', activatedInProject: false, activatedVersion: null },
+      {
+        name: 'ext-a',
+        version: '1.0.0',
+        type: 'standard',
+        activatedInProject: true,
+        activatedVersion: '1.0.0',
+      },
+      {
+        name: 'ext-b',
+        version: '2.0.0',
+        type: 'mcp',
+        activatedInProject: false,
+        activatedVersion: null,
+      },
     ]);
 
     handleExtList({ projectPath: '/tmp/project' });
@@ -49,14 +61,26 @@ describe('ext-list command', () => {
 
   it('shows update available badge when cache has update', () => {
     vi.mocked(extensionManager.status).mockReturnValue([
-      { name: 'ext-a', version: '1.0.0', type: 'standard', activatedInProject: true, activatedVersion: '1.0.0' },
+      {
+        name: 'ext-a',
+        version: '1.0.0',
+        type: 'standard',
+        activatedInProject: true,
+        activatedVersion: '1.0.0',
+      },
     ]);
     vi.mocked(readUpdateCache).mockReturnValue({
       checkedAt: '2026-01-01T00:00:00Z',
-      updates: [{
-        name: 'ext-a', installedVersion: '1.0.0', availableVersion: '2.0.0',
-        engineCompatible: true, engineIssues: [], registryName: 'default',
-      }],
+      updates: [
+        {
+          name: 'ext-a',
+          installedVersion: '1.0.0',
+          availableVersion: '2.0.0',
+          engineCompatible: true,
+          engineIssues: [],
+          registryName: 'default',
+        },
+      ],
     });
 
     handleExtList({ projectPath: '/tmp/project' });
@@ -67,14 +91,26 @@ describe('ext-list command', () => {
 
   it('shows incompatible engine badge when update is incompatible', () => {
     vi.mocked(extensionManager.status).mockReturnValue([
-      { name: 'ext-a', version: '1.0.0', type: 'standard', activatedInProject: false, activatedVersion: null },
+      {
+        name: 'ext-a',
+        version: '1.0.0',
+        type: 'standard',
+        activatedInProject: false,
+        activatedVersion: null,
+      },
     ]);
     vi.mocked(readUpdateCache).mockReturnValue({
       checkedAt: '2026-01-01T00:00:00Z',
-      updates: [{
-        name: 'ext-a', installedVersion: '1.0.0', availableVersion: '2.0.0',
-        engineCompatible: false, engineIssues: ['Requires renre-kit >=5.0.0'], registryName: 'default',
-      }],
+      updates: [
+        {
+          name: 'ext-a',
+          installedVersion: '1.0.0',
+          availableVersion: '2.0.0',
+          engineCompatible: false,
+          engineIssues: ['Requires renre-kit >=5.0.0'],
+          registryName: 'default',
+        },
+      ],
     });
 
     handleExtList({ projectPath: '/tmp/project' });
@@ -85,7 +121,13 @@ describe('ext-list command', () => {
 
   it('shows no badge when no cache exists', () => {
     vi.mocked(extensionManager.status).mockReturnValue([
-      { name: 'ext-a', version: '1.0.0', type: 'standard', activatedInProject: true, activatedVersion: '1.0.0' },
+      {
+        name: 'ext-a',
+        version: '1.0.0',
+        type: 'standard',
+        activatedInProject: true,
+        activatedVersion: '1.0.0',
+      },
     ]);
     vi.mocked(readUpdateCache).mockReturnValue(null);
 

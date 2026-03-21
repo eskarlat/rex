@@ -12,11 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  useSettings,
-  useUpdateSettings,
-  type GlobalConfig,
-} from '@/core/hooks/use-settings';
+import { useSettings, useUpdateSettings, type GlobalConfig } from '@/core/hooks/use-settings';
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
 type LogLevel = (typeof LOG_LEVELS)[number];
@@ -58,9 +54,7 @@ export function GeneralPage() {
 
   function toggleLogLevel(level: LogLevel) {
     const current = form.getValues('logLevels');
-    const next = current.includes(level)
-      ? current.filter((l) => l !== level)
-      : [...current, level];
+    const next = current.includes(level) ? current.filter((l) => l !== level) : [...current, level];
     form.setValue('logLevels', next);
   }
 
@@ -79,10 +73,7 @@ export function GeneralPage() {
     <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="theme">Theme</Label>
-        <Select
-          value={currentTheme}
-          onValueChange={setTheme}
-        >
+        <Select value={currentTheme} onValueChange={setTheme}>
           <SelectTrigger id="theme">
             <SelectValue />
           </SelectTrigger>
@@ -97,10 +88,7 @@ export function GeneralPage() {
         <Label>Log Level</Label>
         <div className="flex flex-col gap-2">
           {LOG_LEVELS.map((level) => (
-            <label
-              key={level}
-              className="flex items-center gap-2 cursor-pointer"
-            >
+            <label key={level} className="flex items-center gap-2 cursor-pointer">
               <Checkbox
                 checked={selectedLevels.includes(level)}
                 onCheckedChange={() => toggleLogLevel(level)}

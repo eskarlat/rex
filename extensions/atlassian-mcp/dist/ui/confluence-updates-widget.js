@@ -28,14 +28,10 @@ export default function ConfluenceUpdatesWidget({ sdk, extensionName }) {
             .finally(() => setLoading(false));
     }, [sdk, extName]);
     if (loading) {
-        return _jsx("div", { style: { padding: '12px', fontSize: '13px', color: '#6b7280' }, children: "Loading updates..." });
+        return _jsx("div", { className: "p-3 text-xs text-muted-foreground", children: "Loading updates..." });
     }
     if (error) {
-        return _jsx("div", { style: { padding: '12px', fontSize: '13px', color: '#ef4444' }, children: error });
+        return _jsx("div", { className: "p-3 text-xs text-red-500", children: error });
     }
-    return (_jsxs("div", { style: { padding: '8px', overflow: 'auto', maxHeight: '100%' }, children: [_jsx("p", { style: { fontSize: '13px', fontWeight: 600, marginBottom: '8px' }, children: "Confluence Updates" }), pages.length === 0 ? (_jsx("p", { style: { fontSize: '12px', color: '#6b7280' }, children: "No recent updates." })) : (_jsx("ul", { style: { listStyle: 'none', padding: 0, margin: 0 }, children: pages.map((page, i) => (_jsxs("li", { style: {
-                        padding: '6px 0',
-                        borderBottom: '1px solid var(--border, #e5e7eb)',
-                        fontSize: '12px',
-                    }, children: [_jsx("div", { style: { fontWeight: 500, color: '#0052CC' }, children: page.title }), _jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', marginTop: '2px', color: '#6b7280', fontSize: '11px' }, children: [_jsx("span", { children: page.space }), _jsx("span", { children: page.modifier })] })] }, `${page.title}-${i}`))) }))] }));
+    return (_jsxs("div", { className: "max-h-full overflow-auto p-2", children: [_jsx("p", { className: "mb-2 text-xs font-semibold", children: "Confluence Updates" }), pages.length === 0 ? (_jsx("p", { className: "text-xs text-muted-foreground", children: "No recent updates." })) : (_jsx("ul", { className: "m-0 list-none p-0", children: pages.map((page, i) => (_jsxs("li", { className: "border-b border-border py-1.5 text-xs", children: [_jsx("div", { className: "font-medium text-[#0052CC]", children: page.title }), _jsxs("div", { className: "mt-0.5 flex justify-between text-[11px] text-muted-foreground", children: [_jsx("span", { children: page.space }), _jsx("span", { children: page.modifier })] })] }, `${page.title}-${i}`))) }))] }));
 }

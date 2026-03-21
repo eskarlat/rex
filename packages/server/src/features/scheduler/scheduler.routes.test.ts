@@ -29,7 +29,9 @@ describe('scheduler routes', () => {
 
   describe('GET /api/scheduler', () => {
     it('returns all scheduled tasks', async () => {
-      const tasks = [{ id: 1, name: 'task1', command: 'ext:backup', cron: '0 * * * *', enabled: 1 }];
+      const tasks = [
+        { id: 1, name: 'task1', command: 'ext:backup', cron: '0 * * * *', enabled: 1 },
+      ];
       mockPrepare.mockReturnValue({ all: () => tasks });
 
       const response = await app.inject({ method: 'GET', url: '/api/scheduler' });

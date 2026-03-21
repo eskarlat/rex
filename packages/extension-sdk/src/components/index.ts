@@ -1,5 +1,6 @@
 // RenreKit Extension SDK — Shared Components (shadcn/ui based)
 
+// Custom components
 export { Panel } from './Panel';
 export type { PanelProps } from './Panel';
 
@@ -35,3 +36,66 @@ export type { SplitProps } from './Split';
 
 export { SidebarNav } from './SidebarNav';
 export type { SidebarNavProps, SidebarNavItem } from './SidebarNav';
+
+// shadcn/ui — Layout
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './ui/card';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+export { Separator } from './ui/separator';
+export { ScrollArea, ScrollBar } from './ui/scroll-area';
+
+// shadcn/ui — Forms
+export { Button, buttonVariants } from './ui/button';
+export { Input } from './ui/input';
+export { Label } from './ui/label';
+export { Checkbox } from './ui/checkbox';
+export { Switch } from './ui/switch';
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from './ui/select';
+
+// shadcn/ui — Feedback
+export { Alert, AlertTitle, AlertDescription } from './ui/alert';
+export { Badge, badgeVariants } from './ui/badge';
+export { Skeleton } from './ui/skeleton';
+export { Progress } from './ui/progress';
+export {
+  Toast,
+  ToastProvider,
+  ToastViewport,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+} from './ui/toast';
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip';
+
+// shadcn/ui — Data
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from './ui/table';
+
+// shadcn/ui — Overlays
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog';

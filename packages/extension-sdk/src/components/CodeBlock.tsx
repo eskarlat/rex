@@ -12,10 +12,7 @@ export function CodeBlock({ code, language, className }: CodeBlockProps) {
     <Card className={cn(className)}>
       <CardContent className="p-4">
         <pre className="overflow-auto">
-          <code
-            className="font-mono text-sm"
-            data-language={language}
-          >
+          <code className="font-mono text-sm" data-language={language}>
             {code}
           </code>
         </pre>

@@ -36,27 +36,32 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Boards — Board management (6 tools)
 
 - **`miro-mcp:miro_list_boards`** — List all accessible boards.
+
   ```
   renre-kit miro-mcp:miro_list_boards
   renre-kit miro-mcp:miro_list_boards --query '{"limit": "10", "sort": "last_modified"}'
   ```
 
 - **`miro-mcp:miro_create_board`** — Create a new board.
+
   ```
   renre-kit miro-mcp:miro_create_board --data '{"name": "Sprint Planning", "description": "Sprint 10 planning board"}'
   ```
 
 - **`miro-mcp:miro_get_board`** — Get board details.
+
   ```
   renre-kit miro-mcp:miro_get_board --boardId "uXjVN1234567="
   ```
 
 - **`miro-mcp:miro_update_board`** — Update board name or description.
+
   ```
   renre-kit miro-mcp:miro_update_board --boardId "uXjVN1234567=" --data '{"name": "Updated Board Name"}'
   ```
 
 - **`miro-mcp:miro_delete_board`** — Delete a board.
+
   ```
   renre-kit miro-mcp:miro_delete_board --boardId "uXjVN1234567="
   ```
@@ -69,17 +74,20 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Items — Generic item operations (4 tools)
 
 - **`miro-mcp:miro_get_items`** — Get all items on a board.
+
   ```
   renre-kit miro-mcp:miro_get_items --boardId "uXjVN1234567="
   renre-kit miro-mcp:miro_get_items --boardId "uXjVN1234567=" --query '{"type": "sticky_note", "limit": "50"}'
   ```
 
 - **`miro-mcp:miro_get_item`** — Get a specific item.
+
   ```
   renre-kit miro-mcp:miro_get_item --boardId "uXjVN1234567=" --itemId "3458764513820541"
   ```
 
 - **`miro-mcp:miro_update_item_position`** — Update item position on the board.
+
   ```
   renre-kit miro-mcp:miro_update_item_position --boardId "uXjVN1234567=" --itemId "3458764513820541" --data '{"position": {"x": 100, "y": 200}}'
   ```
@@ -92,6 +100,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Bulk — Batch item creation (2 tools)
 
 - **`miro-mcp:miro_create_items_in_bulk`** — Create multiple items at once.
+
   ```
   renre-kit miro-mcp:miro_create_items_in_bulk --boardId "uXjVN1234567=" --items '[{"type": "sticky_note", "data": {"content": "Task 1"}}, {"type": "sticky_note", "data": {"content": "Task 2"}}]'
   ```
@@ -104,6 +113,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### App Cards — Application card items (4 tools)
 
 - **`miro-mcp:miro_create_app_card`** — Create an app card.
+
   ```
   renre-kit miro-mcp:miro_create_app_card --boardId "uXjVN1234567=" --data '{"data": {"title": "Task Card", "description": "Card description"}}'
   ```
@@ -115,6 +125,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Cards — Card items (4 tools)
 
 - **`miro-mcp:miro_create_card`** — Create a card.
+
   ```
   renre-kit miro-mcp:miro_create_card --boardId "uXjVN1234567=" --data '{"data": {"title": "Feature Card", "description": "Implementation details"}}'
   ```
@@ -126,6 +137,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Sticky Notes — Sticky note items (4 tools)
 
 - **`miro-mcp:miro_create_sticky_note`** — Create a sticky note.
+
   ```
   renre-kit miro-mcp:miro_create_sticky_note --boardId "uXjVN1234567=" --data '{"data": {"content": "Remember to test edge cases"}, "style": {"fillColor": "yellow"}}'
   ```
@@ -137,6 +149,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Frames — Frame containers (4 tools)
 
 - **`miro-mcp:miro_create_frame`** — Create a frame.
+
   ```
   renre-kit miro-mcp:miro_create_frame --boardId "uXjVN1234567=" --data '{"data": {"title": "Sprint Backlog"}, "style": {"fillColor": "#f5f5f5"}}'
   ```
@@ -148,6 +161,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Documents — Document items (4 tools)
 
 - **`miro-mcp:miro_create_document`** — Create a document.
+
   ```
   renre-kit miro-mcp:miro_create_document --boardId "uXjVN1234567=" --data '{"data": {"url": "https://docs.google.com/document/d/xxx"}}'
   ```
@@ -159,6 +173,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Text — Text items (4 tools)
 
 - **`miro-mcp:miro_create_text`** — Create a text item.
+
   ```
   renre-kit miro-mcp:miro_create_text --boardId "uXjVN1234567=" --data '{"data": {"content": "<p>Hello World</p>"}, "position": {"x": 0, "y": 0}}'
   ```
@@ -170,11 +185,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Images — Image items (7 tools)
 
 - **`miro-mcp:miro_create_image_from_url`** — Create image from URL.
+
   ```
   renre-kit miro-mcp:miro_create_image_from_url --boardId "uXjVN1234567=" --data '{"data": {"url": "https://example.com/image.png"}, "position": {"x": 0, "y": 0}}'
   ```
 
 - **`miro-mcp:miro_create_image_from_file`** — Upload image from file.
+
   ```
   renre-kit miro-mcp:miro_create_image_from_file --boardId "uXjVN1234567=" --fileUrl "/path/to/image.png"
   ```
@@ -188,6 +205,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Shapes — Shape items (4 tools)
 
 - **`miro-mcp:miro_create_shape`** — Create a shape.
+
   ```
   renre-kit miro-mcp:miro_create_shape --boardId "uXjVN1234567=" --data '{"data": {"shape": "rectangle", "content": "Box"}, "style": {"fillColor": "#ff0000"}}'
   ```
@@ -199,6 +217,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Embeds — Embedded content (4 tools)
 
 - **`miro-mcp:miro_create_embed`** — Create an embed.
+
   ```
   renre-kit miro-mcp:miro_create_embed --boardId "uXjVN1234567=" --data '{"data": {"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}}'
   ```
@@ -210,11 +229,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Connectors — Visual connections between items (5 tools)
 
 - **`miro-mcp:miro_list_connectors`** — List connectors on a board.
+
   ```
   renre-kit miro-mcp:miro_list_connectors --boardId "uXjVN1234567="
   ```
 
 - **`miro-mcp:miro_create_connector`** — Create a connector between items.
+
   ```
   renre-kit miro-mcp:miro_create_connector --boardId "uXjVN1234567=" --data '{"startItem": {"id": "3458764513820541"}, "endItem": {"id": "3458764513820542"}, "style": {"strokeColor": "#000000"}}'
   ```
@@ -226,11 +247,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Tags — Item tagging and categorization (8 tools)
 
 - **`miro-mcp:miro_list_tags`** — List all tags on a board.
+
   ```
   renre-kit miro-mcp:miro_list_tags --boardId "uXjVN1234567="
   ```
 
 - **`miro-mcp:miro_create_tag`** — Create a tag.
+
   ```
   renre-kit miro-mcp:miro_create_tag --boardId "uXjVN1234567=" --data '{"title": "High Priority", "fillColor": "red"}'
   ```
@@ -240,6 +263,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 - **`miro-mcp:miro_delete_tag`** — Delete a tag.
 
 - **`miro-mcp:miro_attach_tag`** — Attach a tag to an item.
+
   ```
   renre-kit miro-mcp:miro_attach_tag --boardId "uXjVN1234567=" --itemId "3458764513820541" --tagId "3458764513820600"
   ```
@@ -250,6 +274,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Members — Board membership management (5 tools)
 
 - **`miro-mcp:miro_list_board_members`** — List board members.
+
   ```
   renre-kit miro-mcp:miro_list_board_members --boardId "uXjVN1234567="
   ```
@@ -268,6 +293,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 - **`miro-mcp:miro_list_groups`** — List groups on a board.
 - **`miro-mcp:miro_get_group`** — Get a group.
 - **`miro-mcp:miro_create_group`** — Create a group from items.
+
   ```
   renre-kit miro-mcp:miro_create_group --boardId "uXjVN1234567=" --data '{"itemIds": ["3458764513820541", "3458764513820542"]}'
   ```
@@ -280,6 +306,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Mindmaps — Mind map node management (4 tools)
 
 - **`miro-mcp:miro_create_mindmap_node`** — Create a mindmap node.
+
   ```
   renre-kit miro-mcp:miro_create_mindmap_node --boardId "uXjVN1234567=" --data '{"nodeView": {"content": "Main Idea"}}'
   ```
@@ -291,6 +318,7 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Projects — Organization project management (3 tools)
 
 - **`miro-mcp:miro_list_project_members`** — List project members.
+
   ```
   renre-kit miro-mcp:miro_list_project_members --orgId "3074457345000000000" --projectId "3074457345000000001"
   ```
@@ -301,11 +329,13 @@ Arguments are passed as `--key "value"` flags. Object/array arguments are passed
 ### Exports — Board export management (3 tools)
 
 - **`miro-mcp:miro_create_export_job`** — Start a board export.
+
   ```
   renre-kit miro-mcp:miro_create_export_job --boardId "uXjVN1234567=" --data '{"format": "pdf"}'
   ```
 
 - **`miro-mcp:miro_get_export_job_status`** — Check export job status.
+
   ```
   renre-kit miro-mcp:miro_get_export_job_status --boardId "uXjVN1234567=" --jobId "job-123"
   ```
@@ -328,6 +358,7 @@ Note: Compliance tools require Enterprise-tier Miro tokens.
 ### Organization — Organization management (4 tools)
 
 - **`miro-mcp:miro_get_organization`** — Get organization info.
+
   ```
   renre-kit miro-mcp:miro_get_organization --orgId "3074457345000000000"
   ```
@@ -436,6 +467,7 @@ Before deleting boards, items, or removing members, confirm with the user. These
 
 **Cause:** The access token is not configured.
 **Solution:** Guide the user to configure the extension:
+
 ```
 renre-kit vault set miro-mcp.accessToken
 ```

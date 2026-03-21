@@ -69,7 +69,12 @@ function handleEscapeChar(ch: string, inSingle: boolean, inDouble: boolean): Cha
   return null;
 }
 
-function processChar(ch: string, escaped: boolean, inSingle: boolean, inDouble: boolean): CharResult {
+function processChar(
+  ch: string,
+  escaped: boolean,
+  inSingle: boolean,
+  inDouble: boolean,
+): CharResult {
   if (escaped) {
     return { action: 'append', escaped: false, inSingle, inDouble };
   }
@@ -133,9 +138,9 @@ export class SchedulerRunner {
     const db = getDb();
     const now = new Date().toISOString();
 
-    const dueTasks = db.prepare(
-      'SELECT * FROM scheduled_tasks WHERE enabled = 1 AND next_run_at <= ?',
-    ).all(now) as ScheduledTaskRow[];
+    const dueTasks = db
+      .prepare('SELECT * FROM scheduled_tasks WHERE enabled = 1 AND next_run_at <= ?')
+      .all(now) as ScheduledTaskRow[];
 
     for (const task of dueTasks) {
       executeDueTask(task);
@@ -145,9 +150,9 @@ export class SchedulerRunner {
   /** Initialize next_run_at for tasks that have none set */
   initializeNextRuns(): void {
     const db = getDb();
-    const tasks = db.prepare(
-      'SELECT * FROM scheduled_tasks WHERE enabled = 1 AND next_run_at IS NULL',
-    ).all() as ScheduledTaskRow[];
+    const tasks = db
+      .prepare('SELECT * FROM scheduled_tasks WHERE enabled = 1 AND next_run_at IS NULL')
+      .all() as ScheduledTaskRow[];
 
     for (const task of tasks) {
       try {

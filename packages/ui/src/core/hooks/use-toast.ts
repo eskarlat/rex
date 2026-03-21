@@ -28,17 +28,23 @@ export function useToast() {
     setToasts((prev) => prev.filter((t) => t.id !== toastId));
   }, []);
 
-  const removeAfterDelay = useCallback((toastId: string) => {
-    setTimeout(() => removeToast(toastId), 4000);
-  }, [removeToast]);
+  const removeAfterDelay = useCallback(
+    (toastId: string) => {
+      setTimeout(() => removeToast(toastId), 4000);
+    },
+    [removeToast],
+  );
 
-  const addToast = useCallback((options: Omit<Toast, 'id'>) => {
-    const bytes = new Uint8Array(4);
-    globalThis.crypto.getRandomValues(bytes);
-    const id = `${Date.now()}-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
-    setToasts((prev) => [...prev, { ...options, id }]);
-    removeAfterDelay(id);
-  }, [removeAfterDelay]);
+  const addToast = useCallback(
+    (options: Omit<Toast, 'id'>) => {
+      const bytes = new Uint8Array(4);
+      globalThis.crypto.getRandomValues(bytes);
+      const id = `${Date.now()}-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
+      setToasts((prev) => [...prev, { ...options, id }]);
+      removeAfterDelay(id);
+    },
+    [removeAfterDelay],
+  );
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -46,7 +52,9 @@ export function useToast() {
 
   useEffect(() => {
     setGlobalToastHandler(addToast);
-    return () => { setGlobalToastHandler(null); };
+    return () => {
+      setGlobalToastHandler(null);
+    };
   }, [addToast]);
 
   return { toasts, dismiss };

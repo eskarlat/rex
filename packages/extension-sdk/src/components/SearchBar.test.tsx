@@ -28,15 +28,13 @@ describe('SearchBar', () => {
   });
 
   it('uses custom placeholder', () => {
-    render(
-      <SearchBar value="" onChange={vi.fn()} placeholder="Find extensions..." />
-    );
+    render(<SearchBar value="" onChange={vi.fn()} placeholder="Find extensions..." />);
     expect(screen.getByPlaceholderText('Find extensions...')).toBeInTheDocument();
   });
 
   it('applies custom className', () => {
     const { container } = render(
-      <SearchBar value="" onChange={vi.fn()} className="custom-search" />
+      <SearchBar value="" onChange={vi.fn()} className="custom-search" />,
     );
     expect(container.firstChild).toHaveClass('custom-search');
   });

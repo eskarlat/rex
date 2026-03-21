@@ -122,9 +122,7 @@ describe('paths', () => {
 
   describe('helper functions', () => {
     it('getProjectDir returns .renre-kit inside given path', () => {
-      expect(getProjectDir('/my/project')).toBe(
-        path.join('/my/project', '.renre-kit'),
-      );
+      expect(getProjectDir('/my/project')).toBe(path.join('/my/project', '.renre-kit'));
     });
 
     it('getPluginsPath returns plugins.json inside project dir', () => {
@@ -146,9 +144,7 @@ describe('paths', () => {
     });
 
     it('getSkillsDir returns skills dir in project', () => {
-      expect(getSkillsDir('/my/project')).toBe(
-        path.join('/my/project', '.agents', 'skills'),
-      );
+      expect(getSkillsDir('/my/project')).toBe(path.join('/my/project', '.agents', 'skills'));
     });
 
     it('getAgentDir returns agent type dir in project', () => {

@@ -3,11 +3,7 @@ import path from 'node:path';
 import type { ProjectRecord, ProjectManifest, PluginsJson } from '../types/index.js';
 import { getDb } from '../database/database.js';
 import type { EventBus } from '../event-bus/event-bus.js';
-import {
-  PROJECT_DIR,
-  MANIFEST_JSON,
-  PLUGINS_JSON,
-} from '../paths/paths.js';
+import { PROJECT_DIR, MANIFEST_JSON, PLUGINS_JSON } from '../paths/paths.js';
 import { ProjectAlreadyInitializedError } from '../types/errors.types.js';
 
 export class ProjectManager {
@@ -99,13 +95,10 @@ export class ProjectManager {
   get(projectPath: string): ProjectRecord | null {
     const db = getDb();
     const now = new Date().toISOString();
-    db.prepare('UPDATE projects SET last_accessed_at = ? WHERE path = ?').run(
-      now,
-      projectPath,
-    );
-    const row = db
-      .prepare('SELECT * FROM projects WHERE path = ?')
-      .get(projectPath) as ProjectRecord | undefined;
+    db.prepare('UPDATE projects SET last_accessed_at = ? WHERE path = ?').run(now, projectPath);
+    const row = db.prepare('SELECT * FROM projects WHERE path = ?').get(projectPath) as
+      | ProjectRecord
+      | undefined;
     return row ?? null;
   }
 

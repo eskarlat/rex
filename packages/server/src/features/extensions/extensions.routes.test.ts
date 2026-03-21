@@ -121,14 +121,30 @@ describe('extensions routes', () => {
     });
 
     it('returns available extensions from registries excluding installed', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({});
-      mockLoadGlobalConfig.mockReturnValue({ registries: [{ name: 'default', url: 'https://example.com', priority: 0, cacheTTL: 3600 }] });
+      mockLoadGlobalConfig.mockReturnValue({
+        registries: [{ name: 'default', url: 'https://example.com', priority: 0, cacheTTL: 3600 }],
+      });
       mockListAvailableExtensions.mockReturnValue([
-        { name: 'ext1', description: 'Already installed', gitUrl: 'https://example.com/ext1.git', latestVersion: '1.0.0', type: 'standard', icon: 'box', author: 'test' },
-        { name: 'ext3', description: 'New extension', gitUrl: 'https://example.com/ext3.git', latestVersion: '2.0.0', type: 'mcp', icon: 'star', author: 'author1' },
+        {
+          name: 'ext1',
+          description: 'Already installed',
+          gitUrl: 'https://example.com/ext1.git',
+          latestVersion: '1.0.0',
+          type: 'standard',
+          icon: 'box',
+          author: 'test',
+        },
+        {
+          name: 'ext3',
+          description: 'New extension',
+          gitUrl: 'https://example.com/ext3.git',
+          latestVersion: '2.0.0',
+          type: 'mcp',
+          icon: 'star',
+          author: 'author1',
+        },
       ]);
 
       const response = await app.inject({
@@ -149,15 +165,27 @@ describe('extensions routes', () => {
         tags: [],
         status: 'available',
         hasIcon: false,
+        gitUrl: 'https://example.com/ext3.git',
       });
     });
 
     it('passes tags through for available extensions', async () => {
       mockListInstalled.mockReturnValue([]);
       mockGetActivated.mockReturnValue({});
-      mockLoadGlobalConfig.mockReturnValue({ registries: [{ name: 'default', url: 'https://example.com', priority: 0, cacheTTL: 3600 }] });
+      mockLoadGlobalConfig.mockReturnValue({
+        registries: [{ name: 'default', url: 'https://example.com', priority: 0, cacheTTL: 3600 }],
+      });
       mockListAvailableExtensions.mockReturnValue([
-        { name: 'tagged-ext', description: 'Has tags', gitUrl: 'https://example.com/ext.git', latestVersion: '1.0.0', type: 'standard', icon: '', author: 'test', tags: ['example', 'utility'] },
+        {
+          name: 'tagged-ext',
+          description: 'Has tags',
+          gitUrl: 'https://example.com/ext.git',
+          latestVersion: '1.0.0',
+          type: 'standard',
+          icon: '',
+          author: 'test',
+          tags: ['example', 'utility'],
+        },
       ]);
 
       const response = await app.inject({
@@ -171,9 +199,7 @@ describe('extensions routes', () => {
     });
 
     it('returns title and panels for active extensions from manifest', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
@@ -208,9 +234,7 @@ describe('extensions routes', () => {
     });
 
     it('returns title for installed extensions from manifest', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({});
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
@@ -234,9 +258,7 @@ describe('extensions routes', () => {
     });
 
     it('returns empty panels when manifest has no ui section', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
@@ -257,6 +279,103 @@ describe('extensions routes', () => {
       expect(response.statusCode).toBe(200);
       const body = response.json();
       expect(body.active[0].panels).toEqual([]);
+    });
+
+    it('returns installedAt, registrySource, and installPath for active extensions', async () => {
+      mockListInstalled.mockReturnValue([
+        {
+          name: 'ext1',
+          version: '1.0.0',
+          type: 'standard',
+          installed_at: '2025-01-15T10:00:00Z',
+          registry_source: 'default',
+        },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active[0].installedAt).toBe('2025-01-15T10:00:00Z');
+      expect(body.active[0].registrySource).toBe('default');
+      expect(body.active[0].installPath).toBe('/path/to/ext1@1.0.0');
+    });
+
+    it('returns installedAt, registrySource, and installPath for installed extensions', async () => {
+      mockListInstalled.mockReturnValue([
+        {
+          name: 'ext1',
+          version: '1.0.0',
+          type: 'standard',
+          installed_at: '2025-02-20T08:30:00Z',
+          registry_source: 'custom',
+        },
+      ]);
+      mockGetActivated.mockReturnValue({});
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.installed[0].installedAt).toBe('2025-02-20T08:30:00Z');
+      expect(body.installed[0].registrySource).toBe('custom');
+      expect(body.installed[0].installPath).toBe('/path/to/ext1@1.0.0');
+    });
+
+    it('omits registrySource when registry_source is null', async () => {
+      mockListInstalled.mockReturnValue([
+        {
+          name: 'ext1',
+          version: '1.0.0',
+          type: 'standard',
+          installed_at: '2025-01-15T10:00:00Z',
+          registry_source: null,
+        },
+      ]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockListAvailableExtensions.mockReturnValue([]);
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/marketplace',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.active[0].registrySource).toBeUndefined();
     });
 
     it('classifies multi-version extensions by activated version', async () => {
@@ -490,9 +609,7 @@ describe('extensions routes', () => {
 
   describe('GET /api/extensions/:name/panel.js', () => {
     it('serves the default panel', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
       mockLoadManifest.mockReturnValue({
@@ -531,9 +648,7 @@ describe('extensions routes', () => {
 
   describe('GET /api/extensions/:name/panels/:panelId.js', () => {
     it('serves a specific panel by ID', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
       mockLoadManifest.mockReturnValue({
@@ -562,9 +677,7 @@ describe('extensions routes', () => {
     });
 
     it('returns 404 for unknown panel ID', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
       mockLoadManifest.mockReturnValue({
@@ -573,9 +686,7 @@ describe('extensions routes', () => {
         type: 'standard',
         commands: {},
         ui: {
-          panels: [
-            { id: 'main', title: 'Main', entry: 'dist/panel.js' },
-          ],
+          panels: [{ id: 'main', title: 'Main', entry: 'dist/panel.js' }],
         },
       });
 
@@ -590,9 +701,7 @@ describe('extensions routes', () => {
 
   describe('GET /api/extensions/:name/widgets/:widgetId.js', () => {
     it('serves a widget by ID', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
       mockLoadManifest.mockReturnValue({
@@ -603,7 +712,12 @@ describe('extensions routes', () => {
         ui: {
           panels: [],
           widgets: [
-            { id: 'status', title: 'Status', entry: 'dist/status-widget.js', defaultSize: { w: 4, h: 2 } },
+            {
+              id: 'status',
+              title: 'Status',
+              entry: 'dist/status-widget.js',
+              defaultSize: { w: 4, h: 2 },
+            },
           ],
         },
       });
@@ -621,9 +735,7 @@ describe('extensions routes', () => {
     });
 
     it('returns 404 for unknown widget ID', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
       mockLoadManifest.mockReturnValue({
@@ -648,9 +760,7 @@ describe('extensions routes', () => {
 
   describe('marketplace widget metadata', () => {
     it('returns widgets metadata for active extensions', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
@@ -665,7 +775,13 @@ describe('extensions routes', () => {
         ui: {
           panels: [],
           widgets: [
-            { id: 'status', title: 'Status', entry: 'dist/status.js', defaultSize: { w: 4, h: 2 }, minSize: { w: 2, h: 1 } },
+            {
+              id: 'status',
+              title: 'Status',
+              entry: 'dist/status.js',
+              defaultSize: { w: 4, h: 2 },
+              minSize: { w: 2, h: 1 },
+            },
           ],
         },
       });
@@ -687,9 +803,7 @@ describe('extensions routes', () => {
     });
 
     it('returns empty widgets when manifest has no widgets', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
@@ -715,18 +829,22 @@ describe('extensions routes', () => {
 
   describe('marketplace update info', () => {
     it('includes updateAvailable and engineCompatible fields for active extensions', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
       mockReadUpdateCache.mockReturnValue({
         checkedAt: '2026-01-01T00:00:00Z',
-        updates: [{
-          name: 'ext1', installedVersion: '1.0.0', availableVersion: '2.0.0',
-          engineCompatible: true, engineIssues: [], registryName: 'default',
-        }],
+        updates: [
+          {
+            name: 'ext1',
+            installedVersion: '1.0.0',
+            availableVersion: '2.0.0',
+            engineCompatible: true,
+            engineIssues: [],
+            registryName: 'default',
+          },
+        ],
       });
 
       const response = await app.inject({
@@ -741,18 +859,22 @@ describe('extensions routes', () => {
     });
 
     it('includes updateAvailable for installed-only extensions', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({});
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
       mockReadUpdateCache.mockReturnValue({
         checkedAt: '2026-01-01T00:00:00Z',
-        updates: [{
-          name: 'ext1', installedVersion: '1.0.0', availableVersion: '2.0.0',
-          engineCompatible: false, engineIssues: ['Requires renre-kit >=5.0.0'], registryName: 'default',
-        }],
+        updates: [
+          {
+            name: 'ext1',
+            installedVersion: '1.0.0',
+            availableVersion: '2.0.0',
+            engineCompatible: false,
+            engineIssues: ['Requires renre-kit >=5.0.0'],
+            registryName: 'default',
+          },
+        ],
       });
 
       const response = await app.inject({
@@ -767,9 +889,7 @@ describe('extensions routes', () => {
     });
 
     it('returns null updateAvailable when no cache exists', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockListAvailableExtensions.mockReturnValue([]);
@@ -791,10 +911,16 @@ describe('extensions routes', () => {
     it('returns update cache when available', async () => {
       mockReadUpdateCache.mockReturnValue({
         checkedAt: '2026-01-01T00:00:00Z',
-        updates: [{
-          name: 'ext1', installedVersion: '1.0.0', availableVersion: '2.0.0',
-          engineCompatible: true, engineIssues: [], registryName: 'default',
-        }],
+        updates: [
+          {
+            name: 'ext1',
+            installedVersion: '1.0.0',
+            availableVersion: '2.0.0',
+            engineCompatible: true,
+            engineIssues: [],
+            registryName: 'default',
+          },
+        ],
       });
 
       const response = await app.inject({
@@ -823,9 +949,7 @@ describe('extensions routes', () => {
 
   describe('GET /api/extensions/:name/icon', () => {
     it('serves icon when manifest has icon path and file exists', async () => {
-      mockListInstalled.mockReturnValue([
-        { name: 'ext1', version: '1.0.0', type: 'standard' },
-      ]);
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
       mockLoadManifest.mockReturnValue({
@@ -851,7 +975,9 @@ describe('extensions routes', () => {
       mockListInstalled.mockReturnValue([]);
       mockGetActivated.mockReturnValue({});
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
-      mockResolveRegistryIcon.mockReturnValue('/path/to/registries/default/.renre-kit/icons/ext1.svg');
+      mockResolveRegistryIcon.mockReturnValue(
+        '/path/to/registries/default/.renre-kit/icons/ext1.svg',
+      );
       vi.mocked(readFileSync).mockReturnValue('<svg>registry icon</svg>');
 
       const response = await app.inject({
@@ -883,8 +1009,11 @@ describe('extensions routes', () => {
       mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockResolveExtension.mockReturnValue({
-        name: 'ext1', gitUrl: 'https://github.com/test/ext1.git',
-        latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        name: 'ext1',
+        gitUrl: 'https://github.com/test/ext1.git',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
       });
       mockInstallExtension.mockResolvedValue('/path/to/ext1@2.0.0');
       mockGetActivated.mockReturnValue({});
@@ -917,7 +1046,11 @@ describe('extensions routes', () => {
       mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockResolveExtension.mockReturnValue({
-        name: 'ext1', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        name: 'ext1',
+        gitUrl: '',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
         engines: { 'renre-kit': '>=5.0.0' },
       });
       mockCheckEngineConstraints.mockReturnValue({
@@ -938,8 +1071,11 @@ describe('extensions routes', () => {
       mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockResolveExtension.mockReturnValue({
-        name: 'ext1', gitUrl: 'https://github.com/test/ext1.git',
-        latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        name: 'ext1',
+        gitUrl: 'https://github.com/test/ext1.git',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
         engines: { 'renre-kit': '>=5.0.0' },
       });
       mockCheckEngineConstraints.mockReturnValue({
@@ -971,7 +1107,11 @@ describe('extensions routes', () => {
       mockListInstalled.mockReturnValue([{ name: 'ext1', version: '2.0.0', type: 'standard' }]);
       mockLoadGlobalConfig.mockReturnValue({ registries: [] });
       mockResolveExtension.mockReturnValue({
-        name: 'ext1', gitUrl: '', latestVersion: '2.0.0', type: 'standard', registryName: 'default',
+        name: 'ext1',
+        gitUrl: '',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
       });
 
       const response = await app.inject({
@@ -982,6 +1122,96 @@ describe('extensions routes', () => {
       expect(response.statusCode).toBe(200);
       expect(response.json().message).toBe('Already up to date');
       expect(mockInstallExtension).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /api/extensions/:name/changelog', () => {
+    it('returns changelog content when CHANGELOG.md exists', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue('# Changelog\n\n## [1.0.0]\n\n### Added\n\n- Feature');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/changelog',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.changelog).toBe('# Changelog\n\n## [1.0.0]\n\n### Added\n\n- Feature');
+    });
+
+    it('returns 404 when CHANGELOG.md does not exist', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      vi.mocked(existsSync).mockReturnValue(false);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/changelog',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('returns 404 when extension is not installed', async () => {
+      mockListInstalled.mockReturnValue([]);
+      mockGetActivated.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/nonexistent/changelog',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+  });
+
+  describe('GET /api/extensions/:name/readme', () => {
+    it('returns readme content when README.md exists', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue('# Ext1\n\nA great extension.');
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/readme',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.readme).toBe('# Ext1\n\nA great extension.');
+    });
+
+    it('returns 404 when README.md does not exist', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      vi.mocked(existsSync).mockReturnValue(false);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/readme',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('returns 404 when extension is not installed', async () => {
+      mockListInstalled.mockReturnValue([]);
+      mockGetActivated.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/nonexistent/readme',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
     });
   });
 

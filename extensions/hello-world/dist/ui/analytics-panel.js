@@ -9,7 +9,8 @@ export default function AnalyticsPanel({ sdk, extensionName }) {
         if (!sdk)
             return;
         setLoading(true);
-        sdk.scheduler.list()
+        sdk.scheduler
+            .list()
             .then((all) => setTasks(all.filter((t) => t.name === extName)))
             .catch(() => setTasks([]))
             .finally(() => setLoading(false));
@@ -29,7 +30,9 @@ export default function AnalyticsPanel({ sdk, extensionName }) {
             setLoading(false);
         }
     }
-    return (_jsxs("div", { className: "flex flex-col gap-4", children: [_jsx(Panel, { title: "Scheduled Tasks", description: `Active scheduled tasks for ${extName}.`, children: _jsxs("div", { className: "flex flex-col gap-3", children: [_jsx("button", { onClick: () => { handleRefresh().catch(() => { }); }, disabled: loading, className: "inline-flex h-9 w-fit items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50", children: loading ? 'Loading...' : 'Refresh' }), tasks.length > 0 ? (_jsx(DataTable, { columns: [
+    return (_jsxs("div", { className: "flex flex-col gap-4", children: [_jsx(Panel, { title: "Scheduled Tasks", description: `Active scheduled tasks for ${extName}.`, children: _jsxs("div", { className: "flex flex-col gap-3", children: [_jsx("button", { onClick: () => {
+                                handleRefresh().catch(() => { });
+                            }, disabled: loading, className: "inline-flex h-9 w-fit items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground disabled:opacity-50", children: loading ? 'Loading...' : 'Refresh' }), tasks.length > 0 ? (_jsx(DataTable, { columns: [
                                 { key: 'id', label: 'ID' },
                                 { key: 'cron', label: 'Schedule' },
                                 { key: 'command', label: 'Command' },

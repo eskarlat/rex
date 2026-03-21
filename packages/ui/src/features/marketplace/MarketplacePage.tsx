@@ -1,115 +1,43 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useMarketplace } from '@/core/hooks/use-extensions';
 import { useMarketplaceFilter } from './hooks/use-marketplace-filter';
-import { ExtensionCard } from './components/ExtensionCard';
+import { ExtensionSidebar } from './components/ExtensionSidebar';
+import { ExtensionDetailPanel } from './components/ExtensionDetailPanel';
 
 export function MarketplacePage() {
   const { data: marketplace, isLoading } = useMarketplace();
   const filter = useMarketplaceFilter(marketplace);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+
+  // Auto-select first extension when list changes or selection becomes invalid
+  useEffect(() => {
+    const allExts = filter.allFiltered;
+    const stillExists = selectedName && allExts.some((e) => e.name === selectedName);
+    if (!stillExists && allExts.length > 0) {
+      setSelectedName(allExts[0]!.name);
+    } else if (allExts.length === 0) {
+      setSelectedName(null);
+    }
+  }, [filter.allFiltered, selectedName]);
+
+  const selectedExtension = filter.allFiltered.find((e) => e.name === selectedName);
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Marketplace</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} className="h-48" />
-          ))}
-        </div>
+      <div className="-m-6 flex h-[calc(100%+3rem)]">
+        <Skeleton className="w-80 shrink-0" />
+        <Skeleton className="flex-1" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Marketplace</h1>
-        <p className="text-muted-foreground">
-          Browse, install, and manage extensions.
-        </p>
-      </div>
-
-      <Input
-        placeholder="Search extensions..."
-        value={filter.searchQuery}
-        onChange={(e) => filter.setSearchQuery(e.target.value)}
-      />
-
-      {filter.allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2" data-testid="tag-filter">
-          {filter.allTags.map((tag) => (
-            <Badge
-              key={tag}
-              variant={filter.selectedTag === tag ? 'default' : 'outline'}
-              className="cursor-pointer"
-              onClick={() =>
-                filter.setSelectedTag(filter.selectedTag === tag ? null : tag)
-              }
-            >
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      )}
-
-      <Tabs defaultValue="active">
-        <TabsList>
-          <TabsTrigger value="active">
-            Active ({filter.filteredActive.length})
-          </TabsTrigger>
-          <TabsTrigger value="installed">
-            Installed ({filter.filteredInstalled.length})
-          </TabsTrigger>
-          <TabsTrigger value="available">
-            Available ({filter.filteredAvailable.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="active">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filter.filteredActive.length === 0 ? (
-              <p className="col-span-full text-muted-foreground">
-                No active extensions in this project.
-              </p>
-            ) : (
-              filter.filteredActive.map((ext) => (
-                <ExtensionCard key={ext.name} extension={ext} />
-              ))
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="installed">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filter.filteredInstalled.length === 0 ? (
-              <p className="col-span-full text-muted-foreground">
-                No installed extensions.
-              </p>
-            ) : (
-              filter.filteredInstalled.map((ext) => (
-                <ExtensionCard key={ext.name} extension={ext} />
-              ))
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="available">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filter.filteredAvailable.length === 0 ? (
-              <p className="col-span-full text-muted-foreground">
-                No available extensions in registries.
-              </p>
-            ) : (
-              filter.filteredAvailable.map((ext) => (
-                <ExtensionCard key={ext.name} extension={ext} />
-              ))
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+    <div className="-m-6 flex h-[calc(100%+3rem)]">
+      <ExtensionSidebar filter={filter} selectedName={selectedName} onSelect={setSelectedName} />
+      <Separator orientation="vertical" />
+      <ExtensionDetailPanel extension={selectedExtension} />
     </div>
   );
 }

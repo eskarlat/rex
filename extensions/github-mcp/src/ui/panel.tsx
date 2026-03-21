@@ -168,10 +168,7 @@ export default function GitHubPanel({ sdk, extensionName }: Partial<PanelProps>)
 
   return (
     <div className="flex flex-col gap-4">
-      <Panel
-        title="GitHub"
-        description="GitHub integration via official MCP server."
-      >
+      <Panel title="GitHub" description="GitHub integration via official MCP server.">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
           MCP stdio transport

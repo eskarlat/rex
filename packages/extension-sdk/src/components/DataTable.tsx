@@ -37,15 +37,12 @@ export function DataTable({ columns, data, className }: DataTableProps) {
               const cellValue = row[col.key];
               let display = '';
               if (cellValue != null) {
-                display = typeof cellValue === 'object'
-                  ? JSON.stringify(cellValue)
-                  : `${cellValue as string | number | boolean}`;
+                display =
+                  typeof cellValue === 'object'
+                    ? JSON.stringify(cellValue)
+                    : `${cellValue as string | number | boolean}`;
               }
-              return (
-                <TableCell key={col.key}>
-                  {display}
-                </TableCell>
-              );
+              return <TableCell key={col.key}>{display}</TableCell>;
             })}
           </TableRow>
         ))}

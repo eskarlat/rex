@@ -1,18 +1,12 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { MiroClient } from './client/miro-client.js';
 import { createClientFromEnv } from './client/base-client.js';
 import { createToolRegistry } from './toolsets/registry.js';
 import { errorResult } from './toolsets/types.js';
 
-const server = new Server(
-  { name: 'miro-mcp', version: '1.0.0' },
-  { capabilities: { tools: {} } },
-);
+const server = new Server({ name: 'miro-mcp', version: '1.0.0' }, { capabilities: { tools: {} } });
 
 let registry: ReturnType<typeof createToolRegistry> | undefined;
 

@@ -16,9 +16,7 @@ export function handleRegistryList(options: RegistryListOptions): void {
 
   const lines = registries.map((reg) => {
     const staleMark = reg.isStale ? ' (stale)' : '';
-    const fetched = reg.lastFetched
-      ? reg.lastFetched.toISOString()
-      : 'never';
+    const fetched = reg.lastFetched ? reg.lastFetched.toISOString() : 'never';
     return `  ${reg.name} [priority: ${reg.priority}] ${reg.url}\n    Last fetched: ${fetched}${staleMark}`;
   });
 

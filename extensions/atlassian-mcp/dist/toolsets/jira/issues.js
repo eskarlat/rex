@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createIssuesToolset(client) {
     return {
         name: 'jira_issues',
@@ -113,7 +113,7 @@ export function createIssuesToolset(client) {
             jira_get_issue: async (args) => {
                 try {
                     const data = await client.getIssue(args['issueKey'], args['expand']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -122,7 +122,7 @@ export function createIssuesToolset(client) {
             jira_search: async (args) => {
                 try {
                     const data = await client.search(args['jql'], args['startAt'] ?? 0, args['maxResults'] ?? 50, args['fields']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -131,7 +131,7 @@ export function createIssuesToolset(client) {
             jira_get_project_issues: async (args) => {
                 try {
                     const data = await client.search(`project = ${args['projectKey']} ORDER BY updated DESC`, args['startAt'] ?? 0, args['maxResults'] ?? 50);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -158,7 +158,7 @@ export function createIssuesToolset(client) {
                         };
                     }
                     const data = await client.createIssue(fields);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -167,7 +167,7 @@ export function createIssuesToolset(client) {
             jira_update_issue: async (args) => {
                 try {
                     await client.updateIssue(args['issueKey'], args['fields']);
-                    return textResult({ success: true, issueKey: args['issueKey'] });
+                    return markdownResult({ success: true, issueKey: args['issueKey'] });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -176,7 +176,7 @@ export function createIssuesToolset(client) {
             jira_delete_issue: async (args) => {
                 try {
                     await client.deleteIssue(args['issueKey']);
-                    return textResult({ success: true, issueKey: args['issueKey'] });
+                    return markdownResult({ success: true, issueKey: args['issueKey'] });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -186,7 +186,7 @@ export function createIssuesToolset(client) {
                 try {
                     const issues = args['issues'];
                     const data = await client.bulkCreateIssues(issues);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -195,7 +195,7 @@ export function createIssuesToolset(client) {
             jira_batch_get_changelogs: async (args) => {
                 try {
                     const data = await client.getChangelogs(args['issueKey'], args['startAt'] ?? 0, args['maxResults'] ?? 100);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

@@ -10,12 +10,15 @@ Greet the user with a friendly message.
 ## Commands
 
 ### hello-world:greet
+
 Greet the user with a friendly message.
 
 **Arguments:**
+
 - `--name <string>` — Name to greet (default: "World")
 
 **Example:**
+
 ```
 renre-kit hello-world:greet --name Alice
 ```

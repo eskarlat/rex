@@ -19,6 +19,7 @@ const mockGetScheduledTasks = vi.fn();
 const mockCreateTask = vi.fn();
 const mockDeleteTask = vi.fn();
 const mockUpdateTask = vi.fn();
+const mockWriteLog = vi.fn();
 
 vi.mock('./api-client', () => ({
   ApiClient: vi.fn().mockImplementation(() => ({
@@ -32,6 +33,7 @@ vi.mock('./api-client', () => ({
     createTask: mockCreateTask,
     deleteTask: mockDeleteTask,
     updateTask: mockUpdateTask,
+    writeLog: mockWriteLog,
   })),
 }));
 
@@ -46,7 +48,7 @@ describe('RenreKitSDKImpl', () => {
     vi.clearAllMocks();
     sdk = new RenreKitSDKImpl(
       { baseUrl: 'http://localhost:4200', projectPath: '/my/project' },
-      'test-ext'
+      'test-ext',
     );
   });
 
@@ -367,6 +369,46 @@ describe('RenreKitSDKImpl', () => {
       sdk.terminal.send('echo hello\n');
 
       expect(handler).toHaveBeenCalledWith('echo hello\n');
+    });
+  });
+
+  describe('logger', () => {
+    it('calls writeLog with ext:<name> source for info', () => {
+      sdk.logger.info('test message');
+      expect(mockWriteLog).toHaveBeenCalledWith('info', 'ext:test-ext', 'test message', undefined);
+    });
+
+    it('calls writeLog with ext:<name> source for debug', () => {
+      sdk.logger.debug('debug msg');
+      expect(mockWriteLog).toHaveBeenCalledWith('debug', 'ext:test-ext', 'debug msg', undefined);
+    });
+
+    it('calls writeLog with ext:<name> source for warn', () => {
+      sdk.logger.warn('warning');
+      expect(mockWriteLog).toHaveBeenCalledWith('warn', 'ext:test-ext', 'warning', undefined);
+    });
+
+    it('calls writeLog with ext:<name> source for error', () => {
+      sdk.logger.error('something broke');
+      expect(mockWriteLog).toHaveBeenCalledWith(
+        'error',
+        'ext:test-ext',
+        'something broke',
+        undefined,
+      );
+    });
+
+    it('passes data argument through', () => {
+      sdk.logger.info('with data', { key: 'value' });
+      expect(mockWriteLog).toHaveBeenCalledWith('info', 'ext:test-ext', 'with data', {
+        key: 'value',
+      });
+    });
+
+    it('uses default extension name when not specified', () => {
+      const defaultSdk = new RenreKitSDKImpl({ baseUrl: 'http://localhost:4200' });
+      defaultSdk.logger.info('hello');
+      expect(mockWriteLog).toHaveBeenCalledWith('info', 'ext:default', 'hello', undefined);
     });
   });
 

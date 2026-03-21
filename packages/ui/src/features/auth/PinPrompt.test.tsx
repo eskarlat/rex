@@ -61,16 +61,12 @@ describe('PinPrompt', () => {
 
   it('shows error for invalid PIN from server', async () => {
     const { ApiError } = await import('@/core/api/client');
-    mockFetchApi.mockRejectedValueOnce(
-      new ApiError(401, 'Unauthorized', null)
-    );
+    mockFetchApi.mockRejectedValueOnce(new ApiError(401, 'Unauthorized', null));
     render(<PinPrompt onSuccess={vi.fn()} />);
     const input = screen.getByLabelText('PIN');
     await userEvent.type(input, '0000');
     await userEvent.click(screen.getByText('Submit'));
-    expect(
-      await screen.findByText('Invalid PIN. Please try again.')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Invalid PIN. Please try again.')).toBeInTheDocument();
   });
 
   it('only allows numeric input', async () => {
@@ -88,9 +84,7 @@ describe('PinPrompt', () => {
     const form = input.closest('form');
     expect(form).not.toBeNull();
     form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    expect(
-      await screen.findByText('PIN must be 4 digits')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('PIN must be 4 digits')).toBeInTheDocument();
   });
 
   it('shows generic error for non-ApiError failures', async () => {
@@ -99,8 +93,6 @@ describe('PinPrompt', () => {
     const input = screen.getByLabelText('PIN');
     await userEvent.type(input, '1234');
     await userEvent.click(screen.getByText('Submit'));
-    expect(
-      await screen.findByText('An error occurred. Please try again.')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('An error occurred. Please try again.')).toBeInTheDocument();
   });
 });

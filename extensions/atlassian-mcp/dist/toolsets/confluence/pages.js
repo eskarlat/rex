@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createPagesToolset(client) {
     return {
         name: 'confluence_pages',
@@ -131,7 +131,7 @@ export function createPagesToolset(client) {
             confluence_search: async (args) => {
                 try {
                     const data = await client.search(args['cql'], args['limit'] ?? 25, args['start'] ?? 0);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -140,7 +140,7 @@ export function createPagesToolset(client) {
             confluence_get_page: async (args) => {
                 try {
                     const data = await client.getPage(args['pageId'], args['expand'] ?? 'body.storage,version');
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -149,7 +149,7 @@ export function createPagesToolset(client) {
             confluence_get_page_children: async (args) => {
                 try {
                     const data = await client.getPageChildren(args['pageId'], args['limit'] ?? 25, args['start'] ?? 0);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -158,7 +158,7 @@ export function createPagesToolset(client) {
             confluence_get_page_history: async (args) => {
                 try {
                     const data = await client.getPageHistory(args['pageId']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -181,7 +181,7 @@ export function createPagesToolset(client) {
                         page['ancestors'] = [{ id: args['parentId'] }];
                     }
                     const data = await client.createPage(page);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -200,7 +200,7 @@ export function createPagesToolset(client) {
                         },
                         version: { number: args['version'] + 1 },
                     });
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -209,7 +209,7 @@ export function createPagesToolset(client) {
             confluence_delete_page: async (args) => {
                 try {
                     await client.deletePage(args['pageId']);
-                    return textResult({ success: true, pageId: args['pageId'] });
+                    return markdownResult({ success: true, pageId: args['pageId'] });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -218,7 +218,7 @@ export function createPagesToolset(client) {
             confluence_move_page: async (args) => {
                 try {
                     const data = await client.movePage(args['pageId'], args['targetAncestorId'], args['currentVersion']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -235,7 +235,7 @@ export function createPagesToolset(client) {
                     ]);
                     const fromBody = fromPage['body']?.['storage'];
                     const toBody = toPage['body']?.['storage'];
-                    return textResult({
+                    return markdownResult({
                         pageId,
                         fromVersion,
                         toVersion,

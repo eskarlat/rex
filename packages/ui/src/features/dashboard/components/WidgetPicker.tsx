@@ -1,9 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useMarketplace } from '@/core/hooks/use-extensions';
 
@@ -41,7 +36,10 @@ export function WidgetPicker({ open, onOpenChange, onAdd, addedWidgetIds }: Widg
             const compositeId = `${w.extensionName}:${w.id}`;
             const isAdded = addedWidgetIds.has(compositeId);
             return (
-              <div key={compositeId} className="flex items-center justify-between rounded border p-2">
+              <div
+                key={compositeId}
+                className="flex items-center justify-between rounded border p-2"
+              >
                 <div>
                   <p className="text-sm font-medium">{w.title}</p>
                   <p className="text-xs text-muted-foreground">{w.extensionTitle}</p>

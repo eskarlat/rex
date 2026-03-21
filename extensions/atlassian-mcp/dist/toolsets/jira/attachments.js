@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createAttachmentsToolset(client) {
     return {
         name: 'jira_attachments',
@@ -31,7 +31,7 @@ export function createAttachmentsToolset(client) {
                 try {
                     const res = await client.downloadAttachment(args['attachmentId']);
                     const text = await res.text();
-                    return textResult({ content: text, contentType: res.headers.get('content-type') });
+                    return markdownResult({ content: text, contentType: res.headers.get('content-type') });
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -46,7 +46,7 @@ export function createAttachmentsToolset(client) {
                         const mimeType = a['mimeType'];
                         return mimeType?.startsWith('image/');
                     });
-                    return textResult(images);
+                    return markdownResult(images);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));

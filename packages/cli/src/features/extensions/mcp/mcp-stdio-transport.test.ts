@@ -2,11 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { Readable, Writable } from 'node:stream';
-import {
-  spawnProcess,
-  sendRequest,
-  killProcess,
-} from './mcp-stdio-transport.js';
+import { spawnProcess, sendRequest, sendNotification, killProcess } from './mcp-stdio-transport.js';
 import type { McpStdioProcess } from './mcp-stdio-transport.js';
 import type { JsonRpcRequest } from '../types/mcp.types.js';
 
@@ -59,6 +55,11 @@ describe('mcp-stdio-transport', () => {
       const proc = spawnProcess('python', ['-m', 'server'], {}, '/home');
       expect(proc.buffer).toBe('');
       expect(proc.process.pid).toBe(12345);
+    });
+
+    it('should initialize stderrBuffer as empty string', () => {
+      const proc = spawnProcess('node', ['server.js'], {}, '/tmp');
+      expect(proc.stderrBuffer).toBe('');
     });
   });
 
@@ -167,6 +168,77 @@ describe('mcp-stdio-transport', () => {
 
       const result = await responsePromise;
       expect(result.result).toBe('done');
+    });
+
+    it('should include stderr in crash error when process closes', async () => {
+      const proc = spawnProcess('node', [], {}, '/tmp');
+      const request: JsonRpcRequest = {
+        jsonrpc: '2.0',
+        method: 'test',
+        params: {},
+        id: 10,
+      };
+
+      const responsePromise = sendRequest(proc, request);
+
+      // Simulate stderr output before crash — write directly to the buffer
+      proc.stderrBuffer = 'Error: SIGSEGV\nSegmentation fault';
+      proc.process.emit('close', 1);
+
+      await expect(responsePromise).rejects.toThrow(/SIGSEGV/);
+      await expect(responsePromise).rejects.toThrow(/Segmentation fault/);
+    });
+
+    it('should include stderr in error when process emits error', async () => {
+      const proc = spawnProcess('node', [], {}, '/tmp');
+      const request: JsonRpcRequest = {
+        jsonrpc: '2.0',
+        method: 'test',
+        params: {},
+        id: 11,
+      };
+
+      const responsePromise = sendRequest(proc, request);
+
+      // Simulate stderr output before error — write directly to the buffer
+      proc.stderrBuffer = 'fatal: out of memory\n';
+      proc.process.emit('error', new Error('process crashed'));
+
+      await expect(responsePromise).rejects.toThrow(/out of memory/);
+    });
+  });
+
+  describe('sendNotification', () => {
+    it('should write notification JSON to stdin without expecting a response', () => {
+      const proc = spawnProcess('node', [], {}, '/tmp');
+      const writeSpy = vi.spyOn(proc.process.stdin!, 'write');
+
+      sendNotification(proc, {
+        jsonrpc: '2.0',
+        method: 'notifications/initialized',
+      });
+
+      expect(writeSpy).toHaveBeenCalledOnce();
+      const written = writeSpy.mock.calls[0]![0] as string;
+      const parsed = JSON.parse(written.trim());
+      expect(parsed.jsonrpc).toBe('2.0');
+      expect(parsed.method).toBe('notifications/initialized');
+      expect(parsed.id).toBeUndefined();
+    });
+
+    it('should include params when provided', () => {
+      const proc = spawnProcess('node', [], {}, '/tmp');
+      const writeSpy = vi.spyOn(proc.process.stdin!, 'write');
+
+      sendNotification(proc, {
+        jsonrpc: '2.0',
+        method: 'notifications/progress',
+        params: { progress: 50 },
+      });
+
+      const written = writeSpy.mock.calls[0]![0] as string;
+      const parsed = JSON.parse(written.trim());
+      expect(parsed.params).toEqual({ progress: 50 });
     });
   });
 

@@ -42,12 +42,12 @@ export function getStandardEntryPoint(name: string): string {
   return `import type { HookContext } from '@renre-kit/extension-sdk/node';
 
 export function onInit(context: HookContext): void {
-  context.sdk.deployAgentAssets(context.extensionDir, context.projectDir, context.agentDir);
+  context.sdk.deployAgentAssets();
   console.log('${name} initialized in', context.projectDir);
 }
 
 export function onDestroy(context: HookContext): void {
-  context.sdk.cleanupAgentAssets(context.extensionDir, context.projectDir, context.agentDir);
+  context.sdk.cleanupAgentAssets();
   console.log('${name} destroyed in', context.projectDir);
 }
 `;

@@ -10,11 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  useVaultEntries,
-  useSetVaultEntry,
-  useRemoveVaultEntry,
-} from '@/core/hooks/use-vault';
+import { useVaultEntries, useSetVaultEntry, useRemoveVaultEntry } from '@/core/hooks/use-vault';
 import { ResourcePage } from '@/core/components/ResourcePage';
 
 export function VaultPage(): React.ReactElement {
@@ -41,7 +37,7 @@ export function VaultPage(): React.ReactElement {
           setNewValue('');
           setNewTags('');
         },
-      }
+      },
     );
   }
 
@@ -108,7 +104,7 @@ export function VaultPage(): React.ReactElement {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {(!entries || entries.length === 0) ? (
+          {!entries || entries.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-muted-foreground">
                 No vault entries found.
@@ -118,13 +114,9 @@ export function VaultPage(): React.ReactElement {
             entries.map((entry) => (
               <TableRow key={entry.key}>
                 <TableCell className="font-medium">{entry.key}</TableCell>
-                <TableCell className="font-mono text-muted-foreground">
-                  {'******'}
-                </TableCell>
+                <TableCell className="font-mono text-muted-foreground">{'******'}</TableCell>
                 <TableCell>{entry.tags?.join(', ') ?? '-'}</TableCell>
-                <TableCell>
-                  {new Date(entry.updated_at).toLocaleDateString()}
-                </TableCell>
+                <TableCell>{new Date(entry.updated_at).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Button
                     size="sm"

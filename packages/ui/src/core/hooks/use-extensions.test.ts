@@ -8,8 +8,15 @@ vi.mock('@/core/api/client', () => ({
   fetchApi: (...args: unknown[]) => mockFetchApi(...args),
 }));
 
+const mockShowToast = vi.fn();
+vi.mock('@/core/hooks/use-toast', () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}));
+
 import {
   useMarketplace,
+  useExtensionChangelog,
+  useExtensionReadme,
   useInstallExtension,
   useActivateExtension,
   useDeactivateExtension,
@@ -28,6 +35,7 @@ function createWrapper() {
 
 beforeEach(() => {
   mockFetchApi.mockReset();
+  mockShowToast.mockReset();
 });
 
 describe('useMarketplace', () => {
@@ -52,13 +60,15 @@ describe('useMarketplace', () => {
 describe('useMarketplace widget metadata', () => {
   it('marketplace response includes widget metadata', async () => {
     const marketplace = {
-      active: [{
-        name: 'ext-a',
-        version: '1.0.0',
-        type: 'standard',
-        status: 'active',
-        widgets: [{ id: 'status', title: 'Status', defaultSize: { w: 4, h: 2 } }],
-      }],
+      active: [
+        {
+          name: 'ext-a',
+          version: '1.0.0',
+          type: 'standard',
+          status: 'active',
+          widgets: [{ id: 'status', title: 'Status', defaultSize: { w: 4, h: 2 } }],
+        },
+      ],
       installed: [],
       available: [],
     };
@@ -71,6 +81,50 @@ describe('useMarketplace widget metadata', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.active[0]?.widgets).toHaveLength(1);
     expect(result.current.data?.active[0]?.widgets?.[0]?.id).toBe('status');
+  });
+});
+
+describe('useExtensionChangelog', () => {
+  it('fetches changelog for a given extension name', async () => {
+    mockFetchApi.mockResolvedValueOnce({ changelog: '## [1.0.0]\n\n- Initial release' });
+
+    const { result } = renderHook(() => useExtensionChangelog('my-ext'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/my-ext/changelog');
+    expect(result.current.data).toBe('## [1.0.0]\n\n- Initial release');
+  });
+
+  it('does not fetch when name is undefined', () => {
+    renderHook(() => useExtensionChangelog(undefined), {
+      wrapper: createWrapper(),
+    });
+
+    expect(mockFetchApi).not.toHaveBeenCalled();
+  });
+});
+
+describe('useExtensionReadme', () => {
+  it('fetches readme for a given extension name', async () => {
+    mockFetchApi.mockResolvedValueOnce({ readme: '# Hello World\n\nA simple extension.' });
+
+    const { result } = renderHook(() => useExtensionReadme('my-ext'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/my-ext/readme');
+    expect(result.current.data).toBe('# Hello World\n\nA simple extension.');
+  });
+
+  it('does not fetch when name is undefined', () => {
+    renderHook(() => useExtensionReadme(undefined), {
+      wrapper: createWrapper(),
+    });
+
+    expect(mockFetchApi).not.toHaveBeenCalled();
   });
 });
 
@@ -90,6 +144,34 @@ describe('useInstallExtension', () => {
       expect(mockFetchApi).toHaveBeenCalledWith('/api/extensions/install', {
         method: 'POST',
         body: { name: 'my-extension', version: '1.2.0' },
+      }),
+    );
+  });
+
+  it('shows success toast on install', async () => {
+    mockFetchApi.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useInstallExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate({ name: 'my-ext' });
+    });
+
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith({ title: 'Installed my-ext' }));
+  });
+
+  it('shows error toast on install failure', async () => {
+    mockFetchApi.mockRejectedValueOnce(new Error('network'));
+    const { result } = renderHook(() => useInstallExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate({ name: 'my-ext' });
+    });
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith({
+        title: 'Failed to install my-ext',
+        description: 'network',
+        variant: 'destructive',
       }),
     );
   });
@@ -114,6 +196,17 @@ describe('useActivateExtension', () => {
       }),
     );
   });
+
+  it('shows success toast on activate', async () => {
+    mockFetchApi.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useActivateExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate({ name: 'my-ext', version: '1.0.0' });
+    });
+
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith({ title: 'Activated my-ext' }));
+  });
 });
 
 describe('useDeactivateExtension', () => {
@@ -133,6 +226,19 @@ describe('useDeactivateExtension', () => {
         method: 'POST',
         body: { name: 'my-extension' },
       }),
+    );
+  });
+
+  it('shows success toast on deactivate', async () => {
+    mockFetchApi.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useDeactivateExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate('my-ext');
+    });
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith({ title: 'Deactivated my-ext' }),
     );
   });
 });
@@ -194,6 +300,19 @@ describe('useRemoveExtension', () => {
         `/api/extensions/${encodeURIComponent('@scope/my-extension')}`,
         { method: 'DELETE' },
       ),
+    );
+  });
+
+  it('shows success toast on uninstall', async () => {
+    mockFetchApi.mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() => useRemoveExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate('my-ext');
+    });
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith({ title: 'Uninstalled my-ext' }),
     );
   });
 });

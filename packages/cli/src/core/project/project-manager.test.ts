@@ -39,10 +39,7 @@ describe('ProjectManager', () => {
       fs.mkdirSync(projectPath);
       manager.init('my-project', projectPath);
       const manifest = JSON.parse(
-        fs.readFileSync(
-          path.join(projectPath, '.renre-kit', 'manifest.json'),
-          'utf-8',
-        ),
+        fs.readFileSync(path.join(projectPath, '.renre-kit', 'manifest.json'), 'utf-8'),
       ) as { name: string; version: string; created_at: string };
       expect(manifest.name).toBe('my-project');
       expect(manifest.version).toBe('1.0.0');
@@ -54,10 +51,7 @@ describe('ProjectManager', () => {
       fs.mkdirSync(projectPath);
       manager.init('my-project', projectPath);
       const plugins = JSON.parse(
-        fs.readFileSync(
-          path.join(projectPath, '.renre-kit', 'plugins.json'),
-          'utf-8',
-        ),
+        fs.readFileSync(path.join(projectPath, '.renre-kit', 'plugins.json'), 'utf-8'),
       );
       expect(plugins).toEqual({});
     });
@@ -101,9 +95,7 @@ describe('ProjectManager', () => {
       const projectPath = path.join(tmpDir, 'my-project');
       fs.mkdirSync(projectPath);
       manager.init('my-project', projectPath);
-      expect(() => manager.destroy(projectPath, false)).toThrow(
-        'Use force=true',
-      );
+      expect(() => manager.destroy(projectPath, false)).toThrow('Use force=true');
     });
 
     it('should remove .renre-kit directory', async () => {

@@ -1,10 +1,13 @@
 # ADR-004: Prevent System Sleep While Dashboard is Running
 
 ## Status
+
 Accepted
 
 ## Context
+
 The system supports MCP (Model Context Protocol) server connections and scheduled task execution. Both require the machine to remain awake and responsive. If the system enters sleep mode while:
+
 - A scheduled task is due to run, it will miss the execution window
 - An MCP server is connected, the connection will drop
 - A background process is active, it may be suspended
@@ -12,7 +15,9 @@ The system supports MCP (Model Context Protocol) server connections and schedule
 Users expect scheduled tasks and MCP connections to work reliably, which requires the machine to stay awake.
 
 ## Decision
+
 Prevent system sleep while the dashboard (and core scheduler) is running:
+
 1. **macOS**: Use `caffeinate -i` to prevent idle sleep
 2. **Linux**: Use `systemd-inhibit` to inhibit sleep via D-Bus
 3. **Windows**: Use `SetThreadExecutionState` Win32 API with `ES_CONTINUOUS | ES_SYSTEM_REQUIRED`
@@ -23,6 +28,7 @@ Prevent system sleep while the dashboard (and core scheduler) is running:
 ## Consequences
 
 ### Positive
+
 - **Reliable execution**: Scheduled tasks run on time
 - **MCP connection stability**: Server connections remain active
 - **Cross-platform**: Handles macOS, Linux, Windows uniformly
@@ -30,6 +36,7 @@ Prevent system sleep while the dashboard (and core scheduler) is running:
 - **Reversible**: Config flag allows opting out
 
 ### Negative
+
 - **Battery impact**: Significant power drain on laptops
 - **User expectations**: Users may be surprised that their machine doesn't sleep
 - **Platform-specific code**: Each OS has different inhibitor mechanism

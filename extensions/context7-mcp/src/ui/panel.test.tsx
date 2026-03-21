@@ -4,18 +4,20 @@ import userEvent from '@testing-library/user-event';
 import Context7Panel from './panel.js';
 
 const RESOLVE_RESPONSE = JSON.stringify({
-  content: [{
-    type: 'text',
-    text: [
-      '- Title: React',
-      '- Context7-compatible library ID: /reactjs/react.dev',
-      '- Description: Official React docs',
-      '----------',
-      '- Title: React',
-      '- Context7-compatible library ID: /facebook/react',
-      '- Description: The library for web UIs',
-    ].join('\n'),
-  }],
+  content: [
+    {
+      type: 'text',
+      text: [
+        '- Title: React',
+        '- Context7-compatible library ID: /reactjs/react.dev',
+        '- Description: Official React docs',
+        '----------',
+        '- Title: React',
+        '- Context7-compatible library ID: /facebook/react',
+        '- Description: The library for web UIs',
+      ].join('\n'),
+    },
+  ],
 });
 
 const DOCS_RESPONSE = JSON.stringify({

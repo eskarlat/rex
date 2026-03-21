@@ -1,4 +1,4 @@
-import { textResult, errorResult } from '../types.js';
+import { markdownResult, errorResult } from '../types.js';
 export function createWorklogToolset(client) {
     return {
         name: 'jira_worklog',
@@ -33,7 +33,7 @@ export function createWorklogToolset(client) {
             jira_get_worklog: async (args) => {
                 try {
                     const data = await client.getWorklog(args['issueKey']);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
@@ -59,7 +59,7 @@ export function createWorklogToolset(client) {
                     if (args['started'])
                         worklog['started'] = args['started'];
                     const data = await client.addWorklog(args['issueKey'], worklog);
-                    return textResult(data);
+                    return markdownResult(data);
                 }
                 catch (err) {
                     return errorResult(err instanceof Error ? err.message : String(err));
