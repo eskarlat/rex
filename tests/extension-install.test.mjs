@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 
 const CLI_BIN = join(import.meta.dirname, '..', 'packages', 'cli', 'bin', 'renre-kit.js');
 const HELLO_WORLD_EXT = join(import.meta.dirname, '..', 'extensions', 'hello-world');
+const CONTEXT7_MCP_EXT = join(import.meta.dirname, '..', 'extensions', 'context7-mcp');
 
 /**
  * Create the .renre-kit project structure that `init` would create.
@@ -655,5 +656,145 @@ describe('git-based extension installation (simulated GitHub)', () => {
       setTimeout(() => resolve('timeout'), 5000);
     });
     assert.notEqual(exitCode, 'timeout', 'Server should exit on SIGTERM');
+  });
+});
+
+// ──────────────────────────────────────────────
+// Test: ext:status shows installed MCP extensions
+// ──────────────────────────────────────────────
+
+describe('ext:status shows MCP connections', () => {
+  let homeDir;
+  let projectDir;
+
+  before(async () => {
+    homeDir = await mkdtemp(join(tmpdir(), 'renre-e2e-mcp-status-home-'));
+    projectDir = await mkdtemp(join(tmpdir(), 'renre-e2e-mcp-status-project-'));
+
+    // 1. Create bare repos for both standard and MCP extensions
+    const helloBarePath = join(homeDir, 'fake-github', 'hello-world.git');
+    const mcpBarePath = join(homeDir, 'fake-github', 'context7-mcp.git');
+    await mkdir(helloBarePath, { recursive: true });
+    await mkdir(mcpBarePath, { recursive: true });
+    git(['init', '--bare'], { cwd: helloBarePath });
+    git(['init', '--bare'], { cwd: mcpBarePath });
+
+    // Push hello-world
+    const helloWork = await mkdtemp(join(tmpdir(), 'renre-e2e-mcp-hw-'));
+    git(['init', '-b', 'main'], { cwd: helloWork });
+    git(['config', 'user.email', 'test@test.com'], { cwd: helloWork });
+    git(['config', 'user.name', 'Test'], { cwd: helloWork });
+    git(['config', 'commit.gpgsign', 'false'], { cwd: helloWork });
+    await cp(HELLO_WORLD_EXT, helloWork, { recursive: true });
+    git(['add', '-A'], { cwd: helloWork });
+    git(['commit', '-m', 'initial'], { cwd: helloWork });
+    git(['tag', 'v1.0.0'], { cwd: helloWork });
+    git(['remote', 'add', 'origin', helloBarePath], { cwd: helloWork });
+    git(['push', 'origin', 'main', '--tags'], { cwd: helloWork });
+    await rm(helloWork, { recursive: true, force: true });
+
+    // Push context7-mcp
+    const mcpWork = await mkdtemp(join(tmpdir(), 'renre-e2e-mcp-c7-'));
+    git(['init', '-b', 'main'], { cwd: mcpWork });
+    git(['config', 'user.email', 'test@test.com'], { cwd: mcpWork });
+    git(['config', 'user.name', 'Test'], { cwd: mcpWork });
+    git(['config', 'commit.gpgsign', 'false'], { cwd: mcpWork });
+    await cp(CONTEXT7_MCP_EXT, mcpWork, { recursive: true });
+    git(['add', '-A'], { cwd: mcpWork });
+    git(['commit', '-m', 'initial'], { cwd: mcpWork });
+    git(['tag', 'v1.0.0'], { cwd: mcpWork });
+    git(['remote', 'add', 'origin', mcpBarePath], { cwd: mcpWork });
+    git(['push', 'origin', 'main', '--tags'], { cwd: mcpWork });
+    await rm(mcpWork, { recursive: true, force: true });
+
+    // 2. Set up registry with both extensions
+    const registryDir = join(homeDir, 'registries', 'local', '.renre-kit');
+    await mkdir(registryDir, { recursive: true });
+    await writeFile(
+      join(registryDir, 'extensions.json'),
+      JSON.stringify({
+        extensions: [
+          {
+            name: 'hello-world',
+            description: 'Hello World extension',
+            gitUrl: `file://${helloBarePath}`,
+            latestVersion: '1.0.0',
+            type: 'standard',
+            icon: '',
+            author: 'test',
+          },
+          {
+            name: 'context7-mcp',
+            description: 'Context7 MCP extension',
+            gitUrl: `file://${mcpBarePath}`,
+            latestVersion: '1.0.0',
+            type: 'mcp',
+            icon: '',
+            author: 'test',
+          },
+        ],
+      }),
+    );
+    await writeFile(join(homeDir, 'registries', 'local', '.fetched_at'), new Date().toISOString());
+
+    // 3. Global config
+    await mkdir(homeDir, { recursive: true });
+    await writeFile(
+      join(homeDir, 'config.json'),
+      JSON.stringify({
+        registries: [{ name: 'local', url: helloBarePath, priority: 1, cacheTTL: 86400 }],
+      }),
+    );
+
+    // 4. Initialize project
+    await initProject(projectDir);
+
+    // 5. Install both extensions
+    const addHello = await runCli(['ext:add', 'hello-world'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+    assert.equal(addHello.code, 0, `ext:add hello-world should succeed: ${addHello.stderr}`);
+
+    const addMcp = await runCli(['ext:add', 'context7-mcp'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+    assert.equal(addMcp.code, 0, `ext:add context7-mcp should succeed: ${addMcp.stderr}`);
+  });
+
+  after(async () => {
+    await rm(homeDir, { recursive: true, force: true });
+    await rm(projectDir, { recursive: true, force: true });
+  });
+
+  it('ext:status lists installed MCP extension as not connected', async () => {
+    const statusResult = await runCli(['ext:status'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+
+    assert.equal(statusResult.code, 0, `ext:status should succeed: ${statusResult.stderr}`);
+    assert.ok(
+      statusResult.stdout.includes('context7-mcp'),
+      `ext:status should list the MCP extension, got: ${statusResult.stdout}`,
+    );
+    assert.ok(
+      statusResult.stdout.includes('not connected'),
+      `MCP extension should show as not connected, got: ${statusResult.stdout}`,
+    );
+  });
+
+  it('ext:status does not list standard extensions', async () => {
+    const statusResult = await runCli(['ext:status'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+
+    assert.equal(statusResult.code, 0, `ext:status should succeed: ${statusResult.stderr}`);
+    assert.ok(
+      !statusResult.stdout.includes('hello-world'),
+      `ext:status should not list standard extensions, got: ${statusResult.stdout}`,
+    );
   });
 });

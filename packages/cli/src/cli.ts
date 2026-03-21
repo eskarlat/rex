@@ -369,7 +369,12 @@ export function createProgram(): Command {
     .command('ext:status')
     .description('Show MCP connection status')
     .action(() => {
-      handleExtStatus(connectionManager.status());
+      const db = getDb();
+      const installed = listInstalled(db);
+      const mcpExtensions = installed
+        .filter((ext) => ext.type === 'mcp')
+        .map((ext) => ({ name: ext.name, version: ext.version }));
+      handleExtStatus(connectionManager.status(), mcpExtensions);
     });
 
   program
