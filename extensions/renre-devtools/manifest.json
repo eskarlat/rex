@@ -82,6 +82,18 @@
     "performance": {
       "handler": "dist/commands/performance.js",
       "description": "Get performance metrics and Core Web Vitals"
+    },
+    "inspect": {
+      "handler": "dist/commands/inspect.js",
+      "description": "Activate element picker — user clicks an element in the browser, agent gets full details"
+    },
+    "selected": {
+      "handler": "dist/commands/selected.js",
+      "description": "Get details about the last inspected/selected element"
+    },
+    "highlight": {
+      "handler": "dist/commands/highlight.js",
+      "description": "Highlight an element in the browser by CSS selector"
     }
   },
   "config": {
@@ -125,7 +137,8 @@
       { "name": "dom-inspection", "path": "agent/skills/dom-inspection" },
       { "name": "javascript-execution", "path": "agent/skills/javascript-execution" },
       { "name": "network-analysis", "path": "agent/skills/network-analysis" },
-      { "name": "browser-screenshot", "path": "agent/skills/browser-screenshot" }
+      { "name": "browser-screenshot", "path": "agent/skills/browser-screenshot" },
+      { "name": "element-picker", "path": "agent/skills/element-picker" }
     ]
   }
 }
