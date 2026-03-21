@@ -16,7 +16,20 @@ export interface HookContext {
   projectDir: string;
   agentDir: string;
   extensionDir: string;
+  platform: PlatformInfo;
   sdk: SdkMethods;
+}
+
+export type OSType = 'windows' | 'macos' | 'linux';
+
+export type ArchType = 'x64' | 'arm64' | 'ia32' | 'arm';
+
+export interface PlatformInfo {
+  readonly os: OSType;
+  readonly arch: ArchType;
+  readonly isWindows: boolean;
+  readonly isMacos: boolean;
+  readonly isLinux: boolean;
 }
 
 export interface BuildPanelEntry {

@@ -4,7 +4,9 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 
-export type OSType = 'windows' | 'macos' | 'linux';
+import type { OSType, ArchType, PlatformInfo } from '@renre-kit/extension-sdk/node';
+
+export type { OSType, ArchType, PlatformInfo };
 
 export function getOSType(): OSType {
   const platform = process.platform;
@@ -18,6 +20,27 @@ export function getOSType(): OSType {
   }
 
   return 'linux';
+}
+
+export function getArchType(): ArchType {
+  const arch = process.arch;
+
+  if (arch === 'x64' || arch === 'arm64' || arch === 'ia32' || arch === 'arm') {
+    return arch;
+  }
+
+  return 'x64';
+}
+
+export function getPlatformInfo(): PlatformInfo {
+  const osType = getOSType();
+  return {
+    os: osType,
+    arch: getArchType(),
+    isWindows: osType === 'windows',
+    isMacos: osType === 'macos',
+    isLinux: osType === 'linux',
+  };
 }
 
 function getHardwareUUIDMacOS(): string | undefined {

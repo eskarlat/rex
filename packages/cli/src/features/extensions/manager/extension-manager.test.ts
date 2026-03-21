@@ -346,6 +346,12 @@ export function onInit(ctx) {
     hasLoggerDebug: typeof ctx.sdk.logger.debug === 'function',
     hasLoggerWarn: typeof ctx.sdk.logger.warn === 'function',
     hasLoggerError: typeof ctx.sdk.logger.error === 'function',
+    hasPlatform: typeof ctx.platform === 'object',
+    hasPlatformOs: typeof ctx.platform.os === 'string',
+    hasPlatformArch: typeof ctx.platform.arch === 'string',
+    hasPlatformIsWindows: typeof ctx.platform.isWindows === 'boolean',
+    hasPlatformIsMacos: typeof ctx.platform.isMacos === 'boolean',
+    hasPlatformIsLinux: typeof ctx.platform.isLinux === 'boolean',
   };
   fs.writeFileSync(path.join(ctx.projectDir, '.ctx-check'), JSON.stringify(info));
 }`,
@@ -364,6 +370,12 @@ export function onInit(ctx) {
         hasLoggerDebug: true,
         hasLoggerWarn: true,
         hasLoggerError: true,
+        hasPlatform: true,
+        hasPlatformOs: true,
+        hasPlatformArch: true,
+        hasPlatformIsWindows: true,
+        hasPlatformIsMacos: true,
+        hasPlatformIsLinux: true,
       });
     });
 
