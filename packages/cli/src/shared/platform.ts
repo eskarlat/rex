@@ -4,9 +4,17 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 
-import type { OSType, ArchType, PlatformInfo } from '@renre-kit/extension-sdk/node';
+export type OSType = 'windows' | 'macos' | 'linux';
 
-export type { OSType, ArchType, PlatformInfo };
+export type ArchType = 'x64' | 'arm64' | 'ia32' | 'arm';
+
+export interface PlatformInfo {
+  readonly os: OSType;
+  readonly arch: ArchType;
+  readonly isWindows: boolean;
+  readonly isMacos: boolean;
+  readonly isLinux: boolean;
+}
 
 export function getOSType(): OSType {
   const platform = process.platform;
