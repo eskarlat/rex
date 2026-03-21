@@ -6,6 +6,7 @@ import { DynamicWidget } from './DynamicWidget';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SizeConstraints {
   minSize?: { w: number; h: number };
@@ -39,6 +40,51 @@ function clampSize(
   return { w, h };
 }
 
+function buildWidgetStyle(
+  isMobile: boolean,
+  transformStr: string | undefined,
+  transition: string | null,
+  size: { w: number; h: number },
+): React.CSSProperties {
+  const base = { transform: transformStr, transition: transition ?? undefined };
+  if (isMobile) return { ...base, minHeight: `${size.h * 100}px` };
+  return { ...base, gridColumn: `span ${size.w}`, gridRow: `span ${size.h}` };
+}
+
+function ResizeControls({
+  canShrink,
+  canGrow,
+  onShrink,
+  onGrow,
+}: Readonly<{ canShrink: boolean; canGrow: boolean; onShrink: () => void; onGrow: () => void }>) {
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6"
+        onClick={onShrink}
+        disabled={!canShrink}
+        data-testid="shrink-widget"
+        aria-label="Shrink widget"
+      >
+        <Minimize2 className="h-3 w-3" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6"
+        onClick={onGrow}
+        disabled={!canGrow}
+        data-testid="grow-widget"
+        aria-label="Grow widget"
+      >
+        <Maximize2 className="h-3 w-3" />
+      </Button>
+    </>
+  );
+}
+
 export function WidgetCard({
   id,
   extensionName,
@@ -50,13 +96,8 @@ export function WidgetCard({
   onResize,
 }: Readonly<WidgetCardProps>) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition ?? undefined,
-    gridColumn: `span ${size.w}`,
-    gridRow: `span ${size.h}`,
-  };
+  const isMobile = useIsMobile();
+  const style = buildWidgetStyle(isMobile, CSS.Transform.toString(transform), transition, size);
 
   const canGrow =
     !constraints?.maxSize || size.w < constraints.maxSize.w || size.h < constraints.maxSize.h;
@@ -66,14 +107,12 @@ export function WidgetCard({
 
   const handleGrow = () => {
     if (!onResize) return;
-    const grown = clampSize({ w: size.w + 1, h: size.h + 1 }, constraints);
-    onResize(grown);
+    onResize(clampSize({ w: size.w + 1, h: size.h + 1 }, constraints));
   };
 
   const handleShrink = () => {
     if (!onResize) return;
-    const shrunk = clampSize({ w: size.w - 1, h: size.h - 1 }, constraints);
-    onResize(shrunk);
+    onResize(clampSize({ w: size.w - 1, h: size.h - 1 }, constraints));
   };
 
   return (
@@ -92,31 +131,13 @@ export function WidgetCard({
           <CardTitle className="text-sm font-medium">{title}</CardTitle>
         </div>
         <div className="flex items-center gap-0.5">
-          {onResize && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleShrink}
-                disabled={!canShrink}
-                data-testid="shrink-widget"
-                aria-label="Shrink widget"
-              >
-                <Minimize2 className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={handleGrow}
-                disabled={!canGrow}
-                data-testid="grow-widget"
-                aria-label="Grow widget"
-              >
-                <Maximize2 className="h-3 w-3" />
-              </Button>
-            </>
+          {onResize && !isMobile && (
+            <ResizeControls
+              canShrink={canShrink}
+              canGrow={canGrow}
+              onShrink={handleShrink}
+              onGrow={handleGrow}
+            />
           )}
           <Button
             variant="ghost"

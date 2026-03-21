@@ -44,25 +44,31 @@ describe('SettingsLayout', () => {
 
   it('renders navigation links', () => {
     renderWithProviders();
-    expect(screen.getByText('General')).toBeInTheDocument();
-    expect(screen.getByText('Registries')).toBeInTheDocument();
-    expect(screen.getByText('Vault')).toBeInTheDocument();
+    // Both mobile and desktop navs render the links
+    expect(screen.getAllByText('General').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Registries').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Vault').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders active extensions in settings nav', () => {
     renderWithProviders();
+    // Desktop nav shows "Extensions" label
     expect(screen.getByText('Extensions')).toBeInTheDocument();
-    expect(screen.getByText('hello-world')).toBeInTheDocument();
+    expect(screen.getAllByText('hello-world').length).toBeGreaterThanOrEqual(1);
   });
 
   it('links point to correct routes', () => {
     renderWithProviders();
-    const generalLink = screen.getByText('General').closest('a');
-    const registriesLink = screen.getByText('Registries').closest('a');
-    const extLink = screen.getByText('hello-world').closest('a');
+    // Use the first matching link for assertions (both mobile and desktop have correct hrefs)
+    const generalLinks = screen.getAllByText('General');
+    const registriesLinks = screen.getAllByText('Registries');
+    const extLinks = screen.getAllByText('hello-world');
 
-    expect(generalLink).toHaveAttribute('href', '/settings');
-    expect(registriesLink).toHaveAttribute('href', '/settings/registries');
-    expect(extLink).toHaveAttribute('href', '/settings/extensions/hello-world');
+    expect(generalLinks[0]!.closest('a')).toHaveAttribute('href', '/settings');
+    expect(registriesLinks[0]!.closest('a')).toHaveAttribute('href', '/settings/registries');
+    expect(extLinks[0]!.closest('a')).toHaveAttribute(
+      'href',
+      '/settings/extensions/hello-world',
+    );
   });
 });
