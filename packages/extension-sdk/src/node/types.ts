@@ -1,14 +1,12 @@
-export interface SdkLogger {
-  debug(message: string, data?: unknown): void;
-  info(message: string, data?: unknown): void;
-  warn(message: string, data?: unknown): void;
-  error(message: string, data?: unknown): void;
-}
+import type { ExtensionLogger, PlatformInfo } from '@renre-kit/shared';
+
+export type { ExtensionLogger as SdkLogger } from '@renre-kit/shared';
+export type { OSType, ArchType, PlatformInfo } from '@renre-kit/shared';
 
 export interface SdkMethods {
   deployAgentAssets: () => void;
   cleanupAgentAssets: () => void;
-  logger: SdkLogger;
+  logger: ExtensionLogger;
   notify: (options: { title: string; message?: string; variant?: string; actionUrl?: string }) => void;
 }
 
@@ -18,18 +16,6 @@ export interface HookContext {
   extensionDir: string;
   platform: PlatformInfo;
   sdk: SdkMethods;
-}
-
-export type OSType = 'windows' | 'macos' | 'linux';
-
-export type ArchType = 'x64' | 'arm64' | 'ia32' | 'arm';
-
-export interface PlatformInfo {
-  readonly os: OSType;
-  readonly arch: ArchType;
-  readonly isWindows: boolean;
-  readonly isMacos: boolean;
-  readonly isLinux: boolean;
 }
 
 export interface BuildPanelEntry {

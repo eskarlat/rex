@@ -1,5 +1,10 @@
 // RenreKit Extension SDK — Core Types
 
+import type { ExtensionLogger, CommandResult } from '@renre-kit/shared';
+
+export type { ExtensionLogger as LoggerAPI } from '@renre-kit/shared';
+export type { CommandResult } from '@renre-kit/shared';
+
 /** Props passed to extension UI panels and widgets by the dynamic loaders */
 export interface PanelProps {
   sdk: RenreKitSDK;
@@ -14,11 +19,6 @@ export interface ProjectContext {
   config: Record<string, unknown>;
 }
 
-/** Command execution result */
-export interface CommandResult {
-  output: string;
-  exitCode: number;
-}
 
 /** Storage entry */
 export interface StorageEntry {
@@ -141,14 +141,6 @@ export interface TerminalAPI {
   send(data: string): void;
 }
 
-/** Logger capability group */
-export interface LoggerAPI {
-  debug(message: string, data?: unknown): void;
-  info(message: string, data?: unknown): void;
-  warn(message: string, data?: unknown): void;
-  error(message: string, data?: unknown): void;
-}
-
 /** Main SDK interface — 9 capability groups */
 export interface RenreKitSDK {
   readonly project: ProjectContextAPI;
@@ -158,7 +150,7 @@ export interface RenreKitSDK {
   readonly events: EventsAPI;
   readonly scheduler: SchedulerAPI;
   readonly terminal: TerminalAPI;
-  readonly logger: LoggerAPI;
+  readonly logger: ExtensionLogger;
   notify(options: NotificationOptions): Promise<void>;
   destroy(): void;
 }
