@@ -132,8 +132,10 @@ function findExtensionDoc(
       if (existsSync(filePath)) {
         return readFileSync(filePath, 'utf-8');
       }
-    } catch {
-      // try next version
+    } catch (error: unknown) {
+      getLogger().warn('extensions', `Failed to read ${filename} for ${name}@${version}`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return null;
@@ -158,8 +160,12 @@ function findExtensionUiAsset(
       if (existsSync(assetPath)) {
         return readFileSync(assetPath, 'utf-8');
       }
-    } catch {
-      // try next version
+    } catch (error: unknown) {
+      getLogger().warn('extensions', `Failed to load UI asset for ${name}@${version}`, {
+        assetType,
+        assetId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return null;
@@ -332,8 +338,10 @@ function findExtensionIcon(
   for (const version of candidates) {
     try {
       return readIconFromDir(getExtensionDir(name, version));
-    } catch {
-      // try next version
+    } catch (error: unknown) {
+      getLogger().warn('extensions', `Failed to read icon for ${name}@${version}`, {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
   return null;
