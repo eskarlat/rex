@@ -1,2 +1,18 @@
-export { MarkdownRenderer } from '@renre-kit/extension-sdk/components';
-export type { MarkdownRendererProps } from '@renre-kit/extension-sdk/components';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+import { cn } from '@/lib/utils';
+
+interface MarkdownRendererProps {
+  readonly children: string;
+  readonly className?: string;
+  readonly testId?: string;
+}
+
+export function MarkdownRenderer({ children, className, testId }: MarkdownRendererProps) {
+  return (
+    <div data-testid={testId} className={cn('prose-markdown', className)}>
+      <Markdown remarkPlugins={[remarkGfm]}>{children}</Markdown>
+    </div>
+  );
+}
