@@ -7,7 +7,7 @@ When an extension is installed via `ext:add`, the CLI git-clones the extension r
 but **no `node_modules/`**. This causes runtime failures:
 
 1. **MCP extensions** (e.g., atlassian-mcp): `dist/server.js` does `import { Server } from '@modelcontextprotocol/sdk/server/index.js'` — crashes because `@modelcontextprotocol/sdk` is not installed.
-2. **Standard extensions**: `dist/index.js` does `import type { HookContext } from '@renre-kit/extension-sdk/node'` — the compiled JS still has `import ... from '@renre-kit/extension-sdk/node'` which can't resolve.
+2. **Standard extensions**: `dist/index.js` has `import { ... } from '@renre-kit/extension-sdk/node'` — the compiled JS retains bare module specifiers which can't resolve without `node_modules`.
 3. **Command handlers**: Same problem — any handler importing from the SDK or third-party packages fails.
 
 The current build uses **plain `tsc`** for Node.js code (hooks, commands, MCP server), which only

@@ -5,6 +5,12 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import { NotificationCenter } from './NotificationCenter';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return { ...actual, useNavigate: () => mockNavigate };
+});
+
 const mockNotifications = vi.fn();
 const mockUnreadCount = vi.fn();
 const mockMarkRead = { mutate: vi.fn() };
@@ -244,6 +250,7 @@ describe('NotificationCenter', () => {
     await userEvent.click(screen.getByLabelText('Notifications'));
     await userEvent.click(screen.getByText('Navigable'));
     expect(mockMarkRead.mutate).toHaveBeenCalledWith(1);
+    expect(mockNavigate).toHaveBeenCalledWith('/settings');
   });
 
   it('calls markAllRead when mark all read is clicked', async () => {

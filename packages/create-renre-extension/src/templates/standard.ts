@@ -5,7 +5,6 @@ export function getStandardPackageJson(name: string): string {
     description: `A RenreKit extension: ${name}`,
     type: 'module',
     main: './dist/index.js',
-    types: './dist/index.d.ts',
     scripts: {
       build: 'node build.js',
       dev: 'tsc --watch',

@@ -5,7 +5,6 @@ export function getMcpPackageJson(name: string): string {
     description: `A RenreKit MCP extension: ${name}`,
     type: 'module',
     main: './dist/server.js',
-    types: './dist/server.d.ts',
     scripts: {
       build: 'node build.js',
       dev: 'tsc --watch',

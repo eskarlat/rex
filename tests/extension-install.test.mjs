@@ -20,10 +20,10 @@ const CLI_BIN = join(import.meta.dirname, '..', 'packages', 'cli', 'bin', 'renre
 const HELLO_WORLD_EXT = join(import.meta.dirname, '..', 'extensions', 'hello-world');
 
 /**
- * Run a shell command synchronously. Throws on failure.
+ * Run a git command synchronously. Throws on failure.
  */
-function sh(cmd, options = {}) {
-  return execFileSync('/bin/sh', ['-c', cmd], {
+function git(args, options = {}) {
+  return execFileSync('git', args, {
     encoding: 'utf-8',
     timeout: 15_000,
     ...options,
@@ -260,6 +260,7 @@ describe('extension install and server integration', () => {
 
     // 2. Copy hello-world extension to simulate a local install
     const extInstallDir = join(homeDir, 'extensions', 'hello-world@1.0.0');
+    await mkdir(join(homeDir, 'extensions'), { recursive: true });
     await cp(HELLO_WORLD_EXT, extInstallDir, { recursive: true });
   });
 
@@ -399,22 +400,23 @@ describe('git-based extension installation (simulated GitHub)', () => {
 
     // 1. Create a bare git repo simulating a GitHub remote
     await mkdir(bareRepoDir, { recursive: true });
-    sh('git init --bare', { cwd: bareRepoDir });
+    git(['init', '--bare'], { cwd: bareRepoDir });
 
     // 2. Create a temp working repo, commit hello-world extension, tag v1.0.0, push to bare
     const workRepo = await mkdtemp(join(tmpdir(), 'renre-e2e-git-work-'));
-    sh('git init -b main', { cwd: workRepo });
-    sh(
-      'git config user.email "test@test.com" && git config user.name "Test" && git config commit.gpgsign false',
-      { cwd: workRepo },
-    );
+    git(['init', '-b', 'main'], { cwd: workRepo });
+    git(['config', 'user.email', 'test@test.com'], { cwd: workRepo });
+    git(['config', 'user.name', 'Test'], { cwd: workRepo });
+    git(['config', 'commit.gpgsign', 'false'], { cwd: workRepo });
 
     // Copy hello-world extension files into the work repo
     await cp(HELLO_WORLD_EXT, workRepo, { recursive: true });
 
-    sh('git add -A && git commit -m "initial"', { cwd: workRepo });
-    sh('git tag v1.0.0', { cwd: workRepo });
-    sh(`git remote add origin "${bareRepoDir}" && git push origin main --tags`, { cwd: workRepo });
+    git(['add', '-A'], { cwd: workRepo });
+    git(['commit', '-m', 'initial'], { cwd: workRepo });
+    git(['tag', 'v1.0.0'], { cwd: workRepo });
+    git(['remote', 'add', 'origin', bareRepoDir], { cwd: workRepo });
+    git(['push', 'origin', 'main', '--tags'], { cwd: workRepo });
 
     await rm(workRepo, { recursive: true, force: true });
 
