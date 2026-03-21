@@ -8,7 +8,7 @@
  * 4. Local extension installation works end-to-end
  * 5. Installed extensions are visible through the server API (marketplace)
  */
-import { execFile, spawn } from 'node:child_process';
+import { execFile, execFileSync, spawn } from 'node:child_process';
 import { mkdtemp, rm, readFile, writeFile, mkdir, cp } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -18,6 +18,17 @@ import assert from 'node:assert/strict';
 
 const CLI_BIN = join(import.meta.dirname, '..', 'packages', 'cli', 'bin', 'renre-kit.js');
 const HELLO_WORLD_EXT = join(import.meta.dirname, '..', 'extensions', 'hello-world');
+
+/**
+ * Run a shell command synchronously. Throws on failure.
+ */
+function sh(cmd, options = {}) {
+  return execFileSync('/bin/sh', ['-c', cmd], {
+    encoding: 'utf-8',
+    timeout: 15_000,
+    ...options,
+  });
+}
 
 /**
  * Run the CLI with the given arguments and return { stdout, stderr, code }.
@@ -360,6 +371,212 @@ describe('extension install and server integration', () => {
     if (!serverProc || serverProc.exitCode !== null) {
       return;
     }
+
+    serverProc.kill('SIGTERM');
+    const exitCode = await new Promise((resolve) => {
+      serverProc.on('exit', (code) => resolve(code));
+      setTimeout(() => resolve('timeout'), 5000);
+    });
+    assert.notEqual(exitCode, 'timeout', 'Server should exit on SIGTERM');
+  });
+});
+
+// ──────────────────────────────────────────────
+// Test: git-based extension installation (simulates GitHub)
+// ──────────────────────────────────────────────
+
+describe('git-based extension installation (simulated GitHub)', () => {
+  let homeDir;
+  let projectDir;
+  let bareRepoDir;
+  let serverProc;
+  const TEST_PORT = 14_400 + Math.floor(Math.random() * 500);
+
+  before(async () => {
+    homeDir = await mkdtemp(join(tmpdir(), 'renre-e2e-git-home-'));
+    projectDir = await mkdtemp(join(tmpdir(), 'renre-e2e-git-project-'));
+    bareRepoDir = join(homeDir, 'fake-github', 'hello-world.git');
+
+    // 1. Create a bare git repo simulating a GitHub remote
+    await mkdir(bareRepoDir, { recursive: true });
+    sh('git init --bare', { cwd: bareRepoDir });
+
+    // 2. Create a temp working repo, commit hello-world extension, tag v1.0.0, push to bare
+    const workRepo = await mkdtemp(join(tmpdir(), 'renre-e2e-git-work-'));
+    sh('git init -b main', { cwd: workRepo });
+    sh(
+      'git config user.email "test@test.com" && git config user.name "Test" && git config commit.gpgsign false',
+      { cwd: workRepo },
+    );
+
+    // Copy hello-world extension files into the work repo
+    await cp(HELLO_WORLD_EXT, workRepo, { recursive: true });
+
+    sh('git add -A && git commit -m "initial"', { cwd: workRepo });
+    sh('git tag v1.0.0', { cwd: workRepo });
+    sh(`git remote add origin "${bareRepoDir}" && git push origin main --tags`, { cwd: workRepo });
+
+    await rm(workRepo, { recursive: true, force: true });
+
+    // 3. Set up a registry that points to our local bare repo (file:// protocol for proper clone)
+    const bareRepoUrl = `file://${bareRepoDir}`;
+    const registryDir = join(homeDir, 'registries', 'local', '.renre-kit');
+    await mkdir(registryDir, { recursive: true });
+    await writeFile(
+      join(registryDir, 'extensions.json'),
+      JSON.stringify({
+        extensions: [
+          {
+            name: 'hello-world',
+            description: 'Hello World extension',
+            gitUrl: bareRepoUrl,
+            latestVersion: '1.0.0',
+            type: 'standard',
+            icon: '',
+            author: 'test',
+          },
+        ],
+      }),
+    );
+
+    // Write a .fetched_at so the registry looks fresh
+    await writeFile(join(homeDir, 'registries', 'local', '.fetched_at'), new Date().toISOString());
+
+    // 4. Set up global config with our local registry
+    await mkdir(homeDir, { recursive: true });
+    await writeFile(
+      join(homeDir, 'config.json'),
+      JSON.stringify({
+        registries: [
+          {
+            name: 'local',
+            url: bareRepoDir,
+            priority: 1,
+            cacheTTL: 86400,
+          },
+        ],
+      }),
+    );
+
+    // 5. Initialize a project
+    const initResult = await runCli(['init'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+    assert.equal(initResult.code, 0, `init should succeed: ${initResult.stderr}`);
+  });
+
+  after(async () => {
+    if (serverProc && serverProc.exitCode === null) {
+      serverProc.kill('SIGTERM');
+      await new Promise((resolve) => {
+        serverProc.on('exit', () => resolve(true));
+        setTimeout(() => {
+          if (serverProc.exitCode === null) serverProc.kill('SIGKILL');
+          resolve(false);
+        }, 3000);
+      });
+    }
+    await rm(homeDir, { recursive: true, force: true });
+    await rm(projectDir, { recursive: true, force: true });
+  });
+
+  it('ext:add clones extension from git repo (like GitHub)', async () => {
+    const addResult = await runCli(['ext:add', 'hello-world'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+
+    assert.equal(addResult.code, 0, `ext:add should succeed: ${addResult.stderr}`);
+
+    // Verify extension was cloned into the expected directory
+    const extDir = join(homeDir, 'extensions', 'hello-world@1.0.0');
+    assert.ok(existsSync(extDir), 'Extension directory should exist');
+    assert.ok(
+      existsSync(join(extDir, 'manifest.json')),
+      'manifest.json should exist in cloned extension',
+    );
+    assert.ok(
+      existsSync(join(extDir, 'dist', 'index.js')),
+      'dist/index.js should exist in cloned extension',
+    );
+
+    // Verify manifest content
+    const manifest = JSON.parse(await readFile(join(extDir, 'manifest.json'), 'utf-8'));
+    assert.equal(manifest.name, 'hello-world');
+    assert.equal(manifest.version, '1.0.0');
+    assert.equal(manifest.type, 'standard');
+  });
+
+  it('ext:list shows the installed extension', async () => {
+    const listResult = await runCli(['ext:list'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+
+    assert.equal(listResult.code, 0, 'ext:list should succeed');
+    assert.ok(
+      listResult.stdout.includes('hello-world'),
+      'ext:list should show hello-world',
+    );
+  });
+
+  it('server exposes git-installed extension via marketplace API', async () => {
+    serverProc = spawn(
+      process.execPath,
+      [CLI_BIN, 'ui', '--port', String(TEST_PORT), '--no-browser'],
+      {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: {
+          ...process.env,
+          RENRE_KIT_HOME: homeDir,
+        },
+        cwd: projectDir,
+      },
+    );
+
+    let output = '';
+    serverProc.stdout.on('data', (chunk) => {
+      output += chunk.toString();
+    });
+    serverProc.stderr.on('data', (chunk) => {
+      output += chunk.toString();
+    });
+
+    const ready = await waitForPort(TEST_PORT, 10_000);
+    if (!ready) {
+      console.log('Server output:', output);
+    }
+    assert.ok(ready, `Server should be listening on port ${TEST_PORT}`);
+
+    // Query the marketplace API — extension should appear
+    const res = await fetch(`http://127.0.0.1:${TEST_PORT}/api/marketplace`, {
+      headers: { 'X-RenreKit-Project': projectDir },
+      signal: AbortSignal.timeout(3000),
+    });
+    assert.ok(res.status < 500, `Marketplace API should respond, got ${res.status}`);
+
+    const data = await res.json();
+    const allExtensions = [...data.active, ...data.installed, ...data.available];
+    const helloWorld = allExtensions.find((e) => e.name === 'hello-world');
+    assert.ok(helloWorld, 'hello-world should appear in marketplace data');
+    assert.equal(helloWorld.version, '1.0.0', 'Version should be 1.0.0');
+    assert.equal(helloWorld.type, 'standard', 'Type should be standard');
+  });
+
+  it('server serves extension command handler dist file', async () => {
+    if (!serverProc || serverProc.exitCode !== null) return;
+
+    // Verify the greet command handler exists in the installed extension
+    const extDir = join(homeDir, 'extensions', 'hello-world@1.0.0');
+    assert.ok(
+      existsSync(join(extDir, 'dist', 'commands', 'greet.js')),
+      'greet command handler should exist in dist',
+    );
+  });
+
+  it('server shuts down cleanly after git-install test', async () => {
+    if (!serverProc || serverProc.exitCode !== null) return;
 
     serverProc.kill('SIGTERM');
     const exitCode = await new Promise((resolve) => {
