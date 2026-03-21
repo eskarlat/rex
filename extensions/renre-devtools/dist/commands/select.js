@@ -51,6 +51,19 @@ async function withBrowser(projectPath, fn) {
   }
 }
 
+// src/shared/browser-scripts.ts
+function queryElements(sel) {
+  const els = document.querySelectorAll(sel);
+  return Array.from(els).map((el, i) => ({
+    index: i,
+    tag: el.tagName.toLowerCase(),
+    id: el.id || "",
+    classes: Array.from(el.classList).join(" "),
+    text: (el.textContent?.trim() ?? "").slice(0, 80),
+    attrs: Array.from(el.attributes).filter((a) => !["id", "class"].includes(a.name)).map((a) => `${a.name}="${a.value}"`).join(", ")
+  }));
+}
+
 // src/shared/formatters.ts
 function markdownTable(headers, rows) {
   const separator = headers.map(() => "---");
@@ -67,17 +80,6 @@ function truncate(text, maxLength) {
 }
 
 // src/commands/select.ts
-function queryElements(sel) {
-  const els = document.querySelectorAll(sel);
-  return Array.from(els).map((el, i) => ({
-    index: i,
-    tag: el.tagName.toLowerCase(),
-    id: el.id || "",
-    classes: Array.from(el.classList).join(" "),
-    text: (el.textContent?.trim() ?? "").slice(0, 80),
-    attrs: Array.from(el.attributes).filter((a) => !["id", "class"].includes(a.name)).map((a) => `${a.name}="${a.value}"`).join(", ")
-  }));
-}
 async function select(context) {
   const selector = context.args.selector;
   if (typeof selector !== "string" || selector.length === 0) {

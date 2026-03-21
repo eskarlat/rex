@@ -1,4 +1,5 @@
 import { withBrowser } from '../shared/connection.js';
+import { getComputedStyles } from '../shared/browser-scripts.js';
 import { markdownTable } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
@@ -40,34 +41,7 @@ export default async function styles(context: ExecutionContext): Promise<Command
   const all = context.args.all === true;
 
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const computed = await page.evaluate(
-      /* istanbul ignore next -- browser-context */ (sel, keyProps, showAll) => {
-        const el = document.querySelector(sel);
-        if (!el) return null;
-
-        const cs = getComputedStyle(el);
-        const result: Array<{ property: string; value: string }> = [];
-
-        if (showAll) {
-          for (let i = 0; i < cs.length; i++) {
-            const prop = cs[i];
-            result.push({ property: prop, value: cs.getPropertyValue(prop) });
-          }
-        } else {
-          for (const prop of keyProps) {
-            const val = cs.getPropertyValue(prop);
-            if (val && val !== 'none' && val !== 'normal' && val !== 'auto') {
-              result.push({ property: prop, value: val });
-            }
-          }
-        }
-
-        return result;
-      },
-      selector,
-      KEY_PROPERTIES,
-      all
-    );
+    const computed = await page.evaluate(getComputedStyles, selector, KEY_PROPERTIES, all);
 
     if (!computed) {
       return {

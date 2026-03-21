@@ -1,4 +1,5 @@
 import { withBrowser } from '../shared/connection.js';
+import { getStorageEntries } from '../shared/browser-scripts.js';
 import { markdownTable, truncate } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
@@ -7,17 +8,7 @@ export default async function storage(context: ExecutionContext): Promise<Comman
     typeof context.args.type === 'string' ? context.args.type : 'local';
 
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const entries = await page.evaluate(/* istanbul ignore next -- browser-context */ (type) => {
-      const store = type === 'session' ? sessionStorage : localStorage;
-      const result: Array<{ key: string; value: string }> = [];
-      for (let i = 0; i < store.length; i++) {
-        const key = store.key(i);
-        if (key) {
-          result.push({ key, value: store.getItem(key) ?? '' });
-        }
-      }
-      return result;
-    }, storageType);
+    const entries = await page.evaluate(getStorageEntries, storageType);
 
     const label = storageType === 'session' ? 'sessionStorage' : 'localStorage';
 

@@ -1,29 +1,7 @@
 import { withBrowser } from '../shared/connection.js';
+import { queryElements } from '../shared/browser-scripts.js';
 import { markdownTable, truncate } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
-
-/* istanbul ignore next -- browser-context function */
-function queryElements(sel: string): Array<{
-  index: number;
-  tag: string;
-  id: string;
-  classes: string;
-  text: string;
-  attrs: string;
-}> {
-  const els = document.querySelectorAll(sel);
-  return Array.from(els).map((el, i) => ({
-    index: i,
-    tag: el.tagName.toLowerCase(),
-    id: el.id || '',
-    classes: Array.from(el.classList).join(' '),
-    text: (el.textContent?.trim() ?? '').slice(0, 80),
-    attrs: Array.from(el.attributes)
-      .filter((a) => !['id', 'class'].includes(a.name))
-      .map((a) => `${a.name}="${a.value}"`)
-      .join(', '),
-  }));
-}
 
 export default async function select(context: ExecutionContext): Promise<CommandResult> {
   const selector = context.args.selector;

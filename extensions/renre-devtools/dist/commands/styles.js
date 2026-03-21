@@ -51,6 +51,30 @@ async function withBrowser(projectPath, fn) {
   }
 }
 
+// src/shared/browser-scripts.ts
+function getComputedStyles(sel, keyProps, showAll) {
+  const el = document.querySelector(sel);
+  if (!el) return null;
+  const cs = getComputedStyle(el);
+  const result = [];
+  if (showAll) {
+    for (let i = 0; i < cs.length; i++) {
+      const prop = cs[i];
+      if (prop) {
+        result.push({ property: prop, value: cs.getPropertyValue(prop) });
+      }
+    }
+  } else {
+    for (const prop of keyProps) {
+      const val = cs.getPropertyValue(prop);
+      if (val && val !== "none" && val !== "normal" && val !== "auto") {
+        result.push({ property: prop, value: val });
+      }
+    }
+  }
+  return result;
+}
+
 // src/shared/formatters.ts
 function markdownTable(headers, rows) {
   const separator = headers.map(() => "---");
@@ -98,32 +122,7 @@ async function styles(context) {
   }
   const all = context.args.all === true;
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const computed = await page.evaluate(
-      /* istanbul ignore next -- browser-context */
-      (sel, keyProps, showAll) => {
-        const el = document.querySelector(sel);
-        if (!el) return null;
-        const cs = getComputedStyle(el);
-        const result = [];
-        if (showAll) {
-          for (let i = 0; i < cs.length; i++) {
-            const prop = cs[i];
-            result.push({ property: prop, value: cs.getPropertyValue(prop) });
-          }
-        } else {
-          for (const prop of keyProps) {
-            const val = cs.getPropertyValue(prop);
-            if (val && val !== "none" && val !== "normal" && val !== "auto") {
-              result.push({ property: prop, value: val });
-            }
-          }
-        }
-        return result;
-      },
-      selector,
-      KEY_PROPERTIES,
-      all
-    );
+    const computed = await page.evaluate(getComputedStyles, selector, KEY_PROPERTIES, all);
     if (!computed) {
       return {
         output: `No element found for selector: \`${selector}\``,

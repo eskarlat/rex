@@ -51,6 +51,31 @@ async function withBrowser(projectPath, fn) {
   }
 }
 
+// src/shared/browser-scripts.ts
+function serializeNode(node, currentDepth, truncateText) {
+  if (currentDepth <= 0) return "...";
+  const tag = node.tagName.toLowerCase();
+  const attrs = Array.from(node.attributes).map((a) => `${a.name}="${a.value}"`).join(" ");
+  const open = attrs ? `<${tag} ${attrs}>` : `<${tag}>`;
+  if (node.children.length === 0) {
+    let text = node.textContent?.trim() ?? "";
+    if (truncateText !== void 0) text = text.slice(0, truncateText);
+    return text ? `${open}${text}</${tag}>` : `${open}</${tag}>`;
+  }
+  const children = Array.from(node.children).map((child) => serializeNode(child, currentDepth - 1, truncateText)).join("\n");
+  return `${open}
+${children}
+</${tag}>`;
+}
+function serializeSubtree(sel, maxDepth) {
+  const el = document.querySelector(sel);
+  if (!el) return `No element found for selector: ${sel}`;
+  return serializeNode(el, maxDepth);
+}
+function serializeFullPage(maxDepth) {
+  return serializeNode(document.documentElement, maxDepth, 100);
+}
+
 // src/shared/formatters.ts
 function markdownCodeBlock(content, lang = "") {
   return `\`\`\`${lang}
@@ -59,42 +84,6 @@ ${content}
 }
 
 // src/commands/dom.ts
-function serializeSubtree(sel, maxDepth) {
-  function serialize(node, currentDepth) {
-    if (currentDepth <= 0) return "...";
-    const tag = node.tagName.toLowerCase();
-    const attrs = Array.from(node.attributes).map((a) => `${a.name}="${a.value}"`).join(" ");
-    const open = attrs ? `<${tag} ${attrs}>` : `<${tag}>`;
-    if (node.children.length === 0) {
-      const text = node.textContent?.trim() ?? "";
-      return text ? `${open}${text}</${tag}>` : `${open}</${tag}>`;
-    }
-    const children = Array.from(node.children).map((child) => serialize(child, currentDepth - 1)).join("\n");
-    return `${open}
-${children}
-</${tag}>`;
-  }
-  const el = document.querySelector(sel);
-  if (!el) return `No element found for selector: ${sel}`;
-  return serialize(el, maxDepth);
-}
-function serializeFullPage(maxDepth) {
-  function serialize(node, currentDepth) {
-    if (currentDepth <= 0) return "...";
-    const tag = node.tagName.toLowerCase();
-    const attrs = Array.from(node.attributes).map((a) => `${a.name}="${a.value}"`).join(" ");
-    const open = attrs ? `<${tag} ${attrs}>` : `<${tag}>`;
-    if (node.children.length === 0) {
-      const text = node.textContent?.trim().slice(0, 100) ?? "";
-      return text ? `${open}${text}</${tag}>` : `${open}</${tag}>`;
-    }
-    const children = Array.from(node.children).map((child) => serialize(child, currentDepth - 1)).join("\n");
-    return `${open}
-${children}
-</${tag}>`;
-  }
-  return serialize(document.documentElement, maxDepth);
-}
 async function dom(context) {
   const selector = typeof context.args.selector === "string" ? context.args.selector : null;
   const depth = typeof context.args.depth === "number" ? context.args.depth : 5;

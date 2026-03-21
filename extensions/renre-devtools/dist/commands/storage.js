@@ -51,6 +51,19 @@ async function withBrowser(projectPath, fn) {
   }
 }
 
+// src/shared/browser-scripts.ts
+function getStorageEntries(type) {
+  const store = type === "session" ? sessionStorage : localStorage;
+  const result = [];
+  for (let i = 0; i < store.length; i++) {
+    const key = store.key(i);
+    if (key) {
+      result.push({ key, value: store.getItem(key) ?? "" });
+    }
+  }
+  return result;
+}
+
 // src/shared/formatters.ts
 function markdownTable(headers, rows) {
   const separator = headers.map(() => "---");
@@ -70,21 +83,7 @@ function truncate(text, maxLength) {
 async function storage(context) {
   const storageType = typeof context.args.type === "string" ? context.args.type : "local";
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const entries = await page.evaluate(
-      /* istanbul ignore next -- browser-context */
-      (type) => {
-        const store = type === "session" ? sessionStorage : localStorage;
-        const result = [];
-        for (let i = 0; i < store.length; i++) {
-          const key = store.key(i);
-          if (key) {
-            result.push({ key, value: store.getItem(key) ?? "" });
-          }
-        }
-        return result;
-      },
-      storageType
-    );
+    const entries = await page.evaluate(getStorageEntries, storageType);
     const label = storageType === "session" ? "sessionStorage" : "localStorage";
     if (entries.length === 0) {
       return { output: `${label} is empty.`, exitCode: 0 };
