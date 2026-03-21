@@ -164,4 +164,100 @@ describe('network', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('3)');
   });
+
+  it('respects offset parameter', () => {
+    const entries = Array.from({ length: 5 }, (_, i) =>
+      JSON.stringify({
+        timestamp: `2024-01-15T10:00:0${String(i)}.000Z`,
+        method: 'GET',
+        url: `https://api.example.com/item${String(i)}`,
+        status: 200,
+        type: 'XHR',
+        size: 100,
+        duration: 50,
+      })
+    );
+    writeFileSync(NETWORK_LOG, entries.join('\n'));
+
+    // Offset 3 means skip first 3 lines, leaving 2 entries
+    const result = network(makeContext({ offset: 3 }));
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Network Requests (2)');
+    expect(result.output).toContain('item3');
+    expect(result.output).toContain('item4');
+    expect(result.output).not.toContain('item0');
+  });
+
+  it('returns json format when format=json', () => {
+    const entries = [
+      JSON.stringify({
+        timestamp: '2024-01-15T10:00:00.000Z',
+        method: 'GET',
+        url: 'https://api.example.com/data',
+        status: 200,
+        type: 'XHR',
+        size: 1024,
+        duration: 150,
+      }),
+      JSON.stringify({
+        timestamp: '2024-01-15T10:00:01.000Z',
+        method: 'POST',
+        url: 'https://api.example.com/submit',
+        status: 201,
+        type: 'XHR',
+        size: 256,
+        duration: 300,
+      }),
+    ];
+    writeFileSync(NETWORK_LOG, entries.join('\n'));
+
+    const result = network(makeContext({ format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toHaveLength(2);
+    expect(output.total).toBe(2);
+    expect(output.entries[0].method).toBe('GET');
+    expect(output.entries[1].method).toBe('POST');
+  });
+
+  it('returns empty json when no log file and format=json', () => {
+    rmSync(NETWORK_LOG, { force: true });
+    const result = network(makeContext({ format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toEqual([]);
+    expect(output.total).toBe(0);
+  });
+
+  it('returns empty json when log file is empty and format=json', () => {
+    writeFileSync(NETWORK_LOG, '');
+    const result = network(makeContext({ format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toEqual([]);
+    expect(output.total).toBe(0);
+  });
+
+  it('combines offset, limit, and format=json', () => {
+    const entries = Array.from({ length: 10 }, (_, i) =>
+      JSON.stringify({
+        timestamp: `2024-01-15T10:00:0${String(i)}.000Z`,
+        method: 'GET',
+        url: `https://api.example.com/item${String(i)}`,
+        status: 200,
+        type: 'XHR',
+        size: 100,
+        duration: 50,
+      })
+    );
+    writeFileSync(NETWORK_LOG, entries.join('\n'));
+
+    const result = network(makeContext({ offset: 2, limit: 3, format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toHaveLength(3);
+    expect(output.total).toBe(10);
+    // offset=2 skips first 2, then limit=3 takes last 3 of remaining 8 (indices 7,8,9)
+    expect(output.entries[0].url).toContain('item7');
+  });
 });

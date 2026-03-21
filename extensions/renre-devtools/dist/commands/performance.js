@@ -71,28 +71,34 @@ async function performance(context) {
   return withBrowser(context.projectPath, async (_browser, page) => {
     const client = await page.createCDPSession();
     const { metrics } = await client.send("Performance.getMetrics");
-    const timing = await page.evaluate(() => {
-      const nav = globalThis.performance.getEntriesByType(
-        "navigation"
-      )[0];
-      if (!nav) return null;
-      return {
-        dns: nav.domainLookupEnd - nav.domainLookupStart,
-        tcp: nav.connectEnd - nav.connectStart,
-        ttfb: nav.responseStart - nav.requestStart,
-        download: nav.responseEnd - nav.responseStart,
-        domInteractive: nav.domInteractive - nav.fetchStart,
-        domComplete: nav.domComplete - nav.fetchStart,
-        loadEvent: nav.loadEventEnd - nav.fetchStart
-      };
-    });
-    const vitals = await page.evaluate(() => {
-      const entries = globalThis.performance.getEntriesByType("paint");
-      const fcp = entries.find((e) => e.name === "first-contentful-paint");
-      return {
-        fcp: fcp?.startTime ?? null
-      };
-    });
+    const timing = await page.evaluate(
+      /* istanbul ignore next -- browser-context */
+      () => {
+        const nav = globalThis.performance.getEntriesByType(
+          "navigation"
+        )[0];
+        if (!nav) return null;
+        return {
+          dns: nav.domainLookupEnd - nav.domainLookupStart,
+          tcp: nav.connectEnd - nav.connectStart,
+          ttfb: nav.responseStart - nav.requestStart,
+          download: nav.responseEnd - nav.responseStart,
+          domInteractive: nav.domInteractive - nav.fetchStart,
+          domComplete: nav.domComplete - nav.fetchStart,
+          loadEvent: nav.loadEventEnd - nav.fetchStart
+        };
+      }
+    );
+    const vitals = await page.evaluate(
+      /* istanbul ignore next -- browser-context */
+      () => {
+        const entries = globalThis.performance.getEntriesByType("paint");
+        const fcp = entries.find((e) => e.name === "first-contentful-paint");
+        return {
+          fcp: fcp?.startTime ?? null
+        };
+      }
+    );
     const lines = ["## Performance Metrics", ""];
     if (vitals.fcp !== null || timing) {
       const vitalRows = [];

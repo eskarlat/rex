@@ -90,4 +90,75 @@ describe('console', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('3)');
   });
+
+  it('respects offset parameter', () => {
+    const entries = Array.from({ length: 5 }, (_, i) =>
+      JSON.stringify({
+        timestamp: `2024-01-15T10:00:0${String(i)}.000Z`,
+        level: 'log',
+        text: `Message ${String(i)}`,
+      })
+    );
+    writeFileSync(CONSOLE_LOG, entries.join('\n'));
+
+    // Offset 3 means skip first 3 lines, leaving 2 entries
+    const result = consoleCommand(makeContext({ offset: 3 }));
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Console Messages (2)');
+    expect(result.output).toContain('Message 3');
+    expect(result.output).toContain('Message 4');
+    expect(result.output).not.toContain('Message 0');
+  });
+
+  it('returns json format when format=json', () => {
+    const entries = [
+      JSON.stringify({ timestamp: '2024-01-15T10:00:00.000Z', level: 'log', text: 'Hello' }),
+      JSON.stringify({ timestamp: '2024-01-15T10:00:01.000Z', level: 'error', text: 'Oops' }),
+    ];
+    writeFileSync(CONSOLE_LOG, entries.join('\n'));
+
+    const result = consoleCommand(makeContext({ format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toHaveLength(2);
+    expect(output.total).toBe(2);
+    expect(output.entries[0].text).toBe('Hello');
+    expect(output.entries[1].text).toBe('Oops');
+  });
+
+  it('returns empty json when no log file and format=json', () => {
+    const result = consoleCommand(makeContext({ format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toEqual([]);
+    expect(output.total).toBe(0);
+  });
+
+  it('returns empty json when log file is empty and format=json', () => {
+    writeFileSync(CONSOLE_LOG, '');
+    const result = consoleCommand(makeContext({ format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toEqual([]);
+    expect(output.total).toBe(0);
+  });
+
+  it('combines offset, limit, and format=json', () => {
+    const entries = Array.from({ length: 10 }, (_, i) =>
+      JSON.stringify({
+        timestamp: `2024-01-15T10:00:0${String(i)}.000Z`,
+        level: 'log',
+        text: `Message ${String(i)}`,
+      })
+    );
+    writeFileSync(CONSOLE_LOG, entries.join('\n'));
+
+    const result = consoleCommand(makeContext({ offset: 2, limit: 3, format: 'json' }));
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.entries).toHaveLength(3);
+    expect(output.total).toBe(10);
+    // offset=2 skips first 2, then limit=3 takes last 3 of remaining 8 (indices 7,8,9)
+    expect(output.entries[0].text).toBe('Message 7');
+  });
 });

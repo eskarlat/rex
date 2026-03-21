@@ -16,6 +16,12 @@ export default defineConfig({
         'src/index.ts',
         'src/ui/**',
       ],
+      thresholds: {
+        statements: 86,
+        branches: 86,
+        functions: 86,
+        lines: 86,
+      },
     },
   },
 });

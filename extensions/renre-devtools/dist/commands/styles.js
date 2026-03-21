@@ -99,6 +99,7 @@ async function styles(context) {
   const all = context.args.all === true;
   return withBrowser(context.projectPath, async (_browser, page) => {
     const computed = await page.evaluate(
+      /* istanbul ignore next -- browser-context */
       (sel, keyProps, showAll) => {
         const el = document.querySelector(sel);
         if (!el) return null;

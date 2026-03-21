@@ -7,7 +7,7 @@ const mockDisconnect = vi.fn();
 
 vi.mock('puppeteer', () => ({
   default: {
-    connect: mockConnect,
+    connect: (...args: unknown[]) => mockConnect(...args),
   },
 }));
 

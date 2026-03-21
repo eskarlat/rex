@@ -41,7 +41,7 @@ export default async function styles(context: ExecutionContext): Promise<Command
 
   return withBrowser(context.projectPath, async (_browser, page) => {
     const computed = await page.evaluate(
-      (sel, keyProps, showAll) => {
+      /* istanbul ignore next -- browser-context */ (sel, keyProps, showAll) => {
         const el = document.querySelector(sel);
         if (!el) return null;
 

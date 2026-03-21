@@ -2,6 +2,7 @@ import { withBrowser } from '../shared/connection.js';
 import { markdownTable, truncate } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
+/* istanbul ignore next -- browser-context function */
 function queryElements(sel: string): Array<{
   index: number;
   tag: string;

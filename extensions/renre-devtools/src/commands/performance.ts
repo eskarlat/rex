@@ -12,7 +12,7 @@ export default async function performance(context: ExecutionContext): Promise<Co
     };
 
     // Get Navigation Timing from the page
-    const timing = await page.evaluate(() => {
+    const timing = await page.evaluate(/* istanbul ignore next -- browser-context */ () => {
       const nav = globalThis.performance.getEntriesByType(
         'navigation'
       )[0] as PerformanceNavigationTiming | undefined;
@@ -29,7 +29,7 @@ export default async function performance(context: ExecutionContext): Promise<Co
     });
 
     // Get Core Web Vitals via PerformanceObserver (LCP, CLS)
-    const vitals = await page.evaluate(() => {
+    const vitals = await page.evaluate(/* istanbul ignore next -- browser-context */ () => {
       const entries = globalThis.performance.getEntriesByType('paint');
       const fcp = entries.find((e) => e.name === 'first-contentful-paint');
       return {

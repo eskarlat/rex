@@ -8,8 +8,13 @@ import {
   deleteState,
   ensureBrowserRunning,
   getLogDir,
+  getScreenshotDir,
+  readGlobalSession,
+  writeGlobalSession,
+  deleteGlobalSession,
+  isProcessAlive,
 } from './state.js';
-import type { BrowserState } from './types.js';
+import type { BrowserState, GlobalBrowserSession } from './types.js';
 
 const TEST_DIR = join(tmpdir(), 'renre-devtools-test-' + Date.now().toString());
 
@@ -101,5 +106,153 @@ describe('getLogDir', () => {
     expect(logDir).toBe(
       join(TEST_DIR, '.renre-kit', 'storage', 'renre-devtools')
     );
+  });
+});
+
+describe('getScreenshotDir', () => {
+  it('returns the screenshots subdirectory path', () => {
+    const ssDir = getScreenshotDir(TEST_DIR);
+    expect(ssDir).toBe(
+      join(TEST_DIR, '.renre-kit', 'storage', 'renre-devtools', 'screenshots')
+    );
+  });
+});
+
+describe('readGlobalSession', () => {
+  const GLOBAL_DIR = join(tmpdir(), 'renre-devtools-global-test-' + Date.now().toString());
+  const originalEnv = process.env.RENRE_KIT_HOME;
+
+  beforeEach(() => {
+    process.env.RENRE_KIT_HOME = GLOBAL_DIR;
+    mkdirSync(GLOBAL_DIR, { recursive: true });
+  });
+
+  afterEach(() => {
+    process.env.RENRE_KIT_HOME = originalEnv;
+    rmSync(GLOBAL_DIR, { recursive: true, force: true });
+  });
+
+  it('returns null when no session file exists', () => {
+    expect(readGlobalSession()).toBeNull();
+  });
+
+  it('reads and parses existing global session', () => {
+    const session: GlobalBrowserSession = {
+      wsEndpoint: 'ws://127.0.0.1:9222/devtools/browser/abc',
+      pid: 42,
+      port: 9222,
+      projectPath: '/tmp/proj',
+      launchedAt: '2024-01-01T00:00:00Z',
+      lastSeenAt: '2024-01-01T00:01:00Z',
+      headless: true,
+      networkLogPath: '/tmp/net.jsonl',
+      consoleLogPath: '/tmp/con.jsonl',
+    };
+    writeGlobalSession(session);
+    expect(readGlobalSession()).toEqual(session);
+  });
+});
+
+describe('writeGlobalSession', () => {
+  const GLOBAL_DIR = join(tmpdir(), 'renre-devtools-global-write-test-' + Date.now().toString());
+  const originalEnv = process.env.RENRE_KIT_HOME;
+
+  beforeEach(() => {
+    process.env.RENRE_KIT_HOME = GLOBAL_DIR;
+  });
+
+  afterEach(() => {
+    process.env.RENRE_KIT_HOME = originalEnv;
+    rmSync(GLOBAL_DIR, { recursive: true, force: true });
+  });
+
+  it('creates directory and writes session file', () => {
+    const session: GlobalBrowserSession = {
+      wsEndpoint: 'ws://127.0.0.1:9222',
+      pid: 100,
+      port: 9222,
+      projectPath: '/tmp/proj',
+      launchedAt: '2024-01-01T00:00:00Z',
+      lastSeenAt: '2024-01-01T00:00:00Z',
+      headless: false,
+      networkLogPath: '/tmp/net.jsonl',
+      consoleLogPath: '/tmp/con.jsonl',
+    };
+    writeGlobalSession(session);
+
+    const sessionPath = join(GLOBAL_DIR, 'browser-session.json');
+    expect(existsSync(sessionPath)).toBe(true);
+    const raw = readFileSync(sessionPath, 'utf-8');
+    expect(JSON.parse(raw)).toEqual(session);
+  });
+
+  it('overwrites existing session', () => {
+    const session1: GlobalBrowserSession = {
+      wsEndpoint: 'ws://127.0.0.1:9222',
+      pid: 100,
+      port: 9222,
+      projectPath: '/tmp/proj',
+      launchedAt: '2024-01-01T00:00:00Z',
+      lastSeenAt: '2024-01-01T00:00:00Z',
+      headless: false,
+      networkLogPath: '/tmp/net.jsonl',
+      consoleLogPath: '/tmp/con.jsonl',
+    };
+    writeGlobalSession(session1);
+
+    const session2 = { ...session1, pid: 200 };
+    writeGlobalSession(session2);
+
+    const result = readGlobalSession();
+    expect(result?.pid).toBe(200);
+  });
+});
+
+describe('deleteGlobalSession', () => {
+  const GLOBAL_DIR = join(tmpdir(), 'renre-devtools-global-del-test-' + Date.now().toString());
+  const originalEnv = process.env.RENRE_KIT_HOME;
+
+  beforeEach(() => {
+    process.env.RENRE_KIT_HOME = GLOBAL_DIR;
+    mkdirSync(GLOBAL_DIR, { recursive: true });
+  });
+
+  afterEach(() => {
+    process.env.RENRE_KIT_HOME = originalEnv;
+    rmSync(GLOBAL_DIR, { recursive: true, force: true });
+  });
+
+  it('deletes existing session file', () => {
+    const session: GlobalBrowserSession = {
+      wsEndpoint: 'ws://127.0.0.1:9222',
+      pid: 100,
+      port: 9222,
+      projectPath: '/tmp/proj',
+      launchedAt: '2024-01-01T00:00:00Z',
+      lastSeenAt: '2024-01-01T00:00:00Z',
+      headless: false,
+      networkLogPath: '/tmp/net.jsonl',
+      consoleLogPath: '/tmp/con.jsonl',
+    };
+    writeGlobalSession(session);
+    expect(readGlobalSession()).not.toBeNull();
+
+    deleteGlobalSession();
+    expect(readGlobalSession()).toBeNull();
+  });
+
+  it('does not throw when session file does not exist', () => {
+    expect(() => deleteGlobalSession()).not.toThrow();
+  });
+});
+
+describe('isProcessAlive', () => {
+  it('returns true for current process PID', () => {
+    expect(isProcessAlive(process.pid)).toBe(true);
+  });
+
+  it('returns false for a non-existent PID', () => {
+    // Use a very high PID that is extremely unlikely to exist
+    expect(isProcessAlive(4294967)).toBe(false);
   });
 });

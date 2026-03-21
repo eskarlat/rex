@@ -36,7 +36,7 @@ export default async function selected(context: ExecutionContext): Promise<Comma
     const page = await getActivePage(browser);
 
     // Use the saved selector to get current state of the element
-    const info = await page.evaluate((sel) => {
+    const info = await page.evaluate(/* istanbul ignore next -- browser-context */ (sel) => {
       const el = document.querySelector(sel);
       if (!el) return null;
 

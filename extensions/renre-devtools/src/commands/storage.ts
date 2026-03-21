@@ -7,7 +7,7 @@ export default async function storage(context: ExecutionContext): Promise<Comman
     typeof context.args.type === 'string' ? context.args.type : 'local';
 
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const entries = await page.evaluate((type) => {
+    const entries = await page.evaluate(/* istanbul ignore next -- browser-context */ (type) => {
       const store = type === 'session' ? sessionStorage : localStorage;
       const result: Array<{ key: string; value: string }> = [];
       for (let i = 0; i < store.length; i++) {

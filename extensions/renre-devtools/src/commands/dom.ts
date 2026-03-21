@@ -5,6 +5,7 @@ import type { ExecutionContext, CommandResult } from '../shared/types.js';
 // Serialization functions are passed to page.evaluate() and run in the browser context.
 // They must be self-contained — cannot reference outer scope.
 
+/* istanbul ignore next -- browser-context function */
 function serializeSubtree(sel: string, maxDepth: number): string {
   function serialize(node: Element, currentDepth: number): string {
     if (currentDepth <= 0) return '...';
@@ -30,6 +31,7 @@ function serializeSubtree(sel: string, maxDepth: number): string {
   return serialize(el, maxDepth);
 }
 
+/* istanbul ignore next -- browser-context function */
 function serializeFullPage(maxDepth: number): string {
   function serialize(node: Element, currentDepth: number): string {
     if (currentDepth <= 0) return '...';

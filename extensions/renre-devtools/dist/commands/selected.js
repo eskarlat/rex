@@ -81,39 +81,43 @@ async function selected(context) {
   const browser = await connectBrowser(context.projectPath);
   try {
     const page = await getActivePage(browser);
-    const info = await page.evaluate((sel) => {
-      const el = document.querySelector(sel);
-      if (!el) return null;
-      const rect = el.getBoundingClientRect();
-      const cs = getComputedStyle(el);
-      return {
-        tag: el.tagName.toLowerCase(),
-        id: el.id,
-        classes: Array.from(el.classList).join(" "),
-        text: (el.textContent ?? "").trim().slice(0, 200),
-        html: el.outerHTML.slice(0, 500),
-        attrs: Array.from(el.attributes).map((a) => ({
-          name: a.name,
-          value: a.value
-        })),
-        rect: {
-          x: Math.round(rect.x),
-          y: Math.round(rect.y),
-          width: Math.round(rect.width),
-          height: Math.round(rect.height)
-        },
-        styles: {
-          display: cs.display,
-          position: cs.position,
-          color: cs.color,
-          backgroundColor: cs.backgroundColor,
-          fontSize: cs.fontSize,
-          fontWeight: cs.fontWeight
-        },
-        childCount: el.children.length,
-        visible: rect.width > 0 && rect.height > 0
-      };
-    }, selectedElement.selector);
+    const info = await page.evaluate(
+      /* istanbul ignore next -- browser-context */
+      (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        return {
+          tag: el.tagName.toLowerCase(),
+          id: el.id,
+          classes: Array.from(el.classList).join(" "),
+          text: (el.textContent ?? "").trim().slice(0, 200),
+          html: el.outerHTML.slice(0, 500),
+          attrs: Array.from(el.attributes).map((a) => ({
+            name: a.name,
+            value: a.value
+          })),
+          rect: {
+            x: Math.round(rect.x),
+            y: Math.round(rect.y),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+          },
+          styles: {
+            display: cs.display,
+            position: cs.position,
+            color: cs.color,
+            backgroundColor: cs.backgroundColor,
+            fontSize: cs.fontSize,
+            fontWeight: cs.fontWeight
+          },
+          childCount: el.children.length,
+          visible: rect.width > 0 && rect.height > 0
+        };
+      },
+      selectedElement.selector
+    );
     if (!info) {
       return {
         output: [
