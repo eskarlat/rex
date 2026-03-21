@@ -149,6 +149,25 @@ export class ApiClient {
     return this.fetch<void>(`/api/scheduler/${id}`, { method: 'DELETE' });
   }
 
+  /** POST /api/events — publish an inter-extension event. */
+  async publishEvent(type: string, source: string, data: Record<string, unknown>): Promise<void> {
+    return this.fetch<void>('/api/events', {
+      method: 'POST',
+      body: { type, source, data },
+    });
+  }
+
+  /** POST /api/notifications — create a persistent notification. */
+  async createNotification(payload: {
+    extension_name: string;
+    title: string;
+    message: string;
+    variant?: string;
+    action_url?: string;
+  }): Promise<void> {
+    return this.fetch<void>('/api/notifications', { method: 'POST', body: payload });
+  }
+
   /** POST /api/logs/write — write a log entry from an extension. */
   async writeLog(
     level: string,

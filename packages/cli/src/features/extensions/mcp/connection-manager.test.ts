@@ -526,4 +526,35 @@ describe('connection-manager', () => {
       );
     });
   });
+
+  describe('forwardEvent', () => {
+    it('sends notification to all running stdio connections', () => {
+      manager.getConnection('ext-a', stdioConfig);
+      manager.forwardEvent({ type: 'ext:test:done', source: 'ext:test', data: { id: 1 } });
+
+      expect(sendNotification).toHaveBeenCalled();
+    });
+
+    it('does not send to non-stdio connections', () => {
+      manager.getConnection('ext-sse', sseConfig);
+      manager.forwardEvent({ type: 'ext:test:done', source: 'ext:test', data: {} });
+
+      // sendNotification is called during getConnection for initialize,
+      // but forwardEvent should not call it for SSE connections
+      const callsBeforeForward = vi.mocked(sendNotification).mock.calls.length;
+      manager.forwardEvent({ type: 'another', source: 'test', data: {} });
+      expect(vi.mocked(sendNotification).mock.calls.length).toBe(callsBeforeForward);
+    });
+
+    it('handles errors gracefully without throwing', () => {
+      manager.getConnection('ext-a', stdioConfig);
+      vi.mocked(sendNotification).mockImplementation(() => {
+        throw new Error('write failed');
+      });
+
+      expect(() =>
+        manager.forwardEvent({ type: 'ext:test:fail', source: 'ext:test', data: {} }),
+      ).not.toThrow();
+    });
+  });
 });

@@ -28,6 +28,7 @@ function createMockSDK(): RenreKitSDK {
       on: vi.fn(),
       off: vi.fn(),
       emit: vi.fn(),
+      publish: vi.fn(),
     },
     scheduler: {
       list: vi.fn(),
@@ -37,6 +38,7 @@ function createMockSDK(): RenreKitSDK {
     },
     terminal: { open: vi.fn(), close: vi.fn(), send: vi.fn() },
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    notify: vi.fn(),
     destroy: vi.fn(),
   };
 }

@@ -206,6 +206,18 @@ export class ConnectionManager {
     );
   }
 
+  forwardEvent(event: { type: string; source: string; data: Record<string, unknown> }): void {
+    for (const [, conn] of this.connections) {
+      if (conn.metadata.state === 'running' && conn.stdioProcess) {
+        try {
+          sendNotification(conn.stdioProcess, buildNotification('notifications/event', event));
+        } catch {
+          // Forward errors don't affect other connections
+        }
+      }
+    }
+  }
+
   async stopAll(): Promise<void> {
     const stopPromises: Promise<void>[] = [];
     for (const [name, internal] of this.connections) {

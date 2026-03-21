@@ -14,6 +14,10 @@ vi.mock('@/core/hooks/use-extensions', () => ({
   useMarketplace: () => mockMarketplace(),
 }));
 
+vi.mock('@/features/notifications/NotificationCenter', () => ({
+  NotificationCenter: () => <div data-testid="notification-center" />,
+}));
+
 const mockToggle = vi.fn();
 let mockIsTerminalOpen = false;
 vi.mock('@/features/terminal/use-terminal', () => ({

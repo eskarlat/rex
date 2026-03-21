@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useMarketplace } from '@/core/hooks/use-extensions';
 import { useTerminal } from '@/features/terminal/use-terminal';
+import { NotificationCenter } from '@/features/notifications/NotificationCenter';
 
 interface Crumb {
   label: string;
@@ -100,6 +101,7 @@ export function Toolbar() {
         </nav>
       </div>
       <div className="flex items-center gap-1">
+        <NotificationCenter />
         <Link
           to="/marketplace"
           className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

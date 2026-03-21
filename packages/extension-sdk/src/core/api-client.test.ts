@@ -274,6 +274,48 @@ describe('ApiClient', () => {
     });
   });
 
+  describe('publishEvent', () => {
+    it('sends POST /api/events with type, source, and data', async () => {
+      mockFetch.mockResolvedValueOnce(noContentResponse());
+
+      await client.publishEvent('ext:test:done', 'ext:test', { id: 1 });
+
+      const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('http://localhost:4200/api/events');
+      expect(init.method).toBe('POST');
+      expect(JSON.parse(init.body as string)).toEqual({
+        type: 'ext:test:done',
+        source: 'ext:test',
+        data: { id: 1 },
+      });
+    });
+  });
+
+  describe('createNotification', () => {
+    it('sends POST /api/notifications with payload', async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({ id: 1 }, 201));
+
+      await client.createNotification({
+        extension_name: 'ext:test',
+        title: 'Hello',
+        message: 'World',
+        variant: 'success',
+        action_url: '/extensions/test',
+      });
+
+      const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('http://localhost:4200/api/notifications');
+      expect(init.method).toBe('POST');
+      expect(JSON.parse(init.body as string)).toEqual({
+        extension_name: 'ext:test',
+        title: 'Hello',
+        message: 'World',
+        variant: 'success',
+        action_url: '/extensions/test',
+      });
+    });
+  });
+
   describe('writeLog', () => {
     it('sends POST /api/logs/write with level, source, and message', async () => {
       mockFetch.mockResolvedValueOnce(noContentResponse());

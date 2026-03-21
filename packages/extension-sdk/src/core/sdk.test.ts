@@ -20,6 +20,8 @@ const mockCreateTask = vi.fn();
 const mockDeleteTask = vi.fn();
 const mockUpdateTask = vi.fn();
 const mockWriteLog = vi.fn();
+const mockCreateNotification = vi.fn();
+const mockPublishEvent = vi.fn();
 
 vi.mock('./api-client', () => ({
   ApiClient: vi.fn().mockImplementation(() => ({
@@ -34,6 +36,8 @@ vi.mock('./api-client', () => ({
     deleteTask: mockDeleteTask,
     updateTask: mockUpdateTask,
     writeLog: mockWriteLog,
+    createNotification: mockCreateNotification,
+    publishEvent: mockPublishEvent,
   })),
 }));
 
@@ -268,6 +272,30 @@ describe('RenreKitSDKImpl', () => {
       // Should not throw
       sdk.events.emit('project:init', { type: 'project:init' });
     });
+
+    it('publish sends event through API client', async () => {
+      mockPublishEvent.mockResolvedValueOnce(undefined);
+
+      await sdk.events.publish('task-done', { taskId: '42' });
+
+      expect(mockPublishEvent).toHaveBeenCalledWith(
+        'ext:test-ext:task-done',
+        'ext:test-ext',
+        { taskId: '42' },
+      );
+    });
+
+    it('publish defaults data to empty object', async () => {
+      mockPublishEvent.mockResolvedValueOnce(undefined);
+
+      await sdk.events.publish('ping');
+
+      expect(mockPublishEvent).toHaveBeenCalledWith(
+        'ext:test-ext:ping',
+        'ext:test-ext',
+        {},
+      );
+    });
   });
 
   describe('scheduler', () => {
@@ -409,6 +437,46 @@ describe('RenreKitSDKImpl', () => {
       const defaultSdk = new RenreKitSDKImpl({ baseUrl: 'http://localhost:4200' });
       defaultSdk.logger.info('hello');
       expect(mockWriteLog).toHaveBeenCalledWith('info', 'ext:default', 'hello', undefined);
+    });
+  });
+
+  describe('notify', () => {
+    it('sends notification via createNotification API', async () => {
+      mockCreateNotification.mockResolvedValueOnce(undefined);
+
+      await sdk.notify({ title: 'Build done', message: 'All tests pass', variant: 'success' });
+
+      expect(mockCreateNotification).toHaveBeenCalledWith({
+        extension_name: 'ext:test-ext',
+        title: 'Build done',
+        message: 'All tests pass',
+        variant: 'success',
+        action_url: undefined,
+      });
+    });
+
+    it('defaults message to empty string when omitted', async () => {
+      mockCreateNotification.mockResolvedValueOnce(undefined);
+
+      await sdk.notify({ title: 'Ping' });
+
+      expect(mockCreateNotification).toHaveBeenCalledWith({
+        extension_name: 'ext:test-ext',
+        title: 'Ping',
+        message: '',
+        variant: undefined,
+        action_url: undefined,
+      });
+    });
+
+    it('passes actionUrl through', async () => {
+      mockCreateNotification.mockResolvedValueOnce(undefined);
+
+      await sdk.notify({ title: 'Click', actionUrl: '/extensions/test' });
+
+      expect(mockCreateNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ action_url: '/extensions/test' }),
+      );
     });
   });
 

@@ -7,6 +7,8 @@ import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import websocket from '@fastify/websocket';
+import { EventBus } from '@renre-kit/cli/lib';
+import { publishEvent } from './core/utils/event-hub.js';
 import projectScope from './core/middleware/project-scope.js';
 import errorHandler from './core/middleware/error-handler.js';
 import { pushConsoleEntry } from './core/utils/console-capture.js';
@@ -21,6 +23,8 @@ import schedulerRoutes from './features/scheduler/scheduler.routes.js';
 import dashboardRoutes from './features/dashboard/dashboard.routes.js';
 import logsWebsocket from './features/logs/logs.websocket.js';
 import terminalWebsocket from './features/terminal/terminal.websocket.js';
+import notificationsRoutes from './features/notifications/notifications.routes.js';
+import eventsWebsocket from './features/events/events.websocket.js';
 
 export interface CreateServerOptions {
   lanMode?: boolean;
@@ -29,6 +33,11 @@ export interface CreateServerOptions {
 
 export async function createServer(opts: CreateServerOptions = {}): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: false });
+
+  // Bridge CLI EventBus to server-side EventHub
+  EventBus.setBridge((event, payload) => {
+    publishEvent({ type: event, source: 'system', data: payload as unknown as Record<string, unknown> });
+  });
 
   // Core plugins
   await fastify.register(cors, { origin: true });
@@ -75,6 +84,8 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<Fast
   await fastify.register(dashboardRoutes);
   await fastify.register(logsWebsocket);
   await fastify.register(terminalWebsocket);
+  await fastify.register(notificationsRoutes);
+  await fastify.register(eventsWebsocket);
 
   // Serve the built UI (SPA) if the dist directory exists
   const uiDistPath = resolveUiDist();
