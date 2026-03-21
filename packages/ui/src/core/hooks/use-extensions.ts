@@ -6,7 +6,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 
-import { fetchApi } from '@/core/api/client';
+import { ApiError, fetchApi } from '@/core/api/client';
 import { showToast } from '@/core/hooks/use-toast';
 
 export interface ExtensionPanel {
@@ -63,12 +63,23 @@ export function useExtensionDoc(
   return useQuery<string | null>({
     queryKey: [`extension-${docType}`, name],
     queryFn: async () => {
-      const result = await fetchApi<Record<string, string>>(
-        `/api/extensions/${encodeURIComponent(name!)}/${docType}`,
-      );
-      return result[docType] ?? null;
+      try {
+        const result = await fetchApi<Record<string, string>>(
+          `/api/extensions/${encodeURIComponent(name!)}/${docType}`,
+        );
+        return result[docType] ?? null;
+      } catch (error: unknown) {
+        if (error instanceof ApiError && error.status === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
     enabled: !!name,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiError && error.status === 404) return false;
+      return failureCount < 3;
+    },
   });
 }
 

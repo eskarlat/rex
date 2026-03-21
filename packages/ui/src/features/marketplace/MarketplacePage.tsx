@@ -53,7 +53,7 @@ export function MarketplacePage() {
           fullWidth
         />
         <Sheet
-          open={!!selectedName}
+          open={!!selectedExtension}
           onOpenChange={(open) => !open && setSelectedName(null)}
         >
           <SheetContent side="bottom" className="h-[85svh] p-0" aria-describedby={undefined}>

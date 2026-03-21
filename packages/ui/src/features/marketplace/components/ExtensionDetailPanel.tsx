@@ -89,7 +89,7 @@ function DocContent({ data, isLoading, testIdPrefix }: Readonly<DocContentProps>
       </div>
     );
   }
-  if (!data) return null;
+  if (data == null) return null;
   return (
     <pre
       data-testid={`${testIdPrefix}-content`}
@@ -108,8 +108,8 @@ function DocsTabs({ name }: Readonly<DocsTabsProps>) {
   const { data: readme, isLoading: readmeLoading } = useExtensionReadme(name);
   const { data: changelog, isLoading: changelogLoading } = useExtensionChangelog(name);
 
-  const hasReadme = readmeLoading || !!readme;
-  const hasChangelog = changelogLoading || !!changelog;
+  const hasReadme = readmeLoading || readme != null;
+  const hasChangelog = changelogLoading || changelog != null;
 
   if (!hasReadme && !hasChangelog) return null;
 
