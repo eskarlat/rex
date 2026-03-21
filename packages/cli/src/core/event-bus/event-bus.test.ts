@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventBus } from './event-bus.js';
+import { getLogger } from '../logger/index.js';
 import type { EventType, EventPayload } from '../types/index.js';
 
 describe('EventBus', () => {
@@ -65,7 +66,8 @@ describe('EventBus', () => {
   });
 
   it('should not propagate handler errors but log them', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const logger = getLogger();
+    const logSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
     const errorHandler = vi.fn().mockRejectedValue(new Error('handler fail'));
     const goodHandler = vi.fn();
     bus.on('project:init', errorHandler);
@@ -78,11 +80,12 @@ describe('EventBus', () => {
       }),
     ).resolves.toBeUndefined();
     expect(goodHandler).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(logSpy).toHaveBeenCalledWith(
+      'event-bus',
       expect.stringContaining('project:init'),
-      expect.any(Error),
+      expect.objectContaining({ error: 'handler fail' }),
     );
-    consoleSpy.mockRestore();
+    logSpy.mockRestore();
   });
 
   it('should handle async handlers', async () => {

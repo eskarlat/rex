@@ -24,8 +24,9 @@ describe('scaffoldExtension', () => {
       expect(await fse.pathExists(path.join(extDir, 'package.json'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'manifest.json'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'src', 'index.ts'))).toBe(true);
-      expect(await fse.pathExists(path.join(extDir, 'commands', 'hello.ts'))).toBe(true);
+      expect(await fse.pathExists(path.join(extDir, 'src', 'commands', 'hello.ts'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'tsconfig.json'))).toBe(true);
+      expect(await fse.pathExists(path.join(extDir, 'build.js'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'SKILL.md'))).toBe(true);
     });
 
@@ -75,7 +76,7 @@ describe('scaffoldExtension', () => {
     it('should generate command handler file', async () => {
       await scaffoldExtension('my-plugin', 'standard', tmpDir);
 
-      const cmdPath = path.join(tmpDir, 'my-plugin', 'commands', 'hello.ts');
+      const cmdPath = path.join(tmpDir, 'my-plugin', 'src', 'commands', 'hello.ts');
       const content = await fse.readFile(cmdPath, 'utf-8');
       expect(content).toContain('Hello from my-plugin!');
       expect(content).toContain('export default function');
@@ -99,6 +100,7 @@ describe('scaffoldExtension', () => {
       expect(await fse.pathExists(path.join(extDir, 'manifest.json'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'src', 'server.ts'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'tsconfig.json'))).toBe(true);
+      expect(await fse.pathExists(path.join(extDir, 'build.js'))).toBe(true);
       expect(await fse.pathExists(path.join(extDir, 'SKILL.md'))).toBe(true);
     });
 

@@ -41,7 +41,8 @@ function extractMcpText(raw) {
     const parsed = JSON.parse(raw);
     const text = parsed.content?.[0]?.text ?? raw;
     return { text, isError: !!parsed.isError };
-  } catch {
+  } catch (err) {
+    console.warn("[renre-devtools] Failed to parse MCP response as JSON:", err);
     return { text: raw, isError: false };
   }
 }
@@ -104,10 +105,12 @@ function BrowserWidget({ sdk, extensionName }) {
         const info = JSON.parse(text);
         setCurrentUrl(info.url ?? null);
         setPageTitle(info.title ?? null);
-      } catch {
+      } catch (err) {
+        console.warn("[renre-devtools] Failed to parse page info:", err);
       }
       return true;
-    } catch {
+    } catch (err) {
+      console.error("[renre-devtools] fetchPageInfo failed:", err);
       return false;
     }
   }, [sdk, extName]);
@@ -147,7 +150,8 @@ function BrowserWidget({ sdk, extensionName }) {
     setLoading(true);
     try {
       await fetchPageInfo();
-    } catch {
+    } catch (err) {
+      console.warn("[renre-devtools] Refresh failed:", err);
     } finally {
       setLoading(false);
     }
@@ -173,7 +177,8 @@ function BrowserWidget({ sdk, extensionName }) {
               setCurrentUrl("about:blank");
             }
           }
-        } catch {
+        } catch (err) {
+          console.warn("[renre-devtools] Chrome install poll failed:", err);
         }
       })();
     }, 5e3);

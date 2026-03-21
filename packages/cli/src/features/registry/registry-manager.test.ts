@@ -14,6 +14,7 @@ vi.mock('simple-git', () => {
   return { default: simpleGit, simpleGit, __mockGit: mockGit };
 });
 
+
 import {
   sync,
   syncAll,
@@ -661,4 +662,5 @@ describe('registry-manager', () => {
       expect(resultPath).toContain('my-ext@1.2.0');
     });
   });
+
 });

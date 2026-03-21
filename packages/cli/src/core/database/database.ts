@@ -2,6 +2,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import type Database from 'better-sqlite3';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { getLogger } from '../logger/index.js';
 
 let db: Database.Database | null = null;
 
@@ -49,15 +50,36 @@ export function findMigrationsDir(): string {
   return path.resolve(import.meta.dirname, '..', 'migrations');
 }
 
-export function runMigrations(database: Database.Database, migrationsDir: string): void {
-  let files: string[];
+function readMigrationFiles(migrationsDir: string): string[] | null {
   try {
-    files = readdirSync(migrationsDir)
+    return readdirSync(migrationsDir)
       .filter((f) => f.endsWith('.sql'))
       .sort((a, b) => a.localeCompare(b));
-  } catch {
-    return;
+  } catch (err) {
+    getLogger().warn('database', 'Failed to read migrations directory', {
+      migrationsDir,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
   }
+}
+
+function backupDatabase(dbPath: string, backupPath: string): void {
+  if (dbPath === ':memory:' || dbPath === '') return;
+  try {
+    copyFileSync(dbPath, backupPath);
+  } catch (err) {
+    getLogger().warn('database', 'Database backup failed before migration', {
+      dbPath,
+      backupPath,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+export function runMigrations(database: Database.Database, migrationsDir: string): void {
+  const files = readMigrationFiles(migrationsDir);
+  if (!files) return;
 
   const applied = new Set(
     (
@@ -70,16 +92,9 @@ export function runMigrations(database: Database.Database, migrationsDir: string
   const pending = files.filter((f) => !applied.has(f));
   if (pending.length === 0) return;
 
-  // Backup before running pending migrations (skip for :memory: databases)
   const dbPath = database.name;
   const backupPath = `${dbPath}.bak`;
-  if (dbPath !== ':memory:' && dbPath !== '') {
-    try {
-      copyFileSync(dbPath, backupPath);
-    } catch {
-      // Backup failure should not block migrations
-    }
-  }
+  backupDatabase(dbPath, backupPath);
 
   for (const file of pending) {
     const sql = readFileSync(path.join(migrationsDir, file), 'utf-8');

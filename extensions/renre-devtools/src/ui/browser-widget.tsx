@@ -11,7 +11,8 @@ function extractMcpText(raw: string): { text: string; isError: boolean } {
     const parsed = JSON.parse(raw) as McpResponse;
     const text = parsed.content?.[0]?.text ?? raw;
     return { text, isError: !!parsed.isError };
-  } catch {
+  } catch (err) {
+    console.warn('[renre-devtools] Failed to parse MCP response as JSON:', err);
     return { text: raw, isError: false };
   }
 }
@@ -84,11 +85,12 @@ export default function BrowserWidget({ sdk, extensionName }: Partial<PanelProps
         const info = JSON.parse(text) as { url?: string; title?: string };
         setCurrentUrl(info.url ?? null);
         setPageTitle(info.title ?? null);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.warn('[renre-devtools] Failed to parse page info:', err);
       }
       return true;
-    } catch {
+    } catch (err) {
+      console.error('[renre-devtools] fetchPageInfo failed:', err);
       return false;
     }
   }, [sdk, extName]);
@@ -130,8 +132,8 @@ export default function BrowserWidget({ sdk, extensionName }: Partial<PanelProps
     setLoading(true);
     try {
       await fetchPageInfo();
-    } catch {
-      /* keep current state */
+    } catch (err) {
+      console.warn('[renre-devtools] Refresh failed:', err);
     } finally {
       setLoading(false);
     }
@@ -158,8 +160,8 @@ export default function BrowserWidget({ sdk, extensionName }: Partial<PanelProps
               setCurrentUrl('about:blank');
             }
           }
-        } catch {
-          /* still installing */
+        } catch (err) {
+          console.warn('[renre-devtools] Chrome install poll failed:', err);
         }
       })();
     }, 5000);

@@ -2,6 +2,7 @@ import { existsSync, unlinkSync } from 'node:fs';
 import * as clack from '@clack/prompts';
 import { SERVER_PID_PATH } from '../../../core/paths/paths.js';
 import { isProcessRunning, readPidFile } from '../../../shared/process-utils.js';
+import { getLogger } from '../../../core/logger/index.js';
 
 export function handleStop(): void {
   clack.intro('Stop RenreKit Dashboard');
@@ -17,8 +18,11 @@ export function handleStop(): void {
     clack.log.warn(`Server process ${pid} is not running. Cleaning up stale PID file.`);
     try {
       unlinkSync(SERVER_PID_PATH);
-    } catch {
-      // PID file may have been removed by another process
+    } catch (err) {
+      getLogger().warn('ui', 'Failed to remove stale PID file', {
+        path: SERVER_PID_PATH,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
     clack.outro('Nothing to stop.');
     return;
@@ -37,8 +41,11 @@ export function handleStop(): void {
     if (existsSync(SERVER_PID_PATH)) {
       unlinkSync(SERVER_PID_PATH);
     }
-  } catch {
-    // PID file may have been removed between check and unlink
+  } catch (err) {
+    getLogger().warn('ui', 'Failed to clean up PID file after stop', {
+      path: SERVER_PID_PATH,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   clack.outro('Done.');

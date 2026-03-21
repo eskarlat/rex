@@ -8,6 +8,15 @@ vi.mock('node:fs', () => ({
   readFileSync: (...args: unknown[]) => mockReadFileSync(...args),
 }));
 
+vi.mock('../core/logger/index.js', () => ({
+  getLogger: () => ({
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+  }),
+}));
+
 const { isProcessRunning, readPidFile } = await import('./process-utils.js');
 
 describe('isProcessRunning', () => {

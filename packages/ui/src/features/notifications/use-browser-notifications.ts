@@ -11,6 +11,32 @@ import { useNotifications } from '@/core/hooks/use-notifications';
  *   (no flood on page open). Subsequent polls fire a browser
  *   Notification for each unread item with id > lastSeenId.
  */
+interface NotificationItem {
+  id: number;
+  title: string;
+  message: string | null;
+  read: number;
+}
+
+function fireNewAlerts(items: NotificationItem[], lastSeen: number): void {
+  if (typeof globalThis.Notification === 'undefined') return;
+  if (Notification.permission !== 'granted') return;
+
+  for (const n of items) {
+    if (n.id <= lastSeen) break; // sorted desc — no need to check older
+    if (n.read === 1) continue;
+
+    try {
+      new Notification(n.title, {
+        body: n.message || undefined, // eslint-disable-line sonarjs/prefer-nullish-coalescing -- empty string should map to undefined
+        tag: `renre-kit-notification-${n.id}`,
+      });
+    } catch {
+      // Permission may have been revoked mid-session
+    }
+  }
+}
+
 export function useBrowserNotifications(): void {
   const lastSeenId = useRef<number | null>(null);
   const { data: notifications } = useNotifications();
@@ -35,23 +61,7 @@ export function useBrowserNotifications(): void {
       return;
     }
 
-    if (typeof globalThis.Notification === 'undefined') return;
-    if (Notification.permission !== 'granted') return;
-
-    for (const n of notifications) {
-      if (n.id <= lastSeenId.current) break; // sorted desc — no need to check older
-      if (n.read === 1) continue;
-
-      try {
-        new Notification(n.title, {
-          body: n.message || undefined,
-          tag: `renre-kit-notification-${n.id}`,
-        });
-      } catch {
-        // Permission may have been revoked mid-session
-      }
-    }
-
+    fireNewAlerts(notifications, lastSeenId.current);
     lastSeenId.current = maxId;
   }, [notifications]);
 }

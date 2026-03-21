@@ -1,5 +1,6 @@
 import * as pty from 'node-pty';
 import { homedir } from 'node:os';
+import path from 'node:path';
 import { OutputBuffer } from './output-buffer.js';
 
 export interface TerminalSocket {
@@ -25,8 +26,14 @@ function resolveShell(): string {
   return process.platform === 'win32' ? 'powershell.exe' : 'bash';
 }
 
+function isSafePath(p: string): boolean {
+  if (!path.isAbsolute(p)) return false;
+  const segments = p.split(path.sep);
+  return !segments.some((s) => s === '..' || s === '.');
+}
+
 function resolveCwd(projectPath: string | undefined): string {
-  if (projectPath && projectPath.length > 0) return projectPath;
+  if (projectPath && projectPath.length > 0 && isSafePath(projectPath)) return projectPath;
   return homedir();
 }
 

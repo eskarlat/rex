@@ -211,8 +211,12 @@ export class ConnectionManager {
       if (conn.metadata.state === 'running' && conn.stdioProcess) {
         try {
           sendNotification(conn.stdioProcess, buildNotification('notifications/event', event));
-        } catch {
-          // Forward errors don't affect other connections
+        } catch (err) {
+          getLogger().warn('extensions', 'Failed to forward event to MCP connection', {
+            extension: conn.metadata.extensionName,
+            eventType: event.type,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
     }

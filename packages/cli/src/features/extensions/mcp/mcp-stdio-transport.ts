@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import type { JsonRpcRequest, JsonRpcResponse, JsonRpcNotification } from '../types/mcp.types.js';
 import { parseResponse } from './json-rpc.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
+import { getLogger } from '../../../core/logger/index.js';
 
 export interface McpStdioProcess {
   process: ChildProcess;
@@ -46,7 +47,10 @@ export function sendRequest(
       let parsed: Record<string, unknown>;
       try {
         parsed = JSON.parse(trimmed) as Record<string, unknown>;
-      } catch {
+      } catch (err) {
+        getLogger().debug('mcp-stdio', 'Failed to parse JSON line from MCP process', {
+          error: err instanceof Error ? err.message : String(err),
+        });
         return null;
       }
 

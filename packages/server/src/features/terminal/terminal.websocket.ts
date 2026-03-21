@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyPluginCallback } from 'fastify';
+import { getLogger } from '@renre-kit/cli/lib';
 import { TerminalSessionManager } from './terminal-session-manager.js';
 
 interface WebSocketLike {
@@ -41,9 +42,14 @@ function isResizeMessage(data: unknown): data is ResizeMessage {
 }
 
 function parseJson(raw: string): unknown {
+  const trimmed = raw.trimStart();
+  if (!trimmed.startsWith('{')) return null;
   try {
-    return JSON.parse(raw);
-  } catch {
+    return JSON.parse(trimmed);
+  } catch (err) {
+    getLogger().debug('terminal', 'Failed to parse WebSocket message as JSON', {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return null;
   }
 }
@@ -55,8 +61,10 @@ function toUtf8(raw: Buffer | string): string {
 function safeSend(socket: WebSocketLike, data: string): void {
   try {
     socket.send(data);
-  } catch {
-    // Socket may already be closed
+  } catch (err) {
+    getLogger().debug('terminal', 'WebSocket send failed (socket likely closed)', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -71,6 +79,27 @@ function routeMessage(
     sessionManager.resizeSession(key, parsed.cols, parsed.rows);
   } else {
     sessionManager.writeToSession(key, msg);
+  }
+}
+
+function safeClose(socket: WebSocketLike): void {
+  try {
+    socket.close();
+  } catch (closeErr) {
+    getLogger().debug('terminal', 'Socket close failed', {
+      error: closeErr instanceof Error ? closeErr.message : String(closeErr),
+    });
+  }
+}
+
+function sendReplay(
+  sessionManager: TerminalSessionManager,
+  socket: WebSocketLike,
+  key: string,
+): void {
+  const replayData = sessionManager.getReplayData(key);
+  if (replayData) {
+    safeSend(socket, JSON.stringify({ type: 'session-replay', data: replayData }));
   }
 }
 
@@ -89,11 +118,7 @@ function handleInit(
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     safeSend(socket, `\r\n\x1b[31mFailed to start terminal: ${errMsg}\x1b[0m\r\n`);
-    try {
-      socket.close();
-    } catch {
-      // already closed
-    }
+    safeClose(socket);
     return undefined;
   }
 
@@ -101,10 +126,7 @@ function handleInit(
   safeSend(socket, JSON.stringify({ type: 'session-info', status: isNew ? 'new' : 'reconnected' }));
 
   if (!isNew) {
-    const replayData = sessionManager.getReplayData(key);
-    if (replayData) {
-      safeSend(socket, JSON.stringify({ type: 'session-replay', data: replayData }));
-    }
+    sendReplay(sessionManager, socket, key);
   }
 
   socket.on('message', (raw: Buffer | string) => {
@@ -137,11 +159,7 @@ const terminalWebsocket: FastifyPluginCallback<TerminalWebsocketOptions> = (
         socket,
         '\r\n\x1b[31mTerminal init timed out — no init message received.\x1b[0m\r\n',
       );
-      try {
-        socket.close();
-      } catch {
-        // already closed
-      }
+      safeClose(socket);
     }, INIT_TIMEOUT_MS);
 
     const onFirstMessage = (raw: Buffer | string): void => {

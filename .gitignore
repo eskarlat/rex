@@ -1,6 +1,7 @@
 node_modules/
 dist/
 !extensions/*/dist/
+extensions/*/dist/**/*.d.ts
 .turbo/
 *.sqlite
 *.sqlite-journal

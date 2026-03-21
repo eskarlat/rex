@@ -8,6 +8,7 @@ import {
   getStandardCommandHandler,
   getStandardTsconfig,
   getStandardSkillMd,
+  getStandardBuildJs,
 } from './templates/standard.js';
 import {
   getMcpPackageJson,
@@ -15,6 +16,7 @@ import {
   getMcpServerEntryPoint,
   getMcpTsconfig,
   getMcpSkillMd,
+  getMcpBuildJs,
 } from './templates/mcp.js';
 
 export type ExtensionType = 'standard' | 'mcp';
@@ -30,10 +32,11 @@ function getStandardFiles(name: string, extDir: string): FileEntry[] {
     { filePath: path.join(extDir, 'manifest.json'), content: getStandardManifest(name) },
     { filePath: path.join(extDir, 'src', 'index.ts'), content: getStandardEntryPoint(name) },
     {
-      filePath: path.join(extDir, 'commands', 'hello.ts'),
+      filePath: path.join(extDir, 'src', 'commands', 'hello.ts'),
       content: getStandardCommandHandler(name),
     },
     { filePath: path.join(extDir, 'tsconfig.json'), content: getStandardTsconfig() },
+    { filePath: path.join(extDir, 'build.js'), content: getStandardBuildJs() },
     { filePath: path.join(extDir, 'SKILL.md'), content: getStandardSkillMd(name) },
   ];
 }
@@ -44,6 +47,7 @@ function getMcpFiles(name: string, extDir: string): FileEntry[] {
     { filePath: path.join(extDir, 'manifest.json'), content: getMcpManifest(name) },
     { filePath: path.join(extDir, 'src', 'server.ts'), content: getMcpServerEntryPoint(name) },
     { filePath: path.join(extDir, 'tsconfig.json'), content: getMcpTsconfig() },
+    { filePath: path.join(extDir, 'build.js'), content: getMcpBuildJs() },
     { filePath: path.join(extDir, 'SKILL.md'), content: getMcpSkillMd(name) },
   ];
 }

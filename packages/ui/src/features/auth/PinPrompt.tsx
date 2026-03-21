@@ -35,6 +35,8 @@ export function PinPrompt({ onSuccess }: PinPromptProps) {
       if (err instanceof ApiError && err.status === 401) {
         setError('Invalid PIN. Please try again.');
       } else {
+        // eslint-disable-next-line no-console
+        console.error('[auth] PIN verification failed:', err);
         setError('An error occurred. Please try again.');
       }
     } finally {

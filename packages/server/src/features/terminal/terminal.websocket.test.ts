@@ -210,12 +210,13 @@ describe('terminal.websocket', () => {
     const wsUrl = address.replace('http', 'ws');
 
     await new Promise<void>((resolve) => {
-      const ws = new WebSocket(`${wsUrl}/api/terminal`, {
-        headers: { 'x-renrekit-project': '../etc/passwd' },
-      });
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
       ws.onopen = () => {
-        ws.close();
-        resolve();
+        ws.send(initMsg({ projectPath: '../etc/passwd' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
       };
       ws.onerror = () => {
         ws.close();
@@ -223,7 +224,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
@@ -240,12 +241,13 @@ describe('terminal.websocket', () => {
     const wsUrl = address.replace('http', 'ws');
 
     await new Promise<void>((resolve) => {
-      const ws = new WebSocket(`${wsUrl}/api/terminal`, {
-        headers: { 'x-renrekit-project': '/home/user/../../../etc' },
-      });
+      const ws = new WebSocket(`${wsUrl}/api/terminal`);
       ws.onopen = () => {
-        ws.close();
-        resolve();
+        ws.send(initMsg({ projectPath: '/home/user/../../../etc' }));
+        setTimeout(() => {
+          ws.close();
+          resolve();
+        }, 100);
       };
       ws.onerror = () => {
         ws.close();
@@ -253,7 +255,7 @@ describe('terminal.websocket', () => {
       };
     });
 
-    await new Promise((r) => setTimeout(r, 100));
+    await wait(100);
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expect.any(String),
