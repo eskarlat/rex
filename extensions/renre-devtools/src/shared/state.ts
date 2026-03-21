@@ -1,5 +1,6 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 
 import type { BrowserState, GlobalBrowserSession } from './types.js';
@@ -86,11 +87,44 @@ export function deleteGlobalSession(): void {
   }
 }
 
+function winSystemRoot(): string {
+  return process.env.SystemRoot ?? 'C:\\Windows';
+}
+
 export function isProcessAlive(pid: number): boolean {
+  if (platform() === 'win32') {
+    const tasklist = join(winSystemRoot(), 'System32', 'tasklist.exe');
+    const result = spawnSync(tasklist, ['/FI', `PID eq ${String(pid)}`, '/NH'], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return result.status === 0 && result.stdout.includes(String(pid));
+  }
+
   try {
     process.kill(pid, 0);
     return true;
   } catch {
     return false;
+  }
+}
+
+export function killProcessTree(pid: number): void {
+  if (platform() === 'win32') {
+    const taskkill = join(winSystemRoot(), 'System32', 'taskkill.exe');
+    spawnSync(taskkill, ['/PID', String(pid), '/T', '/F'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return;
+  }
+
+  try {
+    process.kill(-pid, 'SIGTERM');
+  } catch {
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      // Already dead
+    }
   }
 }

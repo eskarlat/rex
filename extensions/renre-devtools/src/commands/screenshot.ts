@@ -1,5 +1,5 @@
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 import type { Page, ElementHandle } from 'puppeteer';
 
@@ -43,7 +43,7 @@ async function captureEncoded(
 function registerMeta(screenshotDir: string, filePath: string, page: Page, selector: string | null, fullPage: boolean): void {
   const metaPath = join(screenshotDir, 'screenshots.jsonl');
   const meta: ScreenshotMeta = {
-    filename: filePath.slice(filePath.lastIndexOf('/') + 1),
+    filename: basename(filePath),
     path: filePath,
     timestamp: new Date().toISOString(),
     url: page.url(),

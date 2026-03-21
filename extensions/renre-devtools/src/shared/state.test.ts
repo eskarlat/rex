@@ -13,6 +13,7 @@ import {
   writeGlobalSession,
   deleteGlobalSession,
   isProcessAlive,
+  killProcessTree,
 } from './state.js';
 import type { BrowserState, GlobalBrowserSession } from './types.js';
 
@@ -254,5 +255,11 @@ describe('isProcessAlive', () => {
   it('returns false for a non-existent PID', () => {
     // Use a very high PID that is extremely unlikely to exist
     expect(isProcessAlive(4294967)).toBe(false);
+  });
+});
+
+describe('killProcessTree', () => {
+  it('does not throw for a non-existent PID', () => {
+    expect(() => killProcessTree(4294967)).not.toThrow();
   });
 });

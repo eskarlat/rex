@@ -1,7 +1,7 @@
 import { existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { readState, deleteState, getLogDir, deleteGlobalSession } from '../shared/state.js';
+import { readState, deleteState, getLogDir, deleteGlobalSession, killProcessTree } from '../shared/state.js';
 import { connectBrowser } from '../shared/connection.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
@@ -18,12 +18,8 @@ export default async function close(context: ExecutionContext): Promise<CommandR
     const browser = await connectBrowser(context.projectPath);
     await browser.close();
   } catch {
-    // Browser may already be gone — kill by PID as fallback
-    try {
-      process.kill(state.pid);
-    } catch {
-      // Already dead, that's fine
-    }
+    // Browser may already be gone — kill process tree as fallback
+    killProcessTree(state.pid);
   }
 
   // Clean up log files
