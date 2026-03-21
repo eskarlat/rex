@@ -362,6 +362,9 @@ importers:
       '@types/fs-extra':
         specifier: ^11.0.0
         version: 11.0.4
+      '@types/node':
+        specifier: ^20
+        version: 20.19.37
       '@vitest/coverage-istanbul':
         specifier: ^2.1.0
         version: 2.1.9(vitest@2.1.9(@types/node@20.19.37)(jsdom@25.0.1)(lightningcss@1.32.0))
