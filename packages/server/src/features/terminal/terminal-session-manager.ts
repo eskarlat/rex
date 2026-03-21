@@ -28,8 +28,8 @@ function resolveShell(): string {
 
 function isSafePath(p: string): boolean {
   if (!path.isAbsolute(p)) return false;
-  const normalized = path.normalize(p);
-  return normalized === p || !p.includes('..');
+  const segments = p.split(path.sep);
+  return !segments.some((s) => s === '..' || s === '.');
 }
 
 function resolveCwd(projectPath: string | undefined): string {
