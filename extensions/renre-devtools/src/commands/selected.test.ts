@@ -229,7 +229,7 @@ describe('selected', () => {
       id: '',
       classes: '',
       text: '',
-      html: 'x'.repeat(500),
+      html: 'x'.repeat(600),
       attrs: [],
       rect: { x: 0, y: 0, width: 100, height: 100 },
       styles: {

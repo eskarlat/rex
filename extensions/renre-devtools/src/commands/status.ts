@@ -3,6 +3,7 @@ import puppeteer from 'puppeteer';
 import {
   readState,
   readGlobalSession,
+  deleteState,
   deleteGlobalSession,
   isProcessAlive,
 } from '../shared/state.js';
@@ -23,7 +24,8 @@ export default async function status(context: ExecutionContext): Promise<Command
 
   // Check if PID is still alive
   if (!isProcessAlive(state.pid)) {
-    deleteGlobalSession();
+    if (localState) deleteState(context.projectPath);
+    if (globalSession) deleteGlobalSession();
     return {
       output: JSON.stringify({ running: false, staleSessionCleaned: true }),
       exitCode: 0,
@@ -34,11 +36,13 @@ export default async function status(context: ExecutionContext): Promise<Command
   try {
     const browser = await puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
     const pages = await browser.pages();
-    const tabs = pages.map((page, index) => ({
-      index,
-      title: page.url(),
-      url: page.url(),
-    }));
+    const tabs = await Promise.all(
+      pages.map(async (page, index) => ({
+        index,
+        title: await page.title(),
+        url: page.url(),
+      }))
+    );
     void browser.disconnect();
 
     const result = {
@@ -57,7 +61,8 @@ export default async function status(context: ExecutionContext): Promise<Command
     };
   } catch {
     // Process alive but can't connect — stale
-    deleteGlobalSession();
+    if (localState) deleteState(context.projectPath);
+    if (globalSession) deleteGlobalSession();
     return {
       output: JSON.stringify({ running: false, staleSessionCleaned: true }),
       exitCode: 0,

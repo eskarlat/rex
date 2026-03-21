@@ -41,6 +41,21 @@ describe('screenshot-delete', () => {
     expect(output.error).toBe('Missing --path argument');
   });
 
+  it('rejects paths outside the screenshot directory', () => {
+    const result = screenshotDelete(makeContext({ path: '/etc/passwd' }));
+    expect(result.exitCode).toBe(1);
+    const output = JSON.parse(result.output);
+    expect(output.error).toBe('Path must be inside the screenshot directory');
+  });
+
+  it('rejects relative path traversal', () => {
+    const traversalPath = join(SCREENSHOT_DIR, '..', '..', 'secret.json');
+    const result = screenshotDelete(makeContext({ path: traversalPath }));
+    expect(result.exitCode).toBe(1);
+    const output = JSON.parse(result.output);
+    expect(output.error).toBe('Path must be inside the screenshot directory');
+  });
+
   it('deletes file and updates metadata', () => {
     const imgPath = join(SCREENSHOT_DIR, 'delete-me.png');
     writeFileSync(imgPath, 'image data');

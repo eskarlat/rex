@@ -14,10 +14,12 @@ class WsManager {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private intentionalClose = false;
 
   connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
+    this.intentionalClose = false;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/api/events`;
 
@@ -53,7 +55,9 @@ class WsManager {
     });
 
     this.ws.addEventListener('close', () => {
-      this.scheduleReconnect();
+      if (!this.intentionalClose) {
+        this.scheduleReconnect();
+      }
     });
 
     this.ws.addEventListener('error', () => {
@@ -63,9 +67,13 @@ class WsManager {
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) return;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+    }
     const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
     this.reconnectAttempts++;
     this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
       this.connect();
     }, delay);
   }
@@ -88,6 +96,7 @@ class WsManager {
   }
 
   disconnect(): void {
+    this.intentionalClose = true;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;

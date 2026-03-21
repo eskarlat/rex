@@ -13,12 +13,14 @@ vi.mock('puppeteer', () => ({
 
 const mockReadState = vi.fn();
 const mockReadGlobalSession = vi.fn();
+const mockDeleteState = vi.fn();
 const mockDeleteGlobalSession = vi.fn();
 const mockIsProcessAlive = vi.fn();
 
 vi.mock('../shared/state.js', () => ({
   readState: (...args: unknown[]) => mockReadState(...args),
   readGlobalSession: (...args: unknown[]) => mockReadGlobalSession(...args),
+  deleteState: (...args: unknown[]) => mockDeleteState(...args),
   deleteGlobalSession: (...args: unknown[]) => mockDeleteGlobalSession(...args),
   isProcessAlive: (...args: unknown[]) => mockIsProcessAlive(...args),
 }));
@@ -49,7 +51,7 @@ describe('status', () => {
     expect(output.running).toBe(false);
   });
 
-  it('cleans stale session when PID is dead (local state)', async () => {
+  it('cleans stale session when PID is dead (local state only)', async () => {
     mockReadState.mockReturnValue({
       wsEndpoint: 'ws://localhost:9222',
       pid: 99999,
@@ -66,10 +68,11 @@ describe('status', () => {
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
     expect(output.staleSessionCleaned).toBe(true);
-    expect(mockDeleteGlobalSession).toHaveBeenCalled();
+    expect(mockDeleteState).toHaveBeenCalledWith('/tmp/test-project');
+    expect(mockDeleteGlobalSession).not.toHaveBeenCalled();
   });
 
-  it('cleans stale session when PID is dead (global session)', async () => {
+  it('cleans stale session when PID is dead (global session only)', async () => {
     mockReadState.mockReturnValue(null);
     mockReadGlobalSession.mockReturnValue({
       wsEndpoint: 'ws://localhost:9222',
@@ -89,6 +92,8 @@ describe('status', () => {
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
     expect(output.staleSessionCleaned).toBe(true);
+    expect(mockDeleteState).not.toHaveBeenCalled();
+    expect(mockDeleteGlobalSession).toHaveBeenCalled();
   });
 
   it('returns status with tabs on successful connect', async () => {
@@ -103,8 +108,8 @@ describe('status', () => {
     mockReadGlobalSession.mockReturnValue(null);
     mockIsProcessAlive.mockReturnValue(true);
 
-    const mockPage1 = { url: () => 'https://example.com' };
-    const mockPage2 = { url: () => 'https://test.com' };
+    const mockPage1 = { url: () => 'https://example.com', title: () => Promise.resolve('Example') };
+    const mockPage2 = { url: () => 'https://test.com', title: () => Promise.resolve('Test Page') };
     mockPages.mockResolvedValue([mockPage1, mockPage2]);
     mockConnect.mockResolvedValue({
       pages: mockPages,
@@ -119,7 +124,9 @@ describe('status', () => {
     expect(output.port).toBe(9222);
     expect(output.tabCount).toBe(2);
     expect(output.tabs).toHaveLength(2);
+    expect(output.tabs[0].title).toBe('Example');
     expect(output.tabs[0].url).toBe('https://example.com');
+    expect(output.tabs[1].title).toBe('Test Page');
     expect(output.tabs[1].url).toBe('https://test.com');
   });
 
@@ -152,7 +159,7 @@ describe('status', () => {
     expect(output.headless).toBe(false);
   });
 
-  it('cleans session when connect throws', async () => {
+  it('cleans local state when connect throws for local session', async () => {
     mockReadState.mockReturnValue({
       wsEndpoint: 'ws://localhost:9222',
       pid: 12345,
@@ -170,7 +177,8 @@ describe('status', () => {
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
     expect(output.staleSessionCleaned).toBe(true);
-    expect(mockDeleteGlobalSession).toHaveBeenCalled();
+    expect(mockDeleteState).toHaveBeenCalledWith('/tmp/test-project');
+    expect(mockDeleteGlobalSession).not.toHaveBeenCalled();
   });
 
   it('prefers local state over global session', async () => {

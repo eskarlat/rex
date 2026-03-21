@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react';
 import { Button, Spinner } from '@renre-kit/extension-sdk/components';
 
 import type { ScreenshotMeta } from '../shared/types.js';
@@ -33,7 +34,7 @@ export function ScreenshotCard({ ss, thumbnail, onPreview, onDelete }: Readonly<
           {new Date(ss.timestamp).toLocaleString()}
         </div>
         <div style={{ marginTop: '4px' }}>
-          <Button variant="ghost" size="sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDelete(); }}>
+          <Button variant="ghost" size="sm" onClick={(e: MouseEvent) => { e.stopPropagation(); onDelete(); }}>
             Delete
           </Button>
         </div>

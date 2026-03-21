@@ -1,8 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { ExecutionContext } from '../shared/types.js';
+
+const mockGetScreenshotDir = vi.fn();
+
+vi.mock('../shared/state.js', () => ({
+  getScreenshotDir: (...args: unknown[]) => mockGetScreenshotDir(...args),
+}));
 
 import screenshotRead from './screenshot-read.js';
 
@@ -20,6 +26,8 @@ function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
 
 beforeEach(() => {
   mkdirSync(SCREENSHOT_DIR, { recursive: true });
+  vi.clearAllMocks();
+  mockGetScreenshotDir.mockReturnValue(SCREENSHOT_DIR);
 });
 
 afterEach(() => {
@@ -39,6 +47,21 @@ describe('screenshot-read', () => {
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Missing --path argument');
+  });
+
+  it('rejects paths outside the screenshot directory', () => {
+    const result = screenshotRead(makeContext({ path: '/etc/passwd' }));
+    expect(result.exitCode).toBe(1);
+    const output = JSON.parse(result.output);
+    expect(output.error).toBe('Path must be inside the screenshot directory');
+  });
+
+  it('rejects relative path traversal', () => {
+    const traversalPath = join(SCREENSHOT_DIR, '..', '..', 'secret.json');
+    const result = screenshotRead(makeContext({ path: traversalPath }));
+    expect(result.exitCode).toBe(1);
+    const output = JSON.parse(result.output);
+    expect(output.error).toBe('Path must be inside the screenshot directory');
   });
 
   it('returns error when file does not exist', () => {

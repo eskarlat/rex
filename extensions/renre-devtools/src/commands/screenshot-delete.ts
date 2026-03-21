@@ -1,8 +1,14 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, realpathSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import { getScreenshotDir } from '../shared/state.js';
 import type { ExecutionContext, CommandResult, ScreenshotMeta } from '../shared/types.js';
+
+function isInsideDir(filePath: string, dir: string): boolean {
+  const resolved = resolve(filePath);
+  const resolvedDir = resolve(dir);
+  return resolved.startsWith(resolvedDir + '/') || resolved.startsWith(resolvedDir + '\\');
+}
 
 export default function screenshotDelete(context: ExecutionContext): CommandResult {
   const filePath = typeof context.args.path === 'string' ? context.args.path : null;
@@ -14,13 +20,28 @@ export default function screenshotDelete(context: ExecutionContext): CommandResu
     };
   }
 
-  // Delete the actual file
+  const screenshotDir = getScreenshotDir(context.projectPath);
+
+  if (!isInsideDir(filePath, screenshotDir)) {
+    return {
+      output: JSON.stringify({ error: 'Path must be inside the screenshot directory' }),
+      exitCode: 1,
+    };
+  }
+
+  // Verify symlinks don't escape the directory
   if (existsSync(filePath)) {
+    const realPath = realpathSync(filePath);
+    if (!isInsideDir(realPath, screenshotDir)) {
+      return {
+        output: JSON.stringify({ error: 'Path must be inside the screenshot directory' }),
+        exitCode: 1,
+      };
+    }
     unlinkSync(filePath);
   }
 
   // Remove from metadata
-  const screenshotDir = getScreenshotDir(context.projectPath);
   const metaPath = join(screenshotDir, 'screenshots.jsonl');
 
   if (existsSync(metaPath)) {

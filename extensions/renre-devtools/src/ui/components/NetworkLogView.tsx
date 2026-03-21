@@ -1,3 +1,4 @@
+import type { RefObject } from 'react';
 import {
   Badge,
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
@@ -21,7 +22,7 @@ function formatBytes(bytes: number): string {
 
 interface NetworkLogViewProps {
   entries: NetworkEntry[];
-  scrollRef: React.RefObject<HTMLDivElement | null>;
+  scrollRef: RefObject<HTMLDivElement | null>;
 }
 
 export function NetworkLogView({ entries, scrollRef }: Readonly<NetworkLogViewProps>) {

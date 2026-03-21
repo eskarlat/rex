@@ -1,6 +1,14 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { resolve } from 'node:path';
 
+import { getScreenshotDir } from '../shared/state.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
+
+function isInsideDir(filePath: string, dir: string): boolean {
+  const resolved = resolve(filePath);
+  const resolvedDir = resolve(dir);
+  return resolved.startsWith(resolvedDir + '/') || resolved.startsWith(resolvedDir + '\\');
+}
 
 export default function screenshotRead(context: ExecutionContext): CommandResult {
   const filePath = typeof context.args.path === 'string' ? context.args.path : null;
@@ -12,9 +20,27 @@ export default function screenshotRead(context: ExecutionContext): CommandResult
     };
   }
 
+  const screenshotDir = getScreenshotDir(context.projectPath);
+
+  if (!isInsideDir(filePath, screenshotDir)) {
+    return {
+      output: JSON.stringify({ error: 'Path must be inside the screenshot directory' }),
+      exitCode: 1,
+    };
+  }
+
   if (!existsSync(filePath)) {
     return {
       output: JSON.stringify({ error: `File not found: ${filePath}` }),
+      exitCode: 1,
+    };
+  }
+
+  // Verify symlinks don't escape the directory
+  const realPath = realpathSync(filePath);
+  if (!isInsideDir(realPath, screenshotDir)) {
+    return {
+      output: JSON.stringify({ error: 'Path must be inside the screenshot directory' }),
       exitCode: 1,
     };
   }
