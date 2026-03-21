@@ -82,6 +82,27 @@ function routeMessage(
   }
 }
 
+function safeClose(socket: WebSocketLike): void {
+  try {
+    socket.close();
+  } catch (closeErr) {
+    getLogger().debug('terminal', 'Socket close failed', {
+      error: closeErr instanceof Error ? closeErr.message : String(closeErr),
+    });
+  }
+}
+
+function sendReplay(
+  sessionManager: TerminalSessionManager,
+  socket: WebSocketLike,
+  key: string,
+): void {
+  const replayData = sessionManager.getReplayData(key);
+  if (replayData) {
+    safeSend(socket, JSON.stringify({ type: 'session-replay', data: replayData }));
+  }
+}
+
 function handleInit(
   sessionManager: TerminalSessionManager,
   socket: WebSocketLike,
@@ -97,13 +118,7 @@ function handleInit(
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     safeSend(socket, `\r\n\x1b[31mFailed to start terminal: ${errMsg}\x1b[0m\r\n`);
-    try {
-      socket.close();
-    } catch (closeErr) {
-      getLogger().debug('terminal', 'Socket close failed after init error', {
-        error: closeErr instanceof Error ? closeErr.message : String(closeErr),
-      });
-    }
+    safeClose(socket);
     return undefined;
   }
 
@@ -111,10 +126,7 @@ function handleInit(
   safeSend(socket, JSON.stringify({ type: 'session-info', status: isNew ? 'new' : 'reconnected' }));
 
   if (!isNew) {
-    const replayData = sessionManager.getReplayData(key);
-    if (replayData) {
-      safeSend(socket, JSON.stringify({ type: 'session-replay', data: replayData }));
-    }
+    sendReplay(sessionManager, socket, key);
   }
 
   socket.on('message', (raw: Buffer | string) => {
@@ -147,13 +159,7 @@ const terminalWebsocket: FastifyPluginCallback<TerminalWebsocketOptions> = (
         socket,
         '\r\n\x1b[31mTerminal init timed out — no init message received.\x1b[0m\r\n',
       );
-      try {
-        socket.close();
-      } catch (err) {
-        getLogger().debug('terminal', 'Socket close failed on init timeout', {
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
+      safeClose(socket);
     }, INIT_TIMEOUT_MS);
 
     const onFirstMessage = (raw: Buffer | string): void => {
