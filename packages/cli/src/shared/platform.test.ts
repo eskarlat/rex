@@ -89,10 +89,10 @@ describe('platform', () => {
       expect(getArchType()).toBe('arm');
     });
 
-    it('should return "x64" for unknown architectures', async () => {
+    it('should return "unknown" for unsupported architectures', async () => {
       vi.stubGlobal('process', { ...process, arch: 'mips' });
       const { getArchType } = await import('./platform.js');
-      expect(getArchType()).toBe('x64');
+      expect(getArchType()).toBe('unknown');
     });
   });
 

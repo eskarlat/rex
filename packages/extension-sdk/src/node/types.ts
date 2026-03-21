@@ -13,7 +13,7 @@ export interface HookContext {
   projectDir: string;
   agentDir: string;
   extensionDir: string;
-  platform: PlatformInfo;
+  platform?: PlatformInfo;
   sdk: SdkMethods;
 }
 

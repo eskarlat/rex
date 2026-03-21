@@ -29,7 +29,7 @@ export function getArchType(): ArchType {
     return arch;
   }
 
-  return 'x64';
+  return 'unknown';
 }
 
 export function getPlatformInfo(): PlatformInfo {
