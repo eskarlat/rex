@@ -20,6 +20,21 @@ const CLI_BIN = join(import.meta.dirname, '..', 'packages', 'cli', 'bin', 'renre
 const HELLO_WORLD_EXT = join(import.meta.dirname, '..', 'extensions', 'hello-world');
 
 /**
+ * Create the .renre-kit project structure that `init` would create.
+ * Avoids calling the interactive `init` command in non-TTY test environments.
+ */
+async function initProject(projectDir) {
+  const renreKitDir = join(projectDir, '.renre-kit');
+  await mkdir(renreKitDir, { recursive: true });
+  const now = new Date().toISOString();
+  await writeFile(
+    join(renreKitDir, 'manifest.json'),
+    JSON.stringify({ name: 'test-project', version: '1.0.0', created_at: now }, null, 2),
+  );
+  await writeFile(join(renreKitDir, 'plugins.json'), JSON.stringify({}, null, 2));
+}
+
+/**
  * Run a git command synchronously. Throws on failure.
  */
 function git(args, options = {}) {
@@ -51,7 +66,8 @@ function runCli(args, options = {}) {
         resolve({
           stdout: stdout?.toString() ?? '',
           stderr: stderr?.toString() ?? '',
-          code: error?.code ?? 0,
+          code: error ? (error.code ?? 1) : 0,
+          signal: error?.killed ? 'SIGTERM' : (error?.signal ?? null),
         });
       },
     );
@@ -75,7 +91,8 @@ function runNode(args, options = {}) {
         resolve({
           stdout: stdout?.toString() ?? '',
           stderr: stderr?.toString() ?? '',
-          code: error?.code ?? 0,
+          code: error ? (error.code ?? 1) : 0,
+          signal: error?.killed ? 'SIGTERM' : (error?.signal ?? null),
         });
       },
     );
@@ -302,12 +319,8 @@ describe('extension install and server integration', () => {
       }),
     );
 
-    // 4. Initialize a project
-    const initResult = await runCli(['init'], {
-      cwd: projectDir,
-      renreHome: homeDir,
-    });
-    assert.equal(initResult.code, 0, `init should succeed: ${initResult.stderr}`);
+    // 4. Initialize project structure (non-interactive)
+    await initProject(projectDir);
   });
 
   after(async () => {
@@ -520,12 +533,8 @@ describe('git-based extension installation (simulated GitHub)', () => {
       }),
     );
 
-    // 5. Initialize a project
-    const initResult = await runCli(['init'], {
-      cwd: projectDir,
-      renreHome: homeDir,
-    });
-    assert.equal(initResult.code, 0, `init should succeed: ${initResult.stderr}`);
+    // 5. Initialize project structure (non-interactive)
+    await initProject(projectDir);
   });
 
   after(async () => {
