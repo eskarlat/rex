@@ -1,31 +1,66 @@
 ---
 name: network-analysis
-description: Use this skill to monitor network requests, inspect cookies, read browser storage (localStorage/sessionStorage), and measure page performance. Use when debugging API calls, checking stored data, analyzing load times, or investigating network issues.
+description: Use this skill to monitor network requests, inspect cookies, read browser storage (localStorage/sessionStorage), measure page performance, and manage log output. Use when debugging API calls, checking stored data, analyzing load times, investigating network issues, or clearing captured logs.
 ---
 
 # renre-devtools/network-analysis
 
-Monitor network traffic, inspect cookies/storage, and measure performance.
+Monitor network traffic, inspect cookies/storage, measure performance, and manage logs.
 
 ## Commands
 
 ### renre-devtools:network
 
-Show captured network requests as a markdown table.
+Show captured network requests as a markdown table or JSON.
 
 **Arguments:**
 
 - `--filter <string>` — Filter URLs containing this string
-- `--method <string>` — Filter by HTTP method (GET, POST, etc.)
+- `--method <string>` — Filter by HTTP method (GET, POST, PUT, DELETE)
 - `--limit <number>` — Max requests to show (default: 50)
+- `--offset <number>` — Skip first N log lines (for incremental reads)
+- `--format <string>` — Output format: "markdown" (default) or "json"
 
 **Examples:**
 
 ```
 renre-kit renre-devtools:network
-renre-kit renre-devtools:network --filter "api"
-renre-kit renre-devtools:network --method POST
-renre-kit renre-devtools:network --filter ".json" --limit 10
+renre-kit renre-devtools:network --filter "api" --method POST
+renre-kit renre-devtools:network --format json --limit 100
+renre-kit renre-devtools:network --offset 50 --limit 20
+```
+
+**JSON format returns:** `{ entries: [{ timestamp, method, url, status, type, size, duration }], total }`
+
+### renre-devtools:console
+
+Show captured console messages from the browser.
+
+**Arguments:**
+
+- `--level <string>` — Filter by level: log, warn, error, info, debug, warning
+- `--limit <number>` — Max messages to show (default: 50)
+- `--offset <number>` — Skip first N log lines (for incremental reads)
+- `--format <string>` — Output format: "markdown" (default) or "json"
+
+**Examples:**
+
+```
+renre-kit renre-devtools:console
+renre-kit renre-devtools:console --level error
+renre-kit renre-devtools:console --format json --limit 200
+```
+
+**JSON format returns:** `{ entries: [{ timestamp, level, text }], total }`
+
+### renre-devtools:clear-logs
+
+Clear all captured console and network log files.
+
+**Example:**
+
+```
+renre-kit renre-devtools:clear-logs
 ```
 
 ### renre-devtools:cookies
@@ -77,5 +112,8 @@ Returns:
 
 - Network requests are captured from launch — navigate to a page first, then check `network`
 - Use `--filter "api"` to focus on API calls
+- Use `--format json` for programmatic processing (e.g., in LLM workflows)
+- Use `--offset` with `--limit` for paginated reading of large log files
+- Use `clear-logs` to reset monitoring when starting a new debugging session
 - Use `performance` after page load for meaningful metrics
 - Combine `cookies` + `storage` to understand the full client-side state

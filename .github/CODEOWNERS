@@ -21,6 +21,7 @@ packages/create-renre-extension/ @eskarlat
 
 # Reference extensions
 extensions/ @eskarlat
+extensions/renre-devtools/ @eskarlat
 
 # Architecture documentation
 renre-kit-architecture/ @eskarlat
