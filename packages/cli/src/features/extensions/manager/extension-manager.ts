@@ -19,6 +19,7 @@ import { createExtensionLogger } from '../../../core/logger/extension-logger.js'
 import { createNotification } from '../../notifications/notification-manager.js';
 import { getDb } from '../../../core/database/database.js';
 import type { NotificationVariant } from '../../notifications/notification.types.js';
+import { getPlatformInfo } from '../../../shared/platform.js';
 
 export interface InstalledExtension {
   name: string;
@@ -87,6 +88,7 @@ async function runHook(
         projectDir,
         agentDir,
         extensionDir,
+        platform: getPlatformInfo(),
         sdk: {
           deployAgentAssets: () => deployAgentAssets(extensionDir, projectDir, agentDir),
           cleanupAgentAssets: () => cleanupAgentAssets(extensionDir, projectDir, agentDir),

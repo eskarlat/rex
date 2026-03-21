@@ -64,6 +64,76 @@ describe('platform', () => {
     });
   });
 
+  describe('getArchType', () => {
+    it('should return "x64" when arch is x64', async () => {
+      vi.stubGlobal('process', { ...process, arch: 'x64' });
+      const { getArchType } = await import('./platform.js');
+      expect(getArchType()).toBe('x64');
+    });
+
+    it('should return "arm64" when arch is arm64', async () => {
+      vi.stubGlobal('process', { ...process, arch: 'arm64' });
+      const { getArchType } = await import('./platform.js');
+      expect(getArchType()).toBe('arm64');
+    });
+
+    it('should return "ia32" when arch is ia32', async () => {
+      vi.stubGlobal('process', { ...process, arch: 'ia32' });
+      const { getArchType } = await import('./platform.js');
+      expect(getArchType()).toBe('ia32');
+    });
+
+    it('should return "arm" when arch is arm', async () => {
+      vi.stubGlobal('process', { ...process, arch: 'arm' });
+      const { getArchType } = await import('./platform.js');
+      expect(getArchType()).toBe('arm');
+    });
+
+    it('should return "unknown" for unsupported architectures', async () => {
+      vi.stubGlobal('process', { ...process, arch: 'mips' });
+      const { getArchType } = await import('./platform.js');
+      expect(getArchType()).toBe('unknown');
+    });
+  });
+
+  describe('getPlatformInfo', () => {
+    it('should return complete platform info for linux x64', async () => {
+      vi.stubGlobal('process', { ...process, platform: 'linux', arch: 'x64' });
+      const { getPlatformInfo } = await import('./platform.js');
+      expect(getPlatformInfo()).toEqual({
+        os: 'linux',
+        arch: 'x64',
+        isWindows: false,
+        isMacos: false,
+        isLinux: true,
+      });
+    });
+
+    it('should return complete platform info for macos arm64', async () => {
+      vi.stubGlobal('process', { ...process, platform: 'darwin', arch: 'arm64' });
+      const { getPlatformInfo } = await import('./platform.js');
+      expect(getPlatformInfo()).toEqual({
+        os: 'macos',
+        arch: 'arm64',
+        isWindows: false,
+        isMacos: true,
+        isLinux: false,
+      });
+    });
+
+    it('should return complete platform info for windows x64', async () => {
+      vi.stubGlobal('process', { ...process, platform: 'win32', arch: 'x64' });
+      const { getPlatformInfo } = await import('./platform.js');
+      expect(getPlatformInfo()).toEqual({
+        os: 'windows',
+        arch: 'x64',
+        isWindows: true,
+        isMacos: false,
+        isLinux: false,
+      });
+    });
+  });
+
   describe('getHardwareUUID', () => {
     it('should return UUID from ioreg on macOS', async () => {
       vi.stubGlobal('process', { ...process, platform: 'darwin' });

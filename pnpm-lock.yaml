@@ -300,6 +300,9 @@ importers:
       '@clack/prompts':
         specifier: ^0.9.1
         version: 0.9.1
+      '@renre-kit/shared':
+        specifier: workspace:*
+        version: link:../shared
       better-sqlite3:
         specifier: ^11.7.0
         version: 11.10.0
@@ -377,6 +380,9 @@ importers:
 
   packages/extension-sdk:
     dependencies:
+      '@renre-kit/shared':
+        specifier: workspace:*
+        version: link:../shared
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -520,6 +526,15 @@ importers:
       vitest:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@20.19.37)(jsdom@25.0.1)(lightningcss@1.32.0)
+
+  packages/shared:
+    devDependencies:
+      tsup:
+        specifier: ^8.3.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
 
   packages/ui:
     dependencies:

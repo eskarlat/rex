@@ -32,6 +32,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@renre-kit/shared": "workspace:*",
     "@clack/prompts": "^0.9.1",
     "better-sqlite3": "^11.7.0",
     "commander": "^12.1.0",

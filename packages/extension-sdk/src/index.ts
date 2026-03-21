@@ -23,7 +23,7 @@ export type {
   EventsAPI,
   SchedulerAPI,
   TerminalAPI,
-  LoggerAPI,
+  ExtensionLogger,
   RenreKitSDK,
 } from './core/types';
 
