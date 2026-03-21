@@ -7,7 +7,11 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-function ConnectionStatus({ connected }: Readonly<{ connected: boolean }>) {
+interface ConnectionStatusProps {
+  connected: boolean;
+}
+
+function ConnectionStatus({ connected }: Readonly<ConnectionStatusProps>) {
   return (
     <TooltipProvider>
       <Tooltip>

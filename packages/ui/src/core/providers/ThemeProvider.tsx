@@ -1,6 +1,10 @@
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 
-export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+interface ThemeProviderProps {
+  children: React.ReactNode;
+}
+
+export function ThemeProvider({ children }: Readonly<ThemeProviderProps>) {
   return (
     <NextThemesProvider attribute="class" defaultTheme="light" enableSystem={false}>
       {children}

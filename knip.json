@@ -28,7 +28,6 @@
     },
     "extensions/context7-mcp": {
       "entry": [
-        "src/index.ts",
         "src/commands/status.ts",
         "src/ui/panel.tsx",
         "src/ui/status-widget.tsx"
@@ -37,10 +36,20 @@
     },
     "extensions/figma-mcp": {
       "entry": [
-        "src/index.ts",
         "src/commands/status.ts",
         "src/ui/panel.tsx",
         "src/ui/status-widget.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "extensions/atlassian-mcp": {
+      "entry": [
+        "src/server.ts",
+        "src/commands/status.ts",
+        "src/ui/panel.tsx",
+        "src/ui/my-tasks-widget.tsx",
+        "src/ui/comments-widget.tsx",
+        "src/ui/confluence-updates-widget.tsx"
       ],
       "project": ["src/**/*.{ts,tsx}"]
     },
@@ -52,15 +61,27 @@
         "src/ui/status-widget.tsx"
       ],
       "project": ["src/**/*.{ts,tsx}"]
+    },
+    "extensions/github-mcp": {
+      "entry": [
+        "src/commands/status.ts",
+        "src/ui/panel.tsx",
+        "src/ui/status-widget.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "extensions/renre-devtools": {
+      "entry": [
+        "src/commands/status.ts",
+        "src/ui/panel.tsx",
+        "src/ui/browser-widget.tsx"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
     }
   },
   "ignoreDependencies": [
     "@vitest/coverage-istanbul",
-    "@typescript-eslint/eslint-plugin",
-    "@typescript-eslint/parser",
-    "eslint-plugin-sonarjs",
     "pino-pretty",
-    "class-variance-authority",
     "@radix-ui/*",
     "@hookform/resolvers"
   ]

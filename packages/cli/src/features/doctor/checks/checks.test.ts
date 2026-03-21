@@ -124,6 +124,38 @@ describe('doctor checks', () => {
       expect(result.status).toBe('pass');
       expect(result.message).toContain('v');
     });
+
+    it('fails when node version is below 20', () => {
+      const originalVersions = process.versions;
+      Object.defineProperty(process, 'versions', {
+        value: { ...originalVersions, node: '18.0.0' },
+        configurable: true,
+      });
+      const result = nodeVersionCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.message).toContain('requires >= 20.0.0');
+      Object.defineProperty(process, 'versions', {
+        value: originalVersions,
+        configurable: true,
+      });
+    });
+
+    it('falls back to 0.0.0 when node version is undefined', () => {
+      const originalVersions = process.versions;
+      const modified = { ...originalVersions };
+      delete (modified as Record<string, unknown>)['node'];
+      Object.defineProperty(process, 'versions', {
+        value: modified,
+        configurable: true,
+      });
+      const result = nodeVersionCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.message).toContain('v0.0.0');
+      Object.defineProperty(process, 'versions', {
+        value: originalVersions,
+        configurable: true,
+      });
+    });
   });
 
   describe('globalDirectoryCheck', () => {
@@ -245,6 +277,17 @@ describe('doctor checks', () => {
       expect(result.status).toBe('fail');
       expect(result.message).toContain('cannot read migration state');
     });
+
+    it('handles non-Error thrown during schema check', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(BetterSqlite3).mockImplementation(() => {
+        throw 'string error';
+      });
+
+      const result = schemaStatusCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.detail).toContain('string error');
+    });
   });
 
   describe('configValidCheck', () => {
@@ -268,6 +311,16 @@ describe('doctor checks', () => {
       const result = configValidCheck.run();
       expect(result.status).toBe('fail');
       expect(result.message).toContain('invalid JSON');
+    });
+
+    it('handles non-Error thrown during config parsing', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockImplementation(() => {
+        throw 'string error';
+      });
+      const result = configValidCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.detail).toContain('string error');
     });
 
     it('fails when config schemaVersion is too new', () => {
@@ -309,6 +362,16 @@ describe('doctor checks', () => {
       vi.mocked(readFileSync).mockReturnValue('not json');
       const result = vaultValidCheck.run();
       expect(result.status).toBe('fail');
+    });
+
+    it('handles non-Error thrown during vault parsing', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockImplementation(() => {
+        throw 'string error';
+      });
+      const result = vaultValidCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.detail).toContain('string error');
     });
 
     it('fails when vault schemaVersion is too new', () => {
@@ -353,6 +416,26 @@ describe('doctor checks', () => {
       const result = vaultKeyCheck.run();
       expect(result.status).toBe('fail');
       expect(result.message).toContain('cannot stat');
+    });
+
+    it('handles non-Error thrown by statSync', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(statSync).mockImplementation(() => {
+        throw 'string error';
+      });
+      const result = vaultKeyCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.detail).toContain('string error');
+    });
+
+    it('passes on Windows without permission check', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      const result = vaultKeyCheck.run();
+      expect(result.status).toBe('pass');
+      expect(result.message).toContain('permission check skipped on Windows');
+      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
     });
   });
 
@@ -406,6 +489,25 @@ describe('doctor checks', () => {
       expect(result.message).toContain('1 manifest error');
     });
 
+    it('handles non-Error thrown by loadManifest', () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(listInstalled).mockReturnValue([
+        {
+          name: 'bad-ext',
+          version: '1.0.0',
+          registry_source: 'default',
+          installed_at: '',
+          type: 'standard',
+        },
+      ]);
+      vi.mocked(loadManifest).mockImplementation(() => {
+        throw 'string error';
+      });
+      const result = extensionManifestsCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.detail).toContain('string error');
+    });
+
     it('fails when database open throws', async () => {
       vi.mocked(existsSync).mockReturnValue(true);
       const BetterSqlite3 = (await import('better-sqlite3')).default;
@@ -415,6 +517,17 @@ describe('doctor checks', () => {
       const result = extensionManifestsCheck.run();
       expect(result.status).toBe('fail');
       expect(result.message).toContain('cannot check');
+    });
+
+    it('handles non-Error thrown during database open', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      const BetterSqlite3 = (await import('better-sqlite3')).default;
+      vi.mocked(BetterSqlite3).mockImplementation(() => {
+        throw 'string error';
+      });
+      const result = extensionManifestsCheck.run();
+      expect(result.status).toBe('fail');
+      expect(result.detail).toContain('string error');
     });
   });
 

@@ -40,15 +40,13 @@ function formatRelativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
-function NotificationItem({
-  notification,
-  onRead,
-  onDelete,
-}: Readonly<{
+interface NotificationItemProps {
   notification: NotificationRecord;
   onRead: (id: number, actionUrl: string | null) => void;
   onDelete: (id: number) => void;
-}>) {
+}
+
+function NotificationItem({ notification, onRead, onDelete }: Readonly<NotificationItemProps>) {
   return (
     <div
       className={cn(

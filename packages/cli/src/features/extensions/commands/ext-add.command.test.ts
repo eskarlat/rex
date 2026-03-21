@@ -104,4 +104,52 @@ describe('ext-add command', () => {
 
     expect(extensionManager.activate).toHaveBeenCalled();
   });
+
+  it('reports engine compat errors and does not activate', async () => {
+    vi.mocked(registryManager.resolve).mockReturnValue({
+      name: 'my-ext',
+      gitUrl: 'https://github.com/user/my-ext.git',
+      latestVersion: '1.0.0',
+      type: 'standard',
+      registryName: 'default',
+    });
+
+    const { checkEngineCompat } = await import('../engine/engine-compat.js');
+    vi.mocked(checkEngineCompat).mockReturnValue({
+      compatible: false,
+      issues: ['Requires renre-kit >=99.0.0', 'Requires extension-sdk >=99.0.0'],
+    });
+
+    await handleExtAdd({
+      name: 'my-ext',
+      registryConfigs: [
+        { name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 },
+      ],
+      projectPath: '/tmp/project',
+    });
+
+    expect(clack.log.error).toHaveBeenCalledWith(expect.stringContaining('renre-kit'));
+    expect(clack.log.error).toHaveBeenCalledWith(expect.stringContaining('extension-sdk'));
+    expect(extensionManager.activate).not.toHaveBeenCalled();
+  });
+
+  it('does not activate when projectPath is null', async () => {
+    vi.mocked(registryManager.resolve).mockReturnValue({
+      name: 'my-ext',
+      gitUrl: 'https://github.com/user/my-ext.git',
+      latestVersion: '1.0.0',
+      type: 'standard',
+      registryName: 'default',
+    });
+
+    await handleExtAdd({
+      name: 'my-ext',
+      registryConfigs: [
+        { name: 'default', url: 'https://example.com', priority: 1, cacheTTL: 3600 },
+      ],
+      projectPath: null,
+    });
+
+    expect(extensionManager.activate).not.toHaveBeenCalled();
+  });
 });

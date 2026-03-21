@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import BetterSqlite3 from 'better-sqlite3';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { initDatabase, getDb, closeDatabase, runMigrations } from './database.js';
+import { initDatabase, getDb, closeDatabase, runMigrations, findMigrationsDir } from './database.js';
 import type Database from 'better-sqlite3';
 
 describe('database', () => {
@@ -258,5 +258,41 @@ describe('runMigrations', () => {
 
   it('should handle non-existent migrations directory gracefully', () => {
     expect(() => runMigrations(testDb, '/nonexistent/path')).not.toThrow();
+  });
+
+  it('should handle backup failure gracefully and still run migration', () => {
+    fs.writeFileSync(
+      path.join(migrationsDir, '001-test.sql'),
+      'CREATE TABLE backup_test (id INTEGER PRIMARY KEY);',
+    );
+
+    // Make backup path unwritable by creating a directory where the .bak file would go
+    const backupPath = `${testDb.name}.bak`;
+    fs.mkdirSync(backupPath, { recursive: true });
+
+    // Migration should still succeed despite backup failure
+    expect(() => runMigrations(testDb, migrationsDir)).not.toThrow();
+
+    const rows = testDb.prepare('SELECT name FROM _migrations').all() as Array<{ name: string }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.name).toBe('001-test.sql');
+
+    // Cleanup
+    fs.rmSync(backupPath, { recursive: true, force: true });
+  });
+});
+
+describe('findMigrationsDir', () => {
+  it('returns a string path', () => {
+    const result = findMigrationsDir();
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it('returns bundle-relative path when source path does not exist', () => {
+    const existsSyncSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+    const result = findMigrationsDir();
+    expect(result).toContain('migrations');
+    existsSyncSpy.mockRestore();
   });
 });

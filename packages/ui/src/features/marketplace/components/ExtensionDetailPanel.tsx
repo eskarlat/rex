@@ -14,7 +14,11 @@ interface ExtensionDetailPanelProps {
   extension: Extension | undefined;
 }
 
-function DetailIcon({ extension }: Readonly<{ extension: Extension }>) {
+interface DetailIconProps {
+  extension: Extension;
+}
+
+function DetailIcon({ extension }: Readonly<DetailIconProps>) {
   if (!extension.hasIcon) {
     return (
       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
@@ -32,7 +36,12 @@ function DetailIcon({ extension }: Readonly<{ extension: Extension }>) {
   );
 }
 
-function MetadataRow({ label, value }: Readonly<{ label: string; value: string | undefined }>) {
+interface MetadataRowProps {
+  label: string;
+  value: string | undefined;
+}
+
+function MetadataRow({ label, value }: Readonly<MetadataRowProps>) {
   if (!value) return null;
   return (
     <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
@@ -42,7 +51,12 @@ function MetadataRow({ label, value }: Readonly<{ label: string; value: string |
   );
 }
 
-function LinkRow({ label, url }: Readonly<{ label: string; url: string | undefined }>) {
+interface LinkRowProps {
+  label: string;
+  url: string | undefined;
+}
+
+function LinkRow({ label, url }: Readonly<LinkRowProps>) {
   if (!url) return null;
   return (
     <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
@@ -60,15 +74,13 @@ function LinkRow({ label, url }: Readonly<{ label: string; url: string | undefin
   );
 }
 
-function DocContent({
-  data,
-  isLoading,
-  testIdPrefix,
-}: Readonly<{
+interface DocContentProps {
   data: string | null | undefined;
   isLoading: boolean;
   testIdPrefix: string;
-}>) {
+}
+
+function DocContent({ data, isLoading, testIdPrefix }: Readonly<DocContentProps>) {
   if (isLoading) {
     return (
       <div data-testid={`${testIdPrefix}-loading`} className="space-y-2">
@@ -88,7 +100,11 @@ function DocContent({
   );
 }
 
-function DocsTabs({ name }: Readonly<{ name: string }>) {
+interface DocsTabsProps {
+  name: string;
+}
+
+function DocsTabs({ name }: Readonly<DocsTabsProps>) {
   const { data: readme, isLoading: readmeLoading } = useExtensionReadme(name);
   const { data: changelog, isLoading: changelogLoading } = useExtensionChangelog(name);
 

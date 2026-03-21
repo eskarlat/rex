@@ -13,7 +13,12 @@ interface ExtensionActionsProps {
   extension: Extension;
 }
 
-function UpdateButton({ extension, isPending }: Readonly<{ extension: Extension; isPending: boolean }>) {
+interface UpdateButtonProps {
+  extension: Extension;
+  isPending: boolean;
+}
+
+function UpdateButton({ extension, isPending }: Readonly<UpdateButtonProps>) {
   const update = useUpdateExtension();
 
   if (!extension.updateAvailable) return null;

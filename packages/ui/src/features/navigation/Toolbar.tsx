@@ -68,7 +68,12 @@ function useBreadcrumbs(): Crumb[] {
   return crumbs;
 }
 
-function CrumbItem({ crumb, isLast }: Readonly<{ crumb: Crumb; isLast: boolean }>) {
+interface CrumbItemProps {
+  crumb: Crumb;
+  isLast: boolean;
+}
+
+function CrumbItem({ crumb, isLast }: Readonly<CrumbItemProps>) {
   if (crumb.to && !isLast) {
     return (
       <Link to={crumb.to} className="text-muted-foreground hover:text-foreground transition-colors">

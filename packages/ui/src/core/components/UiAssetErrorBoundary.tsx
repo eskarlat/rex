@@ -31,7 +31,12 @@ class UiAssetErrorBoundary extends Component<UiAssetErrorBoundaryProps, UiAssetE
   }
 }
 
-function UiAssetError({ label, extensionName }: Readonly<{ label: string; extensionName: string }>) {
+interface UiAssetErrorProps {
+  label: string;
+  extensionName: string;
+}
+
+function UiAssetError({ label, extensionName }: Readonly<UiAssetErrorProps>) {
   return (
     <Alert variant="destructive">
       <AlertTitle>Failed to load {label}</AlertTitle>
@@ -42,7 +47,11 @@ function UiAssetError({ label, extensionName }: Readonly<{ label: string; extens
   );
 }
 
-function UiAssetSkeleton({ compact }: Readonly<{ compact?: boolean }>) {
+interface UiAssetSkeletonProps {
+  compact?: boolean;
+}
+
+function UiAssetSkeleton({ compact }: Readonly<UiAssetSkeletonProps>) {
   if (compact) {
     return (
       <div className="space-y-2 p-2">

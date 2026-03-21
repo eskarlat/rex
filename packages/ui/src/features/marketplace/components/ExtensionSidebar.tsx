@@ -16,7 +16,12 @@ interface ExtensionSidebarProps {
   onSelect: (name: string) => void;
 }
 
-function SectionHeader({ label, count }: Readonly<{ label: string; count: number }>) {
+interface SectionHeaderProps {
+  label: string;
+  count: number;
+}
+
+function SectionHeader({ label, count }: Readonly<SectionHeaderProps>) {
   return (
     <div className="flex items-center justify-between px-2 py-1.5">
       <span className="text-xs font-semibold uppercase text-muted-foreground">{label}</span>

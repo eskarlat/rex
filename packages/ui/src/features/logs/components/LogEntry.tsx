@@ -8,7 +8,11 @@ import { TableCell, TableRow } from '@/components/ui/table';
 import type { LogMessage } from '@/core/api/websocket';
 import { cn } from '@/lib/utils';
 
-function LogDataRow({ data }: Readonly<{ data: Record<string, unknown> }>) {
+interface LogDataRowProps {
+  data: Record<string, unknown>;
+}
+
+function LogDataRow({ data }: Readonly<LogDataRowProps>) {
   return (
     <TableRow className="border-b">
       <TableCell colSpan={4} className="bg-muted/30 py-2 px-3">
@@ -20,7 +24,11 @@ function LogDataRow({ data }: Readonly<{ data: Record<string, unknown> }>) {
   );
 }
 
-function LevelBadge({ level }: Readonly<{ level: string }>) {
+interface LevelBadgeProps {
+  level: string;
+}
+
+function LevelBadge({ level }: Readonly<LevelBadgeProps>) {
   return (
     <Badge
       variant="outline"
@@ -32,15 +40,13 @@ function LevelBadge({ level }: Readonly<{ level: string }>) {
   );
 }
 
-function MessageCell({
-  msg,
-  expandable,
-  expanded,
-}: Readonly<{
+interface MessageCellProps {
   msg: string;
   expandable: boolean;
   expanded: boolean;
-}>) {
+}
+
+function MessageCell({ msg, expandable, expanded }: Readonly<MessageCellProps>) {
   return (
     <TableCell className="py-1.5 pr-3">
       <div className="flex items-center gap-1.5">
@@ -66,7 +72,11 @@ function useInteractiveRow(hasData: boolean, toggle: () => void) {
   return { onClick: toggle, role: 'button' as const, tabIndex: 0, onKeyDown };
 }
 
-export function LogEntry({ log }: Readonly<{ log: LogMessage }>) {
+interface LogEntryProps {
+  log: LogMessage;
+}
+
+export function LogEntry({ log }: Readonly<LogEntryProps>) {
   const [expanded, setExpanded] = useState(false);
   const hasData = log.data !== undefined && Object.keys(log.data).length > 0;
   const toggle = () => setExpanded((v) => !v);

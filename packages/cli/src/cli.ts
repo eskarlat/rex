@@ -133,6 +133,59 @@ function formatMcpResult(result: unknown): string {
   }
 }
 
+function registerSingleExtension(
+  program: Command,
+  extName: string,
+  projectName: string,
+  projectPath: string,
+  mcpExtensions: Map<string, McpExtensionEntry>,
+): void {
+  const version = getActivated(projectPath)[extName];
+  if (!version) return;
+
+  const extDir = getExtensionDir(extName, version);
+  let manifest;
+  try {
+    manifest = loadManifest(extDir);
+  } catch {
+    return; // Skip extensions with missing/invalid manifests
+  }
+
+  const configSchema = manifest.config?.schema ?? {};
+  const resolvedConfig = resolveExtensionConfig(extName, configSchema, projectPath);
+
+  if (manifest.type === 'mcp' && manifest.mcp) {
+    mcpExtensions.set(extName, { mcpConfig: manifest.mcp, resolvedConfig, extDir });
+  }
+
+  for (const [cmdName, cmdDef] of Object.entries(manifest.commands)) {
+    const fullName = `${extName}:${cmdName}`;
+    const description = cmdDef.description ?? `Run ${fullName}`;
+
+    program
+      .command(`${fullName} [args...]`)
+      .description(description)
+      .allowUnknownOption(true)
+      .action(async (args: string[], _opts: unknown, command: Command) => {
+        const parsedOpts: Record<string, unknown> = command.opts();
+        const context = {
+          projectName,
+          projectPath,
+          args: { _positional: args, ...parsedOpts },
+          config: resolvedConfig,
+          logger: createExtensionLogger(extName),
+        };
+
+        const handler = await loadCommandHandler(extDir, cmdDef.handler);
+        const result = await executeCommand(handler, context);
+        if (result !== undefined) {
+          process.stdout.write(formatCommandResult(result));
+          process.stdout.write('\n');
+        }
+      });
+  }
+}
+
 function registerExtensionCommands(
   program: Command,
   projectPath: string,
@@ -142,100 +195,65 @@ function registerExtensionCommands(
   const projectName = getProjectName(projectPath);
   const mcpExtensions = new Map<string, McpExtensionEntry>();
 
-  for (const [extName, version] of Object.entries(plugins)) {
-    if (!version) continue;
-
-    const extDir = getExtensionDir(extName, version);
-    let manifest;
-    try {
-      manifest = loadManifest(extDir);
-    } catch {
-      continue; // Skip extensions with missing/invalid manifests
-    }
-
-    const configSchema = manifest.config?.schema ?? {};
-    const resolvedConfig = resolveExtensionConfig(extName, configSchema, projectPath);
-
-    // MCP extensions: store config so the catch-all forwards unknown tools to the MCP server
-    if (manifest.type === 'mcp' && manifest.mcp) {
-      mcpExtensions.set(extName, { mcpConfig: manifest.mcp, resolvedConfig, extDir });
-    }
-
-    // Register declared commands as file-based handlers (both standard and MCP extensions)
-    for (const [cmdName, cmdDef] of Object.entries(manifest.commands)) {
-      const fullName = `${extName}:${cmdName}`;
-      const description = cmdDef.description ?? `Run ${fullName}`;
-
-      program
-        .command(`${fullName} [args...]`)
-        .description(description)
-        .allowUnknownOption(true)
-        .action(async (args: string[], _opts: unknown, command: Command) => {
-          const parsedOpts: Record<string, unknown> = command.opts();
-          const context = {
-            projectName,
-            projectPath,
-            args: { _positional: args, ...parsedOpts },
-            config: resolvedConfig,
-            logger: createExtensionLogger(extName),
-          };
-
-          const handler = await loadCommandHandler(extDir, cmdDef.handler);
-          const result = await executeCommand(handler, context);
-          if (result !== undefined) {
-            process.stdout.write(formatCommandResult(result));
-            process.stdout.write('\n');
-          }
-        });
-    }
+  for (const extName of Object.keys(plugins)) {
+    registerSingleExtension(program, extName, projectName, projectPath, mcpExtensions);
   }
 
   // MCP catch-all: intercept unknown commands matching {mcpExt}:{tool} pattern
   if (mcpExtensions.size > 0) {
     program.on('command:*', (operands: string[]) => {
       const input = operands[0] ?? '';
-      const colonIdx = input.indexOf(':');
-      if (colonIdx > 0) {
-        const extName = input.slice(0, Math.max(0, colonIdx));
-        const tool = input.slice(Math.max(0, colonIdx + 1));
-        const entry = mcpExtensions.get(extName);
-        if (entry && tool) {
-          const rawArgs = process.argv.slice(3);
-          const parsedArgs = parseCliArgs(rawArgs);
-          connectionManager.getConnection(
-            extName,
-            entry.mcpConfig,
-            entry.resolvedConfig,
-            entry.extDir,
-          );
-          connectionManager.executeToolCall(extName, tool, parsedArgs).then(
-            (result) => {
-              if (result !== undefined) {
-                const text = formatMcpResult(result);
-                const isError =
-                  typeof result === 'object' &&
-                  result !== null &&
-                  (result as Record<string, unknown>).isError === true;
-                if (isError) {
-                  process.stderr.write(text + '\n');
-                  process.exitCode = 1;
-                } else {
-                  process.stdout.write(text + '\n');
-                }
-              }
-            },
-            (err: unknown) => {
-              const message = err instanceof Error ? err.message : String(err);
-              process.stderr.write(`Error: ${message}\n`);
-              process.exitCode = 1;
-            },
-          );
-          return;
-        }
-      }
-      program.error(`error: unknown command '${input}'`, { exitCode: 1 });
+      handleMcpCatchAll(program, input, mcpExtensions, connectionManager);
     });
   }
+}
+
+function handleMcpCatchAll(
+  program: Command,
+  input: string,
+  mcpExtensions: Map<string, McpExtensionEntry>,
+  connectionManager: ConnectionManager,
+): void {
+  const colonIdx = input.indexOf(':');
+  if (colonIdx > 0) {
+    const extName = input.slice(0, Math.max(0, colonIdx));
+    const tool = input.slice(Math.max(0, colonIdx + 1));
+    const entry = mcpExtensions.get(extName);
+    if (entry && tool) {
+      const rawArgs = process.argv.slice(3);
+      const parsedArgs = parseCliArgs(rawArgs);
+      connectionManager.getConnection(
+        extName,
+        entry.mcpConfig,
+        entry.resolvedConfig,
+        entry.extDir,
+      );
+      connectionManager.executeToolCall(extName, tool, parsedArgs).then(
+        (result) => {
+          if (result !== undefined) {
+            const text = formatMcpResult(result);
+            const isError =
+              typeof result === 'object' &&
+              result !== null &&
+              (result as Record<string, unknown>).isError === true;
+            if (isError) {
+              process.stderr.write(text + '\n');
+              process.exitCode = 1;
+            } else {
+              process.stdout.write(text + '\n');
+            }
+          }
+        },
+        (err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          process.stderr.write(`Error: ${message}\n`);
+          process.exitCode = 1;
+        },
+      );
+      return;
+    }
+  }
+  program.error(`error: unknown command '${input}'`, { exitCode: 1 });
 }
 
 export function createProgram(): Command {

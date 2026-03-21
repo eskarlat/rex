@@ -91,15 +91,13 @@ export function ConfigForm({ schema, values, onSave, isSaving }: Readonly<Config
   );
 }
 
-function ConfigFieldInput({
-  fieldKey,
-  field,
-  form,
-}: Readonly<{
+interface ConfigFieldInputProps {
   fieldKey: string;
   field: ConfigField;
   form: ReturnType<typeof useForm<Record<string, unknown>>>;
-}>): React.ReactElement {
+}
+
+function ConfigFieldInput({ fieldKey, field, form }: Readonly<ConfigFieldInputProps>): React.ReactElement {
   const [vaultOpen, setVaultOpen] = useState(false);
   const currentValue = form.watch(fieldKey);
   const isVault = isVaultRef(currentValue);
@@ -170,17 +168,14 @@ function ConfigFieldInput({
   );
 }
 
-function VaultPickerDialog({
-  open,
-  onClose,
-  onSelect,
-  hint,
-}: Readonly<{
+interface VaultPickerDialogProps {
   open: boolean;
   onClose: () => void;
   onSelect: (key: string) => void;
   hint?: string;
-}>) {
+}
+
+function VaultPickerDialog({ open, onClose, onSelect, hint }: Readonly<VaultPickerDialogProps>) {
   const { data: entries } = useVaultEntries();
   const [search, setSearch] = useState('');
 

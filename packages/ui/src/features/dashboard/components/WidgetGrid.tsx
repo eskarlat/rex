@@ -24,7 +24,7 @@ export function WidgetGrid() {
   const saveMutation = useSaveDashboardLayout();
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const allWidgets = layout?.widgets ?? [];
+  const allWidgets = useMemo(() => layout?.widgets ?? [], [layout?.widgets]);
 
   const { constraintsMap, titleMap, activeExtensionNames } = useMemo(() => {
     const constraints: WidgetConstraintsMap = {};

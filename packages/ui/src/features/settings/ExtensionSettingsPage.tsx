@@ -17,7 +17,11 @@ export function ExtensionSettingsPage() {
   return <ExtensionSettingsContent name={name} />;
 }
 
-function ExtensionSettingsContent({ name }: Readonly<{ name: string }>) {
+interface ExtensionSettingsContentProps {
+  name: string;
+}
+
+function ExtensionSettingsContent({ name }: Readonly<ExtensionSettingsContentProps>) {
   const { data: config, isLoading } = useExtensionSettings(name);
   const updateSettings = useUpdateExtensionSettings(name);
 

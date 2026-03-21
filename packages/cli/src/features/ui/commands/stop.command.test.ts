@@ -27,6 +27,12 @@ vi.mock('node:fs', () => ({
 vi.mock('../../../core/paths/paths.js', () => ({
   // eslint-disable-next-line sonarjs/publicly-writable-directories
   SERVER_PID_PATH: '/tmp/test-server.pid',
+  // eslint-disable-next-line sonarjs/publicly-writable-directories
+  LOGS_DIR: '/tmp/test-logs',
+}));
+
+vi.mock('../../../core/logger/index.js', () => ({
+  getLogger: () => ({ warn: vi.fn() }),
 }));
 
 const mockIsProcessRunning = vi.fn();
@@ -95,6 +101,38 @@ describe('stop command', () => {
 
     expect(mockLogError).toHaveBeenCalledWith(expect.stringContaining('Operation not permitted'));
     expect(mockUnlinkSync).toHaveBeenCalled();
+
+    killSpy.mockRestore();
+  });
+
+  it('handles error when unlinkSync fails for stale PID cleanup', () => {
+    mockReadPidFile.mockReturnValue(99999);
+    mockIsProcessRunning.mockReturnValue(false);
+    mockUnlinkSync.mockImplementation(() => {
+      throw new Error('Permission denied');
+    });
+
+    handleStop();
+
+    expect(mockLogWarn).toHaveBeenCalledWith(expect.stringContaining('99999'));
+    expect(mockOutro).toHaveBeenCalledWith('Nothing to stop.');
+  });
+
+  it('handles error when PID file cleanup fails after stop', () => {
+    mockReadPidFile.mockReturnValue(12345);
+    mockIsProcessRunning.mockReturnValue(true);
+    mockExistsSync.mockReturnValue(true);
+
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+    mockUnlinkSync.mockImplementation(() => {
+      throw new Error('Busy');
+    });
+
+    handleStop();
+
+    expect(killSpy).toHaveBeenCalledWith(12345);
+    expect(mockLogSuccess).toHaveBeenCalledWith(expect.stringContaining('12345'));
+    expect(mockOutro).toHaveBeenCalledWith('Done.');
 
     killSpy.mockRestore();
   });

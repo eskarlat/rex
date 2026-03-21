@@ -127,6 +127,7 @@ export default tseslint.config(
       'sonarjs/prefer-read-only-props': 'off',
       'sonarjs/deprecation': 'off',
       'sonarjs/pseudo-random': 'off',
+      complexity: 'off',
     },
   },
 

@@ -27,9 +27,9 @@ export function useMarketplaceFilter(
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
-  const active = marketplace?.active ?? [];
-  const installed = marketplace?.installed ?? [];
-  const available = marketplace?.available ?? [];
+  const active = useMemo(() => marketplace?.active ?? [], [marketplace?.active]);
+  const installed = useMemo(() => marketplace?.installed ?? [], [marketplace?.installed]);
+  const available = useMemo(() => marketplace?.available ?? [], [marketplace?.available]);
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();

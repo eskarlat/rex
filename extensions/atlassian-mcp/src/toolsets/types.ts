@@ -23,14 +23,6 @@ export interface Toolset {
   handlers: Record<string, (args: Record<string, unknown>) => Promise<ToolResult>>;
 }
 
-export function textResult(data: unknown): ToolResult {
-  return {
-    content: [
-      { type: 'text', text: typeof data === 'string' ? data : JSON.stringify(data, null, 2) },
-    ],
-  };
-}
-
 /** Converts data to LLM-friendly Markdown instead of raw JSON */
 export function markdownResult(data: unknown, options?: JsonToMarkdownOptions): ToolResult {
   return {

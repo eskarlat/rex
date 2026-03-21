@@ -61,4 +61,19 @@ describe('ext-activate command', () => {
 
     expect(clack.log.error).toHaveBeenCalled();
   });
+
+  it('handles non-Error thrown during activation', async () => {
+    vi.mocked(extensionManager.activate).mockRejectedValue('string error');
+
+    await handleExtActivate({
+      name: 'my-ext',
+      version: '1.0.0',
+      projectPath: '/tmp/project',
+      extensionDir: '/path/to/ext',
+    });
+
+    expect(clack.log.error).toHaveBeenCalledWith(
+      expect.stringContaining('string error'),
+    );
+  });
 });

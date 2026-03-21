@@ -49,7 +49,12 @@ function NavMenuItem({ to, end, icon: Icon, label }: Readonly<NavMenuItemProps>)
   );
 }
 
-function ExtensionIcon({ name, hasIcon }: Readonly<{ name: string; hasIcon?: boolean }>) {
+interface ExtensionIconProps {
+  name: string;
+  hasIcon?: boolean;
+}
+
+function ExtensionIcon({ name, hasIcon }: Readonly<ExtensionIconProps>) {
   if (!hasIcon) return <Puzzle className="h-4 w-4 shrink-0" />;
 
   return (

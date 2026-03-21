@@ -10,7 +10,11 @@ interface ExtensionListItemProps {
   onSelect: (name: string) => void;
 }
 
-function ListItemIcon({ extension }: Readonly<{ extension: Extension }>) {
+interface ListItemIconProps {
+  extension: Extension;
+}
+
+function ListItemIcon({ extension }: Readonly<ListItemIconProps>) {
   if (!extension.hasIcon) {
     return (
       <div
