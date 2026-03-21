@@ -42,8 +42,10 @@ function isResizeMessage(data: unknown): data is ResizeMessage {
 }
 
 function parseJson(raw: string): unknown {
+  const trimmed = raw.trimStart();
+  if (!trimmed.startsWith('{')) return null;
   try {
-    return JSON.parse(raw);
+    return JSON.parse(trimmed);
   } catch (err) {
     getLogger().debug('terminal', 'Failed to parse WebSocket message as JSON', {
       error: err instanceof Error ? err.message : String(err),
