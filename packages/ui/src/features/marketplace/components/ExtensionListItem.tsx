@@ -1,4 +1,5 @@
 import { Puzzle } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import type { Extension } from '@/core/hooks/use-extensions';
 import { cn } from '@/lib/utils';
@@ -9,7 +10,7 @@ interface ExtensionListItemProps {
   onSelect: (name: string) => void;
 }
 
-function ListItemIcon({ extension }: { extension: Extension }) {
+function ListItemIcon({ extension }: Readonly<{ extension: Extension }>) {
   if (!extension.hasIcon) {
     return (
       <div
@@ -30,7 +31,7 @@ function ListItemIcon({ extension }: { extension: Extension }) {
   );
 }
 
-export function ExtensionListItem({ extension, isSelected, onSelect }: ExtensionListItemProps) {
+export function ExtensionListItem({ extension, isSelected, onSelect }: Readonly<ExtensionListItemProps>) {
   return (
     <button
       type="button"

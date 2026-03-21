@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import type { RegistryConfig } from '../../../core/types/index.js';
 import { resolve, installExtension, ensureSynced } from '../../registry/registry-manager.js';
 import { install, activate } from '../manager/extension-manager.js';

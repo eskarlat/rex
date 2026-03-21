@@ -36,12 +36,7 @@ export class CommandRegistry {
 
   resolve(input: string): { handler: CommandHandler; metadata: CommandMetadata } | undefined {
     const colonIdx = input.indexOf(':');
-    let key: string;
-    if (colonIdx === -1) {
-      key = this.makeKey('', input);
-    } else {
-      key = input;
-    }
+    const key: string = colonIdx === -1 ? this.makeKey('', input) : input;
 
     const entry = this.commands.get(key);
     if (!entry) {

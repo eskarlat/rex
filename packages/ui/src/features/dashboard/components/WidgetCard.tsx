@@ -1,9 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X, Maximize2, Minimize2 } from 'lucide-react';
+
+import { DynamicWidget } from './DynamicWidget';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DynamicWidget } from './DynamicWidget';
 
 interface SizeConstraints {
   minSize?: { w: number; h: number };
@@ -46,7 +48,7 @@ export function WidgetCard({
   constraints,
   onRemove,
   onResize,
-}: WidgetCardProps) {
+}: Readonly<WidgetCardProps>) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
   const style = {

@@ -25,7 +25,7 @@ interface HistoryModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function HistoryModal({ taskId, taskName, open, onOpenChange }: HistoryModalProps) {
+export function HistoryModal({ taskId, taskName, open, onOpenChange }: Readonly<HistoryModalProps>) {
   const { data: history, isLoading } = useTaskHistory(open ? taskId : '');
 
   return (

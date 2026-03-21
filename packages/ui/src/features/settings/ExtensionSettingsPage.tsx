@@ -1,8 +1,10 @@
 import { useParams } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useExtensionSettings, useUpdateExtensionSettings } from '@/core/hooks/use-settings';
+
 import { ConfigForm } from './components/ConfigForm';
 import type { ConfigFormResult } from './components/ConfigForm';
+
+import { Skeleton } from '@/components/ui/skeleton';
+import { useExtensionSettings, useUpdateExtensionSettings } from '@/core/hooks/use-settings';
 import type { ConfigField } from '@/core/hooks/use-settings';
 
 export function ExtensionSettingsPage() {
@@ -15,7 +17,7 @@ export function ExtensionSettingsPage() {
   return <ExtensionSettingsContent name={name} />;
 }
 
-function ExtensionSettingsContent({ name }: { name: string }) {
+function ExtensionSettingsContent({ name }: Readonly<{ name: string }>) {
   const { data: config, isLoading } = useExtensionSettings(name);
   const updateSettings = useUpdateExtensionSettings(name);
 

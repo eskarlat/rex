@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { getAllChecks } from '../checks/index.js';
 import type { DiagnosticResult } from '../types.js';
 

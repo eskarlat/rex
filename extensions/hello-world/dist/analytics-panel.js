@@ -3033,17 +3033,21 @@ function TableCell({ className, ref, ...props }) {
 function DataTable({ columns, data, className }) {
   return /* @__PURE__ */ jsxs(Table, { className: cn(className), children: [
     /* @__PURE__ */ jsx(TableHeader, { children: /* @__PURE__ */ jsx(TableRow, { children: columns.map((col) => /* @__PURE__ */ jsx(TableHead, { children: col.label }, col.key)) }) }),
-    /* @__PURE__ */ jsx(TableBody, { children: data.map((row, rowIndex) => (
-      // eslint-disable-next-line sonarjs/no-array-index-key -- table rows have no natural unique key
-      /* @__PURE__ */ jsx(TableRow, { children: columns.map((col) => {
+    /* @__PURE__ */ jsx(TableBody, { children: data.map((row) => {
+      const rowKey = columns.map((col) => {
+        const v = row[col.key];
+        if (v == null) return "";
+        return typeof v === "object" ? JSON.stringify(v) : String(v);
+      }).join("|");
+      return /* @__PURE__ */ jsx(TableRow, { children: columns.map((col) => {
         const cellValue = row[col.key];
         let display = "";
         if (cellValue != null) {
           display = typeof cellValue === "object" ? JSON.stringify(cellValue) : `${cellValue}`;
         }
         return /* @__PURE__ */ jsx(TableCell, { children: display }, col.key);
-      }) }, rowIndex)
-    )) })
+      }) }, rowKey);
+    }) })
   ] });
 }
 function CodeBlock({ code, language, className }) {

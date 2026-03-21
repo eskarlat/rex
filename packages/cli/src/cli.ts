@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+
 import { handleInit } from './features/project/commands/init.command.js';
 import { handleDestroy } from './features/project/commands/destroy.command.js';
 import { handleExtAdd } from './features/extensions/commands/ext-add.command.js';
@@ -30,7 +31,7 @@ import { handleSchedulerTrigger } from './features/scheduler/commands/scheduler-
 import { handleUi } from './features/ui/commands/ui.command.js';
 import { handleStop } from './features/ui/commands/stop.command.js';
 import { getDb } from './core/database/database.js';
-import { getExtensionDir } from './core/paths/paths.js';
+import { getExtensionDir, getManifestPath  } from './core/paths/paths.js';
 import { ConnectionManager } from './features/extensions/mcp/connection-manager.js';
 import { loadGlobalConfig, resolveExtensionConfig } from './features/config/config-manager.js';
 import { listInstalled, getActivated } from './features/extensions/manager/extension-manager.js';
@@ -41,7 +42,6 @@ import {
   loadCommandHandler,
   executeCommand,
 } from './features/extensions/runtime/standard-runtime.js';
-import { getManifestPath } from './core/paths/paths.js';
 import { pathExistsSync, readJsonSync } from './shared/fs-helpers.js';
 import { parseCliArgs } from './shared/cli-args.js';
 import type { ProjectManifest } from './core/types/project.types.js';
@@ -196,8 +196,8 @@ function registerExtensionCommands(
       const input = operands[0] ?? '';
       const colonIdx = input.indexOf(':');
       if (colonIdx > 0) {
-        const extName = input.substring(0, colonIdx);
-        const tool = input.substring(colonIdx + 1);
+        const extName = input.slice(0, Math.max(0, colonIdx));
+        const tool = input.slice(Math.max(0, colonIdx + 1));
         const entry = mcpExtensions.get(extName);
         if (entry && tool) {
           const rawArgs = process.argv.slice(3);
@@ -423,8 +423,8 @@ export function createProgram(): Command {
     .option('--priority <number>', 'Resolution priority (lower = higher)', '100')
     .option('--cache-ttl <seconds>', 'Cache TTL in seconds', '3600')
     .action((name: string, url: string, opts: { priority: string; cacheTtl: string }) => {
-      const priority = parseInt(opts.priority, 10);
-      const cacheTTL = parseInt(opts.cacheTtl, 10);
+      const priority = Number.parseInt(opts.priority, 10);
+      const cacheTTL = Number.parseInt(opts.cacheTtl, 10);
 
       if (!Number.isFinite(priority) || priority < 0) {
         process.stderr.write('Error: --priority must be a non-negative integer\n');

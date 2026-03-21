@@ -1,4 +1,5 @@
 import { Package } from 'lucide-react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMarketplace } from '@/core/hooks/use-extensions';

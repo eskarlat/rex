@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+
 import { getExtensionDir } from '../../../core/paths/paths.js';
 import { checkEngineCompat } from '../../extensions/engine/engine-compat.js';
 import { loadManifest } from '../../extensions/manifest/manifest-loader.js';

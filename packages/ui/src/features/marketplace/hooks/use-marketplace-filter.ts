@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+
 import type { Extension, MarketplaceResult } from '@/core/hooks/use-extensions';
 
 export interface MarketplaceFilter {

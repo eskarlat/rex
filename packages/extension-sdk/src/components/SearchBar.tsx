@@ -13,7 +13,7 @@ export function SearchBar({
   onChange,
   placeholder = 'Search...',
   className,
-}: SearchBarProps) {
+}: Readonly<SearchBarProps>) {
   return (
     <div className={cn('relative', className)}>
       <svg

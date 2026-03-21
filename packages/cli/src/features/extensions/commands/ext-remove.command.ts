@@ -1,5 +1,7 @@
 import fs from 'node:fs';
+
 import * as clack from '@clack/prompts';
+
 import { remove, deactivate, getActivated } from '../manager/extension-manager.js';
 import { getDb } from '../../../core/database/database.js';
 import { getExtensionDir } from '../../../core/paths/paths.js';

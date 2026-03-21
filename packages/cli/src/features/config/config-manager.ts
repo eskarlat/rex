@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import type {
   GlobalConfig,
   ConfigMapping,
@@ -14,8 +15,9 @@ import {
   ensureDirSync,
 } from '../../shared/fs-helpers.js';
 import { migrateFile } from '../../shared/schema-migration.js';
-import { configMigrations } from './migrations/index.js';
 import { getDecryptedValue } from '../vault/vault-manager.js';
+
+import { configMigrations } from './migrations/index.js';
 
 const DEFAULT_REGISTRY: RegistryConfig = {
   name: 'default',

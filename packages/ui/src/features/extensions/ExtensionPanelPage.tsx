@@ -1,5 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
+
 import { DynamicPanel } from './components/DynamicPanel';
+
 import { useMarketplace } from '@/core/hooks/use-extensions';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +31,7 @@ export function ExtensionPanelPage() {
           {panels.map((panel) => (
             <button
               key={panel.id}
-              // eslint-disable-next-line sonarjs/void-use -- void needed for no-floating-promises
+               
               onClick={() => void navigate(`/extensions/${name}/${panel.id}`)}
               className={cn(
                 'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',

@@ -43,8 +43,8 @@ function resolveCommand(command: string, projectPath: string): CommandResolution
     };
   }
 
-  const extName = command.substring(0, colonIdx);
-  const cmdName = command.substring(colonIdx + 1);
+  const extName = command.slice(0, Math.max(0, colonIdx));
+  const cmdName = command.slice(Math.max(0, colonIdx + 1));
   const plugins = getActivated(projectPath);
   const version = plugins[extName];
 

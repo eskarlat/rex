@@ -1,6 +1,6 @@
 import { ExtensionError, ErrorCode } from '../core/errors/extension-error.js';
 
-const CONFIG_VAR_PATTERN = /\$\{config\.([^}]+)\}/g;
+const CONFIG_VAR_PATTERN = /\${config\.([^}]+)}/g;
 
 function resolveNestedValue(config: Record<string, unknown>, path: string): unknown {
   const parts = path.split('.');

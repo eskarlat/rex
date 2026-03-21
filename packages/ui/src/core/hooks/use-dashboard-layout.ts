@@ -5,6 +5,7 @@ import {
   type UseQueryResult,
   type UseMutationResult,
 } from '@tanstack/react-query';
+
 import { fetchApi } from '@/core/api/client';
 
 /** Position coordinates for a widget on the dashboard grid */

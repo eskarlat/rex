@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { useMarketplace } from '@/core/hooks/use-extensions';
+
 import { useMarketplaceFilter } from './hooks/use-marketplace-filter';
 import { ExtensionSidebar } from './components/ExtensionSidebar';
 import { ExtensionDetailPanel } from './components/ExtensionDetailPanel';
+
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { useMarketplace } from '@/core/hooks/use-extensions';
 
 export function MarketplacePage() {
   const { data: marketplace, isLoading } = useMarketplace();

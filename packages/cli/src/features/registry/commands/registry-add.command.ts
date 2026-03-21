@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { loadGlobalConfig, saveGlobalConfig } from '../../config/config-manager.js';
 import type { RegistryConfig } from '../../../core/types/index.js';
 

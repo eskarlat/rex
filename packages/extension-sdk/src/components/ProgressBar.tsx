@@ -6,7 +6,7 @@ export interface ProgressBarProps {
   className?: string;
 }
 
-export function ProgressBar({ value, max = 100, className }: ProgressBarProps) {
+export function ProgressBar({ value, max = 100, className }: Readonly<ProgressBarProps>) {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
   return (

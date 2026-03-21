@@ -5,7 +5,7 @@ interface DynamicPanelProps {
   panelId?: string;
 }
 
-export function DynamicPanel({ extensionName, panelId }: DynamicPanelProps) {
+export function DynamicPanel({ extensionName, panelId }: Readonly<DynamicPanelProps>) {
   const panelUrl = panelId
     ? `/api/extensions/${extensionName}/panels/${panelId}.js`
     : `/api/extensions/${extensionName}/panel.js`;

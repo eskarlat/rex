@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
+
+import { LEVEL_ICON, LEVEL_VARIANT } from '../constants';
+
 import { Badge } from '@/components/ui/badge';
 import { useSettings } from '@/core/hooks/use-settings';
 import { cn } from '@/lib/utils';
-import { LEVEL_ICON, LEVEL_VARIANT } from '../constants';
 
 export function ActiveLogLevels() {
   const { data: config } = useSettings();

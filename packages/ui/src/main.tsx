@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as jsxRuntime from 'react/jsx-runtime';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+
 import { App } from './App';
 import './styles/globals.css';
 

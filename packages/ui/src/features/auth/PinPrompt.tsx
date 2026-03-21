@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +11,7 @@ interface PinPromptProps {
   onSuccess: () => void;
 }
 
-export function PinPrompt({ onSuccess }: PinPromptProps) {
+export function PinPrompt({ onSuccess }: Readonly<PinPromptProps>) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

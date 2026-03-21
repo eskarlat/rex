@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
+
 import BetterSqlite3 from 'better-sqlite3';
-import { DB_PATH } from '../../../core/paths/paths.js';
-import { getExtensionDir } from '../../../core/paths/paths.js';
+
+import { DB_PATH, getExtensionDir  } from '../../../core/paths/paths.js';
 import { listInstalled } from '../../extensions/manager/extension-manager.js';
 import { loadManifest } from '../../extensions/manifest/manifest-loader.js';
 import type { DiagnosticCheck } from '../types.js';

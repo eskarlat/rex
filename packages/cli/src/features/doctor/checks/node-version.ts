@@ -4,7 +4,7 @@ export const nodeVersionCheck: DiagnosticCheck = {
   name: 'Node.js version',
   run: () => {
     const version = process.versions['node'] ?? '0.0.0';
-    const major = parseInt(version.split('.')[0] ?? '0', 10);
+    const major = Number.parseInt(version.split('.')[0] ?? '0', 10);
     if (major >= 20) {
       return { name: 'Node.js version', status: 'pass', message: `v${version}` };
     }

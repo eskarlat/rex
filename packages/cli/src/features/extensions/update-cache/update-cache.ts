@@ -2,8 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+
 import semver from 'semver';
 import type Database from 'better-sqlite3';
+
 import type { RegistryConfig } from '../../../core/types/index.js';
 import type { UpdateCache, UpdateInfo } from '../types/update-cache.types.js';
 import { listInstalled } from '../manager/extension-manager.js';

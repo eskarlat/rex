@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import {
   Dialog,
   DialogContent,
@@ -5,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { ReactNode } from 'react';
 
 export interface ModalProps {
   open: boolean;
@@ -15,7 +16,7 @@ export interface ModalProps {
   children: ReactNode;
 }
 
-export function Modal({ open, onOpenChange, title, description, children }: ModalProps) {
+export function Modal({ open, onOpenChange, title, description, children }: Readonly<ModalProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

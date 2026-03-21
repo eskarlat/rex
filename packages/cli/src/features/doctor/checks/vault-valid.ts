@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+
 import { VAULT_PATH } from '../../../core/paths/paths.js';
 import { getSchemaVersion } from '../../../shared/schema-migration.js';
 import { vaultMigrations } from '../../vault/migrations/index.js';

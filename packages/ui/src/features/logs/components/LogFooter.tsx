@@ -5,7 +5,7 @@ export interface LogFooterProps {
   unitPlural: string;
 }
 
-export function LogFooter({ filteredCount, totalCount, unit, unitPlural }: LogFooterProps) {
+export function LogFooter({ filteredCount, totalCount, unit, unitPlural }: Readonly<LogFooterProps>) {
   return (
     <div className="flex items-center justify-between border-t px-3 py-1.5 text-xs text-muted-foreground">
       <span>

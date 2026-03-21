@@ -1,4 +1,7 @@
 import { ExternalLink, Puzzle } from 'lucide-react';
+
+import { ExtensionActions, UpdateBadge } from './ExtensionActions';
+
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,13 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Extension } from '@/core/hooks/use-extensions';
 import { useExtensionChangelog, useExtensionReadme } from '@/core/hooks/use-extensions';
-import { ExtensionActions, UpdateBadge } from './ExtensionActions';
 
 interface ExtensionDetailPanelProps {
   extension: Extension | undefined;
 }
 
-function DetailIcon({ extension }: { extension: Extension }) {
+function DetailIcon({ extension }: Readonly<{ extension: Extension }>) {
   if (!extension.hasIcon) {
     return (
       <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted">
@@ -30,7 +32,7 @@ function DetailIcon({ extension }: { extension: Extension }) {
   );
 }
 
-function MetadataRow({ label, value }: { label: string; value: string | undefined }) {
+function MetadataRow({ label, value }: Readonly<{ label: string; value: string | undefined }>) {
   if (!value) return null;
   return (
     <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
@@ -40,7 +42,7 @@ function MetadataRow({ label, value }: { label: string; value: string | undefine
   );
 }
 
-function LinkRow({ label, url }: { label: string; url: string | undefined }) {
+function LinkRow({ label, url }: Readonly<{ label: string; url: string | undefined }>) {
   if (!url) return null;
   return (
     <div className="grid grid-cols-[140px_1fr] gap-2 text-sm">
@@ -62,11 +64,11 @@ function DocContent({
   data,
   isLoading,
   testIdPrefix,
-}: {
+}: Readonly<{
   data: string | null | undefined;
   isLoading: boolean;
   testIdPrefix: string;
-}) {
+}>) {
   if (isLoading) {
     return (
       <div data-testid={`${testIdPrefix}-loading`} className="space-y-2">
@@ -86,7 +88,7 @@ function DocContent({
   );
 }
 
-function DocsTabs({ name }: { name: string }) {
+function DocsTabs({ name }: Readonly<{ name: string }>) {
   const { data: readme, isLoading: readmeLoading } = useExtensionReadme(name);
   const { data: changelog, isLoading: changelogLoading } = useExtensionChangelog(name);
 
@@ -106,7 +108,7 @@ function DocsTabs({ name }: { name: string }) {
   );
 }
 
-export function ExtensionDetailPanel({ extension }: ExtensionDetailPanelProps) {
+export function ExtensionDetailPanel({ extension }: Readonly<ExtensionDetailPanelProps>) {
   if (!extension) {
     return (
       <div className="flex flex-1 items-center justify-center" data-testid="detail-empty">

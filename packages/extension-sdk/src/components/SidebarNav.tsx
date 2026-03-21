@@ -11,7 +11,7 @@ export interface SidebarNavProps {
   className?: string;
 }
 
-export function SidebarNav({ items, className }: SidebarNavProps) {
+export function SidebarNav({ items, className }: Readonly<SidebarNavProps>) {
   return (
     <nav className={cn('flex flex-col space-y-1', className)}>
       {items.map((item) => (

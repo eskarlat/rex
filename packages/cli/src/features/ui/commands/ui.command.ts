@@ -5,7 +5,9 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from '
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
+
 import * as clack from '@clack/prompts';
+
 import { SERVER_PID_PATH, LAN_PIN_PATH, GLOBAL_DIR } from '../../../core/paths/paths.js';
 import { isProcessRunning, readPidFile } from '../../../shared/process-utils.js';
 
@@ -30,7 +32,7 @@ function openBrowser(url: string): void {
     return;
   }
   const [cmd, args] = entry;
-  // eslint-disable-next-line sonarjs/no-os-command-from-path
+   
   const proc = spawn(cmd, args, { stdio: 'ignore', detached: true });
   proc.unref();
 }

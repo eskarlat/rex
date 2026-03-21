@@ -1,4 +1,5 @@
 import semver from 'semver';
+
 import type { ExtensionManifest, PartialEngineConstraints } from '../types/extension.types.js';
 
 export interface CompatResult {

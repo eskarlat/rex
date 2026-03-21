@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
+
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { ReactNode } from 'react';
 
 export interface PanelProps {
   title: string;
@@ -9,7 +10,7 @@ export interface PanelProps {
   className?: string;
 }
 
-export function Panel({ title, description, children, className }: PanelProps) {
+export function Panel({ title, description, children, className }: Readonly<PanelProps>) {
   return (
     <Card className={cn(className)}>
       <CardHeader>

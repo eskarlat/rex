@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { createNotification } from '../notification-manager.js';
 import { getDb } from '../../../core/database/database.js';
 import type { NotificationVariant } from '../notification.types.js';

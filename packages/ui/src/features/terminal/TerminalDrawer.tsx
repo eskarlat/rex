@@ -1,10 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+
+import { useTerminal } from './use-terminal';
+import { XtermPanel } from './XtermPanel';
+
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useProjectContext } from '@/core/providers/ProjectProvider';
-import { useTerminal } from './use-terminal';
-import { XtermPanel } from './XtermPanel';
 
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 1200;

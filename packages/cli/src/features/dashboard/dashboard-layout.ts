@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+
 import type { DashboardLayout } from '../../core/types/dashboard.types.js';
 import { PROJECT_DIR } from '../../core/paths/paths.js';
 

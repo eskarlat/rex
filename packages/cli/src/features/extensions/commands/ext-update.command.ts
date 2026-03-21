@@ -1,6 +1,7 @@
 import * as clack from '@clack/prompts';
 import semver from 'semver';
 import type Database from 'better-sqlite3';
+
 import type { RegistryConfig } from '../../../core/types/index.js';
 import { listInstalled, install, activate, getActivated } from '../manager/extension-manager.js';
 import { resolve, installExtension, ensureSynced } from '../../registry/registry-manager.js';

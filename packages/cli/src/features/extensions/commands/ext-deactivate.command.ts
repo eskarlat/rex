@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import { deactivate } from '../manager/extension-manager.js';
 
 interface ExtDeactivateOptions {

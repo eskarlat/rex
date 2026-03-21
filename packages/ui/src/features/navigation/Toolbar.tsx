@@ -1,5 +1,6 @@
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { ChevronRight, Package, TerminalSquare } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -67,7 +68,7 @@ function useBreadcrumbs(): Crumb[] {
   return crumbs;
 }
 
-function CrumbItem({ crumb, isLast }: { crumb: Crumb; isLast: boolean }) {
+function CrumbItem({ crumb, isLast }: Readonly<{ crumb: Crumb; isLast: boolean }>) {
   if (crumb.to && !isLast) {
     return (
       <Link to={crumb.to} className="text-muted-foreground hover:text-foreground transition-colors">

@@ -1,8 +1,10 @@
-import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
 import fs from 'node:fs';
 import path from 'node:path';
+
+import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
 import { LOGS_DIR, getLogger } from '@renre-kit/cli/lib';
 import type { LogLevel } from '@renre-kit/cli/lib';
+
 import { getConsoleEntries, subscribeConsole } from '../../core/utils/console-capture.js';
 
 interface SocketLike {

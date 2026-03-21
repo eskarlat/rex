@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import * as clack from '@clack/prompts';
+
 import { install, activate } from '../manager/extension-manager.js';
 import { loadManifest } from '../manifest/manifest-loader.js';
 import { getDb } from '../../../core/database/database.js';

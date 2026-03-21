@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+
 import { CONFIG_PATH } from '../../../core/paths/paths.js';
 import { getSchemaVersion } from '../../../shared/schema-migration.js';
 import { configMigrations } from '../../config/migrations/index.js';

@@ -1,10 +1,11 @@
 import * as React from 'react';
+
 import { cn } from '@/lib/utils';
 
 function Table({ className, ref, ...props }: React.ComponentProps<'table'>) {
   return (
     <div className="relative w-full overflow-auto" role="region">
-      {/* eslint-disable-next-line sonarjs/table-header -- Header is provided by consumers via TableHeader child component */}
+      { }
       <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   );

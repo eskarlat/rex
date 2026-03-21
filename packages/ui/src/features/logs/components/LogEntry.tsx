@@ -1,12 +1,14 @@
 import { useState, type KeyboardEvent } from 'react';
 import { ChevronRight } from 'lucide-react';
+
+import { formatTime, LEVEL_ICON, LEVEL_VARIANT } from '../constants';
+
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import type { LogMessage } from '@/core/api/websocket';
 import { cn } from '@/lib/utils';
-import { formatTime, LEVEL_ICON, LEVEL_VARIANT } from '../constants';
 
-function LogDataRow({ data }: { data: Record<string, unknown> }) {
+function LogDataRow({ data }: Readonly<{ data: Record<string, unknown> }>) {
   return (
     <TableRow className="border-b">
       <TableCell colSpan={4} className="bg-muted/30 py-2 px-3">
@@ -18,7 +20,7 @@ function LogDataRow({ data }: { data: Record<string, unknown> }) {
   );
 }
 
-function LevelBadge({ level }: { level: string }) {
+function LevelBadge({ level }: Readonly<{ level: string }>) {
   return (
     <Badge
       variant="outline"
@@ -34,11 +36,11 @@ function MessageCell({
   msg,
   expandable,
   expanded,
-}: {
+}: Readonly<{
   msg: string;
   expandable: boolean;
   expanded: boolean;
-}) {
+}>) {
   return (
     <TableCell className="py-1.5 pr-3">
       <div className="flex items-center gap-1.5">
@@ -64,7 +66,7 @@ function useInteractiveRow(hasData: boolean, toggle: () => void) {
   return { onClick: toggle, role: 'button' as const, tabIndex: 0, onKeyDown };
 }
 
-export function LogEntry({ log }: { log: LogMessage }) {
+export function LogEntry({ log }: Readonly<{ log: LogMessage }>) {
   const [expanded, setExpanded] = useState(false);
   const hasData = log.data !== undefined && Object.keys(log.data).length > 0;
   const toggle = () => setExpanded((v) => !v);

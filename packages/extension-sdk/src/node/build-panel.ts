@@ -1,4 +1,5 @@
 import type { Plugin, BuildOptions } from 'esbuild';
+
 import type { BuildPanelOptions } from './types.js';
 
 const reactGlobalPlugin: Plugin = {

@@ -1,6 +1,8 @@
 import { writeFileSync, unlinkSync } from 'node:fs';
+
 import { initDatabase, GLOBAL_DIR, LAN_PIN_PATH, getLogger, loadGlobalConfig } from '@renre-kit/cli/lib';
 import type { LogLevel } from '@renre-kit/cli/lib';
+
 import { createServer } from './server.js';
 import { SchedulerRunner } from './features/scheduler/scheduler-runner.js';
 import { preventSleep } from './core/utils/sleep-prevention.js';

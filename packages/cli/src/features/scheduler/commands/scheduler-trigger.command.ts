@@ -1,5 +1,6 @@
 import * as clack from '@clack/prompts';
 import type Database from 'better-sqlite3';
+
 import { executeTaskCommand } from '../../../shared/task-execution.js';
 
 interface ScheduledTask {

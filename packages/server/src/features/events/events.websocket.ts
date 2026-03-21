@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
+
 import { publishEvent, subscribeEvents, matchesPattern } from '../../core/utils/event-hub.js';
 import type { InterExtensionEvent } from '../../core/utils/event-hub.js';
 

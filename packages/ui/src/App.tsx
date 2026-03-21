@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+
 import { QueryProvider } from '@/core/providers/QueryProvider';
 import { ProjectProvider } from '@/core/providers/ProjectProvider';
 import { ThemeProvider } from '@/core/providers/ThemeProvider';

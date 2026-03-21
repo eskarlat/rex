@@ -1,12 +1,15 @@
 import { useRef, useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useConsoleSocket } from '@/core/api/websocket';
-import { cn } from '@/lib/utils';
+
 import { useAutoScroll, useScrollToBottom, useStreamLifecycle } from '../hooks';
 import { formatTime } from '../constants';
+
 import { LogToolbar } from './LogToolbar';
 import { LogFooter } from './LogFooter';
+
+import { cn } from '@/lib/utils';
+import { useConsoleSocket } from '@/core/api/websocket';
+import { Card, CardContent } from '@/components/ui/card';
 
 const CONSOLE_LEVEL_COLORS: Record<string, string> = {
   error: 'text-red-600 dark:text-red-400',

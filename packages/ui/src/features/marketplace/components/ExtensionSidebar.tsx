@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
+
+import type { MarketplaceFilter } from '../hooks/use-marketplace-filter';
+
+import { ExtensionListItem } from './ExtensionListItem';
+
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { MarketplaceFilter } from '../hooks/use-marketplace-filter';
-import { ExtensionListItem } from './ExtensionListItem';
 
 interface ExtensionSidebarProps {
   filter: MarketplaceFilter;
@@ -13,7 +16,7 @@ interface ExtensionSidebarProps {
   onSelect: (name: string) => void;
 }
 
-function SectionHeader({ label, count }: { label: string; count: number }) {
+function SectionHeader({ label, count }: Readonly<{ label: string; count: number }>) {
   return (
     <div className="flex items-center justify-between px-2 py-1.5">
       <span className="text-xs font-semibold uppercase text-muted-foreground">{label}</span>
@@ -24,7 +27,7 @@ function SectionHeader({ label, count }: { label: string; count: number }) {
   );
 }
 
-export function ExtensionSidebar({ filter, selectedName, onSelect }: ExtensionSidebarProps) {
+export function ExtensionSidebar({ filter, selectedName, onSelect }: Readonly<ExtensionSidebarProps>) {
   const [showFilters, setShowFilters] = useState(false);
   const hasActiveFilter = !!filter.selectedTag;
 

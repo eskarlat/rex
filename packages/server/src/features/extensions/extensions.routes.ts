@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve, relative } from 'node:path';
+
 import semver from 'semver';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginCallback } from 'fastify';
 import {
@@ -163,7 +164,7 @@ function readIconFromDir(extDir: string): { content: Buffer; contentType: string
   if (!manifest.icon) return null;
   if (!isIconSafe(extDir, manifest.icon)) return null;
   const iconPath = resolve(extDir, manifest.icon);
-  const ext = iconPath.substring(iconPath.lastIndexOf('.'));
+  const ext = iconPath.slice(Math.max(0, iconPath.lastIndexOf('.')));
   const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
   return { content: readFileSync(iconPath), contentType };
 }
@@ -426,7 +427,7 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     const { registries } = loadGlobalConfig();
     const registryIconPath = resolveRegistryIcon(name, registries);
     if (registryIconPath) {
-      const ext = registryIconPath.substring(registryIconPath.lastIndexOf('.'));
+      const ext = registryIconPath.slice(Math.max(0, registryIconPath.lastIndexOf('.')));
       const contentType = ICON_CONTENT_TYPES[ext] ?? 'application/octet-stream';
       reply.header('Content-Type', contentType);
       reply.header('Cache-Control', 'public, max-age=3600');

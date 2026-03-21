@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { KeyRound } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { KeyRound } from 'lucide-react';
 import { useVaultEntries } from '@/core/hooks/use-vault';
 import type { ConfigField, ConfigMapping } from '@/core/hooks/use-settings';
 
@@ -38,7 +39,7 @@ interface ConfigFormProps {
   isSaving: boolean;
 }
 
-export function ConfigForm({ schema, values, onSave, isSaving }: ConfigFormProps) {
+export function ConfigForm({ schema, values, onSave, isSaving }: Readonly<ConfigFormProps>) {
   const form = useForm<Record<string, unknown>>({ defaultValues: values });
 
   useEffect(() => {
@@ -94,11 +95,11 @@ function ConfigFieldInput({
   fieldKey,
   field,
   form,
-}: {
+}: Readonly<{
   fieldKey: string;
   field: ConfigField;
   form: ReturnType<typeof useForm<Record<string, unknown>>>;
-}): React.ReactElement {
+}>): React.ReactElement {
   const [vaultOpen, setVaultOpen] = useState(false);
   const currentValue = form.watch(fieldKey);
   const isVault = isVaultRef(currentValue);
@@ -174,12 +175,12 @@ function VaultPickerDialog({
   onClose,
   onSelect,
   hint,
-}: {
+}: Readonly<{
   open: boolean;
   onClose: () => void;
   onSelect: (key: string) => void;
   hint?: string;
-}) {
+}>) {
   const { data: entries } = useVaultEntries();
   const [search, setSearch] = useState('');
 

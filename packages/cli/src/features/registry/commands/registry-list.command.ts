@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts';
+
 import type { RegistryConfig } from '../../../core/types/index.js';
 import { list } from '../registry-manager.js';
 
