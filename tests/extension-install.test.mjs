@@ -251,17 +251,63 @@ describe('extension install and server integration', () => {
     homeDir = await mkdtemp(join(tmpdir(), 'renre-e2e-full-home-'));
     projectDir = await mkdtemp(join(tmpdir(), 'renre-e2e-full-project-'));
 
-    // 1. Initialize a project
+    // 1. Create a bare git repo with hello-world extension
+    const bareRepoDir = join(homeDir, 'fake-github', 'hello-world.git');
+    await mkdir(bareRepoDir, { recursive: true });
+    git(['init', '--bare'], { cwd: bareRepoDir });
+
+    const workRepo = await mkdtemp(join(tmpdir(), 'renre-e2e-local-work-'));
+    git(['init', '-b', 'main'], { cwd: workRepo });
+    git(['config', 'user.email', 'test@test.com'], { cwd: workRepo });
+    git(['config', 'user.name', 'Test'], { cwd: workRepo });
+    git(['config', 'commit.gpgsign', 'false'], { cwd: workRepo });
+    await cp(HELLO_WORLD_EXT, workRepo, { recursive: true });
+    git(['add', '-A'], { cwd: workRepo });
+    git(['commit', '-m', 'initial'], { cwd: workRepo });
+    git(['tag', 'v1.0.0'], { cwd: workRepo });
+    git(['remote', 'add', 'origin', bareRepoDir], { cwd: workRepo });
+    git(['push', 'origin', 'main', '--tags'], { cwd: workRepo });
+    await rm(workRepo, { recursive: true, force: true });
+
+    // 2. Set up registry pointing to the local bare repo
+    const bareRepoUrl = `file://${bareRepoDir}`;
+    const registryDir = join(homeDir, 'registries', 'local', '.renre-kit');
+    await mkdir(registryDir, { recursive: true });
+    await writeFile(
+      join(registryDir, 'extensions.json'),
+      JSON.stringify({
+        extensions: [
+          {
+            name: 'hello-world',
+            description: 'Hello World extension',
+            gitUrl: bareRepoUrl,
+            latestVersion: '1.0.0',
+            type: 'standard',
+            icon: '',
+            author: 'test',
+          },
+        ],
+      }),
+    );
+    await writeFile(join(homeDir, 'registries', 'local', '.fetched_at'), new Date().toISOString());
+
+    // 3. Set up global config with registry
+    await mkdir(homeDir, { recursive: true });
+    await writeFile(
+      join(homeDir, 'config.json'),
+      JSON.stringify({
+        registries: [
+          { name: 'local', url: bareRepoDir, priority: 1, cacheTTL: 86400 },
+        ],
+      }),
+    );
+
+    // 4. Initialize a project
     const initResult = await runCli(['init'], {
       cwd: projectDir,
       renreHome: homeDir,
     });
     assert.equal(initResult.code, 0, `init should succeed: ${initResult.stderr}`);
-
-    // 2. Copy hello-world extension to simulate a local install
-    const extInstallDir = join(homeDir, 'extensions', 'hello-world@1.0.0');
-    await mkdir(join(homeDir, 'extensions'), { recursive: true });
-    await cp(HELLO_WORLD_EXT, extInstallDir, { recursive: true });
   });
 
   after(async () => {
@@ -287,24 +333,38 @@ describe('extension install and server integration', () => {
     assert.equal(code, 0, 'ext:list should work in initialized project');
   });
 
-  it('ext:add installs hello-world extension from local path', async () => {
-    // Install the extension using ext:add with source override
-    // Since we already copied it, we register it via the DB using the CLI
-    const addResult = await runCli(
-      ['ext:add', 'hello-world', '--version', '1.0.0', '--local', HELLO_WORLD_EXT],
-      { cwd: projectDir, renreHome: homeDir },
+  it('ext:add installs hello-world extension', async () => {
+    const addResult = await runCli(['ext:add', 'hello-world'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+
+    const extDir = join(homeDir, 'extensions', 'hello-world@1.0.0');
+
+    assert.equal(addResult.code, 0, `ext:add should succeed: ${addResult.stderr}`);
+
+    // Verify extension directory and manifest exist
+    assert.ok(existsSync(extDir), 'Extension directory should exist after install');
+    assert.ok(
+      existsSync(join(extDir, 'manifest.json')),
+      'manifest.json should exist in installed extension',
     );
 
-    // If --local flag isn't supported, manually register through ext:list
-    // The extension files are already in place, the ext:list should reflect them
-    if (addResult.code !== 0) {
-      // The ext:add may not support --local directly; the copy above places files
-      // where the system expects them. Let's verify the files are in place.
-      assert.ok(
-        existsSync(join(homeDir, 'extensions', 'hello-world@1.0.0', 'manifest.json')),
-        'Extension files should be in place',
-      );
-    }
+    // Verify manifest content
+    const manifest = JSON.parse(await readFile(join(extDir, 'manifest.json'), 'utf-8'));
+    assert.equal(manifest.name, 'hello-world', 'Manifest name should be hello-world');
+    assert.equal(manifest.version, '1.0.0', 'Manifest version should be 1.0.0');
+
+    // Verify extension appears in ext:list
+    const listResult = await runCli(['ext:list'], {
+      cwd: projectDir,
+      renreHome: homeDir,
+    });
+    assert.equal(listResult.code, 0, 'ext:list should succeed after install');
+    assert.ok(
+      listResult.stdout.includes('hello-world'),
+      'ext:list should show hello-world after install',
+    );
   });
 
   it('server starts and exposes extension data via marketplace API', async () => {
