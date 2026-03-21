@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventBus } from './event-bus.js';
 import type { EventType, EventPayload } from '../types/index.js';
 
@@ -7,6 +7,11 @@ describe('EventBus', () => {
 
   beforeEach(() => {
     bus = new EventBus();
+    EventBus.setBridge(null);
+  });
+
+  afterEach(() => {
+    EventBus.setBridge(null);
   });
 
   it('should call handler when event is emitted', async () => {
@@ -59,7 +64,8 @@ describe('EventBus', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('should not propagate handler errors', async () => {
+  it('should not propagate handler errors but log them', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const errorHandler = vi.fn().mockRejectedValue(new Error('handler fail'));
     const goodHandler = vi.fn();
     bus.on('project:init', errorHandler);
@@ -72,6 +78,11 @@ describe('EventBus', () => {
       }),
     ).resolves.toBeUndefined();
     expect(goodHandler).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('project:init'),
+      expect.any(Error),
+    );
+    consoleSpy.mockRestore();
   });
 
   it('should handle async handlers', async () => {
@@ -110,5 +121,55 @@ describe('EventBus', () => {
     });
     expect(initHandler).toHaveBeenCalled();
     expect(destroyHandler).not.toHaveBeenCalled();
+  });
+
+  describe('setBridge', () => {
+    it('should call bridge function on emit', async () => {
+      const bridge = vi.fn();
+      EventBus.setBridge(bridge);
+
+      await bus.emit('project:init', {
+        type: 'project:init',
+        projectName: 'test',
+        projectPath: '/tmp/test',
+      });
+
+      expect(bridge).toHaveBeenCalledWith('project:init', {
+        type: 'project:init',
+        projectName: 'test',
+        projectPath: '/tmp/test',
+      });
+    });
+
+    it('should not call bridge after setBridge(null)', async () => {
+      const bridge = vi.fn();
+      EventBus.setBridge(bridge);
+      EventBus.setBridge(null);
+
+      await bus.emit('project:init', {
+        type: 'project:init',
+        projectName: 'test',
+        projectPath: '/tmp/test',
+      });
+
+      expect(bridge).not.toHaveBeenCalled();
+    });
+
+    it('should not affect local handlers when bridge throws', async () => {
+      const bridge = vi.fn().mockImplementation(() => {
+        throw new Error('bridge error');
+      });
+      const handler = vi.fn();
+      EventBus.setBridge(bridge);
+      bus.on('project:init', handler);
+
+      await bus.emit('project:init', {
+        type: 'project:init',
+        projectName: 'test',
+        projectPath: '/tmp/test',
+      });
+
+      expect(handler).toHaveBeenCalled();
+    });
   });
 });

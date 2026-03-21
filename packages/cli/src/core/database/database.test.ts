@@ -72,10 +72,12 @@ describe('database', () => {
   });
 
   it('should not re-run migrations on second init', () => {
+    const initialRows = db.prepare('SELECT * FROM _migrations').all();
+    const initialCount = initialRows.length;
     closeDatabase();
     const db2 = initDatabase(tmpDir);
     const rows = db2.prepare('SELECT * FROM _migrations').all();
-    expect(rows.length).toBe(1);
+    expect(rows.length).toBe(initialCount);
   });
 
   it('should allow inserting into projects table', () => {

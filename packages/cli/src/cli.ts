@@ -20,6 +20,8 @@ import { handleRegistryRemove } from './features/registry/commands/registry-remo
 import { handleRegistrySearch } from './features/registry/commands/registry-search.command.js';
 import { handleCapabilities } from './features/skills/commands/capabilities.command.js';
 import { handleDoctor } from './features/doctor/commands/doctor.command.js';
+import { handleNotify } from './features/notifications/commands/notify.command.js';
+import { handleEventsPublish } from './features/events/commands/events-publish.command.js';
 import { handleVaultSet } from './features/vault/commands/vault-set.command.js';
 import { handleVaultList } from './features/vault/commands/vault-list.command.js';
 import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
@@ -583,6 +585,32 @@ export function createProgram(): Command {
     .action(() => {
       const projectPath = requireProject();
       handleCapabilities({ projectPath });
+    });
+
+  // Notification command
+  program
+    .command('notify')
+    .description('Send a persistent notification')
+    .argument('<title>', 'Notification title')
+    .argument('<message>', 'Notification message')
+    .option('--variant <variant>', 'info, success, warning, or error', 'info')
+    .option('--source <name>', 'Source extension name', 'system')
+    .option('--action-url <path>', 'Dashboard path to navigate to')
+    .action(
+      (title: string, message: string, opts: { variant: string; source: string; actionUrl?: string }) => {
+        handleNotify({ title, message, variant: opts.variant, source: opts.source, actionUrl: opts.actionUrl });
+      },
+    );
+
+  // Events command
+  program
+    .command('events:publish')
+    .description('Publish an event to the inter-extension event bus')
+    .argument('<type>', 'Event type (e.g. ext:my-ext:task-done)')
+    .option('--data <json>', 'JSON payload', '{}')
+    .option('--source <name>', 'Source identifier', 'system')
+    .action(async (type: string, opts: { data: string; source: string }) => {
+      await handleEventsPublish({ type, data: opts.data, source: opts.source });
     });
 
   program

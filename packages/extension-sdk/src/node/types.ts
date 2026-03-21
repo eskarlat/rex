@@ -9,6 +9,7 @@ export interface SdkMethods {
   deployAgentAssets: () => void;
   cleanupAgentAssets: () => void;
   logger: SdkLogger;
+  notify: (options: { title: string; message?: string; variant?: string; actionUrl?: string }) => void;
 }
 
 export interface HookContext {

@@ -1,9 +1,15 @@
 import type { EventType, EventPayload } from '../types/index.js';
 
 type EventHandler = (payload: EventPayload) => void | Promise<void>;
+type BridgeFn = (event: string, payload: EventPayload) => void;
 
 export class EventBus {
   private handlers = new Map<EventType, Set<EventHandler>>();
+  private static bridgeFn: BridgeFn | null = null;
+
+  static setBridge(fn: BridgeFn | null): void {
+    EventBus.bridgeFn = fn;
+  }
 
   on(event: EventType, handler: EventHandler): void {
     if (!this.handlers.has(event)) {
@@ -21,20 +27,26 @@ export class EventBus {
 
   async emit(event: EventType, payload: EventPayload): Promise<void> {
     const set = this.handlers.get(event);
-    if (!set) {
-      return;
+    if (set) {
+      const promises: Promise<void>[] = [];
+      for (const handler of set) {
+        promises.push(
+          Promise.resolve()
+            .then(() => handler(payload))
+            .catch((err: unknown) => {
+              console.error(`[EventBus] Handler for "${event}" failed:`, err);
+            }),
+        );
+      }
+      await Promise.all(promises);
     }
 
-    const promises: Promise<void>[] = [];
-    for (const handler of set) {
-      promises.push(
-        Promise.resolve()
-          .then(() => handler(payload))
-          .catch(() => {
-            // Errors in handlers are swallowed to prevent propagation
-          }),
-      );
+    if (EventBus.bridgeFn) {
+      try {
+        EventBus.bridgeFn(event, payload);
+      } catch {
+        // Bridge errors don't affect local events
+      }
     }
-    await Promise.all(promises);
   }
 }

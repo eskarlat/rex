@@ -1,4 +1,5 @@
-export type EventType = 'project:init' | 'project:destroy' | 'ext:activate' | 'ext:deactivate';
+// eslint-disable-next-line sonarjs/redundant-type-aliases -- kept as semantic alias for type safety across event bus consumers
+export type EventType = string;
 
 export interface ProjectInitPayload {
   type: 'project:init';

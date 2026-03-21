@@ -12,10 +12,11 @@ function createMockSDK(overrides?: Partial<RenreKitSDK>): RenreKitSDK {
     exec: { run: vi.fn() },
     storage: { get: vi.fn(), set: vi.fn(), delete: vi.fn(), list: vi.fn() },
     ui: { toast: vi.fn(), confirm: vi.fn(), navigate: vi.fn() },
-    events: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
+    events: { on: vi.fn(), off: vi.fn(), emit: vi.fn(), publish: vi.fn() },
     scheduler: { list: vi.fn(), register: vi.fn(), unregister: vi.fn(), update: vi.fn() },
     terminal: { open: vi.fn(), close: vi.fn(), send: vi.fn() },
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    notify: vi.fn(),
     destroy: vi.fn(),
     ...overrides,
   };

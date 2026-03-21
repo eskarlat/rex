@@ -5,7 +5,9 @@ vi.mock('@renre-kit/cli/lib', () => ({
     list: vi.fn().mockReturnValue([]),
     get: vi.fn().mockReturnValue(null),
   })),
-  EventBus: vi.fn().mockImplementation(() => ({})),
+  EventBus: Object.assign(vi.fn().mockImplementation(() => ({})), {
+    setBridge: vi.fn(),
+  }),
   CommandRegistry: vi.fn().mockImplementation(() => ({
     resolve: vi.fn(),
   })),
