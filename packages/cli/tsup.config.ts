@@ -16,7 +16,7 @@ export default defineConfig({
   target: 'node20',
   outDir: 'dist',
   splitting: false,
-  external: ['better-sqlite3'],
+  external: ['better-sqlite3', 'yazl'],
   define: {
     __CLI_VERSION__: JSON.stringify(pkg.version),
     __SDK_VERSION__: JSON.stringify(sdkPkg.version),
