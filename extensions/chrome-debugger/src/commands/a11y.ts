@@ -22,15 +22,22 @@ export default async function a11y(context: ExecutionContext): Promise<CommandRe
     const params: Record<string, unknown> = {};
 
     if (selector) {
-      const element = await page.$(selector);
-      if (!element) {
+      await client.send('DOM.enable');
+      const { root } = (await client.send('DOM.getDocument', { depth: 0 })) as {
+        root: { nodeId: number };
+      };
+      const { nodeId } = (await client.send('DOM.querySelector', {
+        nodeId: root.nodeId,
+        selector,
+      })) as { nodeId: number };
+      if (nodeId === 0) {
         return {
           output: `No element found for selector: \`${selector}\``,
           exitCode: 1,
         };
       }
       const { node } = (await client.send('DOM.describeNode', {
-        objectId: element.remoteObject().objectId,
+        nodeId,
       })) as { node: { backendNodeId: number } };
       params.backendNodeId = node.backendNodeId;
       params.depth = depth;

@@ -87,6 +87,7 @@ export default async function launch(context: ExecutionContext): Promise<Command
       '--no-first-run',
       '--no-default-browser-check',
       '--disable-infobars',
+      '--no-sandbox',
     ],
   });
 

@@ -75,7 +75,12 @@ describe('a11y', () => {
   });
 
   it('returns error when selector element not found', async () => {
-    mock$.mockResolvedValue(null);
+    mockClient.send.mockImplementation((method: string) => {
+      if (method === 'DOM.enable') return Promise.resolve({});
+      if (method === 'DOM.getDocument') return Promise.resolve({ root: { nodeId: 1 } });
+      if (method === 'DOM.querySelector') return Promise.resolve({ nodeId: 0 });
+      return Promise.resolve({});
+    });
 
     const result = await a11y(makeContext({ selector: '#missing' }));
     expect(result.exitCode).toBe(1);
@@ -84,12 +89,10 @@ describe('a11y', () => {
   });
 
   it('scopes accessibility tree to selector', async () => {
-    const mockElement = {
-      remoteObject: () => ({ objectId: 'obj-123' }),
-    };
-    mock$.mockResolvedValue(mockElement);
-
     mockClient.send.mockImplementation((method: string) => {
+      if (method === 'DOM.enable') return Promise.resolve({});
+      if (method === 'DOM.getDocument') return Promise.resolve({ root: { nodeId: 1 } });
+      if (method === 'DOM.querySelector') return Promise.resolve({ nodeId: 10 });
       if (method === 'DOM.describeNode') {
         return Promise.resolve({ node: { backendNodeId: 42 } });
       }
