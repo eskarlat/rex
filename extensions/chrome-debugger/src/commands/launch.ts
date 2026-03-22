@@ -5,6 +5,7 @@ import puppeteer from 'puppeteer';
 import {
   readState,
   writeState,
+  deleteState,
   getLogDir,
   readGlobalSession,
   writeGlobalSession,
@@ -16,6 +17,13 @@ import type { ExecutionContext, CommandResult, BrowserState } from '../shared/ty
 function checkExistingLocal(projectPath: string): CommandResult | null {
   const existing = readState(projectPath);
   if (!existing) return null;
+
+  if (!isProcessAlive(existing.pid)) {
+    deleteState(projectPath);
+    deleteGlobalSession();
+    return null;
+  }
+
   return {
     output: [
       '## Browser Already Running',

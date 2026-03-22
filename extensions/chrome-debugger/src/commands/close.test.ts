@@ -65,7 +65,7 @@ describe('close', () => {
 
     writeState(TEST_DIR, {
       wsEndpoint: 'ws://localhost:9222',
-      pid: 99999,
+      pid: process.pid,
       port: 9222,
       launchedAt: '2024-01-01T00:00:00Z',
       networkLogPath: networkLog,
@@ -77,7 +77,7 @@ describe('close', () => {
     const result = await close(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Browser Closed');
-    expect(result.output).toContain('99999');
+    expect(result.output).toContain(String(process.pid));
     expect(mockClose).toHaveBeenCalled();
     expect(mockDisconnectCached).toHaveBeenCalled();
 

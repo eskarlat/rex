@@ -18,6 +18,7 @@ vi.mock('puppeteer', () => ({
 
 const mockReadState = vi.fn();
 const mockWriteState = vi.fn();
+const mockDeleteState = vi.fn();
 const mockGetLogDir = vi.fn();
 const mockReadGlobalSession = vi.fn();
 const mockWriteGlobalSession = vi.fn();
@@ -27,6 +28,7 @@ const mockDeleteGlobalSession = vi.fn();
 vi.mock('../shared/state.js', () => ({
   readState: (...args: unknown[]) => mockReadState(...args),
   writeState: (...args: unknown[]) => mockWriteState(...args),
+  deleteState: (...args: unknown[]) => mockDeleteState(...args),
   getLogDir: (...args: unknown[]) => mockGetLogDir(...args),
   readGlobalSession: () => mockReadGlobalSession(),
   writeGlobalSession: (...args: unknown[]) => mockWriteGlobalSession(...args),
@@ -117,12 +119,29 @@ describe('launch', () => {
       networkLogPath: '/tmp/network.jsonl',
       consoleLogPath: '/tmp/console.jsonl',
     });
+    mockIsProcessAlive.mockReturnValue(true);
 
     const result = await launch(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Browser Already Running');
     expect(result.output).toContain('1234');
     expect(mockLaunch).not.toHaveBeenCalled();
+  });
+
+  it('cleans up stale local state and proceeds with launch', async () => {
+    mockReadState.mockReturnValueOnce({
+      wsEndpoint: 'ws://localhost:9222',
+      pid: 1234,
+      port: 9222,
+      launchedAt: '2024-01-01T00:00:00Z',
+      networkLogPath: '/tmp/network.jsonl',
+      consoleLogPath: '/tmp/console.jsonl',
+    }).mockReturnValue(null);
+    mockIsProcessAlive.mockReturnValue(false);
+
+    const result = await launch(makeContext());
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Browser Launched');
   });
 
   it('returns error when global browser running and alive', async () => {

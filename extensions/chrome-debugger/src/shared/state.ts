@@ -51,6 +51,15 @@ export function ensureBrowserRunning(projectPath: string): BrowserState {
       'No browser is running. Start one with: renre-kit chrome-debugger:launch'
     );
   }
+
+  if (!isProcessAlive(state.pid)) {
+    deleteState(projectPath);
+    deleteGlobalSession();
+    throw new Error(
+      'Browser process is no longer running (it may have been closed manually). Start a new one with: renre-kit chrome-debugger:launch'
+    );
+  }
+
   return state;
 }
 
