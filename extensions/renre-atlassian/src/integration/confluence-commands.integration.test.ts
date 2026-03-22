@@ -43,13 +43,13 @@ import confluenceHelp from '../commands/confluence-help.js';
 // ---------------------------------------------------------------------------
 describe('Help commands — no API needed', () => {
   it('jira-help returns help text', async () => {
-    const result = await jiraHelp(missingConfigContext());
+    const result = await jiraHelp.handler(missingConfigContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('jira');
   });
 
   it('confluence-help returns help text', async () => {
-    const result = await confluenceHelp(missingConfigContext());
+    const result = await confluenceHelp.handler(missingConfigContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('confluence');
   });
@@ -62,133 +62,133 @@ describe('Confluence Commands — missing config', () => {
   const ctx = missingConfigContext;
 
   it('status returns error without throwing', async () => {
-    const result = await status(ctx());
+    const result = await status.handler(ctx());
     expect(result.exitCode).toBe(1);
     expect(result.output).toBeTruthy();
   });
 
   it('search returns error without throwing', async () => {
-    const result = await search(ctx({ cql: 'type=page' }));
+    const result = await search.handler(ctx({ cql: 'type=page' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('get-page returns error without throwing', async () => {
-    const result = await getPage(ctx({ pageId: '12345' }));
+    const result = await getPage.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('get-page-children returns error without throwing', async () => {
-    const result = await getPageChildren(ctx({ pageId: '12345' }));
+    const result = await getPageChildren.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('get-page-history returns error without throwing', async () => {
-    const result = await getPageHistory(ctx({ pageId: '12345' }));
+    const result = await getPageHistory.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('create-page returns error without throwing', async () => {
-    const result = await createPage(ctx({ title: 'Test', spaceKey: 'SPACE', body: '<p>hi</p>' }));
+    const result = await createPage.handler(ctx({ title: 'Test', spaceKey: 'SPACE', body: '<p>hi</p>' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('update-page returns error without throwing', async () => {
-    const result = await updatePage(
+    const result = await updatePage.handler(
       ctx({ pageId: '12345', title: 'Updated', body: '<p>new</p>', version: 2 }),
     );
     expect(result.exitCode).toBe(1);
   });
 
   it('delete-page returns error without throwing', async () => {
-    const result = await deletePage(ctx({ pageId: '12345' }));
+    const result = await deletePage.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('move-page returns error without throwing', async () => {
-    const result = await movePage(
+    const result = await movePage.handler(
       ctx({ pageId: '12345', targetAncestorId: '99', currentVersion: 3 }),
     );
     expect(result.exitCode).toBe(1);
   });
 
   it('get-page-diff returns error without throwing', async () => {
-    const result = await getPageDiff(ctx({ pageId: '12345', fromVersion: 1, toVersion: 2 }));
+    const result = await getPageDiff.handler(ctx({ pageId: '12345', fromVersion: 1, toVersion: 2 }));
     expect(result.exitCode).toBe(1);
   });
 
   it('get-comments returns error without throwing', async () => {
-    const result = await getComments(ctx({ pageId: '12345' }));
+    const result = await getComments.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('add-comment returns error without throwing', async () => {
-    const result = await addComment(ctx({ pageId: '12345', body: 'A comment' }));
+    const result = await addComment.handler(ctx({ pageId: '12345', body: 'A comment' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('reply-to-comment returns error without throwing', async () => {
-    const result = await replyToComment(
+    const result = await replyToComment.handler(
       ctx({ pageId: '12345', parentCommentId: '100', body: 'Reply' }),
     );
     expect(result.exitCode).toBe(1);
   });
 
   it('get-labels returns error without throwing', async () => {
-    const result = await getLabels(ctx({ pageId: '12345' }));
+    const result = await getLabels.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('add-label returns error without throwing', async () => {
-    const result = await addLabel(ctx({ pageId: '12345', labels: ['label1'] }));
+    const result = await addLabel.handler(ctx({ pageId: '12345', labels: ['label1'] }));
     expect(result.exitCode).toBe(1);
   });
 
   it('search-user returns error without throwing', async () => {
-    const result = await searchUser(ctx({ query: 'john' }));
+    const result = await searchUser.handler(ctx({ query: 'john' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('get-page-views returns error without throwing', async () => {
-    const result = await getPageViews(ctx({ pageId: '12345' }));
+    const result = await getPageViews.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('upload-attachment returns error without throwing', async () => {
-    const result = await uploadAttachment(
+    const result = await uploadAttachment.handler(
       ctx({ pageId: '12345', filename: 'test.txt', content: 'hello' }),
     );
     expect(result.exitCode).toBe(1);
   });
 
   it('upload-attachments returns error without throwing', async () => {
-    const result = await uploadAttachments(
+    const result = await uploadAttachments.handler(
       ctx({ pageId: '12345', files: [{ filename: 'a.txt', content: 'aa' }] }),
     );
     expect(result.exitCode).toBe(1);
   });
 
   it('get-attachments returns error without throwing', async () => {
-    const result = await getAttachments(ctx({ pageId: '12345' }));
+    const result = await getAttachments.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('download-attachment returns error without throwing', async () => {
-    const result = await downloadAttachment(ctx({ pageId: '12345', filename: 'test.txt' }));
+    const result = await downloadAttachment.handler(ctx({ pageId: '12345', filename: 'test.txt' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('download-all-attachments returns error without throwing', async () => {
-    const result = await downloadAllAttachments(ctx({ pageId: '12345' }));
+    const result = await downloadAllAttachments.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('delete-attachment returns error without throwing', async () => {
-    const result = await deleteAttachment(ctx({ attachmentId: 'att-1' }));
+    const result = await deleteAttachment.handler(ctx({ attachmentId: 'att-1' }));
     expect(result.exitCode).toBe(1);
   });
 
   it('get-page-images returns error without throwing', async () => {
-    const result = await getPageImages(ctx({ pageId: '12345' }));
+    const result = await getPageImages.handler(ctx({ pageId: '12345' }));
     expect(result.exitCode).toBe(1);
   });
 });
@@ -200,53 +200,53 @@ describe.skipIf(!hasCredentials)('Confluence Commands — live API', { timeout: 
   const ctx = liveContext;
 
   it('status returns connection info', async () => {
-    const result = await status(ctx());
+    const result = await status.handler(ctx());
     expect(result.exitCode).toBe(0);
     expect(result.output).toBeTruthy();
   });
 
   it('search returns results', async () => {
-    const result = await search(ctx({ cql: 'type=page', limit: 5 }));
+    const result = await search.handler(ctx({ cql: 'type=page', limit: 5 }));
     expect(result.exitCode).toBe(0);
   });
 
   it('get-page returns page content', async () => {
-    const result = await getPage(ctx({ pageId: testConfig.pageId }));
+    const result = await getPage.handler(ctx({ pageId: testConfig.pageId }));
     expect(result.exitCode).toBe(0);
   });
 
   it('get-page-children returns children', async () => {
-    const result = await getPageChildren(ctx({ pageId: testConfig.pageId, limit: 5 }));
+    const result = await getPageChildren.handler(ctx({ pageId: testConfig.pageId, limit: 5 }));
     expect(result.exitCode).toBe(0);
   });
 
   it('get-page-history returns history', async () => {
-    const result = await getPageHistory(ctx({ pageId: testConfig.pageId }));
+    const result = await getPageHistory.handler(ctx({ pageId: testConfig.pageId }));
     expect(result.exitCode).toBe(0);
   });
 
   it('get-comments returns comments', async () => {
-    const result = await getComments(ctx({ pageId: testConfig.pageId, limit: 5 }));
+    const result = await getComments.handler(ctx({ pageId: testConfig.pageId, limit: 5 }));
     expect(result.exitCode).toBe(0);
   });
 
   it('get-labels returns labels', async () => {
-    const result = await getLabels(ctx({ pageId: testConfig.pageId }));
+    const result = await getLabels.handler(ctx({ pageId: testConfig.pageId }));
     expect(result.exitCode).toBe(0);
   });
 
   it('get-attachments returns attachments', async () => {
-    const result = await getAttachments(ctx({ pageId: testConfig.pageId, limit: 5 }));
+    const result = await getAttachments.handler(ctx({ pageId: testConfig.pageId, limit: 5 }));
     expect(result.exitCode).toBe(0);
   });
 
   it('get-page-images returns images', async () => {
-    const result = await getPageImages(ctx({ pageId: testConfig.pageId }));
+    const result = await getPageImages.handler(ctx({ pageId: testConfig.pageId }));
     expect(result.exitCode).toBe(0);
   });
 
   it('download-all-attachments returns list', async () => {
-    const result = await downloadAllAttachments(ctx({ pageId: testConfig.pageId }));
+    const result = await downloadAllAttachments.handler(ctx({ pageId: testConfig.pageId }));
     expect(result.exitCode).toBe(0);
   });
 });

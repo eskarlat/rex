@@ -1,20 +1,19 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
 import { sprintIdSchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({
-  sprintId: sprintIdSchema,
-  name: z.string().optional(),
-  state: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  goal: z.string().optional(),
-});
-
-export default async function updateSprint(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, schema, (jira, args) => {
+export default defineCommand({
+  args: {
+    sprintId: sprintIdSchema,
+    name: z.string().optional(),
+    state: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    goal: z.string().optional(),
+  },
+  handler: (ctx) =>
+    jiraCommand(ctx, (jira, args) => {
     const update: Record<string, unknown> = {};
     if (args.name) update.name = args.name;
     if (args.state) update.state = args.state;
@@ -22,5 +21,5 @@ export default async function updateSprint(context: ExecutionContext): Promise<C
     if (args.endDate) update.endDate = args.endDate;
     if (args.goal) update.goal = args.goal;
     return jira.updateSprint(args.sprintId, update);
-  });
-}
+  }),
+});

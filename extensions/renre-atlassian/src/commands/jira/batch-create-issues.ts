@@ -1,12 +1,11 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({
-  issues: z.array(z.object({ fields: z.record(z.unknown()) })).min(1),
+export default defineCommand({
+  args: {
+    issues: z.array(z.object({ fields: z.record(z.unknown()) })).min(1),
+  },
+  handler: (ctx) =>
+    jiraCommand(ctx, (jira, args) => jira.bulkCreateIssues(args.issues)),
 });
-
-export default async function batchCreateIssues(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, schema, (jira, args) => jira.bulkCreateIssues(args.issues));
-}

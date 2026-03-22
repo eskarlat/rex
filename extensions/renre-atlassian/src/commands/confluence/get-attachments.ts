@@ -1,12 +1,16 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { confluenceCommand } from '../../shared/command-helper.js';
-import { confluencePaginationSchema, pageIdSchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
+import { pageIdSchema } from '../../shared/schemas.js';
 
-const schema = z.object({ pageId: pageIdSchema }).merge(confluencePaginationSchema);
-
-export default async function getAttachments(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, schema, (confluence, args) =>
-    confluence.getAttachments(args.pageId, args.limit, args.start),
-  );
-}
+export default defineCommand({
+  args: {
+    pageId: pageIdSchema,
+    start: z.coerce.number().int().min(0).default(0),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+  },
+  handler: (ctx) =>
+    confluenceCommand(ctx, (confluence, args) =>
+      confluence.getAttachments(args.pageId, args.limit, args.start),
+    ),
+});

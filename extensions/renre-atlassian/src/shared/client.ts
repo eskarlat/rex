@@ -2,14 +2,14 @@ import { ConfluenceClient } from '../client/confluence-client.js';
 import { JiraClient } from '../client/jira-client.js';
 
 import { atlassianConfigSchema } from './schemas.js';
-import type { ExecutionContext } from './types.js';
+import type { CommandContext } from './types.js';
 
 export interface AtlassianClients {
   jira: JiraClient;
   confluence: ConfluenceClient;
 }
 
-export function createClients(context: ExecutionContext): AtlassianClients {
+export function createClients(context: CommandContext): AtlassianClients {
   const result = atlassianConfigSchema.safeParse(context.config);
 
   if (!result.success) {

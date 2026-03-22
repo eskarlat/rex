@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getUserProfile from './get-user-profile.js';
 
 const mockJira = {
@@ -17,7 +17,7 @@ const mockJira = {
   getUser: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -36,7 +36,7 @@ describe('get-user-profile', () => {
     const user = { accountId: 'me', displayName: 'Me' };
     mockJira.getMyself.mockResolvedValue(user);
     const ctx = makeContext();
-    await getUserProfile(ctx);
+    await getUserProfile.handler(ctx);
     expect(mockJira.getMyself).toHaveBeenCalled();
     expect(mockJira.getUser).not.toHaveBeenCalled();
     expect(toOutput).toHaveBeenCalledWith(user);
@@ -46,7 +46,7 @@ describe('get-user-profile', () => {
     const user = { accountId: 'abc123', displayName: 'John' };
     mockJira.getUser.mockResolvedValue(user);
     const ctx = makeContext({ accountId: 'abc123' });
-    await getUserProfile(ctx);
+    await getUserProfile.handler(ctx);
     expect(mockJira.getUser).toHaveBeenCalledWith('abc123');
     expect(mockJira.getMyself).not.toHaveBeenCalled();
     expect(toOutput).toHaveBeenCalledWith(user);
@@ -55,7 +55,7 @@ describe('get-user-profile', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getMyself.mockRejectedValue(new Error('fail'));
     const ctx = makeContext();
-    const result = await getUserProfile(ctx);
+    const result = await getUserProfile.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

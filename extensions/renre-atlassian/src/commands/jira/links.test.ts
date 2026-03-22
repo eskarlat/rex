@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import createIssueLink from './create-issue-link.js';
 import getLinkTypes from './get-link-types.js';
 import linkToEpic from './link-to-epic.js';
@@ -24,7 +24,7 @@ const mockJira = {
   removeIssueLink: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -46,7 +46,7 @@ describe('create-issue-link', () => {
       inwardIssueKey: 'TEST-1',
       outwardIssueKey: 'TEST-2',
     });
-    await createIssueLink(ctx);
+    await createIssueLink.handler(ctx);
     expect(mockJira.createIssueLink).toHaveBeenCalledWith({
       type: { name: 'Blocks' },
       inwardIssue: { key: 'TEST-1' },
@@ -62,7 +62,7 @@ describe('create-issue-link', () => {
       inwardIssueKey: 'TEST-1',
       outwardIssueKey: 'TEST-2',
     });
-    const result = await createIssueLink(ctx);
+    const result = await createIssueLink.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -73,7 +73,7 @@ describe('get-link-types', () => {
     const types = { issueLinkTypes: [{ name: 'Blocks' }] };
     mockJira.getLinkTypes.mockResolvedValue(types);
     const ctx = makeContext();
-    await getLinkTypes(ctx);
+    await getLinkTypes.handler(ctx);
     expect(mockJira.getLinkTypes).toHaveBeenCalled();
     expect(toOutput).toHaveBeenCalledWith(types);
   });
@@ -81,7 +81,7 @@ describe('get-link-types', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getLinkTypes.mockRejectedValue(new Error('fail'));
     const ctx = makeContext();
-    const result = await getLinkTypes(ctx);
+    const result = await getLinkTypes.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -91,7 +91,7 @@ describe('link-to-epic', () => {
   it('calls jira.linkToEpic with epicKey and issueKeys', async () => {
     mockJira.linkToEpic.mockResolvedValue(undefined);
     const ctx = makeContext({ epicKey: 'EPIC-1', issueKeys: ['TEST-1', 'TEST-2'] });
-    await linkToEpic(ctx);
+    await linkToEpic.handler(ctx);
     expect(mockJira.linkToEpic).toHaveBeenCalledWith('EPIC-1', ['TEST-1', 'TEST-2']);
     expect(toOutput).toHaveBeenCalledWith({ success: true });
   });
@@ -99,7 +99,7 @@ describe('link-to-epic', () => {
   it('returns errorOutput on error', async () => {
     mockJira.linkToEpic.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ epicKey: 'EPIC-1', issueKeys: ['TEST-1'] });
-    const result = await linkToEpic(ctx);
+    const result = await linkToEpic.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -113,7 +113,7 @@ describe('create-remote-issue-link', () => {
       url: 'https://example.com',
       title: 'Example Link',
     });
-    await createRemoteIssueLink(ctx);
+    await createRemoteIssueLink.handler(ctx);
     expect(mockJira.createRemoteIssueLink).toHaveBeenCalledWith('TEST-1', {
       object: { url: 'https://example.com', title: 'Example Link' },
     });
@@ -123,7 +123,7 @@ describe('create-remote-issue-link', () => {
   it('returns errorOutput on error', async () => {
     mockJira.createRemoteIssueLink.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', url: 'https://example.com', title: 'Link' });
-    const result = await createRemoteIssueLink(ctx);
+    const result = await createRemoteIssueLink.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -133,7 +133,7 @@ describe('remove-issue-link', () => {
   it('calls jira.removeIssueLink with linkId and returns success', async () => {
     mockJira.removeIssueLink.mockResolvedValue(undefined);
     const ctx = makeContext({ linkId: '12345' });
-    await removeIssueLink(ctx);
+    await removeIssueLink.handler(ctx);
     expect(mockJira.removeIssueLink).toHaveBeenCalledWith('12345');
     expect(toOutput).toHaveBeenCalledWith({ success: true, linkId: '12345' });
   });
@@ -141,7 +141,7 @@ describe('remove-issue-link', () => {
   it('returns errorOutput on error', async () => {
     mockJira.removeIssueLink.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ linkId: '12345' });
-    const result = await removeIssueLink(ctx);
+    const result = await removeIssueLink.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

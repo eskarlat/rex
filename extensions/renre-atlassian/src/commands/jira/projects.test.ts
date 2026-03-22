@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getAllProjects from './get-all-projects.js';
 import getProjectVersions from './get-project-versions.js';
 import getProjectComponents from './get-project-components.js';
@@ -23,7 +23,7 @@ const mockJira = {
   createVersion: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -42,7 +42,7 @@ describe('get-all-projects', () => {
     const projects = [{ key: 'PROJ' }];
     mockJira.getAllProjects.mockResolvedValue(projects);
     const ctx = makeContext();
-    await getAllProjects(ctx);
+    await getAllProjects.handler(ctx);
     expect(mockJira.getAllProjects).toHaveBeenCalled();
     expect(toOutput).toHaveBeenCalledWith(projects);
   });
@@ -50,7 +50,7 @@ describe('get-all-projects', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getAllProjects.mockRejectedValue(new Error('fail'));
     const ctx = makeContext();
-    const result = await getAllProjects(ctx);
+    const result = await getAllProjects.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -61,7 +61,7 @@ describe('get-project-versions', () => {
     const versions = [{ id: '1', name: 'v1.0' }];
     mockJira.getProjectVersions.mockResolvedValue(versions);
     const ctx = makeContext({ projectKey: 'PROJ' });
-    await getProjectVersions(ctx);
+    await getProjectVersions.handler(ctx);
     expect(mockJira.getProjectVersions).toHaveBeenCalledWith('PROJ');
     expect(toOutput).toHaveBeenCalledWith(versions);
   });
@@ -69,7 +69,7 @@ describe('get-project-versions', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getProjectVersions.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ projectKey: 'PROJ' });
-    const result = await getProjectVersions(ctx);
+    const result = await getProjectVersions.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -80,7 +80,7 @@ describe('get-project-components', () => {
     const components = [{ id: '1', name: 'Backend' }];
     mockJira.getProjectComponents.mockResolvedValue(components);
     const ctx = makeContext({ projectKey: 'PROJ' });
-    await getProjectComponents(ctx);
+    await getProjectComponents.handler(ctx);
     expect(mockJira.getProjectComponents).toHaveBeenCalledWith('PROJ');
     expect(toOutput).toHaveBeenCalledWith(components);
   });
@@ -88,7 +88,7 @@ describe('get-project-components', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getProjectComponents.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ projectKey: 'PROJ' });
-    const result = await getProjectComponents(ctx);
+    const result = await getProjectComponents.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -103,7 +103,7 @@ describe('create-version', () => {
       description: 'First release',
       releaseDate: '2026-01-01',
     });
-    await createVersion(ctx);
+    await createVersion.handler(ctx);
     expect(mockJira.createVersion).toHaveBeenCalledWith({
       project: 'PROJ',
       name: 'v1.0',
@@ -116,7 +116,7 @@ describe('create-version', () => {
   it('creates version without optional fields', async () => {
     mockJira.createVersion.mockResolvedValue({ id: '11' });
     const ctx = makeContext({ projectKey: 'PROJ', name: 'v2.0' });
-    await createVersion(ctx);
+    await createVersion.handler(ctx);
     expect(mockJira.createVersion).toHaveBeenCalledWith({
       project: 'PROJ',
       name: 'v2.0',
@@ -126,7 +126,7 @@ describe('create-version', () => {
   it('returns errorOutput on error', async () => {
     mockJira.createVersion.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ projectKey: 'PROJ', name: 'v1.0' });
-    const result = await createVersion(ctx);
+    const result = await createVersion.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -139,7 +139,7 @@ describe('batch-create-versions', () => {
       .mockResolvedValueOnce({ id: '2' });
     const versions = [{ name: 'v1.0' }, { name: 'v2.0' }];
     const ctx = makeContext({ projectKey: 'PROJ', versions });
-    await batchCreateVersions(ctx);
+    await batchCreateVersions.handler(ctx);
     expect(mockJira.createVersion).toHaveBeenCalledTimes(2);
     expect(mockJira.createVersion).toHaveBeenCalledWith({ project: 'PROJ', name: 'v1.0' });
     expect(mockJira.createVersion).toHaveBeenCalledWith({ project: 'PROJ', name: 'v2.0' });
@@ -150,7 +150,7 @@ describe('batch-create-versions', () => {
     mockJira.createVersion.mockRejectedValue(new Error('fail'));
     const versions = [{ name: 'v1.0' }];
     const ctx = makeContext({ projectKey: 'PROJ', versions });
-    const result = await batchCreateVersions(ctx);
+    const result = await batchCreateVersions.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

@@ -1,7 +1,7 @@
-import type { ExecutionContext } from '../shared/types.js';
+import type { CommandContext } from '../shared/types.js';
 import jiraHelp from './jira-help.js';
 
-function makeContext(): ExecutionContext {
+function makeContext(): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -12,17 +12,17 @@ function makeContext(): ExecutionContext {
 
 describe('jira-help', () => {
   it('should return exitCode 0', () => {
-    const result = jiraHelp(makeContext());
+    const result = jiraHelp.handler(makeContext());
     expect(result.exitCode).toBe(0);
   });
 
   it('should contain "Jira Commands Reference" in output', () => {
-    const result = jiraHelp(makeContext());
+    const result = jiraHelp.handler(makeContext());
     expect(result.output).toContain('Jira Commands Reference');
   });
 
   it('should contain key command names', () => {
-    const result = jiraHelp(makeContext());
+    const result = jiraHelp.handler(makeContext());
     expect(result.output).toContain('jira-get-issue');
     expect(result.output).toContain('jira-search');
     expect(result.output).toContain('jira-create-issue');

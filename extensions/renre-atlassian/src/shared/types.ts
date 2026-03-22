@@ -1,4 +1,4 @@
-export interface ExecutionContext {
+export interface CommandContext {
   projectName: string;
   projectPath: string;
   args: Record<string, unknown>;

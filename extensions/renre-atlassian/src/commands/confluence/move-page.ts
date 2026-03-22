@@ -1,16 +1,16 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { confluenceCommand } from '../../shared/command-helper.js';
 import { pageIdSchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({
-  pageId: pageIdSchema,
-  targetAncestorId: z.string().min(1),
-  currentVersion: z.coerce.number().int().positive(),
+export default defineCommand({
+  args: {
+    pageId: pageIdSchema,
+    targetAncestorId: z.string().min(1),
+    currentVersion: z.coerce.number().int().positive(),
+  },
+  handler: (ctx) =>
+    confluenceCommand(ctx, (confluence, args) =>
+      confluence.movePage(args.pageId, args.targetAncestorId, args.currentVersion),
+    ),
 });
-
-export default async function movePage(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, schema, (confluence, args) =>
-    confluence.movePage(args.pageId, args.targetAncestorId, args.currentVersion),
-  );
-}

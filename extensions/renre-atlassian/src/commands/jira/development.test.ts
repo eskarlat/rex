@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getDevInfo from './get-dev-info.js';
 import getDevSummary from './get-dev-summary.js';
 import getBatchDevInfo from './get-batch-dev-info.js';
@@ -20,7 +20,7 @@ const mockJira = {
   getBatchDevelopmentInfo: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -43,7 +43,7 @@ describe('get-dev-info', () => {
       applicationType: 'GitHub',
       dataType: 'branch',
     });
-    await getDevInfo(ctx);
+    await getDevInfo.handler(ctx);
     expect(mockJira.getDevelopmentInfo).toHaveBeenCalledWith('10001', 'GitHub', 'branch');
     expect(toOutput).toHaveBeenCalledWith(devInfo);
   });
@@ -51,14 +51,14 @@ describe('get-dev-info', () => {
   it('passes undefined for optional params when not provided', async () => {
     mockJira.getDevelopmentInfo.mockResolvedValue({ detail: [] });
     const ctx = makeContext({ issueId: '10001' });
-    await getDevInfo(ctx);
+    await getDevInfo.handler(ctx);
     expect(mockJira.getDevelopmentInfo).toHaveBeenCalledWith('10001', undefined, undefined);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getDevelopmentInfo.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueId: '10001' });
-    const result = await getDevInfo(ctx);
+    const result = await getDevInfo.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -69,7 +69,7 @@ describe('get-dev-summary', () => {
     const summary = { summary: { branch: { count: 2 }, pullrequest: { count: 1 } } };
     mockJira.getDevelopmentSummary.mockResolvedValue(summary);
     const ctx = makeContext({ issueId: '10001' });
-    await getDevSummary(ctx);
+    await getDevSummary.handler(ctx);
     expect(mockJira.getDevelopmentSummary).toHaveBeenCalledWith('10001');
     expect(toOutput).toHaveBeenCalledWith(summary);
   });
@@ -77,7 +77,7 @@ describe('get-dev-summary', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getDevelopmentSummary.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueId: '10001' });
-    const result = await getDevSummary(ctx);
+    const result = await getDevSummary.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -92,7 +92,7 @@ describe('get-batch-dev-info', () => {
       applicationType: 'GitHub',
       dataType: 'pullrequest',
     });
-    await getBatchDevInfo(ctx);
+    await getBatchDevInfo.handler(ctx);
     expect(mockJira.getBatchDevelopmentInfo).toHaveBeenCalledWith(
       ['10001', '10002'],
       'GitHub',
@@ -104,7 +104,7 @@ describe('get-batch-dev-info', () => {
   it('passes undefined for optional params when not provided', async () => {
     mockJira.getBatchDevelopmentInfo.mockResolvedValue({ devInformation: [] });
     const ctx = makeContext({ issueIds: ['10001'] });
-    await getBatchDevInfo(ctx);
+    await getBatchDevInfo.handler(ctx);
     expect(mockJira.getBatchDevelopmentInfo).toHaveBeenCalledWith(
       ['10001'],
       undefined,
@@ -115,7 +115,7 @@ describe('get-batch-dev-info', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getBatchDevelopmentInfo.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueIds: ['10001'] });
-    const result = await getBatchDevInfo(ctx);
+    const result = await getBatchDevInfo.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

@@ -1,7 +1,7 @@
-import type { ExecutionContext } from '../shared/types.js';
+import type { CommandContext } from '../shared/types.js';
 import confluenceHelp from './confluence-help.js';
 
-function makeContext(): ExecutionContext {
+function makeContext(): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -12,17 +12,17 @@ function makeContext(): ExecutionContext {
 
 describe('confluence-help', () => {
   it('should return exitCode 0', () => {
-    const result = confluenceHelp(makeContext());
+    const result = confluenceHelp.handler(makeContext());
     expect(result.exitCode).toBe(0);
   });
 
   it('should contain "Confluence Commands Reference" in output', () => {
-    const result = confluenceHelp(makeContext());
+    const result = confluenceHelp.handler(makeContext());
     expect(result.output).toContain('Confluence Commands Reference');
   });
 
   it('should contain key command names', () => {
-    const result = confluenceHelp(makeContext());
+    const result = confluenceHelp.handler(makeContext());
     expect(result.output).toContain('confluence-search');
     expect(result.output).toContain('confluence-get-page');
     expect(result.output).toContain('confluence-create-page');

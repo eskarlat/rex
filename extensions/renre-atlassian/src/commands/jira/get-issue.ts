@@ -1,16 +1,14 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
 import { issueKeySchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({
-  issueKey: issueKeySchema,
-  expand: z.string().optional(),
+export default defineCommand({
+  args: {
+    issueKey: issueKeySchema,
+    expand: z.string().optional(),
+  },
+  handler: (ctx) =>
+    jiraCommand(ctx, (jira, args) =>
+    jira.getIssue(args.issueKey, args.expand),),
 });
-
-export default async function getIssue(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, schema, (jira, args) =>
-    jira.getIssue(args.issueKey, args.expand),
-  );
-}

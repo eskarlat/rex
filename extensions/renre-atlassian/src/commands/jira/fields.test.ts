@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import searchFields from './search-fields.js';
 import getFieldOptions from './get-field-options.js';
 
@@ -18,7 +18,7 @@ const mockJira = {
   getFieldOptions: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -37,7 +37,7 @@ describe('search-fields', () => {
     const fields = [{ id: 'summary', name: 'Summary' }];
     mockJira.getFields.mockResolvedValue(fields);
     const ctx = makeContext();
-    await searchFields(ctx);
+    await searchFields.handler(ctx);
     expect(mockJira.getFields).toHaveBeenCalled();
     expect(toOutput).toHaveBeenCalledWith(fields);
   });
@@ -45,7 +45,7 @@ describe('search-fields', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getFields.mockRejectedValue(new Error('fail'));
     const ctx = makeContext();
-    const result = await searchFields(ctx);
+    const result = await searchFields.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -56,7 +56,7 @@ describe('get-field-options', () => {
     const options = { values: [{ id: '1', value: 'Option A' }] };
     mockJira.getFieldOptions.mockResolvedValue(options);
     const ctx = makeContext({ fieldId: 'customfield_10001', contextId: '10100' });
-    await getFieldOptions(ctx);
+    await getFieldOptions.handler(ctx);
     expect(mockJira.getFieldOptions).toHaveBeenCalledWith('customfield_10001', '10100');
     expect(toOutput).toHaveBeenCalledWith(options);
   });
@@ -64,7 +64,7 @@ describe('get-field-options', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getFieldOptions.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ fieldId: 'f1', contextId: 'c1' });
-    const result = await getFieldOptions(ctx);
+    const result = await getFieldOptions.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

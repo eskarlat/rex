@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getIssue from './get-issue.js';
 import search from './search.js';
 import getProjectIssues from './get-project-issues.js';
@@ -29,7 +29,7 @@ const mockJira = {
   getChangelogs: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -47,7 +47,7 @@ describe('get-issue', () => {
   it('calls jira.getIssue with issueKey', async () => {
     mockJira.getIssue.mockResolvedValue({ key: 'TEST-1' });
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getIssue(ctx);
+    await getIssue.handler(ctx);
     expect(mockJira.getIssue).toHaveBeenCalledWith('TEST-1', undefined);
     expect(toOutput).toHaveBeenCalledWith({ key: 'TEST-1' });
   });
@@ -55,14 +55,14 @@ describe('get-issue', () => {
   it('passes expand parameter when provided', async () => {
     mockJira.getIssue.mockResolvedValue({ key: 'TEST-1' });
     const ctx = makeContext({ issueKey: 'TEST-1', expand: 'changelog' });
-    await getIssue(ctx);
+    await getIssue.handler(ctx);
     expect(mockJira.getIssue).toHaveBeenCalledWith('TEST-1', 'changelog');
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getIssue.mockRejectedValue(new Error('not found'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await getIssue(ctx);
+    const result = await getIssue.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -72,22 +72,22 @@ describe('search', () => {
   it('calls jira.search with jql, startAt, maxResults, fields', async () => {
     mockJira.search.mockResolvedValue({ issues: [] });
     const ctx = makeContext({ jql: 'project=TEST', startAt: 10, maxResults: 25, fields: ['summary'] });
-    await search(ctx);
+    await search.handler(ctx);
     expect(mockJira.search).toHaveBeenCalledWith('project=TEST', 10, 25, ['summary']);
     expect(toOutput).toHaveBeenCalledWith({ issues: [] });
   });
 
   it('uses defaults for startAt and maxResults', async () => {
     mockJira.search.mockResolvedValue({ issues: [] });
-    const ctx = makeContext({ jql: 'project=TEST' });
-    await search(ctx);
+    const ctx = makeContext({ jql: 'project=TEST', startAt: 0, maxResults: 50 });
+    await search.handler(ctx);
     expect(mockJira.search).toHaveBeenCalledWith('project=TEST', 0, 50, undefined);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.search.mockRejectedValue(new Error('bad jql'));
     const ctx = makeContext({ jql: 'invalid' });
-    const result = await search(ctx);
+    const result = await search.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -97,7 +97,7 @@ describe('get-project-issues', () => {
   it('calls jira.search with project JQL', async () => {
     mockJira.search.mockResolvedValue({ issues: [] });
     const ctx = makeContext({ projectKey: 'PROJ', startAt: 5, maxResults: 10 });
-    await getProjectIssues(ctx);
+    await getProjectIssues.handler(ctx);
     expect(mockJira.search).toHaveBeenCalledWith(
       'project = PROJ ORDER BY updated DESC',
       5,
@@ -107,8 +107,8 @@ describe('get-project-issues', () => {
 
   it('uses defaults for startAt and maxResults', async () => {
     mockJira.search.mockResolvedValue({ issues: [] });
-    const ctx = makeContext({ projectKey: 'PROJ' });
-    await getProjectIssues(ctx);
+    const ctx = makeContext({ projectKey: 'PROJ', startAt: 0, maxResults: 50 });
+    await getProjectIssues.handler(ctx);
     expect(mockJira.search).toHaveBeenCalledWith(
       'project = PROJ ORDER BY updated DESC',
       0,
@@ -119,7 +119,7 @@ describe('get-project-issues', () => {
   it('returns errorOutput on error', async () => {
     mockJira.search.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ projectKey: 'PROJ' });
-    const result = await getProjectIssues(ctx);
+    const result = await getProjectIssues.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -134,7 +134,7 @@ describe('create-issue', () => {
       summary: 'My task',
       description: 'Some description',
     });
-    await createIssue(ctx);
+    await createIssue.handler(ctx);
     expect(mockJira.createIssue).toHaveBeenCalledWith({
       project: { key: 'TEST' },
       issuetype: { name: 'Task' },
@@ -160,7 +160,7 @@ describe('create-issue', () => {
       issueType: 'Bug',
       summary: 'A bug',
     });
-    await createIssue(ctx);
+    await createIssue.handler(ctx);
     expect(mockJira.createIssue).toHaveBeenCalledWith({
       project: { key: 'TEST' },
       issuetype: { name: 'Bug' },
@@ -176,7 +176,7 @@ describe('create-issue', () => {
       summary: 'Task',
       additionalFields: { priority: { name: 'High' } },
     });
-    await createIssue(ctx);
+    await createIssue.handler(ctx);
     expect(mockJira.createIssue).toHaveBeenCalledWith(
       expect.objectContaining({ priority: { name: 'High' } }),
     );
@@ -185,7 +185,7 @@ describe('create-issue', () => {
   it('returns errorOutput on error', async () => {
     mockJira.createIssue.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ projectKey: 'TEST', issueType: 'Task', summary: 'x' });
-    const result = await createIssue(ctx);
+    const result = await createIssue.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -196,7 +196,7 @@ describe('update-issue', () => {
     mockJira.updateIssue.mockResolvedValue(undefined);
     const fields = { summary: 'Updated' };
     const ctx = makeContext({ issueKey: 'TEST-1', fields });
-    await updateIssue(ctx);
+    await updateIssue.handler(ctx);
     expect(mockJira.updateIssue).toHaveBeenCalledWith('TEST-1', fields);
     expect(toOutput).toHaveBeenCalledWith({ success: true, issueKey: 'TEST-1' });
   });
@@ -204,7 +204,7 @@ describe('update-issue', () => {
   it('returns errorOutput on error', async () => {
     mockJira.updateIssue.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', fields: {} });
-    const result = await updateIssue(ctx);
+    const result = await updateIssue.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -214,7 +214,7 @@ describe('delete-issue', () => {
   it('calls jira.deleteIssue and returns success', async () => {
     mockJira.deleteIssue.mockResolvedValue(undefined);
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await deleteIssue(ctx);
+    await deleteIssue.handler(ctx);
     expect(mockJira.deleteIssue).toHaveBeenCalledWith('TEST-1');
     expect(toOutput).toHaveBeenCalledWith({ success: true, issueKey: 'TEST-1' });
   });
@@ -222,7 +222,7 @@ describe('delete-issue', () => {
   it('returns errorOutput on error', async () => {
     mockJira.deleteIssue.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await deleteIssue(ctx);
+    const result = await deleteIssue.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -233,7 +233,7 @@ describe('batch-create-issues', () => {
     const issues = [{ fields: { summary: 'A' } }, { fields: { summary: 'B' } }];
     mockJira.bulkCreateIssues.mockResolvedValue({ issues: [] });
     const ctx = makeContext({ issues });
-    await batchCreateIssues(ctx);
+    await batchCreateIssues.handler(ctx);
     expect(mockJira.bulkCreateIssues).toHaveBeenCalledWith(issues);
     expect(toOutput).toHaveBeenCalledWith({ issues: [] });
   });
@@ -241,7 +241,7 @@ describe('batch-create-issues', () => {
   it('returns errorOutput on error', async () => {
     mockJira.bulkCreateIssues.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issues: [] });
-    const result = await batchCreateIssues(ctx);
+    const result = await batchCreateIssues.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -251,22 +251,22 @@ describe('get-changelogs', () => {
   it('calls jira.getChangelogs with issueKey, startAt, maxResults', async () => {
     mockJira.getChangelogs.mockResolvedValue({ values: [] });
     const ctx = makeContext({ issueKey: 'TEST-1', startAt: 5, maxResults: 20 });
-    await getChangelogs(ctx);
+    await getChangelogs.handler(ctx);
     expect(mockJira.getChangelogs).toHaveBeenCalledWith('TEST-1', 5, 20);
     expect(toOutput).toHaveBeenCalledWith({ values: [] });
   });
 
   it('uses defaults for startAt and maxResults', async () => {
     mockJira.getChangelogs.mockResolvedValue({ values: [] });
-    const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getChangelogs(ctx);
+    const ctx = makeContext({ issueKey: 'TEST-1', startAt: 0, maxResults: 100 });
+    await getChangelogs.handler(ctx);
     expect(mockJira.getChangelogs).toHaveBeenCalledWith('TEST-1', 0, 100);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getChangelogs.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await getChangelogs(ctx);
+    const result = await getChangelogs.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

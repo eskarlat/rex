@@ -1,10 +1,8 @@
-import { z } from 'zod';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({});
-
-export default async function getServiceDesks(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, schema, (jira) => jira.getServiceDesks());
-}
+export default defineCommand({
+  handler: (ctx) =>
+    jiraCommand(ctx, (jira) => jira.getServiceDesks()),
+});

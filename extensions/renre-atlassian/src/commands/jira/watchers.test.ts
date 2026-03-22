@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getIssueWatchers from './get-issue-watchers.js';
 import addWatcher from './add-watcher.js';
 import removeWatcher from './remove-watcher.js';
@@ -20,7 +20,7 @@ const mockJira = {
   removeWatcher: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -39,7 +39,7 @@ describe('get-issue-watchers', () => {
     const watchers = { watchers: [{ accountId: 'abc' }] };
     mockJira.getWatchers.mockResolvedValue(watchers);
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getIssueWatchers(ctx);
+    await getIssueWatchers.handler(ctx);
     expect(mockJira.getWatchers).toHaveBeenCalledWith('TEST-1');
     expect(toOutput).toHaveBeenCalledWith(watchers);
   });
@@ -47,7 +47,7 @@ describe('get-issue-watchers', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getWatchers.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await getIssueWatchers(ctx);
+    const result = await getIssueWatchers.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -57,7 +57,7 @@ describe('add-watcher', () => {
   it('calls jira.addWatcher with issueKey and accountId', async () => {
     mockJira.addWatcher.mockResolvedValue(undefined);
     const ctx = makeContext({ issueKey: 'TEST-1', accountId: 'abc123' });
-    await addWatcher(ctx);
+    await addWatcher.handler(ctx);
     expect(mockJira.addWatcher).toHaveBeenCalledWith('TEST-1', 'abc123');
     expect(toOutput).toHaveBeenCalledWith({ success: true });
   });
@@ -65,7 +65,7 @@ describe('add-watcher', () => {
   it('returns errorOutput on error', async () => {
     mockJira.addWatcher.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', accountId: 'abc123' });
-    const result = await addWatcher(ctx);
+    const result = await addWatcher.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -75,7 +75,7 @@ describe('remove-watcher', () => {
   it('calls jira.removeWatcher with issueKey and accountId', async () => {
     mockJira.removeWatcher.mockResolvedValue(undefined);
     const ctx = makeContext({ issueKey: 'TEST-1', accountId: 'abc123' });
-    await removeWatcher(ctx);
+    await removeWatcher.handler(ctx);
     expect(mockJira.removeWatcher).toHaveBeenCalledWith('TEST-1', 'abc123');
     expect(toOutput).toHaveBeenCalledWith({ success: true });
   });
@@ -83,7 +83,7 @@ describe('remove-watcher', () => {
   it('returns errorOutput on error', async () => {
     mockJira.removeWatcher.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', accountId: 'abc123' });
-    const result = await removeWatcher(ctx);
+    const result = await removeWatcher.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

@@ -1,5 +1,5 @@
 import { createClients } from './client.js';
-import type { ExecutionContext } from './types.js';
+import type { CommandContext } from './types.js';
 
 vi.mock('../client/jira-client.js', () => ({
   JiraClient: vi.fn(),
@@ -9,7 +9,7 @@ vi.mock('../client/confluence-client.js', () => ({
   ConfluenceClient: vi.fn(),
 }));
 
-function createMockContext(configOverrides: Record<string, unknown> = {}): ExecutionContext {
+function createMockContext(configOverrides: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test-project',
     projectPath: '/tmp/test-project',

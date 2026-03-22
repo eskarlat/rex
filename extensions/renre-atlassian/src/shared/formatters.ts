@@ -2,6 +2,7 @@ import { jsonToMarkdown } from '@renre-kit/extension-sdk/node';
 
 import type { CommandResult } from './types.js';
 
+
 /** Convert API response data to a markdown-formatted CommandResult */
 export function toOutput(data: unknown): CommandResult {
   return {

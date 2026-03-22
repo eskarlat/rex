@@ -9,14 +9,14 @@ vi.mock('../shared/formatters.js', () => ({
 
 import { createClients } from '../shared/client.js';
 import { toOutput, errorOutput } from '../shared/formatters.js';
-import type { ExecutionContext } from '../shared/types.js';
+import type { CommandContext } from '../shared/types.js';
 import status from './status.js';
 
 const mockJira = {
   getMyself: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -37,7 +37,7 @@ describe('status', () => {
   it('should call jira.getMyself and return connection info', async () => {
     mockJira.getMyself.mockResolvedValue({ accountId: 'u1', displayName: 'Test User' });
     const ctx = makeContext();
-    const result = await status(ctx);
+    const result = await status.handler(ctx);
     expect(mockJira.getMyself).toHaveBeenCalled();
     expect(toOutput).toHaveBeenCalledWith({
       connected: true,
@@ -52,7 +52,7 @@ describe('status', () => {
 
   it('should handle errors', async () => {
     mockJira.getMyself.mockRejectedValue(new Error('Unauthorized'));
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

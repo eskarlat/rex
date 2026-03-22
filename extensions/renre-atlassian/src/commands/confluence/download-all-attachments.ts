@@ -1,14 +1,12 @@
-import { z } from 'zod';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { confluenceCommand } from '../../shared/command-helper.js';
 import { pageIdSchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({ pageId: pageIdSchema });
-
-export default async function downloadAllAttachments(
-  context: ExecutionContext,
-): Promise<CommandResult> {
-  return confluenceCommand(context, schema, (confluence, args) =>
-    confluence.getAttachments(args.pageId),
-  );
-}
+export default defineCommand({
+  args: {
+    pageId: pageIdSchema,
+  },
+  handler: (ctx) =>
+    confluenceCommand(ctx, (confluence, args) => confluence.getAttachments(args.pageId)),
+});

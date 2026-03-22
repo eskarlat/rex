@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import search from './search.js';
 import getPage from './get-page.js';
 import getPageChildren from './get-page-children.js';
@@ -32,7 +32,7 @@ const mockConfluence = {
   getPageVersion: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -53,7 +53,7 @@ describe('search', () => {
   it('should search with cql, limit, and start', async () => {
     mockConfluence.search.mockResolvedValue({ results: [] });
     const ctx = makeContext({ cql: 'type = page', limit: 10, start: 5 });
-    const result = await search(ctx);
+    const result = await search.handler(ctx);
     expect(mockConfluence.search).toHaveBeenCalledWith('type = page', 10, 5);
     expect(toOutput).toHaveBeenCalledWith({ results: [] });
     expect(result.exitCode).toBe(0);
@@ -61,14 +61,14 @@ describe('search', () => {
 
   it('should use default limit and start', async () => {
     mockConfluence.search.mockResolvedValue({ results: [] });
-    const ctx = makeContext({ cql: 'type = page' });
-    await search(ctx);
+    const ctx = makeContext({ cql: 'type = page', limit: 25, start: 0 });
+    await search.handler(ctx);
     expect(mockConfluence.search).toHaveBeenCalledWith('type = page', 25, 0);
   });
 
   it('should handle errors', async () => {
     mockConfluence.search.mockRejectedValue(new Error('Search failed'));
-    const result = await search(makeContext({ cql: 'bad' }));
+    const result = await search.handler(makeContext({ cql: 'bad' }));
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -77,8 +77,8 @@ describe('search', () => {
 describe('get-page', () => {
   it('should get page with default expand', async () => {
     mockConfluence.getPage.mockResolvedValue({ id: '123', title: 'Test' });
-    const ctx = makeContext({ pageId: '123' });
-    const result = await getPage(ctx);
+    const ctx = makeContext({ pageId: '123', expand: 'body.storage,version' });
+    const result = await getPage.handler(ctx);
     expect(mockConfluence.getPage).toHaveBeenCalledWith('123', 'body.storage,version');
     expect(toOutput).toHaveBeenCalledWith({ id: '123', title: 'Test' });
     expect(result.exitCode).toBe(0);
@@ -87,13 +87,13 @@ describe('get-page', () => {
   it('should get page with custom expand', async () => {
     mockConfluence.getPage.mockResolvedValue({ id: '123' });
     const ctx = makeContext({ pageId: '123', expand: 'version' });
-    await getPage(ctx);
+    await getPage.handler(ctx);
     expect(mockConfluence.getPage).toHaveBeenCalledWith('123', 'version');
   });
 
   it('should handle errors', async () => {
     mockConfluence.getPage.mockRejectedValue(new Error('Not found'));
-    const result = await getPage(makeContext({ pageId: '999' }));
+    const result = await getPage.handler(makeContext({ pageId: '999' }));
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -102,21 +102,21 @@ describe('get-page', () => {
 describe('get-page-children', () => {
   it('should get children with defaults', async () => {
     mockConfluence.getPageChildren.mockResolvedValue({ results: [] });
-    const ctx = makeContext({ pageId: '123' });
-    await getPageChildren(ctx);
+    const ctx = makeContext({ pageId: '123', limit: 25, start: 0 });
+    await getPageChildren.handler(ctx);
     expect(mockConfluence.getPageChildren).toHaveBeenCalledWith('123', 25, 0);
   });
 
   it('should get children with custom limit and start', async () => {
     mockConfluence.getPageChildren.mockResolvedValue({ results: [] });
     const ctx = makeContext({ pageId: '123', limit: 10, start: 5 });
-    await getPageChildren(ctx);
+    await getPageChildren.handler(ctx);
     expect(mockConfluence.getPageChildren).toHaveBeenCalledWith('123', 10, 5);
   });
 
   it('should handle errors', async () => {
     mockConfluence.getPageChildren.mockRejectedValue(new Error('fail'));
-    const result = await getPageChildren(makeContext({ pageId: '123' }));
+    const result = await getPageChildren.handler(makeContext({ pageId: '123' }));
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -126,7 +126,7 @@ describe('get-page-history', () => {
   it('should get page history', async () => {
     mockConfluence.getPageHistory.mockResolvedValue({ results: [{ number: 1 }] });
     const ctx = makeContext({ pageId: '123' });
-    const result = await getPageHistory(ctx);
+    const result = await getPageHistory.handler(ctx);
     expect(mockConfluence.getPageHistory).toHaveBeenCalledWith('123');
     expect(toOutput).toHaveBeenCalledWith({ results: [{ number: 1 }] });
     expect(result.exitCode).toBe(0);
@@ -134,7 +134,7 @@ describe('get-page-history', () => {
 
   it('should handle errors', async () => {
     mockConfluence.getPageHistory.mockRejectedValue(new Error('fail'));
-    const result = await getPageHistory(makeContext({ pageId: '123' }));
+    const result = await getPageHistory.handler(makeContext({ pageId: '123' }));
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -144,7 +144,7 @@ describe('create-page', () => {
   it('should create a page without parentId', async () => {
     mockConfluence.createPage.mockResolvedValue({ id: '456', title: 'New Page' });
     const ctx = makeContext({ title: 'New Page', spaceKey: 'DEV', body: '<p>Hello</p>' });
-    const result = await createPage(ctx);
+    const result = await createPage.handler(ctx);
     expect(mockConfluence.createPage).toHaveBeenCalledWith({
       type: 'page',
       title: 'New Page',
@@ -163,7 +163,7 @@ describe('create-page', () => {
       body: '<p>Child</p>',
       parentId: '123',
     });
-    await createPage(ctx);
+    await createPage.handler(ctx);
     expect(mockConfluence.createPage).toHaveBeenCalledWith({
       type: 'page',
       title: 'Child Page',
@@ -175,7 +175,7 @@ describe('create-page', () => {
 
   it('should handle errors', async () => {
     mockConfluence.createPage.mockRejectedValue(new Error('Permission denied'));
-    const result = await createPage(
+    const result = await createPage.handler(
       makeContext({ title: 'X', spaceKey: 'DEV', body: '<p>X</p>' }),
     );
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
@@ -192,7 +192,7 @@ describe('update-page', () => {
       body: '<p>Updated content</p>',
       version: 5,
     });
-    const result = await updatePage(ctx);
+    const result = await updatePage.handler(ctx);
     expect(mockConfluence.updatePage).toHaveBeenCalledWith('123', {
       type: 'page',
       title: 'Updated',
@@ -205,7 +205,7 @@ describe('update-page', () => {
 
   it('should handle errors', async () => {
     mockConfluence.updatePage.mockRejectedValue(new Error('Conflict'));
-    const result = await updatePage(
+    const result = await updatePage.handler(
       makeContext({ pageId: '123', title: 'X', body: '<p>X</p>', version: 1 }),
     );
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
@@ -217,7 +217,7 @@ describe('delete-page', () => {
   it('should delete a page', async () => {
     mockConfluence.deletePage.mockResolvedValue(undefined);
     const ctx = makeContext({ pageId: '123' });
-    const result = await deletePage(ctx);
+    const result = await deletePage.handler(ctx);
     expect(mockConfluence.deletePage).toHaveBeenCalledWith('123');
     expect(toOutput).toHaveBeenCalledWith({ success: true, pageId: '123' });
     expect(result.exitCode).toBe(0);
@@ -225,7 +225,7 @@ describe('delete-page', () => {
 
   it('should handle errors', async () => {
     mockConfluence.deletePage.mockRejectedValue(new Error('Not found'));
-    const result = await deletePage(makeContext({ pageId: '999' }));
+    const result = await deletePage.handler(makeContext({ pageId: '999' }));
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -235,7 +235,7 @@ describe('move-page', () => {
   it('should move a page', async () => {
     mockConfluence.movePage.mockResolvedValue({ id: '123' });
     const ctx = makeContext({ pageId: '123', targetAncestorId: '456', currentVersion: 3 });
-    const result = await movePage(ctx);
+    const result = await movePage.handler(ctx);
     expect(mockConfluence.movePage).toHaveBeenCalledWith('123', '456', 3);
     expect(toOutput).toHaveBeenCalledWith({ id: '123' });
     expect(result.exitCode).toBe(0);
@@ -243,7 +243,7 @@ describe('move-page', () => {
 
   it('should handle errors', async () => {
     mockConfluence.movePage.mockRejectedValue(new Error('fail'));
-    const result = await movePage(
+    const result = await movePage.handler(
       makeContext({ pageId: '123', targetAncestorId: '456', currentVersion: 1 }),
     );
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
@@ -261,7 +261,7 @@ describe('get-page-diff', () => {
     );
 
     const ctx = makeContext({ pageId: '123', fromVersion: 1, toVersion: 2 });
-    const result = await getPageDiff(ctx);
+    const result = await getPageDiff.handler(ctx);
 
     expect(mockConfluence.getPageVersion).toHaveBeenCalledTimes(2);
     expect(mockConfluence.getPageVersion).toHaveBeenCalledWith('123', 1);
@@ -279,7 +279,7 @@ describe('get-page-diff', () => {
   it('should handle missing body gracefully', async () => {
     mockConfluence.getPageVersion.mockResolvedValue({});
     const ctx = makeContext({ pageId: '123', fromVersion: 1, toVersion: 2 });
-    const result = await getPageDiff(ctx);
+    const result = await getPageDiff.handler(ctx);
     expect(toOutput).toHaveBeenCalledWith({
       pageId: '123',
       fromVersion: 1,
@@ -292,7 +292,7 @@ describe('get-page-diff', () => {
 
   it('should handle errors', async () => {
     mockConfluence.getPageVersion.mockRejectedValue(new Error('Version not found'));
-    const result = await getPageDiff(
+    const result = await getPageDiff.handler(
       makeContext({ pageId: '123', fromVersion: 1, toVersion: 99 }),
     );
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));

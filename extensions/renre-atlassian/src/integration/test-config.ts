@@ -1,4 +1,4 @@
-import type { ExecutionContext } from '../shared/types.js';
+import type { CommandContext } from '../shared/types.js';
 
 /**
  * Test configuration loaded from environment variables.
@@ -28,8 +28,8 @@ export const hasCredentials = Boolean(
   testConfig.domain && testConfig.email && testConfig.apiToken,
 );
 
-/** Build an ExecutionContext with real credentials from env vars */
-export function liveContext(args: Record<string, unknown> = {}): ExecutionContext {
+/** Build a CommandContext with real credentials from env vars */
+export function liveContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'integration-test',
     projectPath: '/tmp/test',
@@ -42,8 +42,8 @@ export function liveContext(args: Record<string, unknown> = {}): ExecutionContex
   };
 }
 
-/** Build an ExecutionContext with empty config (missing credentials) */
-export function missingConfigContext(args: Record<string, unknown> = {}): ExecutionContext {
+/** Build a CommandContext with empty config (missing credentials) */
+export function missingConfigContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',

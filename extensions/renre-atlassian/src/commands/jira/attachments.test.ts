@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import downloadAttachment from './download-attachment.js';
 import getIssueImages from './get-issue-images.js';
 
@@ -18,7 +18,7 @@ const mockJira = {
   getIssueForAttachments: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -38,7 +38,7 @@ describe('download-attachment', () => {
       text: () => Promise.resolve('file content'),
     });
     const ctx = makeContext({ attachmentId: '99' });
-    await downloadAttachment(ctx);
+    await downloadAttachment.handler(ctx);
     expect(mockJira.downloadAttachment).toHaveBeenCalledWith('99');
     expect(toOutput).toHaveBeenCalledWith({ attachmentId: '99', content: 'file content' });
   });
@@ -46,7 +46,7 @@ describe('download-attachment', () => {
   it('returns errorOutput on error', async () => {
     mockJira.downloadAttachment.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ attachmentId: '99' });
-    const result = await downloadAttachment(ctx);
+    const result = await downloadAttachment.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -62,7 +62,7 @@ describe('get-issue-images', () => {
       ],
     });
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getIssueImages(ctx);
+    await getIssueImages.handler(ctx);
     expect(mockJira.getIssueForAttachments).toHaveBeenCalledWith('TEST-1');
     expect(toOutput).toHaveBeenCalledWith([
       { id: '1', mimeType: 'image/png', filename: 'screenshot.png' },
@@ -73,14 +73,14 @@ describe('get-issue-images', () => {
   it('returns empty array when no attachments', async () => {
     mockJira.getIssueForAttachments.mockResolvedValue({});
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getIssueImages(ctx);
+    await getIssueImages.handler(ctx);
     expect(toOutput).toHaveBeenCalledWith([]);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getIssueForAttachments.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await getIssueImages(ctx);
+    const result = await getIssueImages.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

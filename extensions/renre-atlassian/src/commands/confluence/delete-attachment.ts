@@ -1,12 +1,14 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { confluenceCommand } from '../../shared/command-helper.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({ attachmentId: z.string().min(1) });
-
-export default async function deleteAttachment(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, schema, async (confluence, args) => {
-    await confluence.deleteAttachment(args.attachmentId);
-    return { success: true, attachmentId: args.attachmentId };
-  });
-}
+export default defineCommand({
+  args: {
+    attachmentId: z.string().min(1),
+  },
+  handler: (ctx) =>
+    confluenceCommand(ctx, async (confluence, args) => {
+      await confluence.deleteAttachment(args.attachmentId);
+      return { success: true, attachmentId: args.attachmentId };
+    }),
+});

@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import addComment from './add-comment.js';
 import editComment from './edit-comment.js';
 
@@ -18,7 +18,7 @@ const mockJira = {
   editComment: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -47,7 +47,7 @@ describe('add-comment', () => {
   it('calls jira.addComment with issueKey and ADF body', async () => {
     mockJira.addComment.mockResolvedValue({ id: '100' });
     const ctx = makeContext({ issueKey: 'TEST-1', body: 'Hello world' });
-    await addComment(ctx);
+    await addComment.handler(ctx);
     expect(mockJira.addComment).toHaveBeenCalledWith('TEST-1', expectedAdfBody('Hello world'));
     expect(toOutput).toHaveBeenCalledWith({ id: '100' });
   });
@@ -55,7 +55,7 @@ describe('add-comment', () => {
   it('returns errorOutput on error', async () => {
     mockJira.addComment.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', body: 'text' });
-    const result = await addComment(ctx);
+    const result = await addComment.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -65,7 +65,7 @@ describe('edit-comment', () => {
   it('calls jira.editComment with issueKey, commentId, and ADF body', async () => {
     mockJira.editComment.mockResolvedValue({ id: '100' });
     const ctx = makeContext({ issueKey: 'TEST-1', commentId: '100', body: 'Updated text' });
-    await editComment(ctx);
+    await editComment.handler(ctx);
     expect(mockJira.editComment).toHaveBeenCalledWith(
       'TEST-1',
       '100',
@@ -77,7 +77,7 @@ describe('edit-comment', () => {
   it('returns errorOutput on error', async () => {
     mockJira.editComment.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', commentId: '100', body: 'text' });
-    const result = await editComment(ctx);
+    const result = await editComment.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

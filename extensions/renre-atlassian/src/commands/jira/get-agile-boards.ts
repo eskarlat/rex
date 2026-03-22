@@ -1,13 +1,13 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
-import { paginationSchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = paginationSchema;
-
-export default async function getAgileBoards(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, schema, (jira, args) =>
-    jira.getBoards(args.startAt, args.maxResults),
-  );
-}
+export default defineCommand({
+  args: {
+    startAt: z.coerce.number().int().min(0).default(0),
+    maxResults: z.coerce.number().int().min(1).max(100).default(50),
+  },
+  handler: (ctx) =>
+    jiraCommand(ctx, (jira, args) =>
+    jira.getBoards(args.startAt, args.maxResults),),
+});

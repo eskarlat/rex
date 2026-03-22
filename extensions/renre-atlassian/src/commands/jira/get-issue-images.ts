@@ -1,15 +1,14 @@
-import { z } from 'zod';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
 import { issueKeySchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({
-  issueKey: issueKeySchema,
-});
-
-export default async function getIssueImages(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, schema, async (jira, args) => {
+export default defineCommand({
+  args: {
+    issueKey: issueKeySchema,
+  },
+  handler: (ctx) =>
+    jiraCommand(ctx, async (jira, args) => {
     const data = await jira.getIssueForAttachments(args.issueKey);
     const attachments = (data as Record<string, unknown>)['attachments'] as
       | Array<Record<string, unknown>>
@@ -18,5 +17,5 @@ export default async function getIssueImages(context: ExecutionContext): Promise
       const mimeType = a['mimeType'] as string | undefined;
       return mimeType?.startsWith('image/');
     });
-  });
-}
+  }),
+});

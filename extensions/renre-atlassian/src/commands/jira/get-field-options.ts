@@ -1,15 +1,13 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({
-  fieldId: z.string().min(1),
-  contextId: z.string().min(1),
+export default defineCommand({
+  args: {
+    fieldId: z.string().min(1),
+    contextId: z.string().min(1),
+  },
+  handler: (ctx) =>
+    jiraCommand(ctx, (jira, args) =>
+    jira.getFieldOptions(args.fieldId, args.contextId),),
 });
-
-export default async function getFieldOptions(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, schema, (jira, args) =>
-    jira.getFieldOptions(args.fieldId, args.contextId),
-  );
-}

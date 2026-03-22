@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getTransitions from './get-transitions.js';
 import transitionIssue from './transition-issue.js';
 
@@ -18,7 +18,7 @@ const mockJira = {
   transitionIssue: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -37,7 +37,7 @@ describe('get-transitions', () => {
     const transitions = { transitions: [{ id: '1', name: 'Done' }] };
     mockJira.getTransitions.mockResolvedValue(transitions);
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getTransitions(ctx);
+    await getTransitions.handler(ctx);
     expect(mockJira.getTransitions).toHaveBeenCalledWith('TEST-1');
     expect(toOutput).toHaveBeenCalledWith(transitions);
   });
@@ -45,7 +45,7 @@ describe('get-transitions', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getTransitions.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await getTransitions(ctx);
+    const result = await getTransitions.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -55,7 +55,7 @@ describe('transition-issue', () => {
   it('calls jira.transitionIssue with issueKey and transitionId', async () => {
     mockJira.transitionIssue.mockResolvedValue(undefined);
     const ctx = makeContext({ issueKey: 'TEST-1', transitionId: '31' });
-    await transitionIssue(ctx);
+    await transitionIssue.handler(ctx);
     expect(mockJira.transitionIssue).toHaveBeenCalledWith('TEST-1', '31');
     expect(toOutput).toHaveBeenCalledWith({ success: true, issueKey: 'TEST-1', transitionId: '31' });
   });
@@ -63,7 +63,7 @@ describe('transition-issue', () => {
   it('returns errorOutput on error', async () => {
     mockJira.transitionIssue.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', transitionId: '31' });
-    const result = await transitionIssue(ctx);
+    const result = await transitionIssue.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

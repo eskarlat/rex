@@ -1,14 +1,15 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { confluenceCommand } from '../../shared/command-helper.js';
-import { confluencePaginationSchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z
-  .object({ cql: z.string().min(1, 'CQL query is required') })
-  .merge(confluencePaginationSchema);
-
-export default async function search(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, schema, (confluence, args) =>
-    confluence.search(args.cql, args.limit, args.start),
-  );
-}
+export default defineCommand({
+  args: {
+    cql: z.string().min(1, 'CQL query is required'),
+    start: z.coerce.number().int().min(0).default(0),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+  },
+  handler: (ctx) =>
+    confluenceCommand(ctx, (confluence, args) =>
+      confluence.search(args.cql, args.limit, args.start),
+    ),
+});

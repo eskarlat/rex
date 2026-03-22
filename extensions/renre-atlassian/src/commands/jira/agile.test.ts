@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getAgileBoards from './get-agile-boards.js';
 import getBoardIssues from './get-board-issues.js';
 import getSprintsFromBoard from './get-sprints-from-board.js';
@@ -28,7 +28,7 @@ const mockJira = {
   addIssuesToSprint: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -46,22 +46,22 @@ describe('get-agile-boards', () => {
   it('calls jira.getBoards with startAt and maxResults', async () => {
     mockJira.getBoards.mockResolvedValue({ values: [] });
     const ctx = makeContext({ startAt: 10, maxResults: 25 });
-    await getAgileBoards(ctx);
+    await getAgileBoards.handler(ctx);
     expect(mockJira.getBoards).toHaveBeenCalledWith(10, 25);
     expect(toOutput).toHaveBeenCalledWith({ values: [] });
   });
 
   it('uses defaults for startAt and maxResults', async () => {
     mockJira.getBoards.mockResolvedValue({ values: [] });
-    const ctx = makeContext();
-    await getAgileBoards(ctx);
+    const ctx = makeContext({ startAt: 0, maxResults: 50 });
+    await getAgileBoards.handler(ctx);
     expect(mockJira.getBoards).toHaveBeenCalledWith(0, 50);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getBoards.mockRejectedValue(new Error('fail'));
     const ctx = makeContext();
-    const result = await getAgileBoards(ctx);
+    const result = await getAgileBoards.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -71,22 +71,22 @@ describe('get-board-issues', () => {
   it('calls jira.getBoardIssues with boardId, startAt, maxResults', async () => {
     mockJira.getBoardIssues.mockResolvedValue({ issues: [] });
     const ctx = makeContext({ boardId: 5, startAt: 10, maxResults: 20 });
-    await getBoardIssues(ctx);
+    await getBoardIssues.handler(ctx);
     expect(mockJira.getBoardIssues).toHaveBeenCalledWith(5, 10, 20);
     expect(toOutput).toHaveBeenCalledWith({ issues: [] });
   });
 
   it('uses defaults for startAt and maxResults', async () => {
     mockJira.getBoardIssues.mockResolvedValue({ issues: [] });
-    const ctx = makeContext({ boardId: 5 });
-    await getBoardIssues(ctx);
+    const ctx = makeContext({ boardId: 5, startAt: 0, maxResults: 50 });
+    await getBoardIssues.handler(ctx);
     expect(mockJira.getBoardIssues).toHaveBeenCalledWith(5, 0, 50);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getBoardIssues.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ boardId: 5 });
-    const result = await getBoardIssues(ctx);
+    const result = await getBoardIssues.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -96,22 +96,22 @@ describe('get-sprints-from-board', () => {
   it('calls jira.getSprintsFromBoard with boardId, startAt, maxResults', async () => {
     mockJira.getSprintsFromBoard.mockResolvedValue({ values: [] });
     const ctx = makeContext({ boardId: 3, startAt: 5, maxResults: 10 });
-    await getSprintsFromBoard(ctx);
+    await getSprintsFromBoard.handler(ctx);
     expect(mockJira.getSprintsFromBoard).toHaveBeenCalledWith(3, 5, 10);
     expect(toOutput).toHaveBeenCalledWith({ values: [] });
   });
 
   it('uses defaults for startAt and maxResults', async () => {
     mockJira.getSprintsFromBoard.mockResolvedValue({ values: [] });
-    const ctx = makeContext({ boardId: 3 });
-    await getSprintsFromBoard(ctx);
+    const ctx = makeContext({ boardId: 3, startAt: 0, maxResults: 50 });
+    await getSprintsFromBoard.handler(ctx);
     expect(mockJira.getSprintsFromBoard).toHaveBeenCalledWith(3, 0, 50);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getSprintsFromBoard.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ boardId: 3 });
-    const result = await getSprintsFromBoard(ctx);
+    const result = await getSprintsFromBoard.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -121,22 +121,22 @@ describe('get-sprint-issues', () => {
   it('calls jira.getSprintIssues with sprintId, startAt, maxResults', async () => {
     mockJira.getSprintIssues.mockResolvedValue({ issues: [] });
     const ctx = makeContext({ sprintId: 7, startAt: 0, maxResults: 30 });
-    await getSprintIssues(ctx);
+    await getSprintIssues.handler(ctx);
     expect(mockJira.getSprintIssues).toHaveBeenCalledWith(7, 0, 30);
     expect(toOutput).toHaveBeenCalledWith({ issues: [] });
   });
 
   it('uses defaults for startAt and maxResults', async () => {
     mockJira.getSprintIssues.mockResolvedValue({ issues: [] });
-    const ctx = makeContext({ sprintId: 7 });
-    await getSprintIssues(ctx);
+    const ctx = makeContext({ sprintId: 7, startAt: 0, maxResults: 50 });
+    await getSprintIssues.handler(ctx);
     expect(mockJira.getSprintIssues).toHaveBeenCalledWith(7, 0, 50);
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.getSprintIssues.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ sprintId: 7 });
-    const result = await getSprintIssues(ctx);
+    const result = await getSprintIssues.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -152,7 +152,7 @@ describe('create-sprint', () => {
       endDate: '2026-01-14',
       goal: 'Ship feature',
     });
-    await createSprint(ctx);
+    await createSprint.handler(ctx);
     expect(mockJira.createSprint).toHaveBeenCalledWith({
       originBoardId: 1,
       name: 'Sprint 1',
@@ -166,7 +166,7 @@ describe('create-sprint', () => {
   it('creates sprint with only required fields', async () => {
     mockJira.createSprint.mockResolvedValue({ id: 101 });
     const ctx = makeContext({ boardId: 1, name: 'Sprint 2' });
-    await createSprint(ctx);
+    await createSprint.handler(ctx);
     expect(mockJira.createSprint).toHaveBeenCalledWith({
       originBoardId: 1,
       name: 'Sprint 2',
@@ -176,7 +176,7 @@ describe('create-sprint', () => {
   it('returns errorOutput on error', async () => {
     mockJira.createSprint.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ boardId: 1, name: 'Sprint' });
-    const result = await createSprint(ctx);
+    const result = await createSprint.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -193,7 +193,7 @@ describe('update-sprint', () => {
       endDate: '2026-02-14',
       goal: 'New goal',
     });
-    await updateSprint(ctx);
+    await updateSprint.handler(ctx);
     expect(mockJira.updateSprint).toHaveBeenCalledWith(10, {
       name: 'Updated Sprint',
       state: 'active',
@@ -207,14 +207,14 @@ describe('update-sprint', () => {
   it('sends only provided fields', async () => {
     mockJira.updateSprint.mockResolvedValue({ id: 10 });
     const ctx = makeContext({ sprintId: 10, name: 'Renamed' });
-    await updateSprint(ctx);
+    await updateSprint.handler(ctx);
     expect(mockJira.updateSprint).toHaveBeenCalledWith(10, { name: 'Renamed' });
   });
 
   it('returns errorOutput on error', async () => {
     mockJira.updateSprint.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ sprintId: 10 });
-    const result = await updateSprint(ctx);
+    const result = await updateSprint.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -224,7 +224,7 @@ describe('add-issues-to-sprint', () => {
   it('calls jira.addIssuesToSprint with sprintId and issueKeys', async () => {
     mockJira.addIssuesToSprint.mockResolvedValue(undefined);
     const ctx = makeContext({ sprintId: 10, issueKeys: ['TEST-1', 'TEST-2'] });
-    await addIssuesToSprint(ctx);
+    await addIssuesToSprint.handler(ctx);
     expect(mockJira.addIssuesToSprint).toHaveBeenCalledWith(10, ['TEST-1', 'TEST-2']);
     expect(toOutput).toHaveBeenCalledWith({ success: true, sprintId: 10, issueKeys: ['TEST-1', 'TEST-2'] });
   });
@@ -232,7 +232,7 @@ describe('add-issues-to-sprint', () => {
   it('returns errorOutput on error', async () => {
     mockJira.addIssuesToSprint.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ sprintId: 10, issueKeys: ['TEST-1'] });
-    const result = await addIssuesToSprint(ctx);
+    const result = await addIssuesToSprint.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

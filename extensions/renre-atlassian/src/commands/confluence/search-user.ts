@@ -1,11 +1,11 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { confluenceCommand } from '../../shared/command-helper.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
-const schema = z.object({ query: z.string().min(1) });
-
-export default async function searchUser(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, schema, (confluence, args) =>
-    confluence.searchUser(args.query),
-  );
-}
+export default defineCommand({
+  args: {
+    query: z.string().min(1),
+  },
+  handler: (ctx) =>
+    confluenceCommand(ctx, (confluence, args) => confluence.searchUser(args.query)),
+});

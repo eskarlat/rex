@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getIssueForms from './get-issue-forms.js';
 import getFormDetails from './get-form-details.js';
 import updateFormAnswers from './update-form-answers.js';
@@ -20,7 +20,7 @@ const mockJira = {
   updateProformaFormAnswers: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -39,7 +39,7 @@ describe('get-issue-forms', () => {
     const forms = [{ id: 'form-1', name: 'Intake Form' }];
     mockJira.getIssueProformaForms.mockResolvedValue(forms);
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getIssueForms(ctx);
+    await getIssueForms.handler(ctx);
     expect(mockJira.getIssueProformaForms).toHaveBeenCalledWith('TEST-1');
     expect(toOutput).toHaveBeenCalledWith(forms);
   });
@@ -47,7 +47,7 @@ describe('get-issue-forms', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getIssueProformaForms.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await getIssueForms(ctx);
+    const result = await getIssueForms.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -58,7 +58,7 @@ describe('get-form-details', () => {
     const details = { id: 'form-1', questions: [] };
     mockJira.getProformaFormDetails.mockResolvedValue(details);
     const ctx = makeContext({ issueKey: 'TEST-1', formId: 'form-1' });
-    await getFormDetails(ctx);
+    await getFormDetails.handler(ctx);
     expect(mockJira.getProformaFormDetails).toHaveBeenCalledWith('TEST-1', 'form-1');
     expect(toOutput).toHaveBeenCalledWith(details);
   });
@@ -66,7 +66,7 @@ describe('get-form-details', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getProformaFormDetails.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', formId: 'form-1' });
-    const result = await getFormDetails(ctx);
+    const result = await getFormDetails.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -77,7 +77,7 @@ describe('update-form-answers', () => {
     mockJira.updateProformaFormAnswers.mockResolvedValue(undefined);
     const answers = { q1: 'Yes', q2: 'No' };
     const ctx = makeContext({ issueKey: 'TEST-1', formId: 'form-1', answers });
-    await updateFormAnswers(ctx);
+    await updateFormAnswers.handler(ctx);
     expect(mockJira.updateProformaFormAnswers).toHaveBeenCalledWith('TEST-1', 'form-1', answers);
     expect(toOutput).toHaveBeenCalledWith({ success: true });
   });
@@ -85,7 +85,7 @@ describe('update-form-answers', () => {
   it('returns errorOutput on error', async () => {
     mockJira.updateProformaFormAnswers.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', formId: 'form-1', answers: {} });
-    const result = await updateFormAnswers(ctx);
+    const result = await updateFormAnswers.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

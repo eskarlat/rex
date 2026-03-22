@@ -1,17 +1,15 @@
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { jiraCommand } from '../../shared/command-helper.js';
-import { boardIdSchema, paginationSchema } from '../../shared/schemas.js';
-import type { ExecutionContext, CommandResult } from '../../shared/types.js';
+import { boardIdSchema } from '../../shared/schemas.js';
 
-const schema = z.object({
-  boardId: boardIdSchema,
-}).merge(paginationSchema);
-
-export default async function getSprintsFromBoard(
-  context: ExecutionContext,
-): Promise<CommandResult> {
-  return jiraCommand(context, schema, (jira, args) =>
-    jira.getSprintsFromBoard(args.boardId, args.startAt, args.maxResults),
-  );
-}
+export default defineCommand({
+  args: {
+    boardId: boardIdSchema,
+    startAt: z.coerce.number().int().min(0).default(0),
+    maxResults: z.coerce.number().int().min(1).max(100).default(50),
+  },
+  handler: (ctx) =>
+    jiraCommand(ctx, (jira, args) =>
+    jira.getSprintsFromBoard(args.boardId, args.startAt, args.maxResults),),
+});

@@ -9,7 +9,7 @@ vi.mock('../../shared/formatters.js', () => ({
 
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
-import type { ExecutionContext } from '../../shared/types.js';
+import type { CommandContext } from '../../shared/types.js';
 import getWorklog from './get-worklog.js';
 import addWorklog from './add-worklog.js';
 
@@ -18,7 +18,7 @@ const mockJira = {
   addWorklog: vi.fn(),
 };
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+function makeContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
     projectPath: '/tmp/test',
@@ -37,7 +37,7 @@ describe('get-worklog', () => {
     const worklogs = { worklogs: [{ id: '1', timeSpent: '2h' }] };
     mockJira.getWorklog.mockResolvedValue(worklogs);
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    await getWorklog(ctx);
+    await getWorklog.handler(ctx);
     expect(mockJira.getWorklog).toHaveBeenCalledWith('TEST-1');
     expect(toOutput).toHaveBeenCalledWith(worklogs);
   });
@@ -45,7 +45,7 @@ describe('get-worklog', () => {
   it('returns errorOutput on error', async () => {
     mockJira.getWorklog.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1' });
-    const result = await getWorklog(ctx);
+    const result = await getWorklog.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });
@@ -55,7 +55,7 @@ describe('add-worklog', () => {
   it('calls jira.addWorklog with issueKey and worklog containing timeSpent', async () => {
     mockJira.addWorklog.mockResolvedValue({ id: '10' });
     const ctx = makeContext({ issueKey: 'TEST-1', timeSpent: '3h' });
-    await addWorklog(ctx);
+    await addWorklog.handler(ctx);
     expect(mockJira.addWorklog).toHaveBeenCalledWith('TEST-1', { timeSpent: '3h' });
     expect(toOutput).toHaveBeenCalledWith({ id: '10' });
   });
@@ -63,7 +63,7 @@ describe('add-worklog', () => {
   it('includes ADF comment when provided', async () => {
     mockJira.addWorklog.mockResolvedValue({ id: '11' });
     const ctx = makeContext({ issueKey: 'TEST-1', timeSpent: '1h', comment: 'Did some work' });
-    await addWorklog(ctx);
+    await addWorklog.handler(ctx);
     expect(mockJira.addWorklog).toHaveBeenCalledWith('TEST-1', {
       timeSpent: '1h',
       comment: {
@@ -86,7 +86,7 @@ describe('add-worklog', () => {
       timeSpent: '2h',
       started: '2026-01-01T09:00:00.000+0000',
     });
-    await addWorklog(ctx);
+    await addWorklog.handler(ctx);
     expect(mockJira.addWorklog).toHaveBeenCalledWith('TEST-1', {
       timeSpent: '2h',
       started: '2026-01-01T09:00:00.000+0000',
@@ -96,7 +96,7 @@ describe('add-worklog', () => {
   it('returns errorOutput on error', async () => {
     mockJira.addWorklog.mockRejectedValue(new Error('fail'));
     const ctx = makeContext({ issueKey: 'TEST-1', timeSpent: '1h' });
-    const result = await addWorklog(ctx);
+    const result = await addWorklog.handler(ctx);
     expect(errorOutput).toHaveBeenCalledWith(expect.any(Error));
     expect(result.exitCode).toBe(1);
   });

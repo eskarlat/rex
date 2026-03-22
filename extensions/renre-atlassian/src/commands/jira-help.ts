@@ -1,4 +1,4 @@
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 const JIRA_HELP = `# Jira Commands Reference
 
@@ -134,9 +134,9 @@ renre-kit renre-atlassian:jira-create-issue --projectKey "PROJ" --issueType "Tas
 \`\`\`
 `;
 
-export default function jiraHelp(_context: ExecutionContext): CommandResult {
-  return {
+export default defineCommand({
+  handler: () => ({
     output: JIRA_HELP,
     exitCode: 0,
-  };
-}
+  }),
+});

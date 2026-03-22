@@ -1,4 +1,4 @@
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 const CONFLUENCE_HELP = `# Confluence Commands Reference
 
@@ -81,9 +81,9 @@ renre-kit renre-atlassian:confluence-add-label --pageId "123456" --labels '["api
 - CQL is case-sensitive for space keys
 `;
 
-export default function confluenceHelp(_context: ExecutionContext): CommandResult {
-  return {
+export default defineCommand({
+  handler: () => ({
     output: CONFLUENCE_HELP,
     exitCode: 0,
-  };
-}
+  }),
+});
