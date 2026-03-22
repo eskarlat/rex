@@ -207,8 +207,6 @@ When `args` is omitted, args are passed through unchanged on `ctx.args`.
 
 This works for both standard extensions and MCP extensions with custom local command handlers.
 
-> **Legacy pattern**: Bare default export function + separate `export const argsSchema` still works for backward compatibility.
-
 ## Lifecycle Types
 
 ### HookContext

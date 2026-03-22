@@ -176,8 +176,6 @@ When `args` is provided:
 
 When `args` is omitted, args are passed through unchanged on `ctx.args`.
 
-> **Legacy pattern**: Bare default export function + separate `export const argsSchema` still works for backward compatibility.
-
 ## Lifecycle Hooks
 
 Extensions export `onInit` and `onDestroy` from their main entry point:
