@@ -46,4 +46,39 @@ describe('parseCliArgs', () => {
     const result = parseCliArgs(['--libraryId', '/reactjs/react.dev', '--query', 'hooks']);
     expect(result).toEqual({ libraryId: '/reactjs/react.dev', query: 'hooks' });
   });
+
+  it('handles --key=value syntax', () => {
+    const result = parseCliArgs(['--jql=assignee=currentUser()', '--maxResults=10']);
+    expect(result).toEqual({ jql: 'assignee=currentUser()', maxResults: '10' });
+  });
+
+  it('converts kebab-case keys to camelCase', () => {
+    const result = parseCliArgs(['--max-results', '10', '--issue-key', 'PROJ-123']);
+    expect(result).toEqual({ maxResults: '10', issueKey: 'PROJ-123' });
+  });
+
+  it('converts kebab-case keys in --key=value syntax', () => {
+    const result = parseCliArgs(['--start-at=0']);
+    expect(result).toEqual({ startAt: '0' });
+  });
+
+  it('preserves camelCase keys as-is', () => {
+    const result = parseCliArgs(['--maxResults', '50']);
+    expect(result).toEqual({ maxResults: '50' });
+  });
+
+  it('parses JSON object values', () => {
+    const result = parseCliArgs(['--fields', '{"priority":{"name":"High"}}']);
+    expect(result).toEqual({ fields: { priority: { name: 'High' } } });
+  });
+
+  it('parses JSON array values', () => {
+    const result = parseCliArgs(['--fields', '["summary","status","assignee"]']);
+    expect(result).toEqual({ fields: ['summary', 'status', 'assignee'] });
+  });
+
+  it('keeps invalid JSON as string', () => {
+    const result = parseCliArgs(['--query', '{not valid json']);
+    expect(result).toEqual({ query: '{not valid json' });
+  });
 });

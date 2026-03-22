@@ -175,7 +175,7 @@ vi.mock('./features/scheduler/commands/scheduler-trigger.command.js', () => ({
   handleSchedulerTrigger: vi.fn(),
 }));
 const mockHandleUi = vi.fn();
-vi.mock('./features/ui/commands/ui.command.js', () => ({
+vi.mock('./features/ui/commands/start.command.js', () => ({
   handleUi: (...args: unknown[]) => mockHandleUi(...args),
 }));
 const mockHandleStop = vi.fn();
@@ -580,6 +580,7 @@ describe('cli', () => {
     expect(mockExecuteCommand).toHaveBeenCalledWith(
       handler,
       expect.objectContaining({ projectPath: '/mock/project', projectName: 'my-project' }),
+      'figma',
     );
   });
 
@@ -669,7 +670,7 @@ describe('cli', () => {
   it('runs ui command with default port', async () => {
     const program = createProgram();
     program.exitOverride();
-    await program.parseAsync(['node', 'renre-kit', 'ui', '--no-browser']);
+    await program.parseAsync(['node', 'renre-kit', 'start', '--no-browser']);
     expect(mockHandleUi).toHaveBeenCalledWith(
       expect.objectContaining({
         port: 4200,
@@ -678,7 +679,7 @@ describe('cli', () => {
     );
   });
 
-  it('rejects invalid port for ui command', async () => {
+  it('rejects invalid port for start command', async () => {
     const program = createProgram();
     program.exitOverride();
     const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
@@ -687,7 +688,7 @@ describe('cli', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
-      await program.parseAsync(['node', 'renre-kit', 'ui', '--port', 'abc']);
+      await program.parseAsync(['node', 'renre-kit', 'start', '--port', 'abc']);
     } catch {
       // expected
     }
@@ -697,7 +698,7 @@ describe('cli', () => {
     mockExit.mockRestore();
   });
 
-  it('rejects out-of-range port for ui command', async () => {
+  it('rejects out-of-range port for start command', async () => {
     const program = createProgram();
     program.exitOverride();
     const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
@@ -706,7 +707,7 @@ describe('cli', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
-      await program.parseAsync(['node', 'renre-kit', 'ui', '--port', '99999']);
+      await program.parseAsync(['node', 'renre-kit', 'start', '--port', '99999']);
     } catch {
       // expected
     }

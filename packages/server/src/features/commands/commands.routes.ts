@@ -103,13 +103,17 @@ async function executeResolvedCommand(
       handler: cmdDef.handler,
     });
     const loaded = await loadCommandHandler(extDir, cmdDef.handler);
-    return executeCommand(loaded, {
-      projectName: '',
-      projectPath,
-      args,
-      config: resolvedConfig,
-      logger: createExtensionLogger(extName),
-    });
+    return executeCommand(
+      loaded,
+      {
+        projectName: '',
+        projectPath,
+        args,
+        config: resolvedConfig,
+        logger: createExtensionLogger(extName),
+      },
+      extName,
+    );
   }
 
   if (manifest.type === 'mcp' && manifest.mcp) {

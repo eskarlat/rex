@@ -73,13 +73,15 @@ export function formatValidationErrors(error: ZodError): string {
 export function validateArgs(
   schema: ZodType,
   args: Record<string, unknown>,
+  extensionName = '',
 ): Record<string, unknown> {
   const result = schema.safeParse(args) as { success: boolean; data?: Record<string, unknown>; error?: ZodError };
   if (!result.success) {
     throw new ExtensionError(
-      '',
+      extensionName,
       ErrorCode.ARGS_VALIDATION_FAILED,
       `Invalid arguments: ${formatValidationErrors(result.error!)}`,
+      result.error,
     );
   }
   return result.data!;
@@ -88,11 +90,12 @@ export function validateArgs(
 export async function executeCommand(
   loaded: LoadedCommand,
   context: ExecutionContext,
+  extensionName = '',
 ): Promise<unknown> {
   const { handler, argsSchema } = loaded;
 
   if (argsSchema) {
-    context = { ...context, args: validateArgs(argsSchema, context.args) };
+    context = { ...context, args: validateArgs(argsSchema, context.args, extensionName) };
   }
 
   try {

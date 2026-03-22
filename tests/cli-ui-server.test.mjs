@@ -1,5 +1,5 @@
 /**
- * MJS integration test for the `renre-kit ui` command.
+ * MJS integration test for the `renre-kit start` command.
  *
  * Starts the dashboard server via the CLI and verifies that:
  * 1. The server starts and listens on the specified port
@@ -39,10 +39,10 @@ describe('ui command — server lifecycle', () => {
   let serverProc;
 
   before(async () => {
-    // Start the ui command with --no-browser to avoid opening browser
+    // Start the start command with --no-browser to avoid opening browser
     serverProc = spawn(
       process.execPath,
-      [CLI_BIN, 'ui', '--port', String(TEST_PORT), '--no-browser'],
+      [CLI_BIN, 'start', '--port', String(TEST_PORT), '--no-browser'],
       {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env },

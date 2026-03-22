@@ -28,7 +28,7 @@ import { handleVaultList } from './features/vault/commands/vault-list.command.js
 import { handleVaultRemove } from './features/vault/commands/vault-remove.command.js';
 import { handleSchedulerList } from './features/scheduler/commands/scheduler-list.command.js';
 import { handleSchedulerTrigger } from './features/scheduler/commands/scheduler-trigger.command.js';
-import { handleUi } from './features/ui/commands/ui.command.js';
+import { handleUi } from './features/ui/commands/start.command.js';
 import { handleStop } from './features/ui/commands/stop.command.js';
 import { getDb } from './core/database/database.js';
 import { getExtensionDir, getManifestPath } from './core/paths/paths.js';
@@ -166,18 +166,17 @@ function registerSingleExtension(
       .command(`${fullName} [args...]`)
       .description(description)
       .allowUnknownOption(true)
-      .action(async (args: string[], _opts: unknown, command: Command) => {
-        const parsedOpts: Record<string, unknown> = command.opts();
+      .action(async (args: string[]) => {
         const context = {
           projectName,
           projectPath,
-          args: { _positional: args, ...parsedOpts },
+          args: parseCliArgs(args),
           config: resolvedConfig,
           logger: createExtensionLogger(extName),
         };
 
         const loaded = await loadCommandHandler(extDir, cmdDef.handler);
-        const result = await executeCommand(loaded, context);
+        const result = await executeCommand(loaded, context, extName);
         if (result !== undefined) {
           process.stdout.write(formatCommandResult(result));
           process.stdout.write('\n');
@@ -570,9 +569,9 @@ export function createProgram(): Command {
       handleSchedulerTrigger({ taskId, db: getDb() });
     });
 
-  // UI command
+  // Start command (dashboard)
   program
-    .command('ui')
+    .command('start')
     .description('Start local web dashboard server and open browser')
     .option('--port <port>', 'Port to listen on', '4200')
     .option('--lan', 'Bind to 0.0.0.0 for LAN access')

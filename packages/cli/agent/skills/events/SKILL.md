@@ -5,7 +5,7 @@ description: Publish inter-extension events to notify other extensions or trigge
 
 # renre-kit/events
 
-Publish events to the inter-extension event bus. Requires the dashboard server to be running (`renre-kit ui`).
+Publish events to the inter-extension event bus. Requires the dashboard server to be running (`renre-kit start`).
 
 ## Commands
 
@@ -33,6 +33,6 @@ renre-kit events:publish ext:my-ext:task-complete --data '{"taskId":"123","statu
 ## Notes
 
 - Events are fire-and-forget — no delivery guarantee if no subscribers are listening
-- The dashboard server must be running (`renre-kit ui`) for events to be delivered
+- The dashboard server must be running (`renre-kit start`) for events to be delivered
 - Event types should follow the `ext:{extension-name}:{event-name}` convention
 - This is write-only — you cannot subscribe to or read events via CLI

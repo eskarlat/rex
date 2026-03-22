@@ -330,6 +330,29 @@ describe('standard-runtime', () => {
         expect(error.message).toContain('; ');
       }
     });
+
+    it('should include extensionName in error when provided', () => {
+      const schema = z.object({ jql: z.string() });
+      try {
+        validateArgs(schema, {}, 'renre-atlassian');
+        expect.fail('should have thrown');
+      } catch (err: unknown) {
+        const error = err as ExtensionError;
+        expect(error.extensionName).toBe('renre-atlassian');
+      }
+    });
+
+    it('should include Zod error as originalError', () => {
+      const schema = z.object({ jql: z.string() });
+      try {
+        validateArgs(schema, {});
+        expect.fail('should have thrown');
+      } catch (err: unknown) {
+        const error = err as ExtensionError;
+        expect(error.originalError).toBeDefined();
+        expect(error.originalError).toHaveProperty('issues');
+      }
+    });
   });
 
   describe('formatValidationErrors', () => {
