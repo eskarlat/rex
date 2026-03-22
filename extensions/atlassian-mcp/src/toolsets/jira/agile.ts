@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import { safeExec, paginationArgs } from '../types.js';
 
 export function createAgileToolset(client: JiraClient): Toolset {
   return {
@@ -105,55 +105,22 @@ export function createAgileToolset(client: JiraClient): Toolset {
       },
     ],
     handlers: {
-      jira_get_agile_boards: async (args) => {
-        try {
-          const data = await client.getBoards(
-            (args['startAt'] as number | undefined) ?? 0,
-            (args['maxResults'] as number | undefined) ?? 50,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_get_board_issues: async (args) => {
-        try {
-          const data = await client.getBoardIssues(
-            args['boardId'] as number,
-            (args['startAt'] as number | undefined) ?? 0,
-            (args['maxResults'] as number | undefined) ?? 50,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_get_sprints_from_board: async (args) => {
-        try {
-          const data = await client.getSprintsFromBoard(
-            args['boardId'] as number,
-            (args['startAt'] as number | undefined) ?? 0,
-            (args['maxResults'] as number | undefined) ?? 50,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_get_sprint_issues: async (args) => {
-        try {
-          const data = await client.getSprintIssues(
-            args['sprintId'] as number,
-            (args['startAt'] as number | undefined) ?? 0,
-            (args['maxResults'] as number | undefined) ?? 50,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_create_sprint: async (args) => {
-        try {
+      jira_get_agile_boards: (args) =>
+        safeExec(() => client.getBoards(...paginationArgs(args))),
+      jira_get_board_issues: (args) =>
+        safeExec(() =>
+          client.getBoardIssues(args['boardId'] as number, ...paginationArgs(args)),
+        ),
+      jira_get_sprints_from_board: (args) =>
+        safeExec(() =>
+          client.getSprintsFromBoard(args['boardId'] as number, ...paginationArgs(args)),
+        ),
+      jira_get_sprint_issues: (args) =>
+        safeExec(() =>
+          client.getSprintIssues(args['sprintId'] as number, ...paginationArgs(args)),
+        ),
+      jira_create_sprint: (args) =>
+        safeExec(() => {
           const sprint: Record<string, unknown> = {
             originBoardId: args['boardId'] as number,
             name: args['name'] as string,
@@ -161,14 +128,10 @@ export function createAgileToolset(client: JiraClient): Toolset {
           if (args['startDate']) sprint['startDate'] = args['startDate'];
           if (args['endDate']) sprint['endDate'] = args['endDate'];
           if (args['goal']) sprint['goal'] = args['goal'];
-          const data = await client.createSprint(sprint);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_update_sprint: async (args) => {
-        try {
+          return client.createSprint(sprint);
+        }),
+      jira_update_sprint: (args) =>
+        safeExec(() => {
           const sprintId = args['sprintId'] as number;
           const update: Record<string, unknown> = {};
           if (args['name']) update['name'] = args['name'];
@@ -176,23 +139,12 @@ export function createAgileToolset(client: JiraClient): Toolset {
           if (args['startDate']) update['startDate'] = args['startDate'];
           if (args['endDate']) update['endDate'] = args['endDate'];
           if (args['goal']) update['goal'] = args['goal'];
-          const data = await client.updateSprint(sprintId, update);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_add_issues_to_sprint: async (args) => {
-        try {
-          const data = await client.addIssuesToSprint(
-            args['sprintId'] as number,
-            args['issueKeys'] as string[],
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
+          return client.updateSprint(sprintId, update);
+        }),
+      jira_add_issues_to_sprint: (args) =>
+        safeExec(() =>
+          client.addIssuesToSprint(args['sprintId'] as number, args['issueKeys'] as string[]),
+        ),
     },
   };
 }

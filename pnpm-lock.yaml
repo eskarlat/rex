@@ -289,6 +289,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/extension-sdk
     devDependencies:
+      '@renre-kit/shared':
+        specifier: workspace:^
+        version: link:../../packages/shared
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.37

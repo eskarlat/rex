@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import { safeExec, confluencePaginationArgs } from '../types.js';
 
 export function createConfluenceAttachmentsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -95,20 +95,16 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
       },
     ],
     handlers: {
-      confluence_upload_attachment: async (args) => {
-        try {
-          const data = await client.uploadAttachment(
+      confluence_upload_attachment: (args) =>
+        safeExec(() =>
+          client.uploadAttachment(
             args['pageId'] as string,
             args['filename'] as string,
             args['content'] as string,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_upload_attachments: async (args) => {
-        try {
+          ),
+        ),
+      confluence_upload_attachments: (args) =>
+        safeExec(async () => {
           const pageId = args['pageId'] as string;
           const files = args['files'] as Array<{ filename: string; content: string }>;
           const results = [];
@@ -116,59 +112,30 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
             const data = await client.uploadAttachment(pageId, file.filename, file.content);
             results.push(data);
           }
-          return markdownResult(results);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_get_attachments: async (args) => {
-        try {
-          const data = await client.getAttachments(
-            args['pageId'] as string,
-            (args['limit'] as number | undefined) ?? 25,
-            (args['start'] as number | undefined) ?? 0,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_download_attachment: async (args) => {
-        try {
+          return results;
+        }),
+      confluence_get_attachments: (args) =>
+        safeExec(() =>
+          client.getAttachments(args['pageId'] as string, ...confluencePaginationArgs(args)),
+        ),
+      confluence_download_attachment: (args) =>
+        safeExec(async () => {
           const res = await client.downloadAttachment(
             args['pageId'] as string,
             args['filename'] as string,
           );
           const text = await res.text();
-          return markdownResult({ content: text, contentType: res.headers.get('content-type') });
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_download_content_attachments: async (args) => {
-        try {
-          const data = await client.getAttachments(args['pageId'] as string);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_delete_attachment: async (args) => {
-        try {
+          return { content: text, contentType: res.headers.get('content-type') };
+        }),
+      confluence_download_content_attachments: (args) =>
+        safeExec(() => client.getAttachments(args['pageId'] as string)),
+      confluence_delete_attachment: (args) =>
+        safeExec(async () => {
           await client.deleteAttachment(args['attachmentId'] as string);
-          return markdownResult({ success: true });
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_get_page_images: async (args) => {
-        try {
-          const data = await client.getPageImages(args['pageId'] as string);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
+          return { success: true };
+        }),
+      confluence_get_page_images: (args) =>
+        safeExec(() => client.getPageImages(args['pageId'] as string)),
     },
   };
 }

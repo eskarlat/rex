@@ -1,6 +1,15 @@
 import type { JiraClient } from '../../client/jira-client.js';
-import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import type { Toolset, ToolResult } from '../types.js';
+import { safeExec } from '../types.js';
+
+function watcherAction(
+  fn: () => Promise<void>,
+): Promise<ToolResult> {
+  return safeExec(async () => {
+    await fn();
+    return { success: true };
+  });
+}
 
 export function createWatchersToolset(client: JiraClient): Toolset {
   return {
@@ -43,30 +52,16 @@ export function createWatchersToolset(client: JiraClient): Toolset {
       },
     ],
     handlers: {
-      jira_get_issue_watchers: async (args) => {
-        try {
-          const data = await client.getWatchers(args['issueKey'] as string);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_add_watcher: async (args) => {
-        try {
-          await client.addWatcher(args['issueKey'] as string, args['accountId'] as string);
-          return markdownResult({ success: true });
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_remove_watcher: async (args) => {
-        try {
-          await client.removeWatcher(args['issueKey'] as string, args['accountId'] as string);
-          return markdownResult({ success: true });
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
+      jira_get_issue_watchers: (args) =>
+        safeExec(() => client.getWatchers(args['issueKey'] as string)),
+      jira_add_watcher: (args) =>
+        watcherAction(() =>
+          client.addWatcher(args['issueKey'] as string, args['accountId'] as string),
+        ),
+      jira_remove_watcher: (args) =>
+        watcherAction(() =>
+          client.removeWatcher(args['issueKey'] as string, args['accountId'] as string),
+        ),
     },
   };
 }

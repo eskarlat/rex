@@ -14,6 +14,7 @@
     "@renre-kit/extension-sdk": "workspace:*"
   },
   "devDependencies": {
+    "@renre-kit/shared": "workspace:^",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "esbuild": "^0.21.0",

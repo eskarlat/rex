@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import { markdownResult, errorResult, buildAdfBody } from '../types.js';
 
 export function createWorklogToolset(client: JiraClient): Toolset {
   return {
@@ -46,18 +46,7 @@ export function createWorklogToolset(client: JiraClient): Toolset {
           const worklog: Record<string, unknown> = {
             timeSpent: args['timeSpent'] as string,
           };
-          if (args['comment']) {
-            worklog['comment'] = {
-              type: 'doc',
-              version: 1,
-              content: [
-                {
-                  type: 'paragraph',
-                  content: [{ type: 'text', text: args['comment'] as string }],
-                },
-              ],
-            };
-          }
+          if (args['comment']) worklog['comment'] = buildAdfBody(args['comment'] as string);
           if (args['started']) worklog['started'] = args['started'];
           const data = await client.addWorklog(args['issueKey'] as string, worklog);
           return markdownResult(data);

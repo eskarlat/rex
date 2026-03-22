@@ -18,3 +18,4 @@ export function errorOutput(err: unknown): CommandResult {
     exitCode: 1,
   };
 }
+

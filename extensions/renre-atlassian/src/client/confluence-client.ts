@@ -99,7 +99,7 @@ export class ConfluenceClient extends AtlassianBaseClient {
   async searchUser(query: string): Promise<unknown> {
     return this.request(
       'GET',
-      `/wiki/rest/api/search/user?cql=${encodeURIComponent(`user.fullname~"${query}"`)}`,
+      `/wiki/rest/api/search/user?cql=${encodeURIComponent('user.fullname~"' + query + '"')}`,
     );
   }
 

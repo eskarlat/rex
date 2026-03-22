@@ -9,9 +9,34 @@ export class AtlassianBaseClient {
   private readonly authHeader: string;
 
   constructor(config: AtlassianClientConfig) {
-    const domain = config.domain.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    let domain = config.domain;
+    if (domain.startsWith('https://')) {
+      domain = domain.slice(8);
+    } else if (domain.startsWith('http://')) {
+      domain = domain.slice(7);
+    }
+    while (domain.endsWith('/')) {
+      domain = domain.slice(0, -1);
+    }
     this.baseUrl = `https://${domain}`;
-    this.authHeader = `Basic ${Buffer.from(`${config.email}:${config.apiToken}`).toString('base64')}`;
+    const credentials = `${config.email}:${config.apiToken}`;
+    this.authHeader = `Basic ${Buffer.from(credentials).toString('base64')}`;
+  }
+
+  private buildHeaders(extra?: Record<string, string>): Record<string, string> {
+    return {
+      Authorization: this.authHeader,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      ...extra,
+    };
+  }
+
+  private async ensureOk(res: Response): Promise<void> {
+    if (!res.ok) {
+      const text = await res.text().catch(() => 'Unknown error');
+      throw new Error(`Atlassian API error ${res.status}: ${text}`);
+    }
   }
 
   protected async request<T>(
@@ -20,22 +45,13 @@ export class AtlassianBaseClient {
     body?: unknown,
     headers?: Record<string, string>,
   ): Promise<T> {
-    const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await fetch(`${this.baseUrl}${path}`, {
       method,
-      headers: {
-        Authorization: this.authHeader,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...headers,
-      },
+      headers: this.buildHeaders(headers),
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => 'Unknown error');
-      throw new Error(`Atlassian API error ${res.status}: ${text}`);
-    }
+    await this.ensureOk(res);
 
     if (res.status === 204) {
       return undefined as T;
@@ -49,8 +65,7 @@ export class AtlassianBaseClient {
     formData: FormData,
     headers?: Record<string, string>,
   ): Promise<unknown> {
-    const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: {
         Authorization: this.authHeader,
@@ -60,10 +75,7 @@ export class AtlassianBaseClient {
       body: formData,
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => 'Unknown error');
-      throw new Error(`Atlassian API error ${res.status}: ${text}`);
-    }
+    await this.ensureOk(res);
 
     if (res.status === 204) {
       return undefined;
@@ -78,23 +90,13 @@ export class AtlassianBaseClient {
     body?: unknown,
     headers?: Record<string, string>,
   ): Promise<Response> {
-    const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, {
+    const res = await fetch(`${this.baseUrl}${path}`, {
       method,
-      headers: {
-        Authorization: this.authHeader,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...headers,
-      },
+      headers: this.buildHeaders(headers),
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => 'Unknown error');
-      throw new Error(`Atlassian API error ${res.status}: ${text}`);
-    }
-
+    await this.ensureOk(res);
     return res;
   }
 }

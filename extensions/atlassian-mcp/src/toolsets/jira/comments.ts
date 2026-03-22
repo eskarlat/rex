@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import { safeExec, buildAdfBody } from '../types.js';
 
 export function createCommentsToolset(client: JiraClient): Toolset {
   return {
@@ -33,46 +33,18 @@ export function createCommentsToolset(client: JiraClient): Toolset {
       },
     ],
     handlers: {
-      jira_add_comment: async (args) => {
-        try {
-          const adfBody = {
-            type: 'doc',
-            version: 1,
-            content: [
-              {
-                type: 'paragraph',
-                content: [{ type: 'text', text: args['body'] as string }],
-              },
-            ],
-          };
-          const data = await client.addComment(args['issueKey'] as string, adfBody);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      jira_edit_comment: async (args) => {
-        try {
-          const adfBody = {
-            type: 'doc',
-            version: 1,
-            content: [
-              {
-                type: 'paragraph',
-                content: [{ type: 'text', text: args['body'] as string }],
-              },
-            ],
-          };
-          const data = await client.editComment(
+      jira_add_comment: (args) =>
+        safeExec(() =>
+          client.addComment(args['issueKey'] as string, buildAdfBody(args['body'] as string)),
+        ),
+      jira_edit_comment: (args) =>
+        safeExec(() =>
+          client.editComment(
             args['issueKey'] as string,
             args['commentId'] as string,
-            adfBody,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
+            buildAdfBody(args['body'] as string),
+          ),
+        ),
     },
   };
 }

@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import { safeExec, confluencePaginationArgs } from '../types.js';
 
 export function createPagesToolset(client: ConfluenceClient): Toolset {
   return {
@@ -131,51 +131,23 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
       },
     ],
     handlers: {
-      confluence_search: async (args) => {
-        try {
-          const data = await client.search(
-            args['cql'] as string,
-            (args['limit'] as number | undefined) ?? 25,
-            (args['start'] as number | undefined) ?? 0,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_get_page: async (args) => {
-        try {
-          const data = await client.getPage(
+      confluence_search: (args) =>
+        safeExec(() => client.search(args['cql'] as string, ...confluencePaginationArgs(args))),
+      confluence_get_page: (args) =>
+        safeExec(() =>
+          client.getPage(
             args['pageId'] as string,
             (args['expand'] as string | undefined) ?? 'body.storage,version',
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_get_page_children: async (args) => {
-        try {
-          const data = await client.getPageChildren(
-            args['pageId'] as string,
-            (args['limit'] as number | undefined) ?? 25,
-            (args['start'] as number | undefined) ?? 0,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_get_page_history: async (args) => {
-        try {
-          const data = await client.getPageHistory(args['pageId'] as string);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_create_page: async (args) => {
-        try {
+          ),
+        ),
+      confluence_get_page_children: (args) =>
+        safeExec(() =>
+          client.getPageChildren(args['pageId'] as string, ...confluencePaginationArgs(args)),
+        ),
+      confluence_get_page_history: (args) =>
+        safeExec(() => client.getPageHistory(args['pageId'] as string)),
+      confluence_create_page: (args) =>
+        safeExec(() => {
           const page: Record<string, unknown> = {
             type: 'page',
             title: args['title'] as string,
@@ -190,15 +162,11 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
           if (args['parentId']) {
             page['ancestors'] = [{ id: args['parentId'] as string }];
           }
-          const data = await client.createPage(page);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_update_page: async (args) => {
-        try {
-          const data = await client.updatePage(args['pageId'] as string, {
+          return client.createPage(page);
+        }),
+      confluence_update_page: (args) =>
+        safeExec(() =>
+          client.updatePage(args['pageId'] as string, {
             type: 'page',
             title: args['title'] as string,
             body: {
@@ -208,34 +176,23 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
               },
             },
             version: { number: (args['version'] as number) + 1 },
-          });
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_delete_page: async (args) => {
-        try {
+          }),
+        ),
+      confluence_delete_page: (args) =>
+        safeExec(async () => {
           await client.deletePage(args['pageId'] as string);
-          return markdownResult({ success: true, pageId: args['pageId'] });
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_move_page: async (args) => {
-        try {
-          const data = await client.movePage(
+          return { success: true, pageId: args['pageId'] };
+        }),
+      confluence_move_page: (args) =>
+        safeExec(() =>
+          client.movePage(
             args['pageId'] as string,
             args['targetAncestorId'] as string,
             args['currentVersion'] as number,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_get_page_diff: async (args) => {
-        try {
+          ),
+        ),
+      confluence_get_page_diff: (args) =>
+        safeExec(async () => {
           const pageId = args['pageId'] as string;
           const fromVersion = args['fromVersion'] as number;
           const toVersion = args['toVersion'] as number;
@@ -249,17 +206,14 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
           const toBody = (toPage['body'] as Record<string, unknown>)?.['storage'] as
             | Record<string, unknown>
             | undefined;
-          return markdownResult({
+          return {
             pageId,
             fromVersion,
             toVersion,
             from: fromBody?.['value'] ?? '',
             to: toBody?.['value'] ?? '',
-          });
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
+          };
+        }),
     },
   };
 }

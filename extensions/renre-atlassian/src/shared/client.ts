@@ -1,5 +1,6 @@
-import { JiraClient } from '../client/jira-client.js';
 import { ConfluenceClient } from '../client/confluence-client.js';
+import { JiraClient } from '../client/jira-client.js';
+
 import type { ExecutionContext } from './types.js';
 
 export interface AtlassianClients {

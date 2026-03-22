@@ -1,3 +1,4 @@
+import { buildAdfBody } from '../../shared/adf.js';
 import { createClients } from '../../shared/client.js';
 import { toOutput, errorOutput } from '../../shared/formatters.js';
 import type { ExecutionContext, CommandResult } from '../../shared/types.js';
@@ -18,18 +19,7 @@ export default async function createIssue(context: ExecutionContext): Promise<Co
       ...additionalFields,
     };
 
-    if (description) {
-      fields.description = {
-        type: 'doc',
-        version: 1,
-        content: [
-          {
-            type: 'paragraph',
-            content: [{ type: 'text', text: description }],
-          },
-        ],
-      };
-    }
+    if (description) fields.description = buildAdfBody(description);
 
     const data = await jira.createIssue(fields);
     return toOutput(data);

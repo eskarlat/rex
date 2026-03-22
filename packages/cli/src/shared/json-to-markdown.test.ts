@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { jsonToMarkdown } from './json-to-markdown.js';
+import { jsonToMarkdown } from '@renre-kit/extension-sdk/node';
 
 describe('jsonToMarkdown', () => {
   describe('primitives', () => {

@@ -117,8 +117,8 @@ export {
   copyDirSync,
 } from './shared/fs-helpers.js';
 export { interpolate } from './shared/interpolation.js';
-export { jsonToMarkdown } from './shared/json-to-markdown.js';
-export type { JsonToMarkdownOptions } from './shared/json-to-markdown.js';
+export { jsonToMarkdown } from '@renre-kit/extension-sdk/node';
+export type { JsonToMarkdownOptions } from '@renre-kit/extension-sdk/node';
 export { executeTaskCommand } from './shared/task-execution.js';
 export type { TaskExecResult } from './shared/task-execution.js';
 

@@ -10,7 +10,7 @@ export default async function downloadAttachment(
     const pageId = context.args['pageId'] as string;
     const filename = context.args['filename'] as string;
     const res = await confluence.downloadAttachment(pageId, filename);
-    const text = await (res as Response).text();
+    const text = await res.text();
     return toOutput({ pageId, filename, content: text });
   } catch (err) {
     return errorOutput(err);

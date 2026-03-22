@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import { safeExec, confluencePaginationArgs } from '../types.js';
 
 export function createConfluenceCommentsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -46,38 +46,20 @@ export function createConfluenceCommentsToolset(client: ConfluenceClient): Tools
       },
     ],
     handlers: {
-      confluence_get_comments: async (args) => {
-        try {
-          const data = await client.getComments(
-            args['pageId'] as string,
-            (args['limit'] as number | undefined) ?? 25,
-            (args['start'] as number | undefined) ?? 0,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_add_comment: async (args) => {
-        try {
-          const data = await client.addComment(args['pageId'] as string, args['body'] as string);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_reply_to_comment: async (args) => {
-        try {
-          const data = await client.replyToComment(
+      confluence_get_comments: (args) =>
+        safeExec(() =>
+          client.getComments(args['pageId'] as string, ...confluencePaginationArgs(args)),
+        ),
+      confluence_add_comment: (args) =>
+        safeExec(() => client.addComment(args['pageId'] as string, args['body'] as string)),
+      confluence_reply_to_comment: (args) =>
+        safeExec(() =>
+          client.replyToComment(
             args['pageId'] as string,
             args['parentCommentId'] as string,
             args['body'] as string,
-          );
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
+          ),
+        ),
     },
   };
 }

@@ -1,18 +1,15 @@
-import { createClients } from '../../shared/client.js';
-import { toOutput, errorOutput } from '../../shared/formatters.js';
+import { jiraCommand } from '../../shared/command-helper.js';
 import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
 export default async function updateFormAnswers(
   context: ExecutionContext,
 ): Promise<CommandResult> {
-  try {
-    const { jira } = createClients(context);
-    const issueKey = context.args['issueKey'] as string;
-    const formId = context.args['formId'] as string;
-    const answers = context.args['answers'] as Record<string, unknown>;
-    await jira.updateProformaFormAnswers(issueKey, formId, answers);
-    return toOutput({ success: true });
-  } catch (err) {
-    return errorOutput(err);
-  }
+  return jiraCommand(context, async (jira, args) => {
+    await jira.updateProformaFormAnswers(
+      args['issueKey'] as string,
+      args['formId'] as string,
+      args['answers'] as Record<string, unknown>,
+    );
+    return { success: true };
+  });
 }
