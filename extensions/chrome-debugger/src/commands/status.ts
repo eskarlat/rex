@@ -1,5 +1,3 @@
-import puppeteer from 'puppeteer';
-
 import {
   readState,
   readGlobalSession,
@@ -8,6 +6,26 @@ import {
   isProcessAlive,
 } from '../shared/state.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
+
+interface CdpTabInfo {
+  title: string;
+  url: string;
+  type: string;
+}
+
+/**
+ * Fetches open tabs via the Chrome DevTools Protocol HTTP endpoint.
+ * This avoids a full WebSocket connection (puppeteer.connect) which
+ * causes the browser window to blink/flash on every poll.
+ */
+async function fetchTabsViaHttp(port: number): Promise<CdpTabInfo[]> {
+  const response = await fetch(`http://127.0.0.1:${String(port)}/json`);
+  if (!response.ok) {
+    throw new Error(`CDP HTTP request failed: ${String(response.status)}`);
+  }
+  const targets = (await response.json()) as CdpTabInfo[];
+  return targets.filter((t) => t.type === 'page');
+}
 
 export default async function status(context: ExecutionContext): Promise<CommandResult> {
   // Try per-project state first
@@ -32,18 +50,15 @@ export default async function status(context: ExecutionContext): Promise<Command
     };
   }
 
-  // Try to connect and get tab info
+  // Use the lightweight CDP HTTP endpoint instead of puppeteer.connect()
+  // to avoid browser window blinking on every status poll
   try {
-    const browser = await puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
-    const pages = await browser.pages();
-    const tabs = await Promise.all(
-      pages.map(async (page, index) => ({
-        index,
-        title: await page.title(),
-        url: page.url(),
-      }))
-    );
-    void browser.disconnect();
+    const pages = await fetchTabsViaHttp(state.port);
+    const tabs = pages.map((page, index) => ({
+      index,
+      title: page.title,
+      url: page.url,
+    }));
 
     const result = {
       running: true,

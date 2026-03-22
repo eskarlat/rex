@@ -73,10 +73,12 @@ export default async function launch(context: ExecutionContext): Promise<Command
 
   const browser = await puppeteer.launch({
     headless,
+    ignoreDefaultArgs: ['--enable-automation'],
     args: [
       `--remote-debugging-port=${String(port)}`,
       '--no-first-run',
       '--no-default-browser-check',
+      '--disable-infobars',
     ],
   });
 

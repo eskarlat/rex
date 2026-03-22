@@ -98,6 +98,16 @@ describe('launch', () => {
     expect(result.output).toContain('ws://127.0.0.1:9222/devtools/browser/abc');
   });
 
+  it('suppresses automation badge via ignoreDefaultArgs and --disable-infobars', async () => {
+    await launch(makeContext());
+    expect(mockLaunch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ignoreDefaultArgs: ['--enable-automation'],
+        args: expect.arrayContaining(['--disable-infobars']),
+      })
+    );
+  });
+
   it('returns error when local browser already running', async () => {
     mockReadState.mockReturnValue({
       wsEndpoint: 'ws://localhost:9222',

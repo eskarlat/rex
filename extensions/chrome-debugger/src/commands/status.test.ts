@@ -1,15 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ExecutionContext } from '../shared/types.js';
 
-const mockConnect = vi.fn();
-const mockPages = vi.fn();
-const mockDisconnect = vi.fn();
-
-vi.mock('puppeteer', () => ({
-  default: {
-    connect: (...args: unknown[]) => mockConnect(...args),
-  },
-}));
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
 
 const mockReadState = vi.fn();
 const mockReadGlobalSession = vi.fn();
@@ -34,6 +27,13 @@ function makeContext(): ExecutionContext {
     args: { _positional: [] },
     config: {},
   };
+}
+
+function mockFetchResponse(tabs: Array<{ title: string; url: string; type: string }>): void {
+  mockFetch.mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve(tabs),
+  });
 }
 
 beforeEach(() => {
@@ -96,7 +96,7 @@ describe('status', () => {
     expect(mockDeleteGlobalSession).toHaveBeenCalled();
   });
 
-  it('returns status with tabs on successful connect', async () => {
+  it('returns status with tabs on successful HTTP fetch', async () => {
     mockReadState.mockReturnValue({
       wsEndpoint: 'ws://localhost:9222',
       pid: 12345,
@@ -108,13 +108,10 @@ describe('status', () => {
     mockReadGlobalSession.mockReturnValue(null);
     mockIsProcessAlive.mockReturnValue(true);
 
-    const mockPage1 = { url: () => 'https://example.com', title: () => Promise.resolve('Example') };
-    const mockPage2 = { url: () => 'https://test.com', title: () => Promise.resolve('Test Page') };
-    mockPages.mockResolvedValue([mockPage1, mockPage2]);
-    mockConnect.mockResolvedValue({
-      pages: mockPages,
-      disconnect: mockDisconnect,
-    });
+    mockFetchResponse([
+      { title: 'Example', url: 'https://example.com', type: 'page' },
+      { title: 'Test Page', url: 'https://test.com', type: 'page' },
+    ]);
 
     const result = await status(makeContext());
     expect(result.exitCode).toBe(0);
@@ -128,6 +125,32 @@ describe('status', () => {
     expect(output.tabs[0].url).toBe('https://example.com');
     expect(output.tabs[1].title).toBe('Test Page');
     expect(output.tabs[1].url).toBe('https://test.com');
+    expect(mockFetch).toHaveBeenCalledWith('http://127.0.0.1:9222/json');
+  });
+
+  it('filters out non-page targets from HTTP response', async () => {
+    mockReadState.mockReturnValue({
+      wsEndpoint: 'ws://localhost:9222',
+      pid: 12345,
+      port: 9222,
+      launchedAt: '2024-01-01T00:00:00Z',
+      networkLogPath: '/tmp/network.jsonl',
+      consoleLogPath: '/tmp/console.jsonl',
+    });
+    mockReadGlobalSession.mockReturnValue(null);
+    mockIsProcessAlive.mockReturnValue(true);
+
+    mockFetchResponse([
+      { title: 'Example', url: 'https://example.com', type: 'page' },
+      { title: 'Service Worker', url: 'sw.js', type: 'service_worker' },
+      { title: 'Background', url: 'about:blank', type: 'background_page' },
+    ]);
+
+    const result = await status(makeContext());
+    const output = JSON.parse(result.output);
+    expect(output.tabCount).toBe(1);
+    expect(output.tabs).toHaveLength(1);
+    expect(output.tabs[0].title).toBe('Example');
   });
 
   it('includes projectPath and headless when using global session', async () => {
@@ -145,11 +168,7 @@ describe('status', () => {
     });
     mockIsProcessAlive.mockReturnValue(true);
 
-    mockPages.mockResolvedValue([]);
-    mockConnect.mockResolvedValue({
-      pages: mockPages,
-      disconnect: mockDisconnect,
-    });
+    mockFetchResponse([]);
 
     const result = await status(makeContext());
     expect(result.exitCode).toBe(0);
@@ -159,7 +178,7 @@ describe('status', () => {
     expect(output.headless).toBe(false);
   });
 
-  it('cleans local state when connect throws for local session', async () => {
+  it('cleans local state when HTTP fetch fails for local session', async () => {
     mockReadState.mockReturnValue({
       wsEndpoint: 'ws://localhost:9222',
       pid: 12345,
@@ -170,7 +189,7 @@ describe('status', () => {
     });
     mockReadGlobalSession.mockReturnValue(null);
     mockIsProcessAlive.mockReturnValue(true);
-    mockConnect.mockRejectedValue(new Error('Connection refused'));
+    mockFetch.mockRejectedValue(new Error('Connection refused'));
 
     const result = await status(makeContext());
     expect(result.exitCode).toBe(0);
@@ -203,14 +222,31 @@ describe('status', () => {
       consoleLogPath: '/tmp/console.jsonl',
     });
     mockIsProcessAlive.mockReturnValue(true);
-    mockPages.mockResolvedValue([]);
-    mockConnect.mockResolvedValue({
-      pages: mockPages,
-      disconnect: mockDisconnect,
-    });
+
+    mockFetchResponse([]);
 
     const result = await status(makeContext());
     const output = JSON.parse(result.output);
     expect(output.pid).toBe(11111);
+  });
+
+  it('cleans stale session when HTTP response is not ok', async () => {
+    mockReadState.mockReturnValue({
+      wsEndpoint: 'ws://localhost:9222',
+      pid: 12345,
+      port: 9222,
+      launchedAt: '2024-01-01T00:00:00Z',
+      networkLogPath: '/tmp/network.jsonl',
+      consoleLogPath: '/tmp/console.jsonl',
+    });
+    mockReadGlobalSession.mockReturnValue(null);
+    mockIsProcessAlive.mockReturnValue(true);
+    mockFetch.mockResolvedValue({ ok: false, status: 500 });
+
+    const result = await status(makeContext());
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.running).toBe(false);
+    expect(output.staleSessionCleaned).toBe(true);
   });
 });
