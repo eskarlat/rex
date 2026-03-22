@@ -79,7 +79,7 @@ describe('scaffoldExtension', () => {
       const cmdPath = path.join(tmpDir, 'my-plugin', 'src', 'commands', 'hello.ts');
       const content = await fse.readFile(cmdPath, 'utf-8');
       expect(content).toContain('Hello from my-plugin!');
-      expect(content).toContain('export default function');
+      expect(content).toContain('export default defineCommand');
     });
 
     it('should generate SKILL.md with extension name', async () => {

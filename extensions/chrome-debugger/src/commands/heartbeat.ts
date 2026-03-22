@@ -3,7 +3,7 @@ import { defineCommand } from '@renre-kit/extension-sdk/node';
 import { readGlobalSession, writeGlobalSession } from '../shared/state.js';
 
 export default defineCommand({
-  handler: (_ctx) => {
+  handler: () => {
     const session = readGlobalSession();
     if (!session) {
       return {

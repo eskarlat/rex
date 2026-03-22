@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 export default defineCommand({
-  handler: async (_ctx) => {
+  handler: async () => {
     try {
       // Puppeteer downloads Chromium to its cache on launch if missing.
       // We launch headless and immediately close to trigger the download.

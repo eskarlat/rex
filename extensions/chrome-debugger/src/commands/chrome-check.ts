@@ -36,7 +36,7 @@ const SYSTEM_CHROME_PATHS: Record<string, string[]> = {
 };
 
 export default defineCommand({
-  handler: (_ctx) => {
+  handler: () => {
     // 1. Check Puppeteer bundled Chromium
     try {
       const bundledPath = puppeteer.executablePath();

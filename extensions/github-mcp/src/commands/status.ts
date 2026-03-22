@@ -1,10 +1,3 @@
-interface ExecutionContext {
-  projectName: string;
-  projectPath: string;
-  args: Record<string, unknown>;
-  config: Record<string, unknown>;
-}
-
 interface CommandResult {
   output: string;
   exitCode: number;
@@ -28,7 +21,7 @@ const TOOLS = [
   'list_commits',
 ];
 
-export default function status(_context: ExecutionContext): CommandResult {
+export default function status(): CommandResult {
   return {
     output: [
       'github-mcp v1.0.0',
