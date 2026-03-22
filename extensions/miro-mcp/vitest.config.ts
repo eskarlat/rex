@@ -16,7 +16,6 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         '**/test-setup.ts',
         'dist/**',
-        'build-panel.js',
         'vitest.config.ts',
       ],
     },

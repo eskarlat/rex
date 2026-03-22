@@ -33,5 +33,5 @@ This is a **standard** (in-process) extension. It serves as a reference implemen
 
 ```bash
 cd extensions/hello-world
-pnpm build    # tsc && node build-panel.js
+pnpm build    # node build.js
 ```
