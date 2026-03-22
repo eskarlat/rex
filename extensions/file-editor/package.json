@@ -1,0 +1,20 @@
+{
+  "name": "file-editor",
+  "version": "1.0.0",
+  "description": "VS Code-like file editor for the RenreKit dashboard",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "@renre-kit/extension-sdk": "workspace:*",
+    "@monaco-editor/react": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "esbuild": "^0.21.0",
+    "react": "^19.0.0"
+  }
+}
