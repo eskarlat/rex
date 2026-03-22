@@ -63,7 +63,7 @@ await buildExtension({
     { in: 'src/commands/batch.ts', out: 'commands/batch' },
   ],
   outdir: 'dist',
-  external: [],
+  external: ['agent-browser'],
   splitting: true,
 });
 

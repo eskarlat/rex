@@ -1,10 +1,11 @@
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { browserCommand } from '../shared/command-helper.js';
+import { scrollDirectionSchema } from '../shared/schemas.js';
 
 export default defineCommand({
   args: {
-    direction: z.enum(['up', 'down', 'left', 'right']),
+    direction: scrollDirectionSchema,
     pixels: z.coerce.number().int().positive().optional(),
   },
   handler: (ctx) => {

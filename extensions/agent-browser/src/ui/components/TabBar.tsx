@@ -18,10 +18,19 @@ export function TabBar({ tabs, activeTabId, onTabSelect, onTabClose, onNewTab }:
           {tabs.map((tab) => {
             const isActive = tab.targetId === activeTabId;
             return (
-              <button
+              <div
                 key={tab.targetId}
+                role="tab"
+                tabIndex={0}
+                aria-selected={isActive}
                 onClick={() => onTabSelect(tab.targetId)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border-r max-w-[200px] ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onTabSelect(tab.targetId);
+                  }
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border-r max-w-[200px] cursor-pointer ${
                   isActive
                     ? 'bg-background border-b-0 rounded-t-md text-foreground'
                     : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -42,7 +51,7 @@ export function TabBar({ tabs, activeTabId, onTabSelect, onTabClose, onNewTab }:
                 >
                   x
                 </button>
-              </button>
+              </div>
             );
           })}
         </div>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import type { CdpClient } from '../lib/cdp-client.js';
 
@@ -122,6 +122,31 @@ export function useDevMode(client: CdpClient | null) {
     },
     [client],
   );
+
+  useEffect(() => {
+    if (!client?.connected || !enabled) return;
+
+    const unsubscribe = client.on('Overlay.inspectNodeRequested', (params) => {
+      const backendNodeId = params['backendNodeId'];
+      if (typeof backendNodeId === 'number') {
+        void (async () => {
+          try {
+            const resolveResult = (await client.send('DOM.pushNodesByBackendIdsToFrontend', {
+              backendNodeIds: [backendNodeId],
+            })) as { nodeIds?: number[] };
+            const nodeId = resolveResult?.nodeIds?.[0];
+            if (typeof nodeId === 'number') {
+              await inspectNode(nodeId);
+            }
+          } catch {
+            // Node may no longer exist
+          }
+        })();
+      }
+    });
+
+    return unsubscribe;
+  }, [client, enabled, inspectNode]);
 
   return { enabled, toggle, selectedElement, inspectNode, clearSelection: () => setSelectedElement(null) };
 }

@@ -5,11 +5,20 @@ import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 import { getBinPath, getConfigFlags } from '../shared/command-helper.js';
 import { toOutput, errorOutput } from '../shared/formatters.js';
 
+const BATCH_TIMEOUT_MS = 120_000;
+
 function spawnWithStdin(bin: string, args: string[], input: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn(bin, args, { timeout: 120_000 });
+    const child = spawn(bin, args);
     let stdout = '';
     let stderr = '';
+    let killed = false;
+
+    const timer = setTimeout(() => {
+      killed = true;
+      child.kill();
+      reject(new Error(`Batch command timed out after ${String(BATCH_TIMEOUT_MS)}ms`));
+    }, BATCH_TIMEOUT_MS);
 
     child.stdout.on('data', (data: Buffer) => {
       stdout += data.toString();
@@ -18,10 +27,15 @@ function spawnWithStdin(bin: string, args: string[], input: string): Promise<str
       stderr += data.toString();
     });
     child.on('close', (code) => {
+      clearTimeout(timer);
+      if (killed) return;
       if (code === 0) resolve(stdout);
       else reject(new Error(stderr || `Process exited with code ${String(code)}`));
     });
-    child.on('error', reject);
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      if (!killed) reject(err);
+    });
 
     child.stdin.write(input);
     child.stdin.end();

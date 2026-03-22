@@ -1,11 +1,12 @@
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { browserCommand } from '../shared/command-helper.js';
+import { storageTypeSchema, storageActionSchema } from '../shared/schemas.js';
 
 export default defineCommand({
   args: {
-    type: z.enum(['local', 'session']),
-    action: z.enum(['get', 'set', 'clear']).default('get'),
+    type: storageTypeSchema,
+    action: storageActionSchema.default('get'),
     key: z.string().optional(),
     value: z.string().optional(),
   },

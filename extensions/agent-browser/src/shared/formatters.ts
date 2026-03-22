@@ -3,7 +3,7 @@ import type { CommandResult } from './types.js';
 /** Convert data to a JSON-formatted CommandResult */
 export function toOutput(data: unknown): CommandResult {
   return {
-    output: typeof data === 'string' ? data : JSON.stringify(data, undefined, 2),
+    output: JSON.stringify(typeof data === 'string' ? { result: data } : data, undefined, 2),
     exitCode: 0,
   };
 }

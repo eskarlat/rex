@@ -1,11 +1,12 @@
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { browserCommand } from '../shared/command-helper.js';
+import { findActionSchema } from '../shared/schemas.js';
 
 export default defineCommand({
   args: {
     label: z.string().min(1, 'label is required'),
-    action: z.enum(['click', 'fill', 'hover', 'focus', 'check', 'uncheck']),
+    action: findActionSchema,
     text: z.string().optional(),
   },
   handler: (ctx) => {

@@ -1,10 +1,11 @@
-import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { browserCommand } from '../shared/command-helper.js';
+import { urlSchema } from '../shared/schemas.js';
 
 export default defineCommand({
   args: {
-    url: z.string().min(1, 'url is required'),
+    url: urlSchema,
   },
   handler: (ctx) => browserCommand(ctx, ['open', ctx.args.url]),
 });

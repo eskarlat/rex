@@ -1,17 +1,21 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 import { toOutput, errorOutput } from './formatters.js';
 import type { CommandResult, CommandContext } from './types.js';
 
 const execFileAsync = promisify(execFile);
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
-/** Resolve the bundled agent-browser binary path */
+/**
+ * Resolve the agent-browser CLI binary by locating the package entry point.
+ * Works regardless of whether node_modules is present or bundled.
+ */
 export function getBinPath(): string {
-  return resolve(__dirname, '..', 'node_modules', '.bin', 'agent-browser');
+  const require = createRequire(import.meta.url);
+  const pkgEntry = require.resolve('agent-browser');
+  return resolve(dirname(pkgEntry), '..', 'cli.js');
 }
 
 /** Build common CLI flags from extension config */
