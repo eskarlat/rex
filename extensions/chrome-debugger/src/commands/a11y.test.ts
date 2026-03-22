@@ -53,7 +53,7 @@ describe('a11y', () => {
       ],
     });
 
-    const result = await a11y(makeContext());
+    const result = await a11y.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Accessibility Tree');
     expect(result.output).toContain('document "Page"');
@@ -63,33 +63,36 @@ describe('a11y', () => {
   it('uses default depth of 5', async () => {
     mockClient.send.mockResolvedValue({ nodes: [{ role: { value: 'document' } }] });
 
-    await a11y(makeContext());
+    await a11y.handler(makeContext());
     expect(mockClient.send).toHaveBeenCalledWith('Accessibility.getFullAXTree', { depth: 5 });
   });
 
   it('uses custom depth', async () => {
     mockClient.send.mockResolvedValue({ nodes: [{ role: { value: 'document' } }] });
 
-    await a11y(makeContext({ depth: 10 }));
+    await a11y.handler(makeContext({ depth: 10 }));
     expect(mockClient.send).toHaveBeenCalledWith('Accessibility.getFullAXTree', { depth: 10 });
   });
 
   it('returns error when selector element not found', async () => {
-    mock$.mockResolvedValue(null);
+    mockClient.send.mockImplementation((method: string) => {
+      if (method === 'DOM.enable') return Promise.resolve({});
+      if (method === 'DOM.getDocument') return Promise.resolve({ root: { nodeId: 1 } });
+      if (method === 'DOM.querySelector') return Promise.resolve({ nodeId: 0 });
+      return Promise.resolve({});
+    });
 
-    const result = await a11y(makeContext({ selector: '#missing' }));
+    const result = await a11y.handler(makeContext({ selector: '#missing' }));
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No element found');
     expect(result.output).toContain('#missing');
   });
 
   it('scopes accessibility tree to selector', async () => {
-    const mockElement = {
-      remoteObject: () => ({ objectId: 'obj-123' }),
-    };
-    mock$.mockResolvedValue(mockElement);
-
     mockClient.send.mockImplementation((method: string) => {
+      if (method === 'DOM.enable') return Promise.resolve({});
+      if (method === 'DOM.getDocument') return Promise.resolve({ root: { nodeId: 1 } });
+      if (method === 'DOM.querySelector') return Promise.resolve({ nodeId: 10 });
       if (method === 'DOM.describeNode') {
         return Promise.resolve({ node: { backendNodeId: 42 } });
       }
@@ -101,7 +104,7 @@ describe('a11y', () => {
       return Promise.resolve({});
     });
 
-    const result = await a11y(makeContext({ selector: '#btn', depth: 3 }));
+    const result = await a11y.handler(makeContext({ selector: '#btn', depth: 3 }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Accessibility Tree: `#btn`');
     expect(result.output).toContain('button "Click me"');
@@ -124,7 +127,7 @@ describe('a11y', () => {
       ],
     });
 
-    const result = await a11y(makeContext());
+    const result = await a11y.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).not.toContain('generic');
     expect(result.output).toContain('heading "Visible"');
@@ -135,7 +138,7 @@ describe('a11y', () => {
       nodes: [{ role: { value: 'generic' } }],
     });
 
-    const result = await a11y(makeContext());
+    const result = await a11y.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('generic');
   });
@@ -145,7 +148,7 @@ describe('a11y', () => {
       nodes: [{ name: { value: 'test' } }],
     });
 
-    const result = await a11y(makeContext());
+    const result = await a11y.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('unknown');
   });
@@ -153,7 +156,7 @@ describe('a11y', () => {
   it('returns empty tree message when no nodes', async () => {
     mockClient.send.mockResolvedValue({ nodes: [] });
 
-    const result = await a11y(makeContext());
+    const result = await a11y.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Empty accessibility tree');
   });

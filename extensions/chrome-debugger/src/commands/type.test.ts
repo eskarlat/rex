@@ -13,6 +13,8 @@ vi.mock('puppeteer', () => ({
         pages: () =>
           Promise.resolve([{ $: mock$, type: mockType, evaluate: mockEvaluate }]),
         disconnect: mockDisconnect,
+        connected: true,
+        on: vi.fn(),
       })
     ),
   },
@@ -46,20 +48,23 @@ beforeEach(() => {
 
 describe('type command', () => {
   it('returns error when selector is missing', async () => {
-    const result = await typeCommand(makeContext({ text: 'hello' }));
+    mock$.mockResolvedValue(null);
+    const result = await typeCommand.handler(makeContext({ text: 'hello' }));
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('--selector is required');
+    expect(result.output).toContain('No element found');
   });
 
-  it('returns error when text is missing', async () => {
-    const result = await typeCommand(makeContext({ selector: '#input' }));
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('--text is required');
+  it('proceeds with undefined text when text is missing (no runtime validation)', async () => {
+    mock$.mockResolvedValue({});
+    mockType.mockResolvedValue(undefined);
+    const result = await typeCommand.handler(makeContext({ selector: '#input' }));
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Typed into');
   });
 
   it('returns error when element not found', async () => {
     mock$.mockResolvedValue(null);
-    const result = await typeCommand(
+    const result = await typeCommand.handler(
       makeContext({ selector: '#input', text: 'hello' })
     );
     expect(result.exitCode).toBe(1);
@@ -70,7 +75,7 @@ describe('type command', () => {
     mock$.mockResolvedValue({});
     mockType.mockResolvedValue(undefined);
 
-    const result = await typeCommand(
+    const result = await typeCommand.handler(
       makeContext({ selector: '#search', text: 'hello world' })
     );
     expect(result.exitCode).toBe(0);
@@ -85,7 +90,7 @@ describe('type command', () => {
     mockType.mockResolvedValue(undefined);
     mockEvaluate.mockResolvedValue(undefined);
 
-    const result = await typeCommand(
+    const result = await typeCommand.handler(
       makeContext({ selector: '#search', text: 'new text', clear: true })
     );
     expect(result.exitCode).toBe(0);

@@ -1,45 +1,43 @@
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { withBrowser } from '../shared/connection.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
-export default async function typeCommand(context: ExecutionContext): Promise<CommandResult> {
-  const selector = context.args.selector;
-  const text = context.args.text;
+export default defineCommand({
+  args: {
+    selector: z.string({ required_error: '--selector is required' }).min(1, '--selector is required'),
+    text: z.string({ required_error: '--text is required' }),
+    clear: z.boolean().default(false),
+  },
+  handler: async (ctx) => {
+    const { selector, text, clear } = ctx.args;
 
-  if (typeof selector !== 'string' || selector.length === 0) {
-    return { output: 'Error: --selector is required', exitCode: 1 };
-  }
-  if (typeof text !== 'string') {
-    return { output: 'Error: --text is required', exitCode: 1 };
-  }
+    return withBrowser(ctx.projectPath, async (_browser, page) => {
+      const exists = await page.$(selector);
+      if (!exists) {
+        return {
+          output: `No element found for selector: \`${selector}\``,
+          exitCode: 1,
+        };
+      }
 
-  const clear = context.args.clear === true;
+      if (clear) {
+        await page.evaluate((sel) => {
+          const el = document.querySelector(sel) as HTMLInputElement;
+          if (el) el.value = '';
+        }, selector);
+      }
 
-  return withBrowser(context.projectPath, async (_browser, page) => {
-    const exists = await page.$(selector);
-    if (!exists) {
+      await page.type(selector, text);
+
       return {
-        output: `No element found for selector: \`${selector}\``,
-        exitCode: 1,
+        output: [
+          `## Typed into: \`${selector}\``,
+          '',
+          `- **Text**: "${text}"`,
+          `- **Cleared first**: ${clear ? 'yes' : 'no'}`,
+        ].join('\n'),
+        exitCode: 0,
       };
-    }
-
-    if (clear) {
-      await page.evaluate((sel) => {
-        const el = document.querySelector(sel) as HTMLInputElement;
-        if (el) el.value = '';
-      }, selector);
-    }
-
-    await page.type(selector, text);
-
-    return {
-      output: [
-        `## Typed into: \`${selector}\``,
-        '',
-        `- **Text**: "${text}"`,
-        `- **Cleared first**: ${clear ? 'yes' : 'no'}`,
-      ].join('\n'),
-      exitCode: 0,
-    };
-  });
-}
+    });
+  },
+});

@@ -33,7 +33,7 @@ describe('dom', () => {
   it('returns full page DOM tree when no selector', async () => {
     mockEvaluate.mockResolvedValue('<html>\n<body>\n<h1>Hello</h1>\n</body>\n</html>');
 
-    const result = await dom(makeContext());
+    const result = await dom.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('## DOM Tree');
     expect(result.output).toContain('<html>');
@@ -43,7 +43,7 @@ describe('dom', () => {
   it('returns DOM subtree for selector', async () => {
     mockEvaluate.mockResolvedValue('<div id="main"><p>Content</p></div>');
 
-    const result = await dom(makeContext({ selector: '#main' }));
+    const result = await dom.handler(makeContext({ selector: '#main' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('DOM: `#main`');
     expect(result.output).toContain('<div id="main">');
@@ -52,7 +52,7 @@ describe('dom', () => {
   it('uses default depth of 5', async () => {
     mockEvaluate.mockResolvedValue('<html></html>');
 
-    await dom(makeContext());
+    await dom.handler(makeContext());
     // The second arg to evaluate is the serialization function, third is depth
     expect(mockEvaluate).toHaveBeenCalledWith(expect.any(Function), 5);
   });
@@ -60,21 +60,21 @@ describe('dom', () => {
   it('uses custom depth', async () => {
     mockEvaluate.mockResolvedValue('<html></html>');
 
-    await dom(makeContext({ depth: 3 }));
+    await dom.handler(makeContext({ depth: 3 }));
     expect(mockEvaluate).toHaveBeenCalledWith(expect.any(Function), 3);
   });
 
   it('passes selector and depth when selector is provided', async () => {
     mockEvaluate.mockResolvedValue('<div></div>');
 
-    await dom(makeContext({ selector: '.container', depth: 2 }));
+    await dom.handler(makeContext({ selector: '.container', depth: 2 }));
     expect(mockEvaluate).toHaveBeenCalledWith(expect.any(Function), '.container', 2);
   });
 
   it('wraps output in code block', async () => {
     mockEvaluate.mockResolvedValue('<p>test</p>');
 
-    const result = await dom(makeContext());
+    const result = await dom.handler(makeContext());
     expect(result.output).toContain('```html');
     expect(result.output).toContain('```');
   });

@@ -65,7 +65,7 @@ describe('performance', () => {
         fcp: 150,
       });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('## Performance Metrics');
     expect(result.output).toContain('### Web Vitals');
@@ -93,7 +93,7 @@ describe('performance', () => {
       .mockResolvedValueOnce(null)  // no nav timing
       .mockResolvedValueOnce({ fcp: 100 });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('### Web Vitals');
     expect(result.output).toContain('First Contentful Paint');
@@ -117,7 +117,7 @@ describe('performance', () => {
       })
       .mockResolvedValueOnce({ fcp: null });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('### Web Vitals');
     expect(result.output).toContain('Time to First Byte');
@@ -133,7 +133,7 @@ describe('performance', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ fcp: null });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('## Performance Metrics');
     expect(result.output).not.toContain('### Web Vitals');
@@ -148,7 +148,7 @@ describe('performance', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ fcp: null });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).not.toContain('### Runtime Metrics');
   });
@@ -166,7 +166,7 @@ describe('performance', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ fcp: null });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('JSHeapUsedSize');
     expect(result.output).toContain('Nodes');
@@ -184,7 +184,7 @@ describe('performance', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ fcp: null });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('1.0 MB');
   });
@@ -200,7 +200,7 @@ describe('performance', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ fcp: null });
 
-    const result = await performance(makeContext());
+    const result = await performance.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('151');
   });

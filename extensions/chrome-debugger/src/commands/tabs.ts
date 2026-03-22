@@ -1,13 +1,14 @@
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { connectBrowser } from '../shared/connection.js';
 import { ensureBrowserRunning } from '../shared/state.js';
 import { markdownTable, truncate } from '../shared/formatters.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
-export default async function tabs(context: ExecutionContext): Promise<CommandResult> {
-  ensureBrowserRunning(context.projectPath);
-  const browser = await connectBrowser(context.projectPath);
+export default defineCommand({
+  handler: async (ctx) => {
+    ensureBrowserRunning(ctx.projectPath);
+    const browser = await connectBrowser(ctx.projectPath);
 
-  try {
     const pages = await browser.pages();
     const rows: string[][] = [];
 
@@ -23,7 +24,5 @@ export default async function tabs(context: ExecutionContext): Promise<CommandRe
       output: [`## Open Tabs (${String(pages.length)})`, '', table].join('\n'),
       exitCode: 0,
     };
-  } finally {
-    void browser.disconnect();
-  }
-}
+  },
+});

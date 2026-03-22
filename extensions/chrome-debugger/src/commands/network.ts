@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { ensureBrowserRunning } from '../shared/state.js';
 import {
   markdownTable,
@@ -68,28 +70,30 @@ function formatAsMarkdown(entries: NetworkEntry[]): CommandResult {
   };
 }
 
-export default function network(context: ExecutionContext): CommandResult {
-  const state = ensureBrowserRunning(context.projectPath);
-  const { filter, method, limit, offset, format } = parseArgs(context);
+export default defineCommand({
+  handler: (ctx) => {
+    const state = ensureBrowserRunning(ctx.projectPath);
+    const { filter, method, limit, offset, format } = parseArgs(ctx);
 
-  if (!existsSync(state.networkLogPath)) {
-    return emptyResponse(format);
-  }
+    if (!existsSync(state.networkLogPath)) {
+      return emptyResponse(format);
+    }
 
-  const raw = readFileSync(state.networkLogPath, 'utf-8').trim();
-  if (raw.length === 0) {
-    return emptyResponse(format);
-  }
+    const raw = readFileSync(state.networkLogPath, 'utf-8').trim();
+    if (raw.length === 0) {
+      return emptyResponse(format);
+    }
 
-  const allLines = raw.split('\n');
-  const parsed: NetworkEntry[] = allLines
-    .slice(offset)
-    .map((line) => JSON.parse(line) as NetworkEntry);
+    const allLines = raw.split('\n');
+    const parsed: NetworkEntry[] = allLines
+      .slice(offset)
+      .map((line) => JSON.parse(line) as NetworkEntry);
 
-  const filtered = applyFilters(parsed, filter, method);
-  const entries = filtered.slice(-limit);
+    const filtered = applyFilters(parsed, filter, method);
+    const entries = filtered.slice(-limit);
 
-  return format === 'json'
-    ? formatAsJson(entries, allLines.length)
-    : formatAsMarkdown(entries);
-}
+    return format === 'json'
+      ? formatAsJson(entries, allLines.length)
+      : formatAsMarkdown(entries);
+  },
+});

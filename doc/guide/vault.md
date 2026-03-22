@@ -75,15 +75,19 @@ When the extension reads `config.githubToken`, it gets the decrypted value. The 
 ### In Your Extension Code
 
 ```typescript
-export default function myCommand(context: ExecutionContext) {
-  // This is already decrypted — just use it
-  const token = context.config.githubToken as string;
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
-  // Make API calls with the token
-  fetch('https://api.github.com/user', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-}
+export default defineCommand({
+  handler: async (ctx) => {
+    // This is already decrypted — just use it
+    const token = ctx.config.githubToken as string;
+
+    // Make API calls with the token
+    fetch('https://api.github.com/user', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+});
 ```
 
 ## Dashboard Vault UI

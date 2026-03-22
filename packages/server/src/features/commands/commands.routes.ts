@@ -102,8 +102,8 @@ async function executeResolvedCommand(
       type: 'standard',
       handler: cmdDef.handler,
     });
-    const handler = await loadCommandHandler(extDir, cmdDef.handler);
-    return executeCommand(handler, {
+    const loaded = await loadCommandHandler(extDir, cmdDef.handler);
+    return executeCommand(loaded, {
       projectName: '',
       projectPath,
       args,

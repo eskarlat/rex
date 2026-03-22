@@ -269,19 +269,41 @@ You don't need to manage any of this yourself — just define the transport in y
 
 ## Adding Local Commands
 
-MCP extensions can also have regular local commands (not MCP tools). These run in the RenreKit process, not in the MCP server:
+MCP extensions can also have regular local commands (not MCP tools). These run in the RenreKit process, not in the MCP server. Use `defineCommand()` just like standard extensions:
 
 ```typescript
 // commands/status.ts
-export default function status(context: ExecutionContext) {
-  return {
-    output: 'MCP server is healthy',
-    exitCode: 0,
-  };
-}
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
+export default defineCommand({
+  handler: () => {
+    return { output: 'MCP server is healthy', exitCode: 0 };
+  },
+});
 ```
 
 This is useful for health checks, config display, or other quick commands that don't need the MCP server.
+
+Local commands in MCP extensions support the same typed args validation as standard extensions:
+
+```typescript
+// commands/status.ts
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
+export default defineCommand({
+  args: {
+    verbose: z.boolean().default(false),
+    format: z.enum(['json', 'markdown']).default('markdown'),
+  },
+  handler: (ctx) => {
+    // ctx.args.verbose and ctx.args.format are fully typed
+    return {
+      output: ctx.args.format === 'json' ? '{"status":"ok"}' : 'MCP server is healthy',
+      exitCode: 0,
+    };
+  },
+});
+```
 
 ::: tip When to wrap vs. build
 If there's already an MCP server for the tool you want (check the [MCP server directory](https://modelcontextprotocol.io/)), just wrap it. Building your own server only makes sense when no existing server fits your needs.

@@ -52,7 +52,7 @@ describe('selected', () => {
   it('returns error when no element selected (no state)', async () => {
     mockReadState.mockReturnValue(null);
 
-    const result = await selected(makeContext());
+    const result = await selected.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No Element Selected');
     expect(result.output).toContain('chrome-debugger:inspect');
@@ -68,7 +68,7 @@ describe('selected', () => {
       consoleLogPath: '/tmp/console.jsonl',
     });
 
-    const result = await selected(makeContext());
+    const result = await selected.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No Element Selected');
   });
@@ -93,7 +93,7 @@ describe('selected', () => {
     mockPages.mockResolvedValue([mockPage]);
     mockEvaluate.mockResolvedValue(null);
 
-    const result = await selected(makeContext());
+    const result = await selected.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Selected Element No Longer Found');
     expect(result.output).toContain('#main');
@@ -141,7 +141,7 @@ describe('selected', () => {
       visible: true,
     });
 
-    const result = await selected(makeContext());
+    const result = await selected.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('## Selected Element');
     expect(result.output).toContain('div#main');
@@ -197,7 +197,7 @@ describe('selected', () => {
       visible: false,
     });
 
-    const result = await selected(makeContext());
+    const result = await selected.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).not.toContain('**ID**');
     expect(result.output).not.toContain('**Classes**');
@@ -244,7 +244,7 @@ describe('selected', () => {
       visible: true,
     });
 
-    const result = await selected(makeContext());
+    const result = await selected.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('<!-- truncated -->');
   });
@@ -287,8 +287,8 @@ describe('selected', () => {
       visible: true,
     });
 
-    await selected(makeContext());
-    expect(mockDisconnect).toHaveBeenCalled();
+    await selected.handler(makeContext());
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
   it('filters out empty and none style values', async () => {
@@ -329,7 +329,7 @@ describe('selected', () => {
       visible: true,
     });
 
-    const result = await selected(makeContext());
+    const result = await selected.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('display');
     expect(result.output).toContain('flex');

@@ -1,9 +1,9 @@
 import type { CDPSession } from 'puppeteer';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { connectBrowser, getActivePage } from '../shared/connection.js';
 import { markdownCodeBlock, markdownTable, truncate } from '../shared/formatters.js';
 import { ensureBrowserRunning, readState, writeState } from '../shared/state.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
 interface NodeDescription {
   nodeId: number;
@@ -191,13 +191,13 @@ function buildOutput(
   return lines.join('\n');
 }
 
-export default async function inspect(context: ExecutionContext): Promise<CommandResult> {
-  const timeout = typeof context.args.timeout === 'number' ? context.args.timeout : 30000;
+export default defineCommand({
+  handler: async (ctx) => {
+    const timeout = typeof ctx.args.timeout === 'number' ? ctx.args.timeout : 30000;
 
-  ensureBrowserRunning(context.projectPath);
-  const browser = await connectBrowser(context.projectPath);
+    ensureBrowserRunning(ctx.projectPath);
+    const browser = await connectBrowser(ctx.projectPath);
 
-  try {
     const page = await getActivePage(browser);
     const client = await page.createCDPSession();
 
@@ -240,9 +240,9 @@ export default async function inspect(context: ExecutionContext): Promise<Comman
     const attrs = parseAttributes(node.attributes);
 
     // Save selected element to state
-    const state = readState(context.projectPath);
+    const state = readState(ctx.projectPath);
     if (state) {
-      writeState(context.projectPath, {
+      writeState(ctx.projectPath, {
         ...state,
         selectedElement: {
           backendNodeId,
@@ -255,7 +255,5 @@ export default async function inspect(context: ExecutionContext): Promise<Comman
 
     const output = buildOutput(node, cssSelector, outerHTML, boxModel, a11yInfo, textContent, attrs, styleRows);
     return { output, exitCode: 0 };
-  } finally {
-    void browser.disconnect();
-  }
-}
+  },
+});

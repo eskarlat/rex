@@ -32,7 +32,7 @@ describe('chrome-install', () => {
       close: mockClose,
     });
 
-    const result = await chromeInstall(makeContext());
+    const result = await chromeInstall.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.installed).toBe(true);
@@ -48,7 +48,7 @@ describe('chrome-install', () => {
       close: mockClose,
     });
 
-    const result = await chromeInstall(makeContext());
+    const result = await chromeInstall.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.installed).toBe(true);
@@ -58,7 +58,7 @@ describe('chrome-install', () => {
   it('returns installed:false with error on failure', async () => {
     mockLaunch.mockRejectedValue(new Error('Download failed'));
 
-    const result = await chromeInstall(makeContext());
+    const result = await chromeInstall.handler(makeContext());
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.installed).toBe(false);
@@ -68,7 +68,7 @@ describe('chrome-install', () => {
   it('handles non-Error thrown values', async () => {
     mockLaunch.mockRejectedValue('string error');
 
-    const result = await chromeInstall(makeContext());
+    const result = await chromeInstall.handler(makeContext());
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.installed).toBe(false);

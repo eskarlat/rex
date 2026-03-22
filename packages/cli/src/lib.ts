@@ -46,7 +46,10 @@ export { ConnectionManager } from './features/extensions/mcp/connection-manager.
 export {
   loadCommandHandler,
   executeCommand,
+  validateArgs,
+  formatValidationErrors,
 } from './features/extensions/runtime/standard-runtime.js';
+export type { LoadedCommand } from './features/extensions/runtime/standard-runtime.js';
 
 // Vault
 export {

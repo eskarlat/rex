@@ -28,7 +28,7 @@ afterEach(() => {
 
 describe('screenshot-list', () => {
   it('returns empty array when no metadata file exists', () => {
-    const result = screenshotList(makeContext());
+    const result = screenshotList.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.screenshots).toEqual([]);
@@ -37,7 +37,7 @@ describe('screenshot-list', () => {
   it('returns empty array when metadata file is empty', () => {
     writeFileSync(join(SCREENSHOT_DIR, 'screenshots.jsonl'), '');
 
-    const result = screenshotList(makeContext());
+    const result = screenshotList.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.screenshots).toEqual([]);
@@ -57,7 +57,7 @@ describe('screenshot-list', () => {
     };
     writeFileSync(join(SCREENSHOT_DIR, 'screenshots.jsonl'), JSON.stringify(meta));
 
-    const result = screenshotList(makeContext());
+    const result = screenshotList.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.screenshots).toHaveLength(1);
@@ -89,7 +89,7 @@ describe('screenshot-list', () => {
     const lines = [JSON.stringify(meta1), JSON.stringify(meta2)].join('\n');
     writeFileSync(join(SCREENSHOT_DIR, 'screenshots.jsonl'), lines);
 
-    const result = screenshotList(makeContext());
+    const result = screenshotList.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.screenshots).toHaveLength(1);

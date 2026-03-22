@@ -1,8 +1,9 @@
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { connectBrowser, getActivePage } from '../shared/connection.js';
 import { getSelectedElementInfo } from '../shared/browser-scripts.js';
 import { ensureBrowserRunning, readState } from '../shared/state.js';
 import { markdownCodeBlock, markdownTable, truncate } from '../shared/formatters.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
 interface SelectedElement {
   backendNodeId: number;
@@ -11,29 +12,29 @@ interface SelectedElement {
   timestamp: string;
 }
 
-export default async function selected(context: ExecutionContext): Promise<CommandResult> {
-  ensureBrowserRunning(context.projectPath);
+export default defineCommand({
+  handler: async (ctx) => {
+    ensureBrowserRunning(ctx.projectPath);
 
-  const state = readState(context.projectPath) as (ReturnType<typeof readState> & {
-    selectedElement?: SelectedElement;
-  }) | null;
+    const state = readState(ctx.projectPath) as (ReturnType<typeof readState> & {
+      selectedElement?: SelectedElement;
+    }) | null;
 
-  if (!state?.selectedElement) {
-    return {
-      output: [
-        '## No Element Selected',
-        '',
-        'Use `chrome-debugger:inspect` to pick an element from the browser,',
-        'or use `chrome-debugger:select --selector "..."` to query elements.',
-      ].join('\n'),
-      exitCode: 1,
-    };
-  }
+    if (!state?.selectedElement) {
+      return {
+        output: [
+          '## No Element Selected',
+          '',
+          'Use `chrome-debugger:inspect` to pick an element from the browser,',
+          'or use `chrome-debugger:select --selector "..."` to query elements.',
+        ].join('\n'),
+        exitCode: 1,
+      };
+    }
 
-  const { selectedElement } = state;
-  const browser = await connectBrowser(context.projectPath);
+    const { selectedElement } = state;
+    const browser = await connectBrowser(ctx.projectPath);
 
-  try {
     const page = await getActivePage(browser);
 
     const info = await page.evaluate(getSelectedElementInfo, selectedElement.selector);
@@ -97,7 +98,5 @@ export default async function selected(context: ExecutionContext): Promise<Comma
     );
 
     return { output: lines.join('\n'), exitCode: 0 };
-  } finally {
-    void browser.disconnect();
-  }
-}
+  },
+});

@@ -33,7 +33,7 @@ describe('clear-logs', () => {
     writeFileSync(networkLog, 'some network data\n');
     writeFileSync(consoleLog, 'some console data\n');
 
-    const result = clearLogs(makeContext());
+    const result = clearLogs.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.cleared).toBe(2);
@@ -44,7 +44,7 @@ describe('clear-logs', () => {
   });
 
   it('handles missing log files gracefully', () => {
-    const result = clearLogs(makeContext());
+    const result = clearLogs.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.cleared).toBe(0);
@@ -54,7 +54,7 @@ describe('clear-logs', () => {
     const networkLog = join(STORAGE_DIR, 'network.jsonl');
     writeFileSync(networkLog, 'network data\n');
 
-    const result = clearLogs(makeContext());
+    const result = clearLogs.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.cleared).toBe(1);

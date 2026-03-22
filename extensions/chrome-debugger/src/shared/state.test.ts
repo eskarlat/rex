@@ -88,16 +88,26 @@ describe('deleteState', () => {
 });
 
 describe('ensureBrowserRunning', () => {
-  it('returns state when browser is running', () => {
-    writeState(TEST_DIR, mockState);
+  it('returns state when browser process is alive', () => {
+    const liveState = { ...mockState, pid: process.pid };
+    writeState(TEST_DIR, liveState);
     const result = ensureBrowserRunning(TEST_DIR);
-    expect(result).toEqual(mockState);
+    expect(result).toEqual(liveState);
   });
 
-  it('throws when no browser is running', () => {
+  it('throws when no state file exists', () => {
     expect(() => ensureBrowserRunning(TEST_DIR)).toThrow(
       'No browser is running'
     );
+  });
+
+  it('throws and cleans up when browser process is dead', () => {
+    writeState(TEST_DIR, mockState);
+    expect(() => ensureBrowserRunning(TEST_DIR)).toThrow(
+      'Browser process is no longer running'
+    );
+    // State should be cleaned up
+    expect(readState(TEST_DIR)).toBeNull();
   });
 });
 

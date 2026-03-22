@@ -57,16 +57,13 @@ export function onDestroy(context: HookContext): void {
 }
 
 export function getStandardCommandHandler(name: string): string {
-  return `interface ExecutionContext {
-  projectName: string;
-  projectPath: string;
-  args: Record<string, unknown>;
-  config: Record<string, unknown>;
-}
+  return `import { defineCommand } from '@renre-kit/extension-sdk/node';
 
-export default function hello(_context: ExecutionContext): { output: string; exitCode: number } {
-  return { output: 'Hello from ${name}!', exitCode: 0 };
-}
+export default defineCommand({
+  handler: () => {
+    return { output: 'Hello from ${name}!', exitCode: 0 };
+  },
+});
 `;
 }
 

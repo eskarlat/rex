@@ -101,32 +101,24 @@ The heart of every extension is `manifest.json`. Here's a complete example:
 
 ## Writing Commands
 
-Commands are the primary way users interact with your extension from the terminal. Each command is a function that receives an `ExecutionContext`:
+Commands are the primary way users interact with your extension from the terminal. Use `defineCommand()` from `@renre-kit/extension-sdk/node` to define commands with typed args and validation:
 
 ```typescript
 // commands/greet.ts
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
-interface ExecutionContext {
-  projectName: string;
-  projectPath: string;
-  args: Record<string, unknown>;
-  config: Record<string, unknown>;
-}
-
-interface CommandResult {
-  output: string;
-  exitCode: number;
-}
-
-export default function greet(context: ExecutionContext): CommandResult {
-  const name = (context.args.name as string) ?? 'World';
-  const company = (context.config.companyName as string) ?? 'RenreKit';
-
-  return {
-    output: `Hello, ${name}! Welcome from ${company}.`,
-    exitCode: 0,
-  };
-}
+export default defineCommand({
+  args: {
+    name: z.string().default('World'),
+  },
+  handler: (ctx) => {
+    const company = (ctx.config.companyName as string) ?? 'RenreKit';
+    return {
+      output: `Hello, ${ctx.args.name}! Welcome from ${company}.`,
+      exitCode: 0,
+    };
+  },
+});
 ```
 
 Users invoke it as:
@@ -137,6 +129,52 @@ renre-kit my-awesome-tool:greet --name "Ada"
 ```
 
 The command namespace is the extension name, the subcommand is the key from the `commands` map in the manifest.
+
+Commands that don't need args or context can omit the parameter entirely:
+
+```typescript
+// commands/status.ts
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
+export default defineCommand({
+  handler: () => {
+    return { output: 'All systems go', exitCode: 0 };
+  },
+});
+```
+
+### Argument Validation with Zod
+
+Define an `args` object in `defineCommand` with Zod schemas for automatic validation. The CLI validates args before your handler runs and provides fully typed `ctx.args`:
+
+```typescript
+// commands/greet.ts
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
+export default defineCommand({
+  args: {
+    name: z.string({ required_error: '--name is required' }).min(1),
+    loud: z.boolean().default(false),
+  },
+  handler: (ctx) => {
+    // ctx.args.name is typed as string, guaranteed non-empty
+    // ctx.args.loud is typed as boolean, defaults to false
+    const greeting = `Hello, ${ctx.args.name}!`;
+    return {
+      output: ctx.args.loud ? greeting.toUpperCase() : greeting,
+      exitCode: 0,
+    };
+  },
+});
+```
+
+When `args` is provided:
+- The CLI validates args against the schema before calling your handler
+- Schema defaults are applied (e.g., `z.boolean().default(false)`)
+- Invalid args produce a consistent error: `Invalid arguments: --name: --name is required`
+- `ctx.args` is fully typed — no manual casting needed
+
+When `args` is omitted, args are passed through unchanged on `ctx.args`.
 
 ## Lifecycle Hooks
 

@@ -17,6 +17,8 @@ vi.mock('puppeteer', () => ({
             { title: mockTitle2, url: mockUrl2 },
           ]),
         disconnect: mockDisconnect,
+        connected: true,
+        on: vi.fn(),
       })
     ),
   },
@@ -50,7 +52,7 @@ beforeEach(() => {
 
 describe('tabs', () => {
   it('lists all open tabs as a markdown table', async () => {
-    const result = await tabs(makeContext());
+    const result = await tabs.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Open Tabs (2)');
     expect(result.output).toContain('Tab 1');
@@ -61,8 +63,8 @@ describe('tabs', () => {
     expect(result.output).toContain('| 1 |');
   });
 
-  it('disconnects after listing', async () => {
-    await tabs(makeContext());
-    expect(mockDisconnect).toHaveBeenCalled();
+  it('keeps connection cached after listing', async () => {
+    await tabs.handler(makeContext());
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 });

@@ -36,21 +36,21 @@ afterEach(() => {
 
 describe('screenshot-read', () => {
   it('returns error when --path argument is missing', () => {
-    const result = screenshotRead(makeContext());
+    const result = screenshotRead.handler(makeContext());
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Missing --path argument');
   });
 
   it('returns error when path is not a string', () => {
-    const result = screenshotRead(makeContext({ path: 123 }));
+    const result = screenshotRead.handler(makeContext({ path: 123 }));
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Missing --path argument');
   });
 
   it('rejects paths outside the screenshot directory', () => {
-    const result = screenshotRead(makeContext({ path: '/etc/passwd' }));
+    const result = screenshotRead.handler(makeContext({ path: '/etc/passwd' }));
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Path must be inside the screenshot directory');
@@ -58,7 +58,7 @@ describe('screenshot-read', () => {
 
   it('rejects relative path traversal', () => {
     const traversalPath = join(SCREENSHOT_DIR, '..', '..', 'secret.json');
-    const result = screenshotRead(makeContext({ path: traversalPath }));
+    const result = screenshotRead.handler(makeContext({ path: traversalPath }));
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Path must be inside the screenshot directory');
@@ -66,7 +66,7 @@ describe('screenshot-read', () => {
 
   it('returns error when file does not exist', () => {
     const missingPath = join(SCREENSHOT_DIR, 'nonexistent.png');
-    const result = screenshotRead(makeContext({ path: missingPath }));
+    const result = screenshotRead.handler(makeContext({ path: missingPath }));
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toContain('File not found');
@@ -78,7 +78,7 @@ describe('screenshot-read', () => {
     const imgData = Buffer.from('fake-png-content');
     writeFileSync(imgPath, imgData);
 
-    const result = screenshotRead(makeContext({ path: imgPath }));
+    const result = screenshotRead.handler(makeContext({ path: imgPath }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.dataUrl).toBe(`data:image/png;base64,${imgData.toString('base64')}`);
@@ -89,7 +89,7 @@ describe('screenshot-read', () => {
     const binaryData = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
     writeFileSync(imgPath, binaryData);
 
-    const result = screenshotRead(makeContext({ path: imgPath }));
+    const result = screenshotRead.handler(makeContext({ path: imgPath }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.dataUrl).toContain('data:image/png;base64,');

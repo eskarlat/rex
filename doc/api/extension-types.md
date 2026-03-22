@@ -135,9 +135,45 @@ export interface SkillRef {
 
 ## Command Execution Types
 
+### defineCommand
+
+The recommended way to define extension commands. Imported from `@renre-kit/extension-sdk/node`:
+
+```typescript
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
+// With typed args
+export default defineCommand({
+  args: {
+    selector: z.string({ required_error: '--selector is required' }).min(1),
+    timeout: z.number().default(5000),
+  },
+  handler: async (ctx) => {
+    ctx.args.selector; // string (typed)
+    ctx.args.timeout;  // number (defaults to 5000)
+    return { output: '...', exitCode: 0 };
+  },
+});
+
+// Without args — context parameter can be omitted entirely
+export default defineCommand({
+  handler: () => {
+    return { output: '...', exitCode: 0 };
+  },
+});
+```
+
+### TypedContext
+
+The handler receives a `TypedContext<TArgs>` with args inferred from the Zod schema:
+
+```typescript
+type TypedContext<TArgs> = Omit<ExecutionContext, 'args'> & { args: TArgs };
+```
+
 ### ExecutionContext
 
-Passed to every command handler:
+The base context interface (used internally, `TypedContext` wraps it):
 
 ```typescript
 export interface ExecutionContext {
@@ -158,6 +194,18 @@ export interface CommandResult {
   exitCode: number;
 }
 ```
+
+### Argument Validation
+
+When `defineCommand` is called with an `args` object, the CLI automatically:
+- Validates args before the handler runs
+- Applies schema defaults (e.g., `z.number().default(5000)`)
+- Throws `ARGS_VALIDATION_FAILED` with formatted error messages on invalid input
+- Provides fully typed `ctx.args` — no manual casting needed
+
+When `args` is omitted, args are passed through unchanged on `ctx.args`.
+
+This works for both standard extensions and MCP extensions with custom local command handlers.
 
 ## Lifecycle Types
 

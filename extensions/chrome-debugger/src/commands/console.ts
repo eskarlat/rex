@@ -1,23 +1,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { ensureBrowserRunning } from '../shared/state.js';
 import { markdownTable, truncate, formatTimestamp } from '../shared/formatters.js';
-import type { ExecutionContext, CommandResult, ConsoleEntry } from '../shared/types.js';
+import type { CommandResult, ConsoleEntry } from '../shared/types.js';
 
 function emptyResponse(format: string): CommandResult {
   if (format === 'json') {
     return { output: JSON.stringify({ entries: [], total: 0 }), exitCode: 0 };
   }
   return { output: 'No console messages captured yet.', exitCode: 0 };
-}
-
-function parseArgs(context: ExecutionContext): { levelFilter: string | null; limit: number; offset: number; format: string } {
-  return {
-    levelFilter: typeof context.args.level === 'string' ? context.args.level : null,
-    limit: typeof context.args.limit === 'number' ? context.args.limit : 50,
-    offset: typeof context.args.offset === 'number' ? context.args.offset : 0,
-    format: context.args.format === 'json' ? 'json' : 'markdown',
-  };
 }
 
 function formatAsJson(entries: ConsoleEntry[], total: number): CommandResult {
@@ -40,31 +33,39 @@ function formatAsMarkdown(entries: ConsoleEntry[]): CommandResult {
   };
 }
 
-export default function consoleCommand(context: ExecutionContext): CommandResult {
-  const state = ensureBrowserRunning(context.projectPath);
-  const { levelFilter, limit, offset, format } = parseArgs(context);
+export default defineCommand({
+  args: {
+    level: z.string().nullable().default(null),
+    limit: z.number().default(50),
+    offset: z.number().default(0),
+    format: z.enum(['json', 'markdown']).default('markdown'),
+  },
+  handler: (ctx) => {
+    const state = ensureBrowserRunning(ctx.projectPath);
+    const { level: levelFilter, limit, offset, format } = ctx.args;
 
-  if (!existsSync(state.consoleLogPath)) {
-    return emptyResponse(format);
-  }
+    if (!existsSync(state.consoleLogPath)) {
+      return emptyResponse(format);
+    }
 
-  const raw = readFileSync(state.consoleLogPath, 'utf-8').trim();
-  if (raw.length === 0) {
-    return emptyResponse(format);
-  }
+    const raw = readFileSync(state.consoleLogPath, 'utf-8').trim();
+    if (raw.length === 0) {
+      return emptyResponse(format);
+    }
 
-  const allLines = raw.split('\n');
-  let entries: ConsoleEntry[] = allLines
-    .slice(offset)
-    .map((line) => JSON.parse(line) as ConsoleEntry);
+    const allLines = raw.split('\n');
+    let entries: ConsoleEntry[] = allLines
+      .slice(offset)
+      .map((line) => JSON.parse(line) as ConsoleEntry);
 
-  if (levelFilter) {
-    entries = entries.filter((e) => e.level === levelFilter);
-  }
+    if (levelFilter) {
+      entries = entries.filter((e) => e.level === levelFilter);
+    }
 
-  entries = entries.slice(-limit);
+    entries = entries.slice(-limit);
 
-  return format === 'json'
-    ? formatAsJson(entries, allLines.length)
-    : formatAsMarkdown(entries);
-}
+    return format === 'json'
+      ? formatAsJson(entries, allLines.length)
+      : formatAsMarkdown(entries);
+  },
+});
