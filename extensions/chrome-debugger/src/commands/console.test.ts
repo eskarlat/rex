@@ -41,7 +41,7 @@ afterEach(() => {
 
 describe('console', () => {
   it('returns message when no log file exists', () => {
-    const result = consoleCommand(makeContext());
+    const result = consoleCommand.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('No console messages');
   });
@@ -53,7 +53,7 @@ describe('console', () => {
     ];
     writeFileSync(CONSOLE_LOG, entries.join('\n'));
 
-    const result = consoleCommand(makeContext());
+    const result = consoleCommand.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Console Messages (2)');
     expect(result.output).toContain('LOG');
@@ -69,7 +69,7 @@ describe('console', () => {
     ];
     writeFileSync(CONSOLE_LOG, entries.join('\n'));
 
-    const result = consoleCommand(makeContext({ level: 'error' }));
+    const result = consoleCommand.handler(makeContext({ level: 'error' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('1)');
     expect(result.output).toContain('Error msg');
@@ -86,7 +86,7 @@ describe('console', () => {
     );
     writeFileSync(CONSOLE_LOG, entries.join('\n'));
 
-    const result = consoleCommand(makeContext({ limit: 3 }));
+    const result = consoleCommand.handler(makeContext({ limit: 3 }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('3)');
   });
@@ -102,7 +102,7 @@ describe('console', () => {
     writeFileSync(CONSOLE_LOG, entries.join('\n'));
 
     // Offset 3 means skip first 3 lines, leaving 2 entries
-    const result = consoleCommand(makeContext({ offset: 3 }));
+    const result = consoleCommand.handler(makeContext({ offset: 3 }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Console Messages (2)');
     expect(result.output).toContain('Message 3');
@@ -117,7 +117,7 @@ describe('console', () => {
     ];
     writeFileSync(CONSOLE_LOG, entries.join('\n'));
 
-    const result = consoleCommand(makeContext({ format: 'json' }));
+    const result = consoleCommand.handler(makeContext({ format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toHaveLength(2);
@@ -127,7 +127,7 @@ describe('console', () => {
   });
 
   it('returns empty json when no log file and format=json', () => {
-    const result = consoleCommand(makeContext({ format: 'json' }));
+    const result = consoleCommand.handler(makeContext({ format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toEqual([]);
@@ -136,7 +136,7 @@ describe('console', () => {
 
   it('returns empty json when log file is empty and format=json', () => {
     writeFileSync(CONSOLE_LOG, '');
-    const result = consoleCommand(makeContext({ format: 'json' }));
+    const result = consoleCommand.handler(makeContext({ format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toEqual([]);
@@ -153,7 +153,7 @@ describe('console', () => {
     );
     writeFileSync(CONSOLE_LOG, entries.join('\n'));
 
-    const result = consoleCommand(makeContext({ offset: 2, limit: 3, format: 'json' }));
+    const result = consoleCommand.handler(makeContext({ offset: 2, limit: 3, format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toHaveLength(3);

@@ -58,19 +58,19 @@ beforeEach(() => {
 
 describe('tab', () => {
   it('returns error when index is not provided', async () => {
-    const result = await tab(makeContext());
+    const result = await tab.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('--index <number> is required');
   });
 
   it('returns error when index is NaN', async () => {
-    const result = await tab(makeContext({ index: 'abc' }));
+    const result = await tab.handler(makeContext({ index: 'abc' }));
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('--index <number> is required');
   });
 
   it('switches to tab by --index arg', async () => {
-    const result = await tab(makeContext({ index: 1 }));
+    const result = await tab.handler(makeContext({ index: 1 }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Switched Tab');
     expect(result.output).toContain('**Index**: 1');
@@ -80,7 +80,7 @@ describe('tab', () => {
   });
 
   it('switches to tab using positional arg', async () => {
-    const result = await tab({
+    const result = await tab.handler({
       projectName: 'test',
       projectPath: '/tmp/test-project',
       args: { _positional: [0] },
@@ -91,7 +91,7 @@ describe('tab', () => {
   });
 
   it('prefers --index over positional arg', async () => {
-    const result = await tab({
+    const result = await tab.handler({
       projectName: 'test',
       projectPath: '/tmp/test-project',
       args: { _positional: [5], index: 1 },
@@ -101,18 +101,18 @@ describe('tab', () => {
     expect(result.output).toContain('**Index**: 1');
   });
 
-  it('disconnects browser after execution', async () => {
-    await tab(makeContext({ index: 0 }));
-    expect(mockDisconnect).toHaveBeenCalled();
+  it('keeps connection cached after execution', async () => {
+    await tab.handler(makeContext({ index: 0 }));
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
-  it('disconnects browser even on error', async () => {
-    await expect(tab(makeContext({ index: 99 }))).rejects.toThrow('out of range');
-    expect(mockDisconnect).toHaveBeenCalled();
+  it('keeps connection cached even on error', async () => {
+    await expect(tab.handler(makeContext({ index: 99 }))).rejects.toThrow('out of range');
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
   it('calls ensureBrowserRunning', async () => {
-    await tab(makeContext({ index: 0 }));
+    await tab.handler(makeContext({ index: 0 }));
     expect(mockEnsureBrowserRunning).toHaveBeenCalledWith('/tmp/test-project');
   });
 });

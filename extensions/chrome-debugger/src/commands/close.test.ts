@@ -6,16 +6,28 @@ import type { ExecutionContext } from '../shared/types.js';
 import { writeState, readState } from '../shared/state.js';
 
 const mockClose = vi.fn();
+const mockDisconnectCached = vi.fn();
 
 vi.mock('puppeteer', () => ({
   default: {
     connect: vi.fn().mockImplementation(() =>
       Promise.resolve({
         close: mockClose,
+        connected: true,
+        on: vi.fn(),
+        disconnect: vi.fn(),
       })
     ),
   },
 }));
+
+vi.mock('../shared/connection.js', async () => {
+  const actual = await vi.importActual<typeof import('../shared/connection.js')>('../shared/connection.js');
+  return {
+    ...actual,
+    disconnectCachedBrowser: (...args: unknown[]) => mockDisconnectCached(...args),
+  };
+});
 
 import close from './close.js';
 
@@ -42,7 +54,7 @@ afterEach(() => {
 
 describe('close', () => {
   it('returns error when no browser is running', async () => {
-    const result = await close(makeContext());
+    const result = await close.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No browser is running');
   });
@@ -53,7 +65,7 @@ describe('close', () => {
 
     writeState(TEST_DIR, {
       wsEndpoint: 'ws://localhost:9222',
-      pid: 99999,
+      pid: process.pid,
       port: 9222,
       launchedAt: '2024-01-01T00:00:00Z',
       networkLogPath: networkLog,
@@ -62,11 +74,12 @@ describe('close', () => {
     writeFileSync(networkLog, 'log data');
     writeFileSync(consoleLog, 'console data');
 
-    const result = await close(makeContext());
+    const result = await close.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Browser Closed');
-    expect(result.output).toContain('99999');
+    expect(result.output).toContain(String(process.pid));
     expect(mockClose).toHaveBeenCalled();
+    expect(mockDisconnectCached).toHaveBeenCalled();
 
     // State should be deleted
     expect(readState(TEST_DIR)).toBeNull();

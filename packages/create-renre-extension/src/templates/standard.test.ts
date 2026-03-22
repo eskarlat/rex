@@ -54,9 +54,9 @@ describe('standard templates', () => {
   });
 
   describe('getStandardCommandHandler', () => {
-    it('generates a default export function with name', () => {
+    it('generates a defineCommand export with name', () => {
       const result = getStandardCommandHandler('my-ext');
-      expect(result).toContain('export default function hello');
+      expect(result).toContain('export default defineCommand');
       expect(result).toContain('Hello from my-ext!');
     });
   });

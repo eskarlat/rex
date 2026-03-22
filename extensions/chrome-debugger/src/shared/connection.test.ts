@@ -14,16 +14,30 @@ vi.mock('./state.js', () => ({
   ensureBrowserRunning: mockEnsure,
 }));
 
-import { connectBrowser, getActivePage, getPageByIndex, withBrowser } from './connection.js';
+import {
+  connectBrowser,
+  disconnectCachedBrowser,
+  getActivePage,
+  getPageByIndex,
+  withBrowser,
+} from './connection.js';
 
 const mockDisconnect = vi.fn();
 const mockPages = vi.fn();
+const mockOn = vi.fn();
 
-function makeBrowser(): Browser {
-  return { pages: mockPages, disconnect: mockDisconnect } as unknown as Browser;
+function makeBrowser(connected = true): Browser {
+  return {
+    pages: mockPages,
+    disconnect: mockDisconnect,
+    on: mockOn,
+    connected,
+  } as unknown as Browser;
 }
 
 beforeEach(() => {
+  // Reset cached connection before clearing mocks so disconnect mock is callable
+  disconnectCachedBrowser();
   vi.clearAllMocks();
   mockEnsure.mockReturnValue({ wsEndpoint: 'ws://localhost:9222' });
 });
@@ -35,6 +49,77 @@ describe('connectBrowser', () => {
     const result = await connectBrowser('/tmp/test');
     expect(mockConnect).toHaveBeenCalledWith({ browserWSEndpoint: 'ws://localhost:9222' });
     expect(result).toBe(browser);
+  });
+
+  it('reuses cached connection on subsequent calls', async () => {
+    const browser = makeBrowser();
+    mockConnect.mockResolvedValue(browser);
+
+    const first = await connectBrowser('/tmp/test');
+    const second = await connectBrowser('/tmp/test');
+
+    expect(mockConnect).toHaveBeenCalledTimes(1);
+    expect(first).toBe(second);
+  });
+
+  it('uses separate cache entries for different endpoints', async () => {
+    const browser1 = makeBrowser();
+    const browser2 = makeBrowser();
+    mockEnsure
+      .mockReturnValueOnce({ wsEndpoint: 'ws://localhost:9222' })
+      .mockReturnValueOnce({ wsEndpoint: 'ws://localhost:9333' });
+    mockConnect.mockResolvedValueOnce(browser1).mockResolvedValueOnce(browser2);
+
+    const first = await connectBrowser('/tmp/project-a');
+    const second = await connectBrowser('/tmp/project-b');
+
+    expect(mockConnect).toHaveBeenCalledTimes(2);
+    expect(first).toBe(browser1);
+    expect(second).toBe(browser2);
+  });
+
+  it('reconnects when cached browser is disconnected', async () => {
+    const browser1 = makeBrowser(true);
+    const browser2 = makeBrowser(true);
+    mockConnect.mockResolvedValueOnce(browser1).mockResolvedValueOnce(browser2);
+
+    await connectBrowser('/tmp/test');
+
+    // Simulate disconnection
+    Object.defineProperty(browser1, 'connected', { value: false });
+
+    const result = await connectBrowser('/tmp/test');
+    expect(mockConnect).toHaveBeenCalledTimes(2);
+    expect(result).toBe(browser2);
+  });
+
+  it('registers disconnected listener to clear cache', async () => {
+    const browser = makeBrowser();
+    mockConnect.mockResolvedValue(browser);
+
+    await connectBrowser('/tmp/test');
+    expect(mockOn).toHaveBeenCalledWith('disconnected', expect.any(Function));
+  });
+});
+
+describe('disconnectCachedBrowser', () => {
+  it('disconnects and clears cached browser', async () => {
+    const browser = makeBrowser();
+    mockConnect.mockResolvedValue(browser);
+
+    await connectBrowser('/tmp/test');
+    disconnectCachedBrowser();
+
+    expect(mockDisconnect).toHaveBeenCalled();
+
+    // Next call should reconnect
+    mockConnect.mockResolvedValue(makeBrowser());
+    await connectBrowser('/tmp/test');
+    expect(mockConnect).toHaveBeenCalledTimes(2);
+  });
+
+  it('does nothing when no cached browser exists', () => {
+    expect(() => disconnectCachedBrowser()).not.toThrow();
   });
 });
 
@@ -72,7 +157,7 @@ describe('getPageByIndex', () => {
 });
 
 describe('withBrowser', () => {
-  it('calls fn with browser and page, then disconnects', async () => {
+  it('calls fn with browser and page without disconnecting', async () => {
     const page = { url: () => 'test' } as unknown as Page;
     const browser = makeBrowser();
     mockConnect.mockResolvedValue(browser);
@@ -83,10 +168,11 @@ describe('withBrowser', () => {
 
     expect(result).toBe('result');
     expect(fn).toHaveBeenCalledWith(browser, page);
-    expect(mockDisconnect).toHaveBeenCalled();
+    // Should NOT disconnect — connection is cached for reuse
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
-  it('disconnects even on error', async () => {
+  it('does not disconnect on error (connection stays cached)', async () => {
     const page = { url: () => 'test' } as unknown as Page;
     const browser = makeBrowser();
     mockConnect.mockResolvedValue(browser);
@@ -94,6 +180,6 @@ describe('withBrowser', () => {
 
     const fn = vi.fn().mockRejectedValue(new Error('fail'));
     await expect(withBrowser('/tmp/test', fn)).rejects.toThrow('fail');
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 });

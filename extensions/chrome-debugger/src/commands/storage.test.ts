@@ -36,7 +36,7 @@ describe('storage', () => {
       { key: 'lang', value: 'en' },
     ]);
 
-    const result = await storage(makeContext());
+    const result = await storage.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('localStorage (2 entries)');
     expect(result.output).toContain('theme');
@@ -50,7 +50,7 @@ describe('storage', () => {
       { key: 'token', value: 'abc123' },
     ]);
 
-    const result = await storage(makeContext({ type: 'session' }));
+    const result = await storage.handler(makeContext({ type: 'session' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('sessionStorage (1 entries)');
     expect(result.output).toContain('token');
@@ -60,7 +60,7 @@ describe('storage', () => {
   it('returns empty message for localStorage', async () => {
     mockEvaluate.mockResolvedValue([]);
 
-    const result = await storage(makeContext());
+    const result = await storage.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toBe('localStorage is empty.');
   });
@@ -68,7 +68,7 @@ describe('storage', () => {
   it('returns empty message for sessionStorage', async () => {
     mockEvaluate.mockResolvedValue([]);
 
-    const result = await storage(makeContext({ type: 'session' }));
+    const result = await storage.handler(makeContext({ type: 'session' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toBe('sessionStorage is empty.');
   });
@@ -76,14 +76,14 @@ describe('storage', () => {
   it('passes storage type to page.evaluate', async () => {
     mockEvaluate.mockResolvedValue([]);
 
-    await storage(makeContext({ type: 'session' }));
+    await storage.handler(makeContext({ type: 'session' }));
     expect(mockEvaluate).toHaveBeenCalledWith(expect.any(Function), 'session');
   });
 
   it('defaults to local storage type', async () => {
     mockEvaluate.mockResolvedValue([]);
 
-    await storage(makeContext());
+    await storage.handler(makeContext());
     expect(mockEvaluate).toHaveBeenCalledWith(expect.any(Function), 'local');
   });
 
@@ -92,7 +92,7 @@ describe('storage', () => {
       { key: 'a', value: '1' },
     ]);
 
-    const result = await storage(makeContext());
+    const result = await storage.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('| Key | Value |');
     expect(result.output).toContain('| --- | --- |');

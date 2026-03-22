@@ -43,7 +43,7 @@ describe('chrome-check', () => {
     mockExecPath.mockReturnValue('/home/user/.cache/puppeteer/chromium/chrome');
     mockExistsSync.mockReturnValue(true);
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
@@ -59,7 +59,7 @@ describe('chrome-check', () => {
       return false;
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
@@ -70,7 +70,7 @@ describe('chrome-check', () => {
     mockExecPath.mockReturnValue('/home/user/.cache/puppeteer/chromium/chrome');
     mockExistsSync.mockReturnValue(false);
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(false);
@@ -83,7 +83,7 @@ describe('chrome-check', () => {
     });
     mockExistsSync.mockReturnValue(false);
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(false);
@@ -99,7 +99,7 @@ describe('chrome-check', () => {
       return path === '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
@@ -115,7 +115,7 @@ describe('chrome-check', () => {
       return path === '/Applications/Chromium.app/Contents/MacOS/Chromium';
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
@@ -130,7 +130,7 @@ describe('chrome-check', () => {
       return path === '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
@@ -145,7 +145,7 @@ describe('chrome-check', () => {
       return path === 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
@@ -161,7 +161,7 @@ describe('chrome-check', () => {
       return path === 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
@@ -176,7 +176,7 @@ describe('chrome-check', () => {
       return path === '/snap/bin/chromium';
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
@@ -192,7 +192,7 @@ describe('chrome-check', () => {
       return path === '/usr/bin/google-chrome-stable';
     });
 
-    const result = chromeCheck(makeContext());
+    const result = chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');

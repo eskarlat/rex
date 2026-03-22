@@ -8,33 +8,59 @@
 
 // --- DOM ---
 
-function serializeNode(node: Element, currentDepth: number, truncateText?: number): string {
-  if (currentDepth <= 0) return '...';
-  const tag = node.tagName.toLowerCase();
-  const attrs = Array.from(node.attributes)
-    .map((a) => `${a.name}="${a.value}"`)
-    .join(' ');
-  const open = attrs ? `<${tag} ${attrs}>` : `<${tag}>`;
-
-  if (node.children.length === 0) {
-    let text = node.textContent?.trim() ?? '';
-    if (truncateText !== undefined) text = text.slice(0, truncateText);
-    return text ? `${open}${text}</${tag}>` : `${open}</${tag}>`;
-  }
-
-  const children = Array.from(node.children)
-    .map((child) => serializeNode(child, currentDepth - 1, truncateText))
-    .join('\n');
-  return `${open}\n${children}\n</${tag}>`;
-}
+// serializeNode is inlined into each exported function so it's available
+// in the browser context when passed to page.evaluate().
 
 export function serializeSubtree(sel: string, maxDepth: number): string {
+  function serializeNode(node: Element, currentDepth: number, truncateText?: number): string {
+    if (currentDepth <= 0) return '...';
+    const tag = node.tagName.toLowerCase();
+    const attrs = Array.from(node.attributes)
+      .map((a) => `${a.name}="${a.value}"`)
+      .join(' ');
+    const open = attrs ? `<${tag} ${attrs}>` : `<${tag}>`;
+
+    if (node.children.length === 0) {
+      let text = node.textContent?.trim() ?? '';
+      if (truncateText !== undefined) text = text.slice(0, truncateText);
+      return text ? `${open}${text}</${tag}>` : `${open}</${tag}>`;
+    }
+
+    const children = Array.from(node.children)
+      .map((child) => serializeNode(child, currentDepth - 1, truncateText))
+      .join('\n');
+    return `${open}\n${children}\n</${tag}>`;
+  }
+
   const el = document.querySelector(sel);
   if (!el) return `No element found for selector: ${sel}`;
   return serializeNode(el, maxDepth);
 }
 
+// serializeNode is duplicated here because serializeFullPage runs in browser
+// context via page.evaluate() and cannot reference serializeSubtree.
 export function serializeFullPage(maxDepth: number): string {
+  // eslint-disable-next-line sonarjs/no-identical-functions
+  function serializeNode(node: Element, currentDepth: number, truncateText?: number): string {
+    if (currentDepth <= 0) return '...';
+    const tag = node.tagName.toLowerCase();
+    const attrs = Array.from(node.attributes)
+      .map((a) => `${a.name}="${a.value}"`)
+      .join(' ');
+    const open = attrs ? `<${tag} ${attrs}>` : `<${tag}>`;
+
+    if (node.children.length === 0) {
+      let text = node.textContent?.trim() ?? '';
+      if (truncateText !== undefined) text = text.slice(0, truncateText);
+      return text ? `${open}${text}</${tag}>` : `${open}</${tag}>`;
+    }
+
+    const children = Array.from(node.children)
+      .map((child) => serializeNode(child, currentDepth - 1, truncateText))
+      .join('\n');
+    return `${open}\n${children}\n</${tag}>`;
+  }
+
   return serializeNode(document.documentElement, maxDepth, 100);
 }
 

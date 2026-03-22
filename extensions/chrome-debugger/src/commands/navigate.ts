@@ -1,29 +1,32 @@
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
 import { withBrowser } from '../shared/connection.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
-export default async function navigate(context: ExecutionContext): Promise<CommandResult> {
-  const url = context.args.url;
-  if (typeof url !== 'string' || url.length === 0) {
-    return { output: 'Error: --url is required', exitCode: 1 };
-  }
+export default defineCommand({
+  args: {
+    url: z.string({ required_error: '--url is required' }).min(1, '--url is required'),
+    wait: z.enum(['load', 'domcontentloaded']).default('domcontentloaded'),
+  },
+  handler: async (ctx) => {
+    const { url, wait } = ctx.args;
 
-  return withBrowser(context.projectPath, async (_browser, page) => {
-    const waitUntil = context.args.wait === 'load' ? 'load' : 'domcontentloaded';
-    const response = await page.goto(url, { waitUntil });
+    return withBrowser(ctx.projectPath, async (_browser, page) => {
+      const response = await page.goto(url, { waitUntil: wait });
 
-    const status = response?.status() ?? 0;
-    const title = await page.title();
-    const finalUrl = page.url();
+      const status = response?.status() ?? 0;
+      const title = await page.title();
+      const finalUrl = page.url();
 
-    return {
-      output: [
-        '## Navigated',
-        '',
-        `- **URL**: ${finalUrl}`,
-        `- **Title**: ${title}`,
-        `- **Status**: ${String(status)}`,
-      ].join('\n'),
-      exitCode: 0,
-    };
-  });
-}
+      return {
+        output: [
+          '## Navigated',
+          '',
+          `- **URL**: ${finalUrl}`,
+          `- **Title**: ${title}`,
+          `- **Status**: ${String(status)}`,
+        ].join('\n'),
+        exitCode: 0,
+      };
+    });
+  },
+});

@@ -61,20 +61,20 @@ describe('screenshot', () => {
   it('takes a full page screenshot and saves to default path', async () => {
     mockScreenshot.mockResolvedValue(undefined);
 
-    const result = await screenshot(makeContext());
+    const result = await screenshot.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Screenshot Saved');
     expect(result.output).toContain('full page');
     expect(result.output).toContain('**Full page**: no');
     expect(mockScreenshot).toHaveBeenCalledWith(
-      expect.objectContaining({ fullPage: false })
+      expect.objectContaining({ fullPage: undefined })
     );
   });
 
   it('takes a full page screenshot when --full-page is set', async () => {
     mockScreenshot.mockResolvedValue(undefined);
 
-    const result = await screenshot(makeContext({ 'full-page': true }));
+    const result = await screenshot.handler(makeContext({ 'full-page': true }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('**Full page**: yes');
     expect(mockScreenshot).toHaveBeenCalledWith(
@@ -85,7 +85,7 @@ describe('screenshot', () => {
   it('takes a full page screenshot when --fullPage is set', async () => {
     mockScreenshot.mockResolvedValue(undefined);
 
-    const result = await screenshot(makeContext({ fullPage: true }));
+    const result = await screenshot.handler(makeContext({ fullPage: true }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('**Full page**: yes');
   });
@@ -93,7 +93,7 @@ describe('screenshot', () => {
   it('returns error when selector element not found', async () => {
     mock$.mockResolvedValue(null);
 
-    const result = await screenshot(makeContext({ selector: '#missing' }));
+    const result = await screenshot.handler(makeContext({ selector: '#missing' }));
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No element found');
     expect(result.output).toContain('#missing');
@@ -106,7 +106,7 @@ describe('screenshot', () => {
     mock$.mockResolvedValue(mockElement);
     mockElementScreenshot.mockResolvedValue(undefined);
 
-    const result = await screenshot(makeContext({ selector: '#hero' }));
+    const result = await screenshot.handler(makeContext({ selector: '#hero' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Screenshot Saved');
     expect(result.output).toContain('#hero');
@@ -117,7 +117,7 @@ describe('screenshot', () => {
     const outputPath = join(TEST_DIR, 'custom', 'my-screenshot.png');
     mockScreenshot.mockResolvedValue(undefined);
 
-    const result = await screenshot(makeContext({ output: outputPath }));
+    const result = await screenshot.handler(makeContext({ output: outputPath }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain(outputPath);
   });
@@ -125,7 +125,7 @@ describe('screenshot', () => {
   it('returns base64 encoded screenshot when --encoded is set', async () => {
     mockScreenshot.mockResolvedValue('base64data');
 
-    const result = await screenshot(makeContext({ encoded: true }));
+    const result = await screenshot.handler(makeContext({ encoded: true }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('data:image/png;base64,base64data');
     expect(mockScreenshot).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe('screenshot', () => {
     mock$.mockResolvedValue(mockElement);
     mockElementScreenshot.mockResolvedValue('element-base64');
 
-    const result = await screenshot(makeContext({ encoded: true, selector: '.hero' }));
+    const result = await screenshot.handler(makeContext({ encoded: true, selector: '.hero' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('data:image/png;base64,element-base64');
     expect(result.output).toContain('Screenshot: `.hero`');
@@ -154,7 +154,7 @@ describe('screenshot', () => {
     mkdirSync(customDir, { recursive: true });
     mockScreenshot.mockResolvedValue(undefined);
 
-    const result = await screenshot(makeContext({ dir: customDir }));
+    const result = await screenshot.handler(makeContext({ dir: customDir }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Screenshot Saved');
   });
@@ -162,7 +162,7 @@ describe('screenshot', () => {
   it('registers screenshot metadata', async () => {
     mockScreenshot.mockResolvedValue(undefined);
 
-    await screenshot(makeContext());
+    await screenshot.handler(makeContext());
 
     const metaPath = join(SCREENSHOT_DIR, 'screenshots.jsonl');
     expect(existsSync(metaPath)).toBe(true);
@@ -170,14 +170,14 @@ describe('screenshot', () => {
     const content = readFileSync(metaPath, 'utf-8').trim();
     const meta = JSON.parse(content);
     expect(meta.url).toBe('https://example.com');
-    expect(meta.selector).toBeNull();
-    expect(meta.fullPage).toBe(false);
+    expect(meta.selector).toBeUndefined();
+    expect(meta.fullPage).toBeUndefined();
   });
 
   it('shows full page label in encoded output without selector', async () => {
     mockScreenshot.mockResolvedValue('b64');
 
-    const result = await screenshot(makeContext({ encoded: true }));
+    const result = await screenshot.handler(makeContext({ encoded: true }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Screenshot (full page)');
   });

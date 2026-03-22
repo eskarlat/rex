@@ -228,14 +228,45 @@ Every extension contains a `manifest.json` that declares its capabilities:
 
 ### 4.5 Extension Command Contract
 
-Every extension command exports a standard interface. The CLI injects an `ExecutionContext` object:
+Commands use `defineCommand()` from `@renre-kit/extension-sdk/node`. The CLI injects a `TypedContext` object:
 
 | Context Property | Type                | Description                                            |
 | ---------------- | ------------------- | ------------------------------------------------------ |
 | `projectName`    | string              | Name of the current project                            |
 | `projectPath`    | string              | Absolute path to the project root                      |
-| `args`           | Record<string, any> | Parsed command arguments and flags                     |
+| `args`           | Record<string, any> | Parsed command arguments and flags (typed when using `defineCommand` with `args`) |
 | `config`         | Record<string, any> | Extension-specific configuration from project manifest |
+
+**`defineCommand()`** — The recommended way to define commands. Accepts an inline `args` Zod shape for typed validation and a `handler` function. The CLI detects the `defineCommand` output, extracts `handler` + `argsSchema`, validates args before execution, and applies defaults. Commands that don't use the context can omit the parameter entirely.
+
+```typescript
+// commands/greet.ts — with typed args
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
+export default defineCommand({
+  args: {
+    name: z.string({ required_error: '--name is required' }),
+    loud: z.boolean().default(false),
+  },
+  handler: (ctx) => {
+    ctx.args.name; // string (typed)
+    ctx.args.loud; // boolean (defaults to false)
+  },
+});
+```
+
+```typescript
+// commands/heartbeat.ts — no args, no context needed
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
+export default defineCommand({
+  handler: () => {
+    return { output: JSON.stringify({ ok: true }), exitCode: 0 };
+  },
+});
+```
+
+> **Legacy pattern**: Bare default export function + separate `export const argsSchema` still works for backward compatibility.
 
 ### 4.6 Git-Based Registry
 

@@ -28,7 +28,7 @@ describe('heartbeat', () => {
   it('returns updated:false when no session exists', () => {
     mockReadGlobalSession.mockReturnValue(null);
 
-    const result = heartbeat(makeContext());
+    const result = heartbeat.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.updated).toBe(false);
@@ -50,7 +50,7 @@ describe('heartbeat', () => {
     };
     mockReadGlobalSession.mockReturnValue(session);
 
-    const result = heartbeat(makeContext());
+    const result = heartbeat.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.updated).toBe(true);

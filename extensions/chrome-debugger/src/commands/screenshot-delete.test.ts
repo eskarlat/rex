@@ -28,21 +28,21 @@ afterEach(() => {
 
 describe('screenshot-delete', () => {
   it('returns error when --path argument is missing', () => {
-    const result = screenshotDelete(makeContext());
+    const result = screenshotDelete.handler(makeContext());
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Missing --path argument');
   });
 
   it('returns error when path is not a string', () => {
-    const result = screenshotDelete(makeContext({ path: 42 }));
+    const result = screenshotDelete.handler(makeContext({ path: 42 }));
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Missing --path argument');
   });
 
   it('rejects paths outside the screenshot directory', () => {
-    const result = screenshotDelete(makeContext({ path: '/etc/passwd' }));
+    const result = screenshotDelete.handler(makeContext({ path: '/etc/passwd' }));
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Path must be inside the screenshot directory');
@@ -50,7 +50,7 @@ describe('screenshot-delete', () => {
 
   it('rejects relative path traversal', () => {
     const traversalPath = join(SCREENSHOT_DIR, '..', '..', 'secret.json');
-    const result = screenshotDelete(makeContext({ path: traversalPath }));
+    const result = screenshotDelete.handler(makeContext({ path: traversalPath }));
     expect(result.exitCode).toBe(1);
     const output = JSON.parse(result.output);
     expect(output.error).toBe('Path must be inside the screenshot directory');
@@ -79,7 +79,7 @@ describe('screenshot-delete', () => {
     const metaPath = join(SCREENSHOT_DIR, 'screenshots.jsonl');
     writeFileSync(metaPath, [JSON.stringify(meta1), JSON.stringify(meta2)].join('\n'));
 
-    const result = screenshotDelete(makeContext({ path: imgPath }));
+    const result = screenshotDelete.handler(makeContext({ path: imgPath }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.deleted).toBe(true);
@@ -109,7 +109,7 @@ describe('screenshot-delete', () => {
     const metaPath = join(SCREENSHOT_DIR, 'screenshots.jsonl');
     writeFileSync(metaPath, JSON.stringify(meta));
 
-    const result = screenshotDelete(makeContext({ path: imgPath }));
+    const result = screenshotDelete.handler(makeContext({ path: imgPath }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.deleted).toBe(true);
@@ -123,7 +123,7 @@ describe('screenshot-delete', () => {
     const imgPath = join(SCREENSHOT_DIR, 'orphan.png');
     writeFileSync(imgPath, 'data');
 
-    const result = screenshotDelete(makeContext({ path: imgPath }));
+    const result = screenshotDelete.handler(makeContext({ path: imgPath }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.deleted).toBe(true);
@@ -135,7 +135,7 @@ describe('screenshot-delete', () => {
     const metaPath = join(SCREENSHOT_DIR, 'screenshots.jsonl');
     writeFileSync(metaPath, '');
 
-    const result = screenshotDelete(makeContext({ path: imgPath }));
+    const result = screenshotDelete.handler(makeContext({ path: imgPath }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.deleted).toBe(true);

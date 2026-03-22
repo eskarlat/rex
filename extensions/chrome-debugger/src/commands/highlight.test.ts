@@ -38,13 +38,13 @@ beforeEach(() => {
 
 describe('highlight', () => {
   it('returns error when selector is missing', async () => {
-    const result = await highlight(makeContext());
+    const result = await highlight.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('--selector is required');
   });
 
   it('returns error when selector is empty string', async () => {
-    const result = await highlight(makeContext({ selector: '' }));
+    const result = await highlight.handler(makeContext({ selector: '' }));
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('--selector is required');
   });
@@ -60,7 +60,7 @@ describe('highlight', () => {
       return Promise.resolve({});
     });
 
-    const resultPromise = highlight(makeContext({ selector: '#missing' }));
+    const resultPromise = highlight.handler(makeContext({ selector: '#missing' }));
     await vi.runAllTimersAsync();
     const result = await resultPromise;
 
@@ -80,7 +80,7 @@ describe('highlight', () => {
       return Promise.resolve({});
     });
 
-    const resultPromise = highlight(makeContext({ selector: '#btn' }));
+    const resultPromise = highlight.handler(makeContext({ selector: '#btn' }));
     await vi.runAllTimersAsync();
     const result = await resultPromise;
 
@@ -107,7 +107,7 @@ describe('highlight', () => {
       return Promise.resolve({});
     });
 
-    const resultPromise = highlight(makeContext({ selector: 'div', duration: 5000 }));
+    const resultPromise = highlight.handler(makeContext({ selector: 'div', duration: 5000 }));
     await vi.runAllTimersAsync();
     const result = await resultPromise;
 

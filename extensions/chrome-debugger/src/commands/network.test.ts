@@ -42,14 +42,14 @@ afterEach(() => {
 describe('network', () => {
   it('returns message when no log file exists', () => {
     rmSync(NETWORK_LOG, { force: true });
-    const result = network(makeContext());
+    const result = network.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('No network requests');
   });
 
   it('returns message when log file is empty', () => {
     writeFileSync(NETWORK_LOG, '');
-    const result = network(makeContext());
+    const result = network.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('No network requests');
   });
@@ -77,7 +77,7 @@ describe('network', () => {
     ];
     writeFileSync(NETWORK_LOG, entries.join('\n'));
 
-    const result = network(makeContext());
+    const result = network.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Network Requests (2)');
     expect(result.output).toContain('GET');
@@ -109,7 +109,7 @@ describe('network', () => {
     ];
     writeFileSync(NETWORK_LOG, entries.join('\n'));
 
-    const result = network(makeContext({ filter: 'api' }));
+    const result = network.handler(makeContext({ filter: 'api' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('1)');
     expect(result.output).toContain('users');
@@ -139,7 +139,7 @@ describe('network', () => {
     ];
     writeFileSync(NETWORK_LOG, entries.join('\n'));
 
-    const result = network(makeContext({ method: 'post' }));
+    const result = network.handler(makeContext({ method: 'post' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('1)');
     expect(result.output).toContain('POST');
@@ -160,7 +160,7 @@ describe('network', () => {
     );
     writeFileSync(NETWORK_LOG, entries.join('\n'));
 
-    const result = network(makeContext({ limit: 3 }));
+    const result = network.handler(makeContext({ limit: 3 }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('3)');
   });
@@ -180,7 +180,7 @@ describe('network', () => {
     writeFileSync(NETWORK_LOG, entries.join('\n'));
 
     // Offset 3 means skip first 3 lines, leaving 2 entries
-    const result = network(makeContext({ offset: 3 }));
+    const result = network.handler(makeContext({ offset: 3 }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Network Requests (2)');
     expect(result.output).toContain('item3');
@@ -211,7 +211,7 @@ describe('network', () => {
     ];
     writeFileSync(NETWORK_LOG, entries.join('\n'));
 
-    const result = network(makeContext({ format: 'json' }));
+    const result = network.handler(makeContext({ format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toHaveLength(2);
@@ -222,7 +222,7 @@ describe('network', () => {
 
   it('returns empty json when no log file and format=json', () => {
     rmSync(NETWORK_LOG, { force: true });
-    const result = network(makeContext({ format: 'json' }));
+    const result = network.handler(makeContext({ format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toEqual([]);
@@ -231,7 +231,7 @@ describe('network', () => {
 
   it('returns empty json when log file is empty and format=json', () => {
     writeFileSync(NETWORK_LOG, '');
-    const result = network(makeContext({ format: 'json' }));
+    const result = network.handler(makeContext({ format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toEqual([]);
@@ -252,7 +252,7 @@ describe('network', () => {
     );
     writeFileSync(NETWORK_LOG, entries.join('\n'));
 
-    const result = network(makeContext({ offset: 2, limit: 3, format: 'json' }));
+    const result = network.handler(makeContext({ offset: 2, limit: 3, format: 'json' }));
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.entries).toHaveLength(3);
