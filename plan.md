@@ -16,7 +16,7 @@ Users can interact with the page directly in the viewport (click, scroll, type),
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │  [favicon] Tab 1  ×  │  [favicon] Tab 2  ×  │  [+]   │  │
 │  ├───────────────────────────────────────────────────────┤  │
-│  │  ◀  ▶  ↻  │ 🔒 https://example.com   │ ⚙  [Dev Mode ◉] │  │
+│  │  ◀  ▶  ↻  │ 🔒 https://example.com      │  ⚙  [Dev ◉]  │  │
 │  ├───────────────────────────────────────────────────────┤  │
 │  │                                                       │  │
 │  │              LIVE VIEWPORT                            │  │
@@ -128,7 +128,6 @@ A single panel that renders a complete browser window chrome using the dashboard
 - Right side controls (separated by a `Separator`):
   - Settings gear (`Settings2`): dropdown with viewport preset selector
   - Dev Mode `Switch` with `Code2` icon label — toggles element inspector overlay
-  - Connection status dot inline: green `bg-emerald-500` / yellow `bg-yellow-500` / red `bg-destructive` (small 8px circle)
 
 ### 3. Viewport — The Core
 
@@ -382,7 +381,7 @@ function scaleToViewport(
 ### Step 7: Panel components
 - `EmptyState` — URL input + Launch button (when no browser running)
 - `TabBar` — renders tabs, handles switching
-- `AddressBar` — URL display/input, nav buttons, settings gear, dev mode switch, connection dot
+- `AddressBar` — URL display/input, nav buttons, settings gear, dev mode switch
 - `Viewport` — dual-canvas (screencast + overlay), focus management
 - `DevToolsOverlay` — element info card on selection
 - `BrowserChrome` — composites all above into the browser window
