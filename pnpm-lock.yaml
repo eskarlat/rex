@@ -287,7 +287,7 @@ importers:
         version: 19.2.4
       vitest:
         specifier: ^2.1.0
-        version: 2.1.9(@types/node@20.19.37)(jsdom@25.0.1)(lightningcss@1.32.0)
+        version: 2.1.9(@types/node@20.19.37)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.46.1)
 
   packages/cli:
     dependencies:
