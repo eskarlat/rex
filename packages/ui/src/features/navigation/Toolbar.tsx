@@ -42,6 +42,7 @@ const simplePaths: Record<string, string> = {
   marketplace: 'Marketplace',
   scheduler: 'Scheduler',
   logs: 'Logs',
+  notifications: 'Notifications',
 };
 
 function useBreadcrumbs(): Crumb[] {

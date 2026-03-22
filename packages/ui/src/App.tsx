@@ -15,6 +15,7 @@ import { RegistriesPage } from '@/features/settings/RegistriesPage';
 import { VaultSettingsPage } from '@/features/settings/VaultSettingsPage';
 import { ExtensionSettingsPage } from '@/features/settings/ExtensionSettingsPage';
 import { LogsPage } from '@/features/logs/LogsPage';
+import { NotificationsPage } from '@/features/notifications/NotificationsPage';
 import { AuthGate } from '@/features/auth/AuthGate';
 
 export function App() {
@@ -31,6 +32,7 @@ export function App() {
                     <Route path="/marketplace" element={<MarketplacePage />} />
                     <Route path="/scheduler" element={<ScheduledTasksPage />} />
                     <Route path="/logs" element={<LogsPage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/extensions/:name" element={<ExtensionPanelPage />} />
                     <Route path="/extensions/:name/:panelId" element={<ExtensionPanelPage />} />
                     <Route path="/settings" element={<SettingsLayout />}>

@@ -16,6 +16,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 const navLinks = [
@@ -37,10 +38,11 @@ interface NavMenuItemProps {
 
 function NavMenuItem({ to, end, icon: Icon, label }: Readonly<NavMenuItemProps>) {
   const match = useMatch({ path: to, end });
+  const { setOpenMobile } = useSidebar();
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={!!match} tooltip={label}>
-        <NavLink to={to} end={end}>
+        <NavLink to={to} end={end} onClick={() => setOpenMobile(false)}>
           <Icon />
           <span>{label}</span>
         </NavLink>
@@ -75,10 +77,11 @@ interface ExtensionMenuItemProps {
 function ExtensionMenuItem({ name, title, hasIcon }: Readonly<ExtensionMenuItemProps>) {
   const label = title ?? name;
   const match = useMatch({ path: `/extensions/${name}`, end: false });
+  const { setOpenMobile } = useSidebar();
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={!!match} tooltip={label}>
-        <NavLink to={`/extensions/${name}`}>
+        <NavLink to={`/extensions/${name}`} onClick={() => setOpenMobile(false)}>
           <ExtensionIcon name={name} hasIcon={hasIcon} />
           <span>{label}</span>
         </NavLink>
