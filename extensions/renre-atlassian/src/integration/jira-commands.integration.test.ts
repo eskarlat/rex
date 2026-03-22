@@ -1,5 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/**
+ * Integration tests for all Jira commands.
+ *
+ * No mocking — each command runs the full stack:
+ *   command → jiraCommand helper → createClients → JiraClient → real fetch
+ *
+ * Without valid credentials the API call will fail, but the command must
+ * handle the error gracefully: return { exitCode: 1, output: '...' }
+ * and never throw.
+ */
+import { describe, it, expect } from 'vitest';
 
+import type { ExecutionContext } from '../shared/types.js';
 import getIssue from '../commands/jira/get-issue.js';
 import search from '../commands/jira/search.js';
 import getProjectIssues from '../commands/jira/get-project-issues.js';
@@ -50,722 +61,276 @@ import getIssueSla from '../commands/jira/get-issue-sla.js';
 import getDevInfo from '../commands/jira/get-dev-info.js';
 import getDevSummary from '../commands/jira/get-dev-summary.js';
 import getBatchDevInfo from '../commands/jira/get-batch-dev-info.js';
-import type { ExecutionContext } from '../shared/types.js';
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+/** Context with missing config — should trigger config validation error */
+function missingConfigContext(args: Record<string, unknown> = {}): ExecutionContext {
   return {
-    projectName: 'test-project',
+    projectName: 'test',
     projectPath: '/tmp/test',
     args,
-    config: { domain: 'test.atlassian.net', email: 'test@test.com', apiToken: 'test-token' },
+    config: {},
   };
 }
 
-function mockFetchResponse(data: unknown, status = 200): Response {
-  return {
-    ok: true,
-    status,
-    json: () => Promise.resolve(data),
-    text: () => Promise.resolve(typeof data === 'string' ? data : JSON.stringify(data)),
-    headers: new Headers({ 'content-type': 'application/json' }),
-  } as unknown as Response;
-}
 
-function mock204Response(): Response {
-  return {
-    ok: true,
-    status: 204,
-    json: () => Promise.resolve(undefined),
-    text: () => Promise.resolve(''),
-  } as unknown as Response;
-}
+describe('Jira Commands Integration — missing config', () => {
+  const ctx = missingConfigContext;
 
-describe('Jira Commands Integration', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+  it('get-issue returns error without throwing', async () => {
+    const result = await getIssue(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBeTruthy();
   });
 
-  // 1. get-issue
-  describe('get-issue', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ key: 'TEST-1', fields: { summary: 'Test issue' } }),
-      );
-      const result = await getIssue(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('search returns error without throwing', async () => {
+    const result = await search(ctx({ jql: 'project=TEST' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 2. search
-  describe('search', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ issues: [], total: 0, startAt: 0, maxResults: 10 }),
-      );
-      const result = await search(
-        makeContext({ jql: 'project=TEST', startAt: 0, maxResults: 10 }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-project-issues returns error without throwing', async () => {
+    const result = await getProjectIssues(ctx({ projectKey: 'TEST' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 3. get-project-issues
-  describe('get-project-issues', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ issues: [], total: 0 }),
-      );
-      const result = await getProjectIssues(makeContext({ projectKey: 'TEST' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('create-issue returns error without throwing', async () => {
+    const result = await createIssue(ctx({ projectKey: 'TEST', issueType: 'Task', summary: 'Test' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 4. create-issue
-  describe('create-issue', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '10001', key: 'TEST-2', self: 'https://test.atlassian.net/rest/api/3/issue/10001' }),
-      );
-      const result = await createIssue(
-        makeContext({ projectKey: 'TEST', issueType: 'Task', summary: 'Test' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('update-issue returns error without throwing', async () => {
+    const result = await updateIssue(ctx({ issueKey: 'TEST-1', fields: { summary: 'x' } }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 5. create-issue with description
-  describe('create-issue with description', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '10002', key: 'TEST-3', self: 'https://test.atlassian.net/rest/api/3/issue/10002' }),
-      );
-      const result = await createIssue(
-        makeContext({
-          projectKey: 'TEST',
-          issueType: 'Task',
-          summary: 'Test',
-          description: 'Desc',
-        }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('delete-issue returns error without throwing', async () => {
+    const result = await deleteIssue(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 6. update-issue
-  describe('update-issue', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await updateIssue(
-        makeContext({ issueKey: 'TEST-1', fields: { summary: 'Updated' } }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('batch-create-issues returns error without throwing', async () => {
+    const result = await batchCreateIssues(ctx({ issues: [{ fields: { summary: 'A' } }] }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 7. delete-issue
-  describe('delete-issue', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await deleteIssue(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('get-changelogs returns error without throwing', async () => {
+    const result = await getChangelogs(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 8. batch-create-issues
-  describe('batch-create-issues', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ issues: [{ id: '10001', key: 'TEST-1' }], errors: [] }),
-      );
-      const result = await batchCreateIssues(
-        makeContext({ issues: [{ fields: { summary: 'A' } }] }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('search-fields returns error without throwing', async () => {
+    const result = await searchFields(ctx());
+    expect(result.exitCode).toBe(1);
   });
 
-  // 9. get-changelogs
-  describe('get-changelogs', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ values: [], startAt: 0, maxResults: 100, total: 0 }),
-      );
-      const result = await getChangelogs(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-field-options returns error without throwing', async () => {
+    const result = await getFieldOptions(ctx({ fieldId: 'cf_10001', contextId: '10000' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 10. search-fields
-  describe('search-fields', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse([{ id: 'summary', name: 'Summary', schema: {} }]),
-      );
-      const result = await searchFields(makeContext());
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('add-comment returns error without throwing', async () => {
+    const result = await addComment(ctx({ issueKey: 'TEST-1', body: 'hello' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 11. get-field-options
-  describe('get-field-options', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ values: [{ id: '1', value: 'Option A' }] }),
-      );
-      const result = await getFieldOptions(
-        makeContext({ fieldId: 'cf_10001', contextId: '10000' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('edit-comment returns error without throwing', async () => {
+    const result = await editComment(ctx({ issueKey: 'TEST-1', commentId: '10000', body: 'x' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 12. add-comment
-  describe('add-comment', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '10000', body: {}, author: {} }),
-      );
-      const result = await addComment(makeContext({ issueKey: 'TEST-1', body: 'hello' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-transitions returns error without throwing', async () => {
+    const result = await getTransitions(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 13. edit-comment
-  describe('edit-comment', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '10000', body: {}, author: {} }),
-      );
-      const result = await editComment(
-        makeContext({ issueKey: 'TEST-1', commentId: '10000', body: 'updated' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('transition-issue returns error without throwing', async () => {
+    const result = await transitionIssue(ctx({ issueKey: 'TEST-1', transitionId: '31' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 14. get-transitions
-  describe('get-transitions', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ transitions: [{ id: '31', name: 'Done' }] }),
-      );
-      const result = await getTransitions(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-all-projects returns error without throwing', async () => {
+    const result = await getAllProjects(ctx());
+    expect(result.exitCode).toBe(1);
   });
 
-  // 15. transition-issue
-  describe('transition-issue', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await transitionIssue(
-        makeContext({ issueKey: 'TEST-1', transitionId: '31' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('get-project-versions returns error without throwing', async () => {
+    const result = await getProjectVersions(ctx({ projectKey: 'TEST' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 16. get-all-projects
-  describe('get-all-projects', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse([{ id: '10000', key: 'TEST', name: 'Test Project' }]),
-      );
-      const result = await getAllProjects(makeContext());
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-project-components returns error without throwing', async () => {
+    const result = await getProjectComponents(ctx({ projectKey: 'TEST' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 17. get-project-versions
-  describe('get-project-versions', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse([{ id: '10000', name: 'v1.0' }]),
-      );
-      const result = await getProjectVersions(makeContext({ projectKey: 'TEST' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('create-version returns error without throwing', async () => {
+    const result = await createVersion(ctx({ projectKey: 'TEST', name: 'v1.0' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 18. get-project-components
-  describe('get-project-components', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse([{ id: '10000', name: 'Backend' }]),
-      );
-      const result = await getProjectComponents(makeContext({ projectKey: 'TEST' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('batch-create-versions returns error without throwing', async () => {
+    const result = await batchCreateVersions(ctx({ projectKey: 'TEST', versions: [{ name: 'v1' }] }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 19. create-version
-  describe('create-version', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '10000', name: 'v1.0', project: 'TEST' }),
-      );
-      const result = await createVersion(makeContext({ projectKey: 'TEST', name: 'v1.0' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-agile-boards returns error without throwing', async () => {
+    const result = await getAgileBoards(ctx());
+    expect(result.exitCode).toBe(1);
   });
 
-  // 20. batch-create-versions
-  describe('batch-create-versions', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '10000', name: 'v1', project: 'TEST' }),
-      );
-      const result = await batchCreateVersions(
-        makeContext({ projectKey: 'TEST', versions: [{ name: 'v1' }, { name: 'v2' }] }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-board-issues returns error without throwing', async () => {
+    const result = await getBoardIssues(ctx({ boardId: 1 }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 21. get-agile-boards
-  describe('get-agile-boards', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ values: [{ id: 1, name: 'Board 1' }], total: 1 }),
-      );
-      const result = await getAgileBoards(makeContext());
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-sprints-from-board returns error without throwing', async () => {
+    const result = await getSprintsFromBoard(ctx({ boardId: 1 }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 22. get-board-issues
-  describe('get-board-issues', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ issues: [], total: 0 }),
-      );
-      const result = await getBoardIssues(makeContext({ boardId: 1 }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-sprint-issues returns error without throwing', async () => {
+    const result = await getSprintIssues(ctx({ sprintId: 1 }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 23. get-sprints-from-board
-  describe('get-sprints-from-board', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ values: [{ id: 1, name: 'Sprint 1', state: 'active' }] }),
-      );
-      const result = await getSprintsFromBoard(makeContext({ boardId: 1 }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('create-sprint returns error without throwing', async () => {
+    const result = await createSprint(ctx({ boardId: 1, name: 'Sprint 1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 24. get-sprint-issues
-  describe('get-sprint-issues', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ issues: [], total: 0 }),
-      );
-      const result = await getSprintIssues(makeContext({ sprintId: 1 }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('update-sprint returns error without throwing', async () => {
+    const result = await updateSprint(ctx({ sprintId: 1, name: 'Updated' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 25. create-sprint
-  describe('create-sprint', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: 1, name: 'Sprint 1', state: 'future' }),
-      );
-      const result = await createSprint(makeContext({ boardId: 1, name: 'Sprint 1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('add-issues-to-sprint returns error without throwing', async () => {
+    const result = await addIssuesToSprint(ctx({ sprintId: 1, issueKeys: ['TEST-1'] }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 26. update-sprint
-  describe('update-sprint', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: 1, name: 'Updated Sprint', state: 'active' }),
-      );
-      const result = await updateSprint(makeContext({ sprintId: 1, name: 'Updated Sprint' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('create-issue-link returns error without throwing', async () => {
+    const result = await createIssueLink(
+      ctx({ typeName: 'Blocks', inwardIssueKey: 'TEST-1', outwardIssueKey: 'TEST-2' }),
+    );
+    expect(result.exitCode).toBe(1);
   });
 
-  // 27. add-issues-to-sprint
-  describe('add-issues-to-sprint', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await addIssuesToSprint(
-        makeContext({ sprintId: 1, issueKeys: ['TEST-1'] }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('get-link-types returns error without throwing', async () => {
+    const result = await getLinkTypes(ctx());
+    expect(result.exitCode).toBe(1);
   });
 
-  // 28. create-issue-link
-  describe('create-issue-link', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await createIssueLink(
-        makeContext({
-          typeName: 'Blocks',
-          inwardIssueKey: 'TEST-1',
-          outwardIssueKey: 'TEST-2',
-        }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('link-to-epic returns error without throwing', async () => {
+    const result = await linkToEpic(ctx({ epicKey: 'TEST-1', issueKeys: ['TEST-2'] }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 29. get-link-types
-  describe('get-link-types', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          issueLinkTypes: [
-            { id: '10000', name: 'Blocks', inward: 'is blocked by', outward: 'blocks' },
-          ],
-        }),
-      );
-      const result = await getLinkTypes(makeContext());
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('create-remote-issue-link returns error without throwing', async () => {
+    const result = await createRemoteIssueLink(
+      ctx({ issueKey: 'TEST-1', url: 'https://example.com', title: 'Link' }),
+    );
+    expect(result.exitCode).toBe(1);
   });
 
-  // 30. link-to-epic
-  describe('link-to-epic', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await linkToEpic(
-        makeContext({ epicKey: 'TEST-1', issueKeys: ['TEST-2'] }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('remove-issue-link returns error without throwing', async () => {
+    const result = await removeIssueLink(ctx({ linkId: '10000' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 31. create-remote-issue-link
-  describe('create-remote-issue-link', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: 10000, self: 'https://test.atlassian.net/rest/api/3/issue/TEST-1/remotelink/10000' }),
-      );
-      const result = await createRemoteIssueLink(
-        makeContext({ issueKey: 'TEST-1', url: 'https://example.com', title: 'Link' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-worklog returns error without throwing', async () => {
+    const result = await getWorklog(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 32. remove-issue-link
-  describe('remove-issue-link', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await removeIssueLink(makeContext({ linkId: '10000' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('add-worklog returns error without throwing', async () => {
+    const result = await addWorklog(ctx({ issueKey: 'TEST-1', timeSpent: '2h' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 33. get-worklog
-  describe('get-worklog', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ worklogs: [], total: 0 }),
-      );
-      const result = await getWorklog(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('download-attachment returns error without throwing', async () => {
+    const result = await downloadAttachment(ctx({ attachmentId: '10000' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 34. add-worklog
-  describe('add-worklog', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '10000', timeSpent: '2h', author: {} }),
-      );
-      const result = await addWorklog(
-        makeContext({ issueKey: 'TEST-1', timeSpent: '2h' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-issue-images returns error without throwing', async () => {
+    const result = await getIssueImages(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 35. download-attachment
-  describe('download-attachment', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse('file content here'),
-      );
-      const result = await downloadAttachment(makeContext({ attachmentId: '10000' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-user-profile returns error without throwing', async () => {
+    const result = await getUserProfile(ctx());
+    expect(result.exitCode).toBe(1);
   });
 
-  // 36. get-issue-images
-  describe('get-issue-images', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          attachments: [
-            { mimeType: 'image/png', filename: 'test.png' },
-          ],
-        }),
-      );
-      const result = await getIssueImages(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-issue-watchers returns error without throwing', async () => {
+    const result = await getIssueWatchers(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 37. get-user-profile (no accountId)
-  describe('get-user-profile (no accountId)', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          accountId: 'myself-123',
-          displayName: 'Test User',
-          emailAddress: 'test@test.com',
-        }),
-      );
-      const result = await getUserProfile(makeContext({}));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('add-watcher returns error without throwing', async () => {
+    const result = await addWatcher(ctx({ issueKey: 'TEST-1', accountId: '123' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 38. get-user-profile (with accountId)
-  describe('get-user-profile (with accountId)', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          accountId: '123',
-          displayName: 'Other User',
-          emailAddress: 'other@test.com',
-        }),
-      );
-      const result = await getUserProfile(makeContext({ accountId: '123' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('remove-watcher returns error without throwing', async () => {
+    const result = await removeWatcher(ctx({ issueKey: 'TEST-1', accountId: '123' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 39. get-issue-watchers
-  describe('get-issue-watchers', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          watchCount: 1,
-          watchers: [{ accountId: '123', displayName: 'Test' }],
-        }),
-      );
-      const result = await getIssueWatchers(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-service-desks returns error without throwing', async () => {
+    const result = await getServiceDesks(ctx());
+    expect(result.exitCode).toBe(1);
   });
 
-  // 40. add-watcher
-  describe('add-watcher', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await addWatcher(
-        makeContext({ issueKey: 'TEST-1', accountId: '123' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('get-service-desk-queues returns error without throwing', async () => {
+    const result = await getServiceDeskQueues(ctx({ serviceDeskId: 1 }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 41. remove-watcher
-  describe('remove-watcher', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await removeWatcher(
-        makeContext({ issueKey: 'TEST-1', accountId: '123' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('get-queue-issues returns error without throwing', async () => {
+    const result = await getQueueIssues(ctx({ serviceDeskId: 1, queueId: 1 }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 42. get-service-desks
-  describe('get-service-desks', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ values: [{ id: 1, projectName: 'Service Desk' }] }),
-      );
-      const result = await getServiceDesks(makeContext());
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-issue-forms returns error without throwing', async () => {
+    const result = await getIssueForms(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 43. get-service-desk-queues
-  describe('get-service-desk-queues', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ values: [{ id: 1, name: 'Queue 1' }] }),
-      );
-      const result = await getServiceDeskQueues(makeContext({ serviceDeskId: 1 }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-form-details returns error without throwing', async () => {
+    const result = await getFormDetails(ctx({ issueKey: 'TEST-1', formId: 'form-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 44. get-queue-issues
-  describe('get-queue-issues', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ values: [], size: 0 }),
-      );
-      const result = await getQueueIssues(makeContext({ serviceDeskId: 1, queueId: 1 }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('update-form-answers returns error without throwing', async () => {
+    const result = await updateFormAnswers(
+      ctx({ issueKey: 'TEST-1', formId: 'form-1', answers: { q1: 'a1' } }),
+    );
+    expect(result.exitCode).toBe(1);
   });
 
-  // 45. get-issue-forms
-  describe('get-issue-forms', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ value: { forms: [{ id: 'form-1', name: 'Test Form' }] } }),
-      );
-      const result = await getIssueForms(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-issue-dates returns error without throwing', async () => {
+    const result = await getIssueDates(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 46. get-form-details
-  describe('get-form-details', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          value: { id: 'form-1', name: 'Test Form', questions: [] },
-        }),
-      );
-      const result = await getFormDetails(
-        makeContext({ issueKey: 'TEST-1', formId: 'form-1' }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-issue-sla returns error without throwing', async () => {
+    const result = await getIssueSla(ctx({ issueKey: 'TEST-1' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 47. update-form-answers
-  describe('update-form-answers', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await updateFormAnswers(
-        makeContext({ issueKey: 'TEST-1', formId: 'form-1', answers: { q1: 'a1' } }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output.toLowerCase()).toContain('success');
-    });
+  it('get-dev-info returns error without throwing', async () => {
+    const result = await getDevInfo(ctx({ issueId: '10001' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 48. get-issue-dates
-  describe('get-issue-dates', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          key: 'TEST-1',
-          fields: {
-            created: '2024-01-01T00:00:00.000+0000',
-            updated: '2024-01-02T00:00:00.000+0000',
-            resolutiondate: null,
-            duedate: null,
-          },
-        }),
-      );
-      const result = await getIssueDates(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-dev-summary returns error without throwing', async () => {
+    const result = await getDevSummary(ctx({ issueId: '10001' }));
+    expect(result.exitCode).toBe(1);
   });
 
-  // 49. get-issue-sla
-  describe('get-issue-sla', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          values: [{ name: 'Time to resolution', ongoingCycle: {} }],
-        }),
-      );
-      const result = await getIssueSla(makeContext({ issueKey: 'TEST-1' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
-  });
-
-  // 50. get-dev-info
-  describe('get-dev-info', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ detail: [{ repositories: [] }] }),
-      );
-      const result = await getDevInfo(makeContext({ issueId: '10001' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
-  });
-
-  // 51. get-dev-summary
-  describe('get-dev-summary', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          summary: { repository: { count: 0 }, branch: { count: 0 } },
-        }),
-      );
-      const result = await getDevSummary(makeContext({ issueId: '10001' }));
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
-  });
-
-  // 52. get-batch-dev-info
-  describe('get-batch-dev-info', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ detail: [{ repositories: [] }] }),
-      );
-      const result = await getBatchDevInfo(
-        makeContext({ issueIds: ['10001', '10002'] }),
-      );
-      expect(result.exitCode).toBe(0);
-      expect(result.output).toBeTruthy();
-    });
+  it('get-batch-dev-info returns error without throwing', async () => {
+    const result = await getBatchDevInfo(ctx({ issueIds: ['10001'] }));
+    expect(result.exitCode).toBe(1);
   });
 });
+

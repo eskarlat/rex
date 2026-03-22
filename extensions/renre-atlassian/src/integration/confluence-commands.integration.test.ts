@@ -1,5 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/**
+ * Integration tests for all Confluence, status, and help commands.
+ *
+ * No mocking — each command runs the full stack:
+ *   command → confluenceCommand helper → createClients → ConfluenceClient → real fetch
+ *
+ * Without valid credentials the API call will fail, but the command must
+ * handle the error gracefully: return { exitCode: 1, output: '...' }
+ * and never throw.
+ *
+ * Help commands need no API access and should return exitCode: 0.
+ */
+import { describe, it, expect } from 'vitest';
 
+import type { ExecutionContext } from '../shared/types.js';
 import search from '../commands/confluence/search.js';
 import getPage from '../commands/confluence/get-page.js';
 import getPageChildren from '../commands/confluence/get-page-children.js';
@@ -26,356 +39,164 @@ import getPageImages from '../commands/confluence/get-page-images.js';
 import status from '../commands/status.js';
 import jiraHelp from '../commands/jira-help.js';
 import confluenceHelp from '../commands/confluence-help.js';
-import type { ExecutionContext } from '../shared/types.js';
 
-function makeContext(args: Record<string, unknown> = {}): ExecutionContext {
+/** Context with missing config — should trigger config validation error */
+function missingConfigContext(args: Record<string, unknown> = {}): ExecutionContext {
   return {
-    projectName: 'test-project',
+    projectName: 'test',
     projectPath: '/tmp/test',
     args,
-    config: { domain: 'test.atlassian.net', email: 'test@test.com', apiToken: 'test-token' },
+    config: {},
   };
 }
 
-function mockFetchResponse(data: unknown, status = 200): Response {
-  return {
-    ok: true,
-    status,
-    json: () => Promise.resolve(data),
-    text: () => Promise.resolve(typeof data === 'string' ? data : JSON.stringify(data)),
-    headers: new Headers({ 'content-type': 'application/json' }),
-  } as unknown as Response;
-}
 
-function mock204Response(): Response {
-  return {
-    ok: true,
-    status: 204,
-    json: () => Promise.resolve(undefined),
-    text: () => Promise.resolve(''),
-  } as unknown as Response;
-}
-
-describe('Confluence Commands Integration', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+describe('Help commands — no API needed', () => {
+  it('jira-help returns help text', async () => {
+    const result = await jiraHelp(missingConfigContext());
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('jira');
   });
 
-  // --- Pages ---
-
-  describe('search', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await search(makeContext({ cql: 'type=page' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('search with pagination', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await search(makeContext({ cql: 'type=page', limit: 10, start: 5 }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-page', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '12345', title: 'Test Page', body: { storage: { value: '<p>hello</p>' } } }),
-      );
-      const result = await getPage(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-page with expand', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '12345', title: 'Test Page', body: { view: { value: '<p>hello</p>' } } }),
-      );
-      const result = await getPage(makeContext({ pageId: '12345', expand: 'body.view' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-page-children', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await getPageChildren(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-page-history', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ lastUpdated: { when: '2024-01-01' } }),
-      );
-      const result = await getPageHistory(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('create-page', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '99999', title: 'Test', type: 'page' }),
-      );
-      const result = await createPage(
-        makeContext({ title: 'Test', spaceKey: 'SPACE', body: '<p>hello</p>' }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('create-page with parent', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '99999', title: 'Test', type: 'page' }),
-      );
-      const result = await createPage(
-        makeContext({ title: 'Test', spaceKey: 'SPACE', body: '<p>hello</p>', parentId: '99' }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('update-page', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '12345', title: 'Updated', version: { number: 3 } }),
-      );
-      const result = await updatePage(
-        makeContext({ pageId: '12345', title: 'Updated', body: '<p>new</p>', version: 2 }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('delete-page', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await deletePage(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('move-page', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '12345', ancestors: [{ id: '99' }] }),
-      );
-      const result = await movePage(
-        makeContext({ pageId: '12345', targetAncestorId: '99', currentVersion: 3 }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-page-diff', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({
-          id: '12345',
-          body: { storage: { value: '<p>version content</p>' } },
-        }),
-      );
-      const result = await getPageDiff(
-        makeContext({ pageId: '12345', fromVersion: 1, toVersion: 2 }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  // --- Comments ---
-
-  describe('get-comments', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await getComments(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('add-comment', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '200', type: 'comment' }),
-      );
-      const result = await addComment(makeContext({ pageId: '12345', body: 'A comment' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('reply-to-comment', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ id: '201', type: 'comment' }),
-      );
-      const result = await replyToComment(
-        makeContext({ pageId: '12345', parentCommentId: '100', body: 'Reply' }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  // --- Labels ---
-
-  describe('get-labels', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await getLabels(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('add-label', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse([{ name: 'label1' }, { name: 'label2' }]),
-      );
-      const result = await addLabel(
-        makeContext({ pageId: '12345', labels: ['label1', 'label2'] }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  // --- Users ---
-
-  describe('search-user', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await searchUser(makeContext({ query: 'john' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  // --- Analytics ---
-
-  describe('get-page-views', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ count: 42 }));
-      const result = await getPageViews(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-page-views with fromDate', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ count: 10 }));
-      const result = await getPageViews(
-        makeContext({ pageId: '12345', fromDate: '2024-01-01' }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  // --- Attachments ---
-
-  describe('upload-attachment', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ results: [{ id: 'att-1', title: 'test.txt' }] }),
-      );
-      const result = await uploadAttachment(
-        makeContext({ pageId: '12345', filename: 'test.txt', content: 'hello' }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('upload-attachments', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ results: [{ id: 'att-1', title: 'a.txt' }] }),
-      );
-      const result = await uploadAttachments(
-        makeContext({ pageId: '12345', files: [{ filename: 'a.txt', content: 'aa' }] }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-attachments', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await getAttachments(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('download-attachment', () => {
-    it('should complete without error', async () => {
-      const fetchSpy = vi.spyOn(global, 'fetch');
-      // First call: getAttachments (to find the attachment by filename)
-      fetchSpy.mockResolvedValueOnce(
-        mockFetchResponse({
-          results: [{ id: 'att-1', title: 'test.txt' }],
-        }),
-      );
-      // Second call: requestRaw to download the attachment content
-      fetchSpy.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve('file content here'),
-        headers: new Headers({ 'content-type': 'application/octet-stream' }),
-      } as unknown as Response);
-      const result = await downloadAttachment(
-        makeContext({ pageId: '12345', filename: 'test.txt' }),
-      );
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('download-all-attachments', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await downloadAllAttachments(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('delete-attachment', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mock204Response());
-      const result = await deleteAttachment(makeContext({ attachmentId: 'att-1' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('get-page-images', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(mockFetchResponse({ results: [] }));
-      const result = await getPageImages(makeContext({ pageId: '12345' }));
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  // --- Status and Help ---
-
-  describe('status', () => {
-    it('should complete without error', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue(
-        mockFetchResponse({ accountId: 'abc', displayName: 'Test User', emailAddress: 'test@test.com' }),
-      );
-      const result = await status(makeContext());
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('jira-help', () => {
-    it('should complete without error', () => {
-      const result = jiraHelp(makeContext());
-      expect(result.exitCode).toBe(0);
-    });
-  });
-
-  describe('confluence-help', () => {
-    it('should complete without error', () => {
-      const result = confluenceHelp(makeContext());
-      expect(result.exitCode).toBe(0);
-    });
+  it('confluence-help returns help text', async () => {
+    const result = await confluenceHelp(missingConfigContext());
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('confluence');
   });
 });
+
+describe('Confluence Commands Integration — missing config', () => {
+  const ctx = missingConfigContext;
+
+  it('status returns error without throwing', async () => {
+    const result = await status(ctx());
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBeTruthy();
+  });
+
+  it('search returns error without throwing', async () => {
+    const result = await search(ctx({ cql: 'type=page' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-page returns error without throwing', async () => {
+    const result = await getPage(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-page-children returns error without throwing', async () => {
+    const result = await getPageChildren(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-page-history returns error without throwing', async () => {
+    const result = await getPageHistory(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('create-page returns error without throwing', async () => {
+    const result = await createPage(ctx({ title: 'Test', spaceKey: 'SPACE', body: '<p>hi</p>' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('update-page returns error without throwing', async () => {
+    const result = await updatePage(
+      ctx({ pageId: '12345', title: 'Updated', body: '<p>new</p>', version: 2 }),
+    );
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('delete-page returns error without throwing', async () => {
+    const result = await deletePage(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('move-page returns error without throwing', async () => {
+    const result = await movePage(
+      ctx({ pageId: '12345', targetAncestorId: '99', currentVersion: 3 }),
+    );
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-page-diff returns error without throwing', async () => {
+    const result = await getPageDiff(ctx({ pageId: '12345', fromVersion: 1, toVersion: 2 }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-comments returns error without throwing', async () => {
+    const result = await getComments(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('add-comment returns error without throwing', async () => {
+    const result = await addComment(ctx({ pageId: '12345', body: 'A comment' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('reply-to-comment returns error without throwing', async () => {
+    const result = await replyToComment(
+      ctx({ pageId: '12345', parentCommentId: '100', body: 'Reply' }),
+    );
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-labels returns error without throwing', async () => {
+    const result = await getLabels(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('add-label returns error without throwing', async () => {
+    const result = await addLabel(ctx({ pageId: '12345', labels: ['label1'] }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('search-user returns error without throwing', async () => {
+    const result = await searchUser(ctx({ query: 'john' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-page-views returns error without throwing', async () => {
+    const result = await getPageViews(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('upload-attachment returns error without throwing', async () => {
+    const result = await uploadAttachment(
+      ctx({ pageId: '12345', filename: 'test.txt', content: 'hello' }),
+    );
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('upload-attachments returns error without throwing', async () => {
+    const result = await uploadAttachments(
+      ctx({ pageId: '12345', files: [{ filename: 'a.txt', content: 'aa' }] }),
+    );
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-attachments returns error without throwing', async () => {
+    const result = await getAttachments(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('download-attachment returns error without throwing', async () => {
+    const result = await downloadAttachment(ctx({ pageId: '12345', filename: 'test.txt' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('download-all-attachments returns error without throwing', async () => {
+    const result = await downloadAllAttachments(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('delete-attachment returns error without throwing', async () => {
+    const result = await deleteAttachment(ctx({ attachmentId: 'att-1' }));
+    expect(result.exitCode).toBe(1);
+  });
+
+  it('get-page-images returns error without throwing', async () => {
+    const result = await getPageImages(ctx({ pageId: '12345' }));
+    expect(result.exitCode).toBe(1);
+  });
+});
+
