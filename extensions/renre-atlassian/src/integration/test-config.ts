@@ -32,7 +32,7 @@ export const hasCredentials = Boolean(
 export function liveContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'integration-test',
-    projectPath: '/tmp/test',
+    projectPath: '/home/test-project', // NOSONAR - test-only path
     args,
     config: {
       domain: testConfig.domain,
@@ -46,7 +46,7 @@ export function liveContext(args: Record<string, unknown> = {}): CommandContext 
 export function missingConfigContext(args: Record<string, unknown> = {}): CommandContext {
   return {
     projectName: 'test',
-    projectPath: '/tmp/test',
+    projectPath: '/home/test-project', // NOSONAR - test-only path
     args,
     config: {},
   };

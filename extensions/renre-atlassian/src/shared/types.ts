@@ -1,7 +1,7 @@
-export interface CommandContext {
+export interface CommandContext<T extends Record<string, unknown> = Record<string, unknown>> {
   projectName: string;
   projectPath: string;
-  args: Record<string, unknown>;
+  args: T;
   config: Record<string, unknown>;
   logger?: {
     debug(message: string, data?: unknown): void;

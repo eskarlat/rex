@@ -6,9 +6,9 @@ import { toOutput, errorOutput } from './formatters.js';
 import type { CommandResult, CommandContext } from './types.js';
 
 /** Wrap a Jira command handler with createClients + toOutput + errorOutput */
-export async function jiraCommand(
-  context: CommandContext,
-  fn: (jira: JiraClient, args: Record<string, unknown>) => Promise<unknown>,
+export async function jiraCommand<T extends Record<string, unknown>>(
+  context: CommandContext<T>,
+  fn: (jira: JiraClient, args: T) => Promise<unknown>,
 ): Promise<CommandResult> {
   try {
     const { jira } = createClients(context);
@@ -20,9 +20,9 @@ export async function jiraCommand(
 }
 
 /** Wrap a Confluence command handler with createClients + toOutput + errorOutput */
-export async function confluenceCommand(
-  context: CommandContext,
-  fn: (confluence: ConfluenceClient, args: Record<string, unknown>) => Promise<unknown>,
+export async function confluenceCommand<T extends Record<string, unknown>>(
+  context: CommandContext<T>,
+  fn: (confluence: ConfluenceClient, args: T) => Promise<unknown>,
 ): Promise<CommandResult> {
   try {
     const { confluence } = createClients(context);
