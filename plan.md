@@ -31,9 +31,19 @@ Users can interact with the page directly in the viewport (click, scroll, type),
          ▼                                    │
     ┌─────────────────────────────────────────────┐
     │  agent-browser daemon (headless Chrome)      │
+    │  Bundled as npm dependency in extension      │
     │  CDP WebSocket: ws://localhost:9222/...       │
     └─────────────────────────────────────────────┘
 ```
+
+### Bundled Dependency
+
+`agent-browser` ships as an npm dependency inside the extension — not a global install. The extension's `package.json` declares it as a dependency, and commands invoke it via `node_modules/.bin/agent-browser` (resolved from the extension directory). This means:
+
+- **Zero setup** — install extension, it works
+- **Version pinned** — no system-wide version conflicts
+- **`onInit`** — just deploys agent assets, no installation check needed
+- **Always headless** — no `--headed` flag, the panel viewport is the visual layer
 
 ### Why Direct CDP (not polling screenshots)?
 
@@ -85,10 +95,12 @@ extensions/agent-browser/
 │   │   ├── find-role.ts                  # Find by ARIA role
 │   │   ├── find-text.ts                  # Find by text content
 │   │   ├── find-label.ts                 # Find by label
-│   │   ├── # Tabs & Cookies (3)
+│   │   ├── # Tabs, Cookies & Storage (5)
 │   │   ├── tabs.ts                       # List open tabs
 │   │   ├── cookies-get.ts                # Get cookies
 │   │   ├── cookies-set.ts                # Set cookies
+│   │   ├── cookies-clear.ts              # Clear cookies
+│   │   ├── storage.ts                    # Get/set localStorage/sessionStorage
 │   │   ├── # Debug & Inspect (8)
 │   │   ├── console.ts                    # View console logs
 │   │   ├── errors.ts                     # View page errors
@@ -97,7 +109,8 @@ extensions/agent-browser/
 │   │   ├── trace-start.ts               # Start Chrome trace
 │   │   ├── trace-stop.ts                # Stop trace, save file
 │   │   ├── diff-snapshot.ts             # Compare accessibility snapshots
-│   │   └── diff-screenshot.ts           # Compare screenshots visually
+│   │   ├── diff-screenshot.ts           # Compare screenshots visually
+│   │   └── batch.ts                     # Execute multiple commands atomically
 │   └── ui/
 │       ├── panel.tsx                      # Main panel entry point
 │       ├── components/
@@ -202,7 +215,7 @@ When Dev Mode is on, a resizable bottom drawer slides up below the viewport (lik
 - **Auto-scroll**: New entries auto-scroll to bottom, pauses on manual scroll up
 - Drawer state persists in `localStorage`
 
-### 5. Dev Mode Overlay
+### 5. Dev Mode Overlay (Viewport Layer)
 
 When toggled on:
 - Hover highlights elements with blue border overlay (drawn on overlay canvas)
@@ -223,7 +236,7 @@ When toggled on:
 - Exit: click toggle or press Escape
 - Uses `DOM.describeNode` + `CSS.getComputedStyleForNode` for element details
 
-### 5. Empty State (No Browser Running)
+### 6. Empty State (No Browser Running)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -244,7 +257,7 @@ When toggled on:
 
 ---
 
-## Commands (CLI Layer) — 30 commands
+## Commands (CLI Layer) — 34 commands
 
 All commands wrap `agent-browser` CLI via `child_process.execFile` with `--json` flag and parse structured output.
 
@@ -291,13 +304,15 @@ All commands wrap `agent-browser` CLI via `child_process.execFile` with `--json`
 | `find-text` | `text: string, action: string` | `agent-browser find text <text> <action>` | `{ result }` |
 | `find-label` | `label: string, action: string, text?: string` | `agent-browser find label <label> <action> [text]` | `{ result }` |
 
-### Tabs & Cookies (3)
+### Tabs, Cookies & Storage (5)
 
 | Command | Args | Wraps | Returns |
 |---------|------|-------|---------|
 | `tabs` | — | `agent-browser tab list` | `{ tabs: Tab[] }` |
 | `cookies-get` | `url?: string` | `agent-browser cookies get` | `{ cookies: Cookie[] }` |
 | `cookies-set` | `name, value, domain, ...` | `agent-browser cookies set` | `{ set: true }` |
+| `cookies-clear` | `url?: string` | `agent-browser cookies clear` | `{ cleared: true }` |
+| `storage` | `type: "local"\|"session", action: "get"\|"set"\|"clear", key?, value?` | `agent-browser storage <type>` | `{ data }` |
 
 ### Debug & Inspect (8)
 
@@ -312,19 +327,29 @@ All commands wrap `agent-browser` CLI via `child_process.execFile` with `--json`
 | `diff-snapshot` | — | `agent-browser diff snapshot` | `{ diff: string }` |
 | `diff-screenshot` | `baseline: string` | `agent-browser diff screenshot --baseline <path>` | `{ diff: DiffResult }` |
 
+### Batch (1)
+
+| Command | Args | Wraps | Returns |
+|---------|------|-------|---------|
+| `batch` | `commands: string[][]` | `agent-browser batch` (stdin JSON) | `{ results: BatchResult[] }` |
+
 Each command uses `defineCommand()` with Zod schemas:
 
 ```typescript
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const execFileAsync = promisify(execFile);
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const BIN = resolve(__dirname, '..', 'node_modules', '.bin', 'agent-browser');
 
 export default defineCommand({
   args: { url: z.string() },
   handler: async (ctx) => {
-    const { stdout } = await execFileAsync('agent-browser', ['open', '--json', ctx.args.url]);
+    const { stdout } = await execFileAsync(BIN, ['open', '--json', ctx.args.url]);
     return { output: stdout.trim(), exitCode: 0 };
   },
 });
@@ -446,10 +471,36 @@ function scaleToViewport(
       "description": "Default viewport size (WxH)",
       "secret": false,
       "default": "1280x720"
+    },
+    "timeout": {
+      "type": "number",
+      "description": "Default action timeout in ms",
+      "secret": false,
+      "default": 25000
+    },
+    "profile": {
+      "type": "string",
+      "description": "Persistent browser profile path (cookies, IndexedDB survive restarts)",
+      "secret": false,
+      "default": ""
+    },
+    "screenshotFormat": {
+      "type": "string",
+      "description": "Screenshot format: png or jpeg",
+      "secret": false,
+      "default": "jpeg"
+    },
+    "screenshotQuality": {
+      "type": "number",
+      "description": "JPEG screenshot quality (0-100)",
+      "secret": false,
+      "default": 80
     }
   }
 }
 ```
+
+All commands run headless — the panel viewport is the visual layer. No `headed` option.
 
 ---
 
@@ -457,25 +508,26 @@ function scaleToViewport(
 
 ### Step 1: Scaffold extension
 - Create `extensions/agent-browser/` directory
-- `manifest.json` — 30 commands, 1 panel, config schema, agent skill
-- `package.json` — `@renre-kit/extension-sdk` dependency
-- `build.js` — `buildExtension` (30 commands + index) + `buildPanel` (1 panel)
+- `manifest.json` — 34 commands, 1 panel, config schema, agent skill
+- `package.json` — `@renre-kit/extension-sdk` + `agent-browser` as dependencies
+- `build.js` — `buildExtension` (34 commands + index) + `buildPanel` (1 panel)
 - `tsconfig.json`, `tsconfig.lint.json`, `eslint.config.mjs`
 - `icon.svg` — globe/browser icon
 
-### Step 2: CLI commands (30 commands, 6 groups)
+### Step 2: CLI commands (34 commands, 7 groups)
 - **Core Navigation (6):** `open`, `close`, `status`, `back`, `forward`, `reload`
 - **Interaction (7):** `click`, `type`, `fill`, `select`, `hover`, `scroll`, `wait`
 - **Capture & Extraction (7):** `screenshot`, `snapshot`, `eval`, `get-text`, `get-html`, `get-url`, `pdf`
 - **Find Elements (3):** `find-role`, `find-text`, `find-label`
-- **Tabs & Cookies (3):** `tabs`, `cookies-get`, `cookies-set`
+- **Tabs, Cookies & Storage (5):** `tabs`, `cookies-get`, `cookies-set`, `cookies-clear`, `storage`
 - **Debug & Inspect (8):** `console`, `errors`, `network`, `highlight`, `trace-start`, `trace-stop`, `diff-snapshot`, `diff-screenshot`
-- All commands use `--json` flag for structured output
+- **Batch (1):** `batch` — execute multiple commands in single process invocation
+- All commands invoke bundled `agent-browser` from `node_modules/.bin/` with `--json` flag
 - `status` returns `{ connected, cdpUrl, url, title, session }` — key for panel
 
 ### Step 3: Lifecycle hooks (`index.ts`)
-- `onInit`: check `agent-browser --version`, deploy agent assets
-- `onDestroy`: cleanup agent assets
+- `onInit`: deploy agent assets via `context.sdk.deployAgentAssets()`. No install check needed — `agent-browser` is a bundled npm dependency
+- `onDestroy`: cleanup agent assets via `context.sdk.cleanupAgentAssets()`, close any running browser session
 
 ### Step 4: CDP client library (`ui/lib/cdp-client.ts`)
 - WebSocket wrapper with request/response ID tracking
@@ -517,9 +569,15 @@ function scaleToViewport(
 - Conditionally renders `EmptyState` or `BrowserChrome` based on status
 - Manages top-level state (cdpUrl, connected, devMode)
 
-### Step 9: Agent skill (`SKILL.md`)
-- Browser automation skill with all command references
-- Example workflows
+### Step 9: Agent skills (`SKILL.md` — multi-section)
+Structured into workflow-oriented sections, not just a command reference:
+
+- **Section 1: Core Workflow** — The snapshot loop: `open` → `snapshot -i` → interact via refs → `wait` → re-snapshot. This is the fundamental pattern all agents must learn.
+- **Section 2: Data Extraction** — `get-text`, `get-html`, `get-url`, `pdf`, `eval` for scraping. Patterns for tables, lists, pagination. When to use `snapshot` vs `get-text` vs `eval`.
+- **Section 3: Form Automation** — `fill`, `select`, `click`, `wait` for login flows, search forms, multi-step wizards. Cookie injection for pre-authenticated sessions.
+- **Section 4: Debugging** — `console`, `errors`, `network`, `highlight`, `trace-start/stop`, `diff-snapshot`, `diff-screenshot`. When to use each for diagnosing page issues.
+- **Section 5: Batch Operations** — `batch` for atomic multi-step sequences. JSON format, error handling with `--bail`.
+- **Section 6: Command Reference** — All 34 commands with args, examples, and return types.
 
 ### Step 10: Build & validate
 - `node build.js` — verify all entry points compile
