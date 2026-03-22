@@ -176,8 +176,8 @@ function registerSingleExtension(
           logger: createExtensionLogger(extName),
         };
 
-        const handler = await loadCommandHandler(extDir, cmdDef.handler);
-        const result = await executeCommand(handler, context);
+        const loaded = await loadCommandHandler(extDir, cmdDef.handler);
+        const result = await executeCommand(loaded, context);
         if (result !== undefined) {
           process.stdout.write(formatCommandResult(result));
           process.stdout.write('\n');

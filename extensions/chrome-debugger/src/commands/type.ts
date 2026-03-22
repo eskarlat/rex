@@ -1,18 +1,16 @@
+import { z } from 'zod';
+
 import { withBrowser } from '../shared/connection.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
+export const argsSchema = z.object({
+  selector: z.string({ required_error: '--selector is required' }).min(1, '--selector is required'),
+  text: z.string({ required_error: '--text is required' }),
+  clear: z.boolean().default(false),
+});
+
 export default async function typeCommand(context: ExecutionContext): Promise<CommandResult> {
-  const selector = context.args.selector;
-  const text = context.args.text;
-
-  if (typeof selector !== 'string' || selector.length === 0) {
-    return { output: 'Error: --selector is required', exitCode: 1 };
-  }
-  if (typeof text !== 'string') {
-    return { output: 'Error: --text is required', exitCode: 1 };
-  }
-
-  const clear = context.args.clear === true;
+  const { selector, text, clear } = context.args as z.infer<typeof argsSchema>;
 
   return withBrowser(context.projectPath, async (_browser, page) => {
     const exists = await page.$(selector);

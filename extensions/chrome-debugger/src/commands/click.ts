@@ -1,11 +1,14 @@
+import { z } from 'zod';
+
 import { withBrowser } from '../shared/connection.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
+export const argsSchema = z.object({
+  selector: z.string({ required_error: '--selector is required' }).min(1, '--selector is required'),
+});
+
 export default async function click(context: ExecutionContext): Promise<CommandResult> {
-  const selector = context.args.selector;
-  if (typeof selector !== 'string' || selector.length === 0) {
-    return { output: 'Error: --selector is required', exitCode: 1 };
-  }
+  const { selector } = context.args as z.infer<typeof argsSchema>;
 
   return withBrowser(context.projectPath, async (_browser, page) => {
     const exists = await page.$(selector);

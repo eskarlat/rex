@@ -2,20 +2,22 @@ import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
 import type { Page, ElementHandle } from 'puppeteer';
+import { z } from 'zod';
 
 import { withBrowser } from '../shared/connection.js';
 import { getScreenshotDir } from '../shared/state.js';
 import type { ExecutionContext, CommandResult, ScreenshotMeta } from '../shared/types.js';
 
-function parseArgs(context: ExecutionContext): { selector: string | null; fullPage: boolean; output: string | null; encoded: boolean; dir: string | null } {
-  return {
-    selector: typeof context.args.selector === 'string' ? context.args.selector : null,
-    fullPage: context.args['full-page'] === true || context.args.fullPage === true,
-    output: typeof context.args.output === 'string' ? context.args.output : null,
-    encoded: context.args.encoded === true,
-    dir: typeof context.args.dir === 'string' ? context.args.dir : null,
-  };
-}
+export const argsSchema = z.object({
+  selector: z.string().nullable().default(null),
+  'full-page': z.boolean().default(false),
+  fullPage: z.boolean().default(false),
+  output: z.string().nullable().default(null),
+  encoded: z.boolean().default(false),
+  dir: z.string().nullable().default(null),
+});
+
+type Args = z.infer<typeof argsSchema>;
 
 function ensureDir(filePath: string): void {
   const dir = dirname(filePath);
@@ -57,7 +59,12 @@ function registerMeta(screenshotDir: string, filePath: string, page: Page, selec
 }
 
 export default async function screenshot(context: ExecutionContext): Promise<CommandResult> {
-  const { selector, fullPage, output, encoded, dir } = parseArgs(context);
+  const args = context.args as Args;
+  const selector = args.selector;
+  const fullPage = args['full-page'] || args.fullPage;
+  const output = args.output;
+  const encoded = args.encoded;
+  const dir = args.dir;
 
   return withBrowser(context.projectPath, async (_browser, page) => {
     const element = selector ? await page.$(selector) : null;

@@ -96,6 +96,9 @@ importers:
       puppeteer:
         specifier: ^24.0.0
         version: 24.40.0(typescript@5.9.3)
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

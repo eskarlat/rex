@@ -1,23 +1,25 @@
 import { existsSync, readFileSync } from 'node:fs';
 
+import { z } from 'zod';
+
 import { ensureBrowserRunning } from '../shared/state.js';
 import { markdownTable, truncate, formatTimestamp } from '../shared/formatters.js';
 import type { ExecutionContext, CommandResult, ConsoleEntry } from '../shared/types.js';
+
+export const argsSchema = z.object({
+  level: z.string().nullable().default(null),
+  limit: z.number().default(50),
+  offset: z.number().default(0),
+  format: z.enum(['json', 'markdown']).default('markdown'),
+});
+
+type Args = z.infer<typeof argsSchema>;
 
 function emptyResponse(format: string): CommandResult {
   if (format === 'json') {
     return { output: JSON.stringify({ entries: [], total: 0 }), exitCode: 0 };
   }
   return { output: 'No console messages captured yet.', exitCode: 0 };
-}
-
-function parseArgs(context: ExecutionContext): { levelFilter: string | null; limit: number; offset: number; format: string } {
-  return {
-    levelFilter: typeof context.args.level === 'string' ? context.args.level : null,
-    limit: typeof context.args.limit === 'number' ? context.args.limit : 50,
-    offset: typeof context.args.offset === 'number' ? context.args.offset : 0,
-    format: context.args.format === 'json' ? 'json' : 'markdown',
-  };
 }
 
 function formatAsJson(entries: ConsoleEntry[], total: number): CommandResult {
@@ -42,7 +44,7 @@ function formatAsMarkdown(entries: ConsoleEntry[]): CommandResult {
 
 export default function consoleCommand(context: ExecutionContext): CommandResult {
   const state = ensureBrowserRunning(context.projectPath);
-  const { levelFilter, limit, offset, format } = parseArgs(context);
+  const { level: levelFilter, limit, offset, format } = context.args as Args;
 
   if (!existsSync(state.consoleLogPath)) {
     return emptyResponse(format);

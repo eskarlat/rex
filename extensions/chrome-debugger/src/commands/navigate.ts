@@ -1,15 +1,18 @@
+import { z } from 'zod';
+
 import { withBrowser } from '../shared/connection.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
+export const argsSchema = z.object({
+  url: z.string({ required_error: '--url is required' }).min(1, '--url is required'),
+  wait: z.enum(['load', 'domcontentloaded']).default('domcontentloaded'),
+});
+
 export default async function navigate(context: ExecutionContext): Promise<CommandResult> {
-  const url = context.args.url;
-  if (typeof url !== 'string' || url.length === 0) {
-    return { output: 'Error: --url is required', exitCode: 1 };
-  }
+  const { url, wait } = context.args as z.infer<typeof argsSchema>;
 
   return withBrowser(context.projectPath, async (_browser, page) => {
-    const waitUntil = context.args.wait === 'load' ? 'load' : 'domcontentloaded';
-    const response = await page.goto(url, { waitUntil });
+    const response = await page.goto(url, { waitUntil: wait });
 
     const status = response?.status() ?? 0;
     const title = await page.title();
