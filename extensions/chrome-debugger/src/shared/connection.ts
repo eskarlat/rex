@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import type { Browser, Page } from 'puppeteer';
 
+import { setupBrowserMonitoring } from './monitoring.js';
 import { ensureBrowserRunning } from './state.js';
 
 let cachedBrowser: Browser | null = null;
@@ -20,6 +21,14 @@ export async function connectBrowser(projectPath: string): Promise<Browser> {
       cachedBrowser = null;
     }
   });
+
+  // Best-effort: attach network/console monitoring so requests are logged to disk.
+  // This may fail in unit-test environments where the browser is a mock.
+  try {
+    await setupBrowserMonitoring(browser, state.networkLogPath, state.consoleLogPath);
+  } catch {
+    // Monitoring is non-critical — connection still works without it
+  }
 
   return browser;
 }

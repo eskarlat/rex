@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { appendFileSync } from 'node:fs';
 import type { ExecutionContext } from '../shared/types.js';
 
 const mockLaunch = vi.fn();
@@ -35,17 +34,6 @@ vi.mock('../shared/state.js', () => ({
   isProcessAlive: (...args: unknown[]) => mockIsProcessAlive(...args),
   deleteGlobalSession: () => mockDeleteGlobalSession(),
 }));
-
-// Mock node:fs for setupPageMonitoring
-vi.mock('node:fs', async () => {
-  const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
-  return {
-    ...actual,
-    appendFileSync: vi.fn(),
-    existsSync: vi.fn().mockReturnValue(true),
-    mkdirSync: vi.fn(),
-  };
-});
 
 import launch from './launch.js';
 
@@ -272,127 +260,11 @@ describe('launch', () => {
     expect(mockDisconnect).toHaveBeenCalled();
   });
 
-  it('sets up page monitoring for initial page', async () => {
-    await launch(makeContext());
-    expect(mockCreateCDPSession).toHaveBeenCalled();
-    expect(mockCdpClient.send).toHaveBeenCalledWith('Network.enable');
-    expect(mockCdpClient.send).toHaveBeenCalledWith('Runtime.enable');
-  });
-
   it('handles empty pages array', async () => {
     mockPages.mockResolvedValue([]);
 
     const result = await launch(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Browser Launched');
-    // No createCDPSession call since there are no pages
-    expect(mockCreateCDPSession).not.toHaveBeenCalled();
-  });
-
-  it('registers targetcreated listener', async () => {
-    await launch(makeContext());
-    expect(mockOn).toHaveBeenCalledWith('targetcreated', expect.any(Function));
-  });
-
-  it('triggers Network.requestWillBeSent and Network.responseReceived handlers', async () => {
-    // Capture the CDP event handlers
-    const cdpHandlers: Record<string, (...args: unknown[]) => void> = {};
-    mockCdpClient.on.mockImplementation((event: string, handler: (...args: unknown[]) => void) => {
-      cdpHandlers[event] = handler;
-    });
-
-    await launch(makeContext());
-
-    // Simulate a network request
-    cdpHandlers['Network.requestWillBeSent']?.({
-      requestId: 'req-1',
-      request: { method: 'GET', url: 'https://example.com/api' },
-      type: 'Fetch',
-      timestamp: 1000,
-    });
-
-    // Simulate the response
-    cdpHandlers['Network.responseReceived']?.({
-      requestId: 'req-1',
-      response: {
-        status: 200,
-        headers: { 'content-length': '1024' },
-      },
-      timestamp: 1001,
-    });
-
-    expect(appendFileSync).toHaveBeenCalled();
-  });
-
-  it('handles Network.responseReceived with no matching request', async () => {
-    const cdpHandlers: Record<string, (...args: unknown[]) => void> = {};
-    mockCdpClient.on.mockImplementation((event: string, handler: (...args: unknown[]) => void) => {
-      cdpHandlers[event] = handler;
-    });
-
-    await launch(makeContext());
-
-    // Response with no matching request - should early return
-    cdpHandlers['Network.responseReceived']?.({
-      requestId: 'unknown-req',
-      response: { status: 200, headers: {} },
-      timestamp: 1001,
-    });
-
-    // appendFileSync should not be called for network log in this case
-    // (it may be called 0 times or only for other reasons)
-  });
-
-  it('handles Network.responseReceived without content-length', async () => {
-    const cdpHandlers: Record<string, (...args: unknown[]) => void> = {};
-    mockCdpClient.on.mockImplementation((event: string, handler: (...args: unknown[]) => void) => {
-      cdpHandlers[event] = handler;
-    });
-
-    await launch(makeContext());
-
-    cdpHandlers['Network.requestWillBeSent']?.({
-      requestId: 'req-2',
-      request: { method: 'POST', url: 'https://example.com/submit' },
-      type: undefined,
-      timestamp: 2000,
-    });
-
-    cdpHandlers['Network.responseReceived']?.({
-      requestId: 'req-2',
-      response: { status: 201, headers: {} },
-      timestamp: 2002,
-    });
-
-    expect(appendFileSync).toHaveBeenCalled();
-  });
-
-  it('triggers Runtime.consoleAPICalled handler', async () => {
-    const cdpHandlers: Record<string, (...args: unknown[]) => void> = {};
-    mockCdpClient.on.mockImplementation((event: string, handler: (...args: unknown[]) => void) => {
-      cdpHandlers[event] = handler;
-    });
-
-    await launch(makeContext());
-
-    cdpHandlers['Runtime.consoleAPICalled']?.({
-      type: 'log',
-      args: [
-        { value: 'Hello' },
-        { description: 'Object description' },
-        { type: 'undefined' },
-      ],
-    });
-
-    expect(appendFileSync).toHaveBeenCalled();
-  });
-
-  it('creates log directory if it does not exist', async () => {
-    const { existsSync, mkdirSync } = await import('node:fs');
-    (existsSync as ReturnType<typeof vi.fn>).mockReturnValue(false);
-
-    await launch(makeContext());
-
-    expect(mkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
   });
 });

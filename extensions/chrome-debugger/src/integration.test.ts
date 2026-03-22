@@ -408,39 +408,43 @@ describe('Chrome Debugger — Integration', () => {
   // ────────────────────────────────────────────
 
   describe('network, console, and storage', () => {
-    it('network: returns valid output (markdown)', async () => {
+    it('network: captures requests from page navigation (markdown)', async () => {
       const result = await network(makeContext({ format: 'markdown' }));
       assertSuccess(result);
-      // Network monitoring logs may or may not have entries depending on
-      // whether the CDP session is still active after launch's disconnect()
-      expect(typeof result.output).toBe('string');
+      expect(result.output).toContain('Network Requests');
+      expect(result.output).toContain('GET');
     });
 
     it('network: shows captured requests (json)', async () => {
       const result = await network(makeContext({ format: 'json' }));
       assertSuccess(result);
-      const data = JSON.parse(result.output);
-      expect(data).toHaveProperty('entries');
-      expect(data).toHaveProperty('total');
+      const data = JSON.parse(result.output) as { entries: unknown[]; total: number };
+      expect(data.entries.length).toBeGreaterThan(0);
+      expect(data.total).toBeGreaterThan(0);
     });
 
     it('network: filters by method', async () => {
       const result = await network(makeContext({ method: 'GET', format: 'json' }));
       assertSuccess(result);
+      const data = JSON.parse(result.output) as { entries: { method: string }[] };
+      for (const entry of data.entries) {
+        expect(entry.method).toBe('GET');
+      }
     });
 
-    it('console: returns valid output (markdown)', async () => {
+    it('console: captures page console.log messages (markdown)', async () => {
       const result = await console_(makeContext({ format: 'markdown' }));
       assertSuccess(result);
-      expect(typeof result.output).toBe('string');
+      expect(result.output).toContain('Console');
+      expect(result.output).toContain('page loaded');
     });
 
     it('console: shows captured messages (json)', async () => {
       const result = await console_(makeContext({ format: 'json' }));
       assertSuccess(result);
-      const data = JSON.parse(result.output);
-      expect(data).toHaveProperty('entries');
-      expect(data).toHaveProperty('total');
+      const data = JSON.parse(result.output) as { entries: unknown[]; total: number };
+      expect(data.entries.length).toBeGreaterThan(0);
+      expect(data.total).toBeGreaterThan(0);
     });
 
     it('performance: returns metrics', async () => {

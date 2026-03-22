@@ -123,26 +123,8 @@ export default async function launch(context: ExecutionContext): Promise<Command
     consoleLogPath,
   });
 
-  // Set up persistent network and console logging on the initial page
-  const pages = await browser.pages();
-  const page = pages[0];
-  if (page) {
-    await setupPageMonitoring(page, networkLogPath, consoleLogPath);
-  }
-
-  // Monitor new pages (tabs) for network/console too
-  browser.on('targetcreated', (target) => {
-    const targetType: string = target.type();
-    if (targetType === 'page') {
-      void target.page().then((newPage) => {
-        if (newPage) {
-          void setupPageMonitoring(newPage, networkLogPath, consoleLogPath);
-        }
-      });
-    }
-  });
-
-  // Disconnect (don't close) so the browser stays alive
+  // Disconnect (don't close) so the browser stays alive.
+  // Network/console monitoring is attached on reconnect (see connection.ts).
   void browser.disconnect();
 
   return {
@@ -160,70 +142,3 @@ export default async function launch(context: ExecutionContext): Promise<Command
   };
 }
 
-async function setupPageMonitoring(
-  page: import('puppeteer').Page,
-  networkLogPath: string,
-  consoleLogPath: string
-): Promise<void> {
-  const { appendFileSync, existsSync, mkdirSync } = await import('node:fs');
-  const nodePath = await import('node:path');
-
-  const dir = nodePath.dirname(networkLogPath);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-
-  const client = await page.createCDPSession();
-
-  await client.send('Network.enable');
-  const pendingRequests = new Map<
-    string,
-    { method: string; url: string; type: string; startTime: number }
-  >();
-
-  client.on('Network.requestWillBeSent', (params) => {
-    pendingRequests.set(params.requestId, {
-      method: params.request.method,
-      url: params.request.url,
-      type: params.type ?? 'Other',
-      startTime: params.timestamp,
-    });
-  });
-
-  client.on('Network.responseReceived', (params) => {
-    const req = pendingRequests.get(params.requestId);
-    if (!req) return;
-    pendingRequests.delete(params.requestId);
-
-    const entry = JSON.stringify({
-      timestamp: new Date().toISOString(),
-      method: req.method,
-      url: req.url,
-      status: params.response.status,
-      type: req.type,
-      size: params.response.headers['content-length']
-        ? Number(params.response.headers['content-length'])
-        : 0,
-      duration: Math.round((params.timestamp - req.startTime) * 1000),
-    });
-    appendFileSync(networkLogPath, entry + '\n');
-  });
-
-  await client.send('Runtime.enable');
-  client.on('Runtime.consoleAPICalled', (params) => {
-    const text = params.args
-      .map((arg) => {
-        if (arg.value !== undefined) return String(arg.value);
-        if (arg.description) return arg.description;
-        return arg.type;
-      })
-      .join(' ');
-
-    const entry = JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level: params.type,
-      text,
-    });
-    appendFileSync(consoleLogPath, entry + '\n');
-  });
-}
