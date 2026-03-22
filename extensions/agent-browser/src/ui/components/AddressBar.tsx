@@ -26,7 +26,7 @@ export function AddressBar({
     if (url) setInputValue(url);
   }, [url]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (inputValue.trim()) onNavigate(inputValue.trim());
   };

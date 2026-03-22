@@ -1,5 +1,6 @@
-import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 import { spawn } from 'node:child_process';
+
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { getBinPath, getConfigFlags } from '../shared/command-helper.js';
 import { toOutput, errorOutput } from '../shared/formatters.js';

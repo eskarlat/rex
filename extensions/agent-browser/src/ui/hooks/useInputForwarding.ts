@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 
 import type { CdpClient } from '../lib/cdp-client.js';
 import {
-  scaleToViewport,
   getModifiers,
   mapMouseEvent,
   mapKeyEvent,
@@ -31,7 +30,9 @@ export function useInputForwarding(
       e.preventDefault();
       const eventType = e.type as 'keydown' | 'keyup';
       const mods = getModifiers(e);
-      const params = mapKeyEvent(eventType, e.key, e.code, e.keyCode, mods);
+      // CDP requires windowsVirtualKeyCode which maps to the deprecated keyCode
+      const keyCode = (e as unknown as Record<string, unknown>)['keyCode'] as number;
+      const params = mapKeyEvent(eventType, e.key, e.code, keyCode, mods);
       void client.send('Input.dispatchKeyEvent', params as unknown as Record<string, unknown>);
     };
 

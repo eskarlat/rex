@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+function extractText(entry: Record<string, unknown>): string {
+  if (typeof entry['text'] === 'string') return entry['text'];
+  if (typeof entry['message'] === 'string') return entry['message'];
+  return '';
+}
+
 export interface ConsoleEntry {
   level: string;
   text: string;
@@ -24,9 +30,9 @@ export function useConsole(sdk: { exec: SdkExec } | undefined, extensionName: st
       if (Array.isArray(parsed)) {
         setLogs(
           parsed.map((entry: Record<string, unknown>) => ({
-            level: String(entry['level'] ?? 'info'),
-            text: String(entry['text'] ?? entry['message'] ?? ''),
-            timestamp: String(entry['timestamp'] ?? new Date().toISOString()),
+            level: typeof entry['level'] === 'string' ? entry['level'] : 'info',
+            text: extractText(entry),
+            timestamp: typeof entry['timestamp'] === 'string' ? entry['timestamp'] : new Date().toISOString(),
           })),
         );
       }

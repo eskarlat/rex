@@ -24,9 +24,9 @@ export function useErrors(sdk: { exec: SdkExec } | undefined, extensionName: str
       if (Array.isArray(parsed)) {
         setErrors(
           parsed.map((entry: Record<string, unknown>) => ({
-            message: String(entry['message'] ?? ''),
-            stack: String(entry['stack'] ?? ''),
-            timestamp: String(entry['timestamp'] ?? new Date().toISOString()),
+            message: typeof entry['message'] === 'string' ? entry['message'] : '',
+            stack: typeof entry['stack'] === 'string' ? entry['stack'] : '',
+            timestamp: typeof entry['timestamp'] === 'string' ? entry['timestamp'] : new Date().toISOString(),
           })),
         );
       }

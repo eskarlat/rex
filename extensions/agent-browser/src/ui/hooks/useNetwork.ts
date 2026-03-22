@@ -26,11 +26,11 @@ export function useNetwork(sdk: { exec: SdkExec } | undefined, extensionName: st
       if (Array.isArray(parsed)) {
         setRequests(
           parsed.map((entry: Record<string, unknown>) => ({
-            method: String(entry['method'] ?? 'GET'),
-            url: String(entry['url'] ?? ''),
-            status: Number(entry['status'] ?? 0),
-            duration: Number(entry['duration'] ?? 0),
-            size: Number(entry['size'] ?? 0),
+            method: typeof entry['method'] === 'string' ? entry['method'] : 'GET',
+            url: typeof entry['url'] === 'string' ? entry['url'] : '',
+            status: typeof entry['status'] === 'number' ? entry['status'] : 0,
+            duration: typeof entry['duration'] === 'number' ? entry['duration'] : 0,
+            size: typeof entry['size'] === 'number' ? entry['size'] : 0,
           })),
         );
       }

@@ -9,7 +9,7 @@ interface EmptyStateProps {
 export function BrowserEmptyState({ onLaunch, loading }: Readonly<EmptyStateProps>) {
   const [url, setUrl] = useState('https://');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (url.trim()) onLaunch(url.trim());
   };

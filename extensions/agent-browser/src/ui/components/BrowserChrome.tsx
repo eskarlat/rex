@@ -6,6 +6,7 @@ import type { ConsoleEntry } from '../hooks/useConsole.js';
 import type { NetworkEntry } from '../hooks/useNetwork.js';
 import type { ErrorEntry } from '../hooks/useErrors.js';
 import type { SelectedElement } from '../hooks/useDevMode.js';
+
 import { TabBar } from './TabBar.js';
 import { AddressBar } from './AddressBar.js';
 import { Viewport } from './Viewport.js';

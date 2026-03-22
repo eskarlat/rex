@@ -65,8 +65,8 @@ export class CdpClient {
     handlers.add(handler);
 
     return () => {
-      handlers!.delete(handler);
-      if (handlers!.size === 0) {
+      handlers.delete(handler);
+      if (handlers.size === 0) {
         this.listeners.delete(event);
       }
     };
@@ -90,35 +90,38 @@ export class CdpClient {
       return;
     }
 
-    // Response to a send() call
     if (typeof msg['id'] === 'number') {
-      const pending = this.pending.get(msg['id']);
-      if (pending) {
-        this.pending.delete(msg['id']);
-        if (msg['error']) {
-          const err = msg['error'] as Record<string, unknown>;
-          pending.reject(new Error(String(err['message'] ?? 'CDP error')));
-        } else {
-          pending.resolve(msg['result']);
-        }
-      }
-      return;
+      this.handleResponse(msg);
+    } else if (typeof msg['method'] === 'string') {
+      this.handleEvent(msg['method'], (msg['params'] ?? {}) as Record<string, unknown>);
     }
+  }
 
-    // Event notification
-    if (typeof msg['method'] === 'string') {
-      const handlers = this.listeners.get(msg['method']);
-      if (handlers) {
-        const params = (msg['params'] ?? {}) as Record<string, unknown>;
-        for (const handler of handlers) {
-          handler(params);
-        }
-      }
+  private handleResponse(msg: Record<string, unknown>): void {
+    const id = msg['id'] as number;
+    const pending = this.pending.get(id);
+    if (!pending) return;
+
+    this.pending.delete(id);
+    if (msg['error']) {
+      const err = msg['error'] as Record<string, unknown>;
+      const errMsg = typeof err['message'] === 'string' ? err['message'] : 'CDP error';
+      pending.reject(new Error(errMsg));
+    } else {
+      pending.resolve(msg['result']);
+    }
+  }
+
+  private handleEvent(method: string, params: Record<string, unknown>): void {
+    const handlers = this.listeners.get(method);
+    if (!handlers) return;
+    for (const handler of handlers) {
+      handler(params);
     }
   }
 
   private rejectAllPending(reason: string): void {
-    for (const [id, pending] of this.pending) {
+    for (const [, pending] of this.pending) {
       pending.reject(new Error(reason));
     }
     this.pending.clear();
