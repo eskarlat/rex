@@ -1,0 +1,381 @@
+{
+  "name": "renre-atlassian",
+  "title": "Atlassian",
+  "version": "1.0.0",
+  "description": "Jira and Confluence integration — 75 CLI commands for issues, pages, sprints, and more",
+  "icon": "icon.svg",
+  "type": "standard",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Show Atlassian connection status and available commands"
+    },
+    "jira-help": {
+      "handler": "dist/commands/jira-help.js",
+      "description": "Show all available Jira commands with usage examples"
+    },
+    "confluence-help": {
+      "handler": "dist/commands/confluence-help.js",
+      "description": "Show all available Confluence commands with usage examples"
+    },
+    "jira-get-issue": {
+      "handler": "dist/commands/jira/get-issue.js",
+      "description": "Get a Jira issue by key"
+    },
+    "jira-search": {
+      "handler": "dist/commands/jira/search.js",
+      "description": "Search Jira issues using JQL"
+    },
+    "jira-get-project-issues": {
+      "handler": "dist/commands/jira/get-project-issues.js",
+      "description": "Get all issues for a project"
+    },
+    "jira-create-issue": {
+      "handler": "dist/commands/jira/create-issue.js",
+      "description": "Create a new Jira issue"
+    },
+    "jira-update-issue": {
+      "handler": "dist/commands/jira/update-issue.js",
+      "description": "Update an existing Jira issue"
+    },
+    "jira-delete-issue": {
+      "handler": "dist/commands/jira/delete-issue.js",
+      "description": "Delete a Jira issue"
+    },
+    "jira-batch-create-issues": {
+      "handler": "dist/commands/jira/batch-create-issues.js",
+      "description": "Create multiple Jira issues in bulk"
+    },
+    "jira-get-changelogs": {
+      "handler": "dist/commands/jira/get-changelogs.js",
+      "description": "Get changelog history for an issue"
+    },
+    "jira-search-fields": {
+      "handler": "dist/commands/jira/search-fields.js",
+      "description": "List all available Jira fields"
+    },
+    "jira-get-field-options": {
+      "handler": "dist/commands/jira/get-field-options.js",
+      "description": "Get options for a custom field"
+    },
+    "jira-add-comment": {
+      "handler": "dist/commands/jira/add-comment.js",
+      "description": "Add a comment to a Jira issue"
+    },
+    "jira-edit-comment": {
+      "handler": "dist/commands/jira/edit-comment.js",
+      "description": "Edit an existing comment"
+    },
+    "jira-get-transitions": {
+      "handler": "dist/commands/jira/get-transitions.js",
+      "description": "Get available workflow transitions for an issue"
+    },
+    "jira-transition-issue": {
+      "handler": "dist/commands/jira/transition-issue.js",
+      "description": "Transition an issue through its workflow"
+    },
+    "jira-get-all-projects": {
+      "handler": "dist/commands/jira/get-all-projects.js",
+      "description": "List all accessible Jira projects"
+    },
+    "jira-get-project-versions": {
+      "handler": "dist/commands/jira/get-project-versions.js",
+      "description": "Get release versions for a project"
+    },
+    "jira-get-project-components": {
+      "handler": "dist/commands/jira/get-project-components.js",
+      "description": "Get components for a project"
+    },
+    "jira-create-version": {
+      "handler": "dist/commands/jira/create-version.js",
+      "description": "Create a release version"
+    },
+    "jira-batch-create-versions": {
+      "handler": "dist/commands/jira/batch-create-versions.js",
+      "description": "Create multiple release versions"
+    },
+    "jira-get-agile-boards": {
+      "handler": "dist/commands/jira/get-agile-boards.js",
+      "description": "List all agile boards"
+    },
+    "jira-get-board-issues": {
+      "handler": "dist/commands/jira/get-board-issues.js",
+      "description": "Get issues on a board"
+    },
+    "jira-get-sprints-from-board": {
+      "handler": "dist/commands/jira/get-sprints-from-board.js",
+      "description": "List sprints for a board"
+    },
+    "jira-get-sprint-issues": {
+      "handler": "dist/commands/jira/get-sprint-issues.js",
+      "description": "Get issues in a sprint"
+    },
+    "jira-create-sprint": {
+      "handler": "dist/commands/jira/create-sprint.js",
+      "description": "Create a new sprint"
+    },
+    "jira-update-sprint": {
+      "handler": "dist/commands/jira/update-sprint.js",
+      "description": "Update sprint details or state"
+    },
+    "jira-add-issues-to-sprint": {
+      "handler": "dist/commands/jira/add-issues-to-sprint.js",
+      "description": "Move issues into a sprint"
+    },
+    "jira-get-link-types": {
+      "handler": "dist/commands/jira/get-link-types.js",
+      "description": "Get available issue link types"
+    },
+    "jira-link-to-epic": {
+      "handler": "dist/commands/jira/link-to-epic.js",
+      "description": "Link issues to an epic"
+    },
+    "jira-create-issue-link": {
+      "handler": "dist/commands/jira/create-issue-link.js",
+      "description": "Create a link between two issues"
+    },
+    "jira-create-remote-issue-link": {
+      "handler": "dist/commands/jira/create-remote-issue-link.js",
+      "description": "Link an issue to an external URL"
+    },
+    "jira-remove-issue-link": {
+      "handler": "dist/commands/jira/remove-issue-link.js",
+      "description": "Remove an issue link"
+    },
+    "jira-get-worklog": {
+      "handler": "dist/commands/jira/get-worklog.js",
+      "description": "Get work log entries for an issue"
+    },
+    "jira-add-worklog": {
+      "handler": "dist/commands/jira/add-worklog.js",
+      "description": "Log time spent on an issue"
+    },
+    "jira-download-attachment": {
+      "handler": "dist/commands/jira/download-attachment.js",
+      "description": "Download an attachment by ID"
+    },
+    "jira-get-issue-images": {
+      "handler": "dist/commands/jira/get-issue-images.js",
+      "description": "Get image attachments for an issue"
+    },
+    "jira-get-user-profile": {
+      "handler": "dist/commands/jira/get-user-profile.js",
+      "description": "Get current user or another user's profile"
+    },
+    "jira-get-issue-watchers": {
+      "handler": "dist/commands/jira/get-issue-watchers.js",
+      "description": "List watchers on an issue"
+    },
+    "jira-add-watcher": {
+      "handler": "dist/commands/jira/add-watcher.js",
+      "description": "Add a watcher to an issue"
+    },
+    "jira-remove-watcher": {
+      "handler": "dist/commands/jira/remove-watcher.js",
+      "description": "Remove a watcher from an issue"
+    },
+    "jira-get-service-desks": {
+      "handler": "dist/commands/jira/get-service-desks.js",
+      "description": "List all service desks"
+    },
+    "jira-get-service-desk-queues": {
+      "handler": "dist/commands/jira/get-service-desk-queues.js",
+      "description": "Get queues for a service desk"
+    },
+    "jira-get-queue-issues": {
+      "handler": "dist/commands/jira/get-queue-issues.js",
+      "description": "Get issues in a service desk queue"
+    },
+    "jira-get-issue-forms": {
+      "handler": "dist/commands/jira/get-issue-forms.js",
+      "description": "Get Proforma forms on an issue"
+    },
+    "jira-get-form-details": {
+      "handler": "dist/commands/jira/get-form-details.js",
+      "description": "Get form details"
+    },
+    "jira-update-form-answers": {
+      "handler": "dist/commands/jira/update-form-answers.js",
+      "description": "Update Proforma form answers"
+    },
+    "jira-get-issue-dates": {
+      "handler": "dist/commands/jira/get-issue-dates.js",
+      "description": "Get date fields for an issue"
+    },
+    "jira-get-issue-sla": {
+      "handler": "dist/commands/jira/get-issue-sla.js",
+      "description": "Get SLA information for an issue"
+    },
+    "jira-get-dev-info": {
+      "handler": "dist/commands/jira/get-dev-info.js",
+      "description": "Get development info (commits, branches, PRs)"
+    },
+    "jira-get-dev-summary": {
+      "handler": "dist/commands/jira/get-dev-summary.js",
+      "description": "Get development summary for an issue"
+    },
+    "jira-get-batch-dev-info": {
+      "handler": "dist/commands/jira/get-batch-dev-info.js",
+      "description": "Get development info for multiple issues"
+    },
+    "confluence-search": {
+      "handler": "dist/commands/confluence/search.js",
+      "description": "Search Confluence content using CQL"
+    },
+    "confluence-get-page": {
+      "handler": "dist/commands/confluence/get-page.js",
+      "description": "Get a Confluence page by ID"
+    },
+    "confluence-get-page-children": {
+      "handler": "dist/commands/confluence/get-page-children.js",
+      "description": "Get child pages of a page"
+    },
+    "confluence-get-page-history": {
+      "handler": "dist/commands/confluence/get-page-history.js",
+      "description": "Get version history of a page"
+    },
+    "confluence-create-page": {
+      "handler": "dist/commands/confluence/create-page.js",
+      "description": "Create a new Confluence page"
+    },
+    "confluence-update-page": {
+      "handler": "dist/commands/confluence/update-page.js",
+      "description": "Update an existing page"
+    },
+    "confluence-delete-page": {
+      "handler": "dist/commands/confluence/delete-page.js",
+      "description": "Delete a Confluence page"
+    },
+    "confluence-move-page": {
+      "handler": "dist/commands/confluence/move-page.js",
+      "description": "Move a page under a different parent"
+    },
+    "confluence-get-page-diff": {
+      "handler": "dist/commands/confluence/get-page-diff.js",
+      "description": "Compare two versions of a page"
+    },
+    "confluence-get-comments": {
+      "handler": "dist/commands/confluence/get-comments.js",
+      "description": "Get comments on a page"
+    },
+    "confluence-add-comment": {
+      "handler": "dist/commands/confluence/add-comment.js",
+      "description": "Add a comment to a page"
+    },
+    "confluence-reply-to-comment": {
+      "handler": "dist/commands/confluence/reply-to-comment.js",
+      "description": "Reply to an existing comment"
+    },
+    "confluence-get-labels": {
+      "handler": "dist/commands/confluence/get-labels.js",
+      "description": "Get labels on a page"
+    },
+    "confluence-add-label": {
+      "handler": "dist/commands/confluence/add-label.js",
+      "description": "Add labels to a page"
+    },
+    "confluence-search-user": {
+      "handler": "dist/commands/confluence/search-user.js",
+      "description": "Search for a Confluence user"
+    },
+    "confluence-get-page-views": {
+      "handler": "dist/commands/confluence/get-page-views.js",
+      "description": "Get page view statistics"
+    },
+    "confluence-upload-attachment": {
+      "handler": "dist/commands/confluence/upload-attachment.js",
+      "description": "Upload a file to a page"
+    },
+    "confluence-upload-attachments": {
+      "handler": "dist/commands/confluence/upload-attachments.js",
+      "description": "Upload multiple files to a page"
+    },
+    "confluence-get-attachments": {
+      "handler": "dist/commands/confluence/get-attachments.js",
+      "description": "List attachments on a page"
+    },
+    "confluence-download-attachment": {
+      "handler": "dist/commands/confluence/download-attachment.js",
+      "description": "Download an attachment by filename"
+    },
+    "confluence-download-all-attachments": {
+      "handler": "dist/commands/confluence/download-all-attachments.js",
+      "description": "List all downloadable attachments"
+    },
+    "confluence-delete-attachment": {
+      "handler": "dist/commands/confluence/delete-attachment.js",
+      "description": "Delete an attachment"
+    },
+    "confluence-get-page-images": {
+      "handler": "dist/commands/confluence/get-page-images.js",
+      "description": "Get image attachments from a page"
+    }
+  },
+  "config": {
+    "schema": {
+      "domain": {
+        "type": "string",
+        "description": "Atlassian Cloud domain (e.g., mycompany.atlassian.net)",
+        "secret": false
+      },
+      "email": {
+        "type": "string",
+        "description": "Atlassian account email address",
+        "secret": false
+      },
+      "apiToken": {
+        "type": "string",
+        "description": "Atlassian API token (https://id.atlassian.com/manage-profile/security/api-tokens)",
+        "secret": true,
+        "vaultHint": "renre-atlassian.apiToken"
+      }
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "atlassian-panel",
+        "title": "Atlassian",
+        "entry": "dist/panel.js"
+      }
+    ],
+    "widgets": [
+      {
+        "id": "my-tasks-widget",
+        "title": "My Jira Tasks",
+        "entry": "dist/my-tasks-widget.js",
+        "defaultSize": { "w": 4, "h": 3 },
+        "minSize": { "w": 3, "h": 2 },
+        "maxSize": { "w": 6, "h": 6 }
+      },
+      {
+        "id": "comments-widget",
+        "title": "Recent Comments",
+        "entry": "dist/comments-widget.js",
+        "defaultSize": { "w": 4, "h": 3 },
+        "minSize": { "w": 3, "h": 2 },
+        "maxSize": { "w": 6, "h": 6 }
+      },
+      {
+        "id": "confluence-updates-widget",
+        "title": "Confluence Updates",
+        "entry": "dist/confluence-updates-widget.js",
+        "defaultSize": { "w": 4, "h": 3 },
+        "minSize": { "w": 3, "h": 2 },
+        "maxSize": { "w": 6, "h": 6 }
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      { "name": "jira", "path": "agent/skills/jira" },
+      { "name": "confluence", "path": "agent/skills/confluence" },
+      { "name": "help", "path": "agent/skills/help" }
+    ]
+  }
+}

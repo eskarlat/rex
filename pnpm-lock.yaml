@@ -66,28 +66,6 @@ importers:
         specifier: ^2.0.17
         version: 2.0.17(mermaid@11.13.0)(vitepress@1.6.4(@algolia/client-search@5.49.2)(@types/node@20.19.37)(lightningcss@1.32.0)(postcss@8.5.8)(search-insights@2.17.3)(terser@5.46.1)(typescript@5.9.3))
 
-  extensions/atlassian-mcp:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.12.1
-        version: 1.27.1(zod@4.3.6)
-      '@renre-kit/extension-sdk':
-        specifier: workspace:*
-        version: link:../../packages/extension-sdk
-    devDependencies:
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.37
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      esbuild:
-        specifier: ^0.21.0
-        version: 0.21.5
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-
   extensions/chrome-debugger:
     dependencies:
       '@renre-kit/extension-sdk':
@@ -282,6 +260,34 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.4(@types/debug@4.1.13)(@types/node@20.19.37)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.2)
+
+  extensions/renre-atlassian:
+    dependencies:
+      '@renre-kit/extension-sdk':
+        specifier: workspace:*
+        version: link:../../packages/extension-sdk
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@renre-kit/shared':
+        specifier: workspace:^
+        version: link:../../packages/shared
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      esbuild:
+        specifier: ^0.21.0
+        version: 0.21.5
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.37)(jsdom@25.0.1)(lightningcss@1.32.0)
 
   packages/cli:
     dependencies:

@@ -55,22 +55,24 @@ extensions/hello-world/
 - Config interpolation in `mcp.env`
 - Local status command alongside MCP tools
 
-## atlassian-mcp (MCP stdio)
+## renre-atlassian (Standard)
 
-**Jira + Confluence integration** via the Atlassian MCP server.
+**Jira + Confluence integration** — 75 CLI commands for issues, pages, sprints, and more.
 
 | Feature | Details |
 |---------|---------|
-| **Type** | MCP stdio |
-| **Config** | `atlassianToken`, `atlassianEmail`, `siteUrl` (all secret/string) |
+| **Type** | Standard (in-process) |
+| **Commands** | 75 (50 Jira + 23 Confluence + 2 help) |
+| **Config** | `domain`, `email`, `apiToken` (secret) |
 | **Panels** | Main panel |
 | **Widgets** | My Tasks, Confluence Updates, Comments |
-| **Skills** | Jira management, Confluence search |
+| **Skills** | Jira management, Confluence search, Help |
 
 ### What to learn from it
 
+- Large command set with Zod schema validation
 - Multiple widgets from one extension
-- Custom MCP client wrapping (base-client pattern)
+- REST API client pattern (base-client → Jira/Confluence clients)
 - Rich dashboard UI with task lists and activity feeds
 - Multiple SKILL.md files per extension
 
@@ -148,7 +150,7 @@ extensions/hello-world/
 |-----------|------|----------|--------|---------|---------------|--------|
 | hello-world | Standard | 2 | 3 | 1 | 2 | 2 |
 | github-mcp | MCP | 1 | 1 | 1 | 2 | 1 |
-| atlassian-mcp | MCP | 1 | 1 | 3 | 3 | 2 |
+| renre-atlassian | Standard | 75 | 1 | 3 | 3 | 3 |
 | miro-mcp | MCP | 1 | 1 | 1 | 1 | 1 |
 | context7-mcp | MCP | 0 | 1 | 1 | 0 | 1 |
 | figma-mcp | MCP | 0 | 1 | 1 | 1 | 1 |

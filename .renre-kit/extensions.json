@@ -11,14 +11,14 @@
       "tags": ["example", "greeting"]
     },
     {
-      "name": "atlassian-mcp",
-      "description": "Jira and Confluence integration via MCP — 72 tools for issues, pages, sprints, and more",
-      "gitUrl": "./extensions/atlassian-mcp",
+      "name": "renre-atlassian",
+      "description": "Jira and Confluence integration — 75 CLI commands for issues, pages, sprints, and more",
+      "gitUrl": "./extensions/renre-atlassian",
       "latestVersion": "1.0.0",
-      "type": "mcp",
+      "type": "standard",
       "icon": "icons/atlassian.svg",
       "author": "yskarlat",
-      "tags": ["atlassian", "jira", "confluence", "mcp"]
+      "tags": ["atlassian", "jira", "confluence"]
     },
     {
       "name": "github-mcp",
