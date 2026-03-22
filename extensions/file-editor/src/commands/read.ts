@@ -1,9 +1,9 @@
 import { readFileSync, statSync } from 'node:fs';
 import { resolve, extname } from 'node:path';
 
-import { isInsideProject } from './path-guard.js';
-
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
+import { isInsideProject } from './path-guard.js';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 

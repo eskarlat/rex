@@ -6,13 +6,12 @@ import { relative, resolve, sep } from 'node:path';
  * (e.g., /proj vs /proj-evil both start with "/proj").
  */
 export function isInsideProject(basePath: string, targetPath: string): boolean {
-  const resolvedBase = resolve(basePath) + sep;
-  const resolvedTarget = resolve(targetPath);
+  const resolved = resolve(basePath);
+  const rel = relative(resolved, resolve(targetPath));
 
-  // Exact match (target IS the base dir)
-  if (resolvedTarget === resolve(basePath)) return true;
+  // Empty string means exact match (target IS the base dir)
+  if (rel === '') return true;
 
-  const rel = relative(resolve(basePath), resolvedTarget);
   // If relative path starts with ".." or is absolute, it's outside
   return !rel.startsWith('..') && !rel.startsWith(sep);
 }
