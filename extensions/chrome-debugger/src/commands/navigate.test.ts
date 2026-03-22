@@ -12,6 +12,8 @@ vi.mock('puppeteer', () => ({
       Promise.resolve({
         pages: () => Promise.resolve([{ goto: mockGoto, title: mockTitle, url: mockUrl }]),
         disconnect: mockDisconnect,
+        connected: true,
+        on: vi.fn(),
       })
     ),
   },
@@ -72,8 +74,8 @@ describe('navigate', () => {
     });
   });
 
-  it('disconnects the browser after execution', async () => {
+  it('keeps connection cached after execution', async () => {
     await navigate(makeContext({ url: 'https://example.com' }));
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 });

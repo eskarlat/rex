@@ -197,65 +197,61 @@ export default async function inspect(context: ExecutionContext): Promise<Comman
   ensureBrowserRunning(context.projectPath);
   const browser = await connectBrowser(context.projectPath);
 
-  try {
-    const page = await getActivePage(browser);
-    const client = await page.createCDPSession();
+  const page = await getActivePage(browser);
+  const client = await page.createCDPSession();
 
-    await client.send('DOM.enable');
-    await client.send('Overlay.enable');
-    await client.send('CSS.enable');
+  await client.send('DOM.enable');
+  await client.send('Overlay.enable');
+  await client.send('CSS.enable');
 
-    const backendNodeId = await waitForElementPick(client, timeout);
+  const backendNodeId = await waitForElementPick(client, timeout);
 
-    const { node } = (await client.send('DOM.describeNode', {
-      backendNodeId, depth: 0,
-    })) as { node: NodeDescription };
+  const { node } = (await client.send('DOM.describeNode', {
+    backendNodeId, depth: 0,
+  })) as { node: NodeDescription };
 
-    const { object } = (await client.send('DOM.resolveNode', { backendNodeId })) as {
-      object: { objectId: string };
-    };
+  const { object } = (await client.send('DOM.resolveNode', { backendNodeId })) as {
+    object: { objectId: string };
+  };
 
-    const cssSelector = await generateSelector(client, object.objectId);
+  const cssSelector = await generateSelector(client, object.objectId);
 
-    const { outerHTML } = (await client.send('DOM.getOuterHTML', { backendNodeId })) as {
-      outerHTML: string;
-    };
+  const { outerHTML } = (await client.send('DOM.getOuterHTML', { backendNodeId })) as {
+    outerHTML: string;
+  };
 
-    const { nodeId } = (await client.send('DOM.pushNodesByBackendIdsToFrontend', {
-      backendNodeIds: [backendNodeId],
-    })) as { nodeIds: number[]; nodeId?: number };
+  const { nodeId } = (await client.send('DOM.pushNodesByBackendIdsToFrontend', {
+    backendNodeIds: [backendNodeId],
+  })) as { nodeIds: number[]; nodeId?: number };
 
-    const resolvedNodeId = nodeId ?? node.nodeId;
-    const styleRows = await getComputedStyles(client, resolvedNodeId);
-    const boxModel = await getBoxModelSize(client, backendNodeId);
+  const resolvedNodeId = nodeId ?? node.nodeId;
+  const styleRows = await getComputedStyles(client, resolvedNodeId);
+  const boxModel = await getBoxModelSize(client, backendNodeId);
 
-    const textResult = await client.send('Runtime.callFunctionOn', {
-      objectId: object.objectId,
-      functionDeclaration: `function() { return (this.textContent || '').trim().slice(0, 200); }`,
-      returnByValue: true,
-    });
-    const textContent = (textResult as { result: { value: string } }).result.value;
+  const textResult = await client.send('Runtime.callFunctionOn', {
+    objectId: object.objectId,
+    functionDeclaration: `function() { return (this.textContent || '').trim().slice(0, 200); }`,
+    returnByValue: true,
+  });
+  const textContent = (textResult as { result: { value: string } }).result.value;
 
-    const a11yInfo = await getA11yInfo(client, backendNodeId);
-    const attrs = parseAttributes(node.attributes);
+  const a11yInfo = await getA11yInfo(client, backendNodeId);
+  const attrs = parseAttributes(node.attributes);
 
-    // Save selected element to state
-    const state = readState(context.projectPath);
-    if (state) {
-      writeState(context.projectPath, {
-        ...state,
-        selectedElement: {
-          backendNodeId,
-          selector: cssSelector,
-          tag: node.localName,
-          timestamp: new Date().toISOString(),
-        },
-      } as typeof state);
-    }
-
-    const output = buildOutput(node, cssSelector, outerHTML, boxModel, a11yInfo, textContent, attrs, styleRows);
-    return { output, exitCode: 0 };
-  } finally {
-    void browser.disconnect();
+  // Save selected element to state
+  const state = readState(context.projectPath);
+  if (state) {
+    writeState(context.projectPath, {
+      ...state,
+      selectedElement: {
+        backendNodeId,
+        selector: cssSelector,
+        tag: node.localName,
+        timestamp: new Date().toISOString(),
+      },
+    } as typeof state);
   }
+
+  const output = buildOutput(node, cssSelector, outerHTML, boxModel, a11yInfo, textContent, attrs, styleRows);
+  return { output, exitCode: 0 };
 }

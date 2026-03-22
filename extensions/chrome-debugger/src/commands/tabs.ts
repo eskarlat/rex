@@ -7,23 +7,19 @@ export default async function tabs(context: ExecutionContext): Promise<CommandRe
   ensureBrowserRunning(context.projectPath);
   const browser = await connectBrowser(context.projectPath);
 
-  try {
-    const pages = await browser.pages();
-    const rows: string[][] = [];
+  const pages = await browser.pages();
+  const rows: string[][] = [];
 
-    for (let i = 0; i < pages.length; i++) {
-      const page = pages[i];
-      const title = await page.title();
-      rows.push([String(i), truncate(title, 40), truncate(page.url(), 60)]);
-    }
-
-    const table = markdownTable(['Index', 'Title', 'URL'], rows);
-
-    return {
-      output: [`## Open Tabs (${String(pages.length)})`, '', table].join('\n'),
-      exitCode: 0,
-    };
-  } finally {
-    void browser.disconnect();
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    const title = await page.title();
+    rows.push([String(i), truncate(title, 40), truncate(page.url(), 60)]);
   }
+
+  const table = markdownTable(['Index', 'Title', 'URL'], rows);
+
+  return {
+    output: [`## Open Tabs (${String(pages.length)})`, '', table].join('\n'),
+    exitCode: 0,
+  };
 }

@@ -6,16 +6,28 @@ import type { ExecutionContext } from '../shared/types.js';
 import { writeState, readState } from '../shared/state.js';
 
 const mockClose = vi.fn();
+const mockDisconnectCached = vi.fn();
 
 vi.mock('puppeteer', () => ({
   default: {
     connect: vi.fn().mockImplementation(() =>
       Promise.resolve({
         close: mockClose,
+        connected: true,
+        on: vi.fn(),
+        disconnect: vi.fn(),
       })
     ),
   },
 }));
+
+vi.mock('../shared/connection.js', async () => {
+  const actual = await vi.importActual<typeof import('../shared/connection.js')>('../shared/connection.js');
+  return {
+    ...actual,
+    disconnectCachedBrowser: (...args: unknown[]) => mockDisconnectCached(...args),
+  };
+});
 
 import close from './close.js';
 
@@ -67,6 +79,7 @@ describe('close', () => {
     expect(result.output).toContain('Browser Closed');
     expect(result.output).toContain('99999');
     expect(mockClose).toHaveBeenCalled();
+    expect(mockDisconnectCached).toHaveBeenCalled();
 
     // State should be deleted
     expect(readState(TEST_DIR)).toBeNull();

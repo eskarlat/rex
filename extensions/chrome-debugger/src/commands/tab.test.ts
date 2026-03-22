@@ -101,14 +101,14 @@ describe('tab', () => {
     expect(result.output).toContain('**Index**: 1');
   });
 
-  it('disconnects browser after execution', async () => {
+  it('keeps connection cached after execution', async () => {
     await tab(makeContext({ index: 0 }));
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
-  it('disconnects browser even on error', async () => {
+  it('keeps connection cached even on error', async () => {
     await expect(tab(makeContext({ index: 99 }))).rejects.toThrow('out of range');
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
   it('calls ensureBrowserRunning', async () => {

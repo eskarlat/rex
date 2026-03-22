@@ -288,7 +288,7 @@ describe('selected', () => {
     });
 
     await selected(makeContext());
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
   it('filters out empty and none style values', async () => {

@@ -17,6 +17,8 @@ vi.mock('puppeteer', () => ({
             { title: mockTitle2, url: mockUrl2 },
           ]),
         disconnect: mockDisconnect,
+        connected: true,
+        on: vi.fn(),
       })
     ),
   },
@@ -61,8 +63,8 @@ describe('tabs', () => {
     expect(result.output).toContain('| 1 |');
   });
 
-  it('disconnects after listing', async () => {
+  it('keeps connection cached after listing', async () => {
     await tabs(makeContext());
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 });

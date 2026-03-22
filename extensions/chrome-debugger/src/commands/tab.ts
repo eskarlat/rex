@@ -12,22 +12,18 @@ export default async function tab(context: ExecutionContext): Promise<CommandRes
   ensureBrowserRunning(context.projectPath);
   const browser = await connectBrowser(context.projectPath);
 
-  try {
-    const page = await getPageByIndex(browser, index);
-    await page.bringToFront();
-    const title = await page.title();
+  const page = await getPageByIndex(browser, index);
+  await page.bringToFront();
+  const title = await page.title();
 
-    return {
-      output: [
-        '## Switched Tab',
-        '',
-        `- **Index**: ${String(index)}`,
-        `- **Title**: ${title}`,
-        `- **URL**: ${page.url()}`,
-      ].join('\n'),
-      exitCode: 0,
-    };
-  } finally {
-    void browser.disconnect();
-  }
+  return {
+    output: [
+      '## Switched Tab',
+      '',
+      `- **Index**: ${String(index)}`,
+      `- **Title**: ${title}`,
+      `- **URL**: ${page.url()}`,
+    ].join('\n'),
+    exitCode: 0,
+  };
 }

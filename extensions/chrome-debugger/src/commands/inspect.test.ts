@@ -190,21 +190,21 @@ describe('inspect', () => {
     expect(result.output).toContain('Inspected Element');
   });
 
-  it('disconnects browser after execution', async () => {
+  it('keeps connection cached after execution', async () => {
     mockReadState.mockReturnValue(null);
 
     await inspect(makeContext());
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
-  it('disconnects browser even on error', async () => {
+  it('keeps connection cached even on error', async () => {
     mockReadState.mockReturnValue(null);
 
     // Make createCDPSession fail
     mockCreateCDPSession.mockRejectedValue(new Error('CDP error'));
 
     await expect(inspect(makeContext())).rejects.toThrow('CDP error');
-    expect(mockDisconnect).toHaveBeenCalled();
+    expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
   it('handles missing nodeId from pushNodesByBackendIdsToFrontend', async () => {

@@ -10,6 +10,8 @@ vi.mock('puppeteer', () => ({
       Promise.resolve({
         pages: () => Promise.resolve([{ evaluate: mockEvaluate }]),
         disconnect: mockDisconnect,
+        connected: true,
+        on: vi.fn(),
       })
     ),
   },

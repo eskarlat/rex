@@ -3,9 +3,53 @@ import type { Browser, Page } from 'puppeteer';
 
 import { ensureBrowserRunning } from './state.js';
 
+let cachedBrowser: Browser | null = null;
+let cachedEndpoint: string | null = null;
+
+function isConnected(browser: Browser): boolean {
+  return browser.connected;
+}
+
 export async function connectBrowser(projectPath: string): Promise<Browser> {
   const state = ensureBrowserRunning(projectPath);
-  return puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
+
+  if (cachedBrowser && cachedEndpoint === state.wsEndpoint && isConnected(cachedBrowser)) {
+    return cachedBrowser;
+  }
+
+  // Endpoint changed or connection dropped — reconnect
+  if (cachedBrowser) {
+    try {
+      cachedBrowser.disconnect();
+    } catch {
+      // Already disconnected
+    }
+  }
+
+  const browser = await puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
+  cachedBrowser = browser;
+  cachedEndpoint = state.wsEndpoint;
+
+  browser.on('disconnected', () => {
+    if (cachedBrowser === browser) {
+      cachedBrowser = null;
+      cachedEndpoint = null;
+    }
+  });
+
+  return browser;
+}
+
+export function disconnectCachedBrowser(): void {
+  if (cachedBrowser) {
+    try {
+      cachedBrowser.disconnect();
+    } catch {
+      // Already disconnected
+    }
+    cachedBrowser = null;
+    cachedEndpoint = null;
+  }
 }
 
 export async function getActivePage(browser: Browser): Promise<Page> {
@@ -31,10 +75,6 @@ export async function withBrowser<T>(
   fn: (browser: Browser, page: Page) => Promise<T>
 ): Promise<T> {
   const browser = await connectBrowser(projectPath);
-  try {
-    const page = await getActivePage(browser);
-    return await fn(browser, page);
-  } finally {
-    void browser.disconnect();
-  }
+  const page = await getActivePage(browser);
+  return fn(browser, page);
 }

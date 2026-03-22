@@ -13,6 +13,8 @@ vi.mock('puppeteer', () => ({
         pages: () =>
           Promise.resolve([{ $: mock$, type: mockType, evaluate: mockEvaluate }]),
         disconnect: mockDisconnect,
+        connected: true,
+        on: vi.fn(),
       })
     ),
   },

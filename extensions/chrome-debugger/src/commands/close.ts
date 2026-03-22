@@ -2,7 +2,7 @@ import { existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { readState, deleteState, getLogDir, deleteGlobalSession, killProcessTree } from '../shared/state.js';
-import { connectBrowser } from '../shared/connection.js';
+import { connectBrowser, disconnectCachedBrowser } from '../shared/connection.js';
 import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
 export default async function close(context: ExecutionContext): Promise<CommandResult> {
@@ -14,6 +14,8 @@ export default async function close(context: ExecutionContext): Promise<CommandR
     };
   }
 
+  disconnectCachedBrowser();
+
   try {
     const browser = await connectBrowser(context.projectPath);
     await browser.close();
@@ -21,6 +23,8 @@ export default async function close(context: ExecutionContext): Promise<CommandR
     // Browser may already be gone — kill process tree as fallback
     killProcessTree(state.pid);
   }
+
+  disconnectCachedBrowser();
 
   // Clean up log files
   const logDir = getLogDir(context.projectPath);
