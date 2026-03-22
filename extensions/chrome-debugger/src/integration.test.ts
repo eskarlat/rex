@@ -14,6 +14,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
+const SKIP_INTEGRATION = !process.env['RUN_INTEGRATION_TESTS'];
+const describeIntegration = SKIP_INTEGRATION ? describe.skip : describe;
+
 /**
  * Locate a usable Chromium binary.
  * Priority: PUPPETEER_EXECUTABLE_PATH env > Playwright's bundled Chromium > system Chrome.
@@ -189,7 +192,7 @@ afterAll(async () => {
 
 // ── Tests ─────────────────────────────────────────────────────────
 
-describe('Chrome Debugger — Integration', () => {
+describeIntegration('Chrome Debugger — Integration', () => {
   // ────────────────────────────────────────────
   // 1. Browser Lifecycle
   // ────────────────────────────────────────────

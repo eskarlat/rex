@@ -62,6 +62,22 @@ describe('connectBrowser', () => {
     expect(first).toBe(second);
   });
 
+  it('uses separate cache entries for different endpoints', async () => {
+    const browser1 = makeBrowser();
+    const browser2 = makeBrowser();
+    mockEnsure
+      .mockReturnValueOnce({ wsEndpoint: 'ws://localhost:9222' })
+      .mockReturnValueOnce({ wsEndpoint: 'ws://localhost:9333' });
+    mockConnect.mockResolvedValueOnce(browser1).mockResolvedValueOnce(browser2);
+
+    const first = await connectBrowser('/tmp/project-a');
+    const second = await connectBrowser('/tmp/project-b');
+
+    expect(mockConnect).toHaveBeenCalledTimes(2);
+    expect(first).toBe(browser1);
+    expect(second).toBe(browser2);
+  });
+
   it('reconnects when cached browser is disconnected', async () => {
     const browser1 = makeBrowser(true);
     const browser2 = makeBrowser(true);

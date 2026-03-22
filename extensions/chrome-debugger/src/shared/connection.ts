@@ -4,21 +4,28 @@ import type { Browser, Page } from 'puppeteer';
 import { setupBrowserMonitoring } from './monitoring.js';
 import { ensureBrowserRunning } from './state.js';
 
-let cachedBrowser: Browser | null = null;
+const browserCache = new Map<string, Browser>();
 
 export async function connectBrowser(projectPath: string): Promise<Browser> {
   const state = ensureBrowserRunning(projectPath);
+  const endpoint = state.wsEndpoint;
 
-  if (cachedBrowser?.connected) {
-    return cachedBrowser;
+  const cached = browserCache.get(endpoint);
+  if (cached?.connected) {
+    return cached;
   }
 
-  const browser = await puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
-  cachedBrowser = browser;
+  // Stale entry — remove it
+  if (cached) {
+    browserCache.delete(endpoint);
+  }
+
+  const browser = await puppeteer.connect({ browserWSEndpoint: endpoint });
+  browserCache.set(endpoint, browser);
 
   browser.on('disconnected', () => {
-    if (cachedBrowser === browser) {
-      cachedBrowser = null;
+    if (browserCache.get(endpoint) === browser) {
+      browserCache.delete(endpoint);
     }
   });
 
@@ -34,9 +41,10 @@ export async function connectBrowser(projectPath: string): Promise<Browser> {
 }
 
 export function disconnectCachedBrowser(): void {
-  const browser = cachedBrowser;
-  cachedBrowser = null;
-  void browser?.disconnect();
+  for (const [endpoint, browser] of browserCache) {
+    browserCache.delete(endpoint);
+    void browser.disconnect();
+  }
 }
 
 export async function getActivePage(browser: Browser): Promise<Page> {
