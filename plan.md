@@ -1,304 +1,430 @@
-# Plan: Create `renre-atlassian` Standard CLI Extension
+# Browser Extension Plan
 
 ## Overview
 
-Convert the existing `atlassian-mcp` (MCP wrapper) into a new `renre-atlassian` **standard (in-process) CLI extension** following the same architecture as `chrome-debugger`. The extension exposes all 72+ Atlassian tools (Jira + Confluence) as individual CLI command handlers.
+A new RenreKit extension called **`agent-browser`** that wraps the [`agent-browser`](https://agent-browser.dev) CLI tool (by Vercel Labs). It provides a **single panel** that looks and behaves like a real browser window — tab bar, URL bar, and a live interactive viewport streamed from headless Chrome via CDP WebSocket.
 
-## Key Design Decisions
+Users can interact with the page directly in the viewport (click, scroll, type), toggle **Dev Mode** (element inspector), and watch AI agents operate the browser in real-time.
 
-- **Type**: `"standard"` (in-process, NOT MCP) — same pattern as `chrome-debugger`
-- **No MCP SDK dependency** — removes `@modelcontextprotocol/sdk`, uses direct REST API calls
-- **Reuse existing clients** — `base-client.ts`, `jira-client.ts`, `confluence-client.ts` are clean REST wrappers, copy them
-- **Markdown output** — all commands return LLM-friendly markdown via `jsonToMarkdown` from `@renre-kit/extension-sdk/node` (same as MCP version's `markdownResult`)
-- **Config reads from `ExecutionContext`** — domain/email/apiToken come from `context.config` (resolved by CLI core, vault-decrypted)
-- **Command naming**: kebab-case for CLI — `renre-kit renre-atlassian:jira-get-issue`, `renre-kit renre-atlassian:confluence-search`, etc.
-- **Help commands** — `renre-atlassian:jira-help` and `renre-atlassian:confluence-help` return full command reference so agents can discover available commands without SKILL.md
-- **TDD methodology**: Write tests first for each module, then implementation
-- **Local ESLint config**: `eslint.config.mjs` inside the extension (same pattern as `chrome-debugger`)
+---
 
-## Directory Structure
+## Architecture
 
 ```
-extensions/renre-atlassian/
+┌─────────────────────────────────────────────────────────────┐
+│  Dashboard Panel (React)                                    │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  [favicon] Tab 1  ×  │  [favicon] Tab 2  ×  │  [+]   │  │
+│  ├───────────────────────────────────────────────────────┤  │
+│  │  ◀  ▶  ↻  │ 🔒 https://example.com           │  ⚙   │  │
+│  ├───────────────────────────────────────────────────────┤  │
+│  │                                                       │  │
+│  │              LIVE VIEWPORT                            │  │
+│  │        (CDP Page.screencastFrame → <canvas>)          │  │
+│  │        + mouse/keyboard events → CDP Input.*          │  │
+│  │                                                       │  │
+│  ├───────────────────────────────────────────────────────┤  │
+│  │ ● Connected │ 1280×720 │ [Dev Mode] │ Session: default│  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+         │                                    ▲
+         │ Input.dispatchMouseEvent           │ Page.screencastFrame
+         │ Input.dispatchKeyEvent             │ DOM.getDocument (dev mode)
+         ▼                                    │
+    ┌─────────────────────────────────────────────┐
+    │  agent-browser daemon (headless Chrome)      │
+    │  CDP WebSocket: ws://localhost:9222/...       │
+    └─────────────────────────────────────────────┘
+```
+
+### Why Direct CDP (not polling screenshots)?
+
+- **Real-time**: `Page.startScreencast` pushes JPEG frames at configurable FPS, ~50-100KB each
+- **Interactive**: `Input.dispatchMouseEvent` / `Input.dispatchKeyEvent` over same WebSocket
+- **Efficient**: No repeated `screenshot` command overhead; frames arrive only when content changes
+- **Dev Mode**: `DOM.getDocument` + `DOM.highlightNode` for element inspection over same connection
+
+---
+
+## Extension Structure
+
+```
+extensions/agent-browser/
 ├── manifest.json
 ├── package.json
+├── icon.svg
 ├── build.js
 ├── tsconfig.json
 ├── tsconfig.lint.json
-├── vitest.config.ts
-├── eslint.config.mjs              # Local ESLint config
+├── eslint.config.mjs
 ├── src/
-│   ├── index.ts                   # onInit/onDestroy lifecycle hooks
-│   ├── shared/
-│   │   ├── types.ts               # ExecutionContext, CommandResult, AtlassianClientConfig
-│   │   ├── client.ts              # Client factory: creates Jira/Confluence clients from context.config
-│   │   ├── client.test.ts         # Tests for client factory
-│   │   ├── formatters.ts          # toOutput/errorOutput helpers for CommandResult
-│   │   └── formatters.test.ts     # Tests for formatters
-│   ├── client/
-│   │   ├── base-client.ts         # HTTP client (from atlassian-mcp)
-│   │   ├── base-client.test.ts    # Tests for base client
-│   │   ├── jira-client.ts         # Jira REST API wrapper (from atlassian-mcp)
-│   │   ├── jira-client.test.ts    # Tests for Jira client
-│   │   ├── confluence-client.ts   # Confluence REST API wrapper (from atlassian-mcp)
-│   │   └── confluence-client.test.ts  # Tests for Confluence client
-│   └── commands/
-│       ├── status.ts              # Connection status command
-│       ├── status.test.ts
-│       ├── jira-help.ts           # Jira command reference (for agent discovery)
-│       ├── jira-help.test.ts
-│       ├── confluence-help.ts     # Confluence command reference (for agent discovery)
-│       ├── confluence-help.test.ts
-│       ├── jira/
-│       │   ├── get-issue.ts       # Each tool = one file
-│       │   ├── search.ts
-│       │   ├── get-project-issues.ts
-│       │   ├── create-issue.ts
-│       │   ├── update-issue.ts
-│       │   ├── delete-issue.ts
-│       │   ├── batch-create-issues.ts
-│       │   ├── get-changelogs.ts
-│       │   ├── search-fields.ts
-│       │   ├── get-field-options.ts
-│       │   ├── add-comment.ts
-│       │   ├── edit-comment.ts
-│       │   ├── get-transitions.ts
-│       │   ├── transition-issue.ts
-│       │   ├── get-all-projects.ts
-│       │   ├── get-project-versions.ts
-│       │   ├── get-project-components.ts
-│       │   ├── create-version.ts
-│       │   ├── batch-create-versions.ts
-│       │   ├── get-agile-boards.ts
-│       │   ├── get-board-issues.ts
-│       │   ├── get-sprints-from-board.ts
-│       │   ├── get-sprint-issues.ts
-│       │   ├── create-sprint.ts
-│       │   ├── update-sprint.ts
-│       │   ├── add-issues-to-sprint.ts
-│       │   ├── get-link-types.ts
-│       │   ├── link-to-epic.ts
-│       │   ├── create-issue-link.ts
-│       │   ├── create-remote-issue-link.ts
-│       │   ├── remove-issue-link.ts
-│       │   ├── get-worklog.ts
-│       │   ├── add-worklog.ts
-│       │   ├── download-attachment.ts
-│       │   ├── get-issue-images.ts
-│       │   ├── get-user-profile.ts
-│       │   ├── get-issue-watchers.ts
-│       │   ├── add-watcher.ts
-│       │   ├── remove-watcher.ts
-│       │   ├── get-service-desks.ts
-│       │   ├── get-service-desk-queues.ts
-│       │   ├── get-queue-issues.ts
-│       │   ├── get-issue-forms.ts
-│       │   ├── get-form-details.ts
-│       │   ├── update-form-answers.ts
-│       │   ├── get-issue-dates.ts
-│       │   ├── get-issue-sla.ts
-│       │   ├── get-dev-info.ts
-│       │   ├── get-dev-summary.ts
-│       │   ├── get-batch-dev-info.ts
-│       │   ├── issues.test.ts          # Grouped tests per domain
-│       │   ├── fields.test.ts
-│       │   ├── comments.test.ts
-│       │   ├── transitions.test.ts
-│       │   ├── projects.test.ts
-│       │   ├── agile.test.ts
-│       │   ├── links.test.ts
-│       │   ├── worklog.test.ts
-│       │   ├── attachments.test.ts
-│       │   ├── users.test.ts
-│       │   ├── watchers.test.ts
-│       │   ├── service-desk.test.ts
-│       │   ├── forms.test.ts
-│       │   ├── metrics.test.ts
-│       │   └── development.test.ts
-│       └── confluence/
-│           ├── search.ts
-│           ├── get-page.ts
-│           ├── get-page-children.ts
-│           ├── get-page-history.ts
-│           ├── create-page.ts
-│           ├── update-page.ts
-│           ├── delete-page.ts
-│           ├── move-page.ts
-│           ├── get-page-diff.ts
-│           ├── get-comments.ts
-│           ├── add-comment.ts
-│           ├── reply-to-comment.ts
-│           ├── get-labels.ts
-│           ├── add-label.ts
-│           ├── search-user.ts
-│           ├── get-page-views.ts
-│           ├── upload-attachment.ts
-│           ├── upload-attachments.ts
-│           ├── get-attachments.ts
-│           ├── download-attachment.ts
-│           ├── download-all-attachments.ts
-│           ├── delete-attachment.ts
-│           ├── get-page-images.ts
-│           ├── pages.test.ts            # Grouped tests per domain
-│           ├── comments.test.ts
-│           ├── labels.test.ts
-│           ├── users.test.ts
-│           ├── analytics.test.ts
-│           └── attachments.test.ts
+│   ├── index.ts                          # onInit/onDestroy lifecycle
+│   ├── commands/
+│   │   ├── open.ts                       # Open URL in browser
+│   │   ├── close.ts                      # Close browser session
+│   │   ├── status.ts                     # Browser status + CDP URL
+│   │   ├── click.ts                      # Click element by ref
+│   │   ├── type.ts                       # Type into element
+│   │   ├── screenshot.ts                 # Take screenshot
+│   │   ├── snapshot.ts                   # Accessibility tree snapshot
+│   │   ├── tabs.ts                       # List open tabs
+│   │   ├── navigate.ts                   # Navigate to URL
+│   │   └── eval.ts                       # Execute JavaScript
+│   └── ui/
+│       ├── panel.tsx                      # Main panel entry point
+│       ├── components/
+│       │   ├── BrowserChrome.tsx          # Full browser window wrapper
+│       │   ├── TabBar.tsx                 # Tab bar with management
+│       │   ├── AddressBar.tsx            # URL bar + nav buttons
+│       │   ├── Viewport.tsx              # Canvas-based live viewport
+│       │   ├── StatusBar.tsx             # Bottom status strip
+│       │   ├── DevToolsOverlay.tsx       # Element inspector overlay
+│       │   └── EmptyState.tsx            # Not-connected state
+│       ├── hooks/
+│       │   ├── useCdpConnection.ts       # WebSocket lifecycle to CDP
+│       │   ├── useScreencast.ts          # Frame rendering on canvas
+│       │   ├── useInputForwarding.ts     # Mouse/keyboard → CDP Input.*
+│       │   ├── useDevMode.ts             # DOM inspection overlay
+│       │   ├── useBrowserStatus.ts       # Polling browser status
+│       │   └── useTabManager.ts          # Tab state from CDP
+│       └── lib/
+│           ├── cdp-client.ts             # Thin CDP WebSocket wrapper
+│           └── input-mapper.ts           # DOM events → CDP protocol
 ├── agent/
 │   └── skills/
-│       ├── jira/
-│       │   └── SKILL.md
-│       ├── confluence/
-│       │   └── SKILL.md
-│       └── help/
-│           └── SKILL.md           # Skill teaching agent to use help commands for discovery
-└── src/ui/
-    ├── panel.tsx
-    ├── my-tasks-widget.tsx
-    ├── comments-widget.tsx
-    └── confluence-updates-widget.tsx
+│       └── browser-automation/
+│           └── SKILL.md
+└── dist/
 ```
 
-## Implementation Steps
+---
 
-### Phase 1: Project Scaffolding & Config Files
+## Panel Design — "Browser-in-Browser"
 
-1. Create directory `extensions/renre-atlassian/`
-2. Write `package.json` — no MCP SDK dependency, just `@renre-kit/extension-sdk`
-3. Write `tsconfig.json` — ES2022, NodeNext, jsx: react-jsx
-4. Write `tsconfig.lint.json` — extends tsconfig for ESLint projectService
-5. Write `eslint.config.mjs` — local ESLint config (same pattern as chrome-debugger: typescript-eslint, sonarjs, import-x, unicorn, react-hooks)
-6. Write `vitest.config.ts` — node environment, 86% coverage thresholds, exclude UI
-7. Write `build.js` — entry points for all 72+ commands + UI panels
+A single panel that renders a complete browser window chrome using the dashboard's design system (shadcn/ui tokens, muted backgrounds, subtle borders).
 
-### Phase 2: Shared Types & Client Layer (TDD)
+### 1. Tab Bar
 
-8. Write `src/shared/types.ts` — `ExecutionContext`, `CommandResult` interfaces
-9. Write `src/client/base-client.test.ts` — mock fetch, test request/requestFormData/requestRaw/error handling
-10. Write `src/client/base-client.ts` — copy from atlassian-mcp (clean REST wrapper)
-11. Write `src/client/jira-client.test.ts` — mock base-client, test each method
-12. Write `src/client/jira-client.ts` — copy from atlassian-mcp
-13. Write `src/client/confluence-client.test.ts` — mock base-client, test each method
-14. Write `src/client/confluence-client.ts` — copy from atlassian-mcp
-15. Write `src/shared/client.test.ts` — test factory creates clients from context.config
-16. Write `src/shared/client.ts` — factory function `createClients(context)` extracts domain/email/apiToken from config
-17. Write `src/shared/formatters.test.ts` — test toOutput and errorOutput
-18. Write `src/shared/formatters.ts` — `toOutput(data)` → CommandResult with markdown, `errorOutput(err)` → CommandResult with exitCode 1
+```
+┌──────────────────────────────────────────────────────────────┐
+│  [●] Example.com  ×  │  [●] GitHub  ×  │  [+]               │
+└──────────────────────────────────────────────────────────────┘
+```
 
-### Phase 3: Jira Command Handlers (TDD)
+- Horizontal scrollable tabs
+- Active tab: `bg-background border-b-0 rounded-t-md`, inactive: `bg-muted/50 text-muted-foreground`
+- Close per tab (×), new tab (+)
+- Favicon dot (colored circle derived from domain)
+- Tab data from `Target.getTargets()` via CDP
 
-Each command follows this pattern:
+### 2. Address Bar
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  ◀  ▶  ↻  │  🔒 https://example.com/page          │  ⚙    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- Nav buttons: `Button variant="ghost" size="icon"` with Lucide icons (`ChevronLeft`, `ChevronRight`, `RotateCw`)
+- Lock icon (`Lock`/`Unlock`) for HTTPS/HTTP
+- URL `Input` — editable, Enter navigates
+- Settings gear (`Settings2`): dropdown with viewport preset selector
+
+### 3. Viewport — The Core
+
+- `<canvas>` element filling available panel height
+- Two-layer approach: bottom canvas for screencast, top canvas (absolute positioned) for dev mode overlay
+- Renders JPEG frames from `Page.screencastFrame`
+- `tabIndex={0}` to capture keyboard focus
+- Mouse events: click, move, scroll → scaled to viewport coords → `Input.dispatchMouseEvent`
+- Keyboard events → `Input.dispatchKeyEvent`
+- Loading spinner overlay when connecting
+
+### 4. Status Bar
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ● Connected │ 1280 × 720 │ [Dev Mode] │ Session: default    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- Status dot: green `bg-emerald-500` (connected), yellow `bg-yellow-500` (connecting), red `bg-destructive` (disconnected)
+- Viewport dimensions: `text-muted-foreground text-xs`
+- Dev Mode toggle: `Button variant="outline" size="sm"` → `variant="default"` when active
+- Session name: `Badge variant="secondary"`
+
+### 5. Dev Mode Overlay
+
+When toggled on:
+- Hover highlights elements with blue border overlay (drawn on overlay canvas)
+- Uses `Overlay.setInspectMode({ mode: 'searchForNode' })` via CDP
+- On element click, shows info card positioned near selection:
+
+```
+┌─────────────────────────────┐
+│ div.container > p.title     │
+│ 320 × 48                   │
+│ font-size: 16px             │
+│ color: rgb(51, 51, 51)      │
+│ [Copy selector]             │
+└─────────────────────────────┘
+```
+
+- Card component: `Card` with `CardContent`, small text, `text-xs font-mono`
+- Exit: click toggle or press Escape
+- Uses `DOM.describeNode` + `CSS.getComputedStyleForNode` for element details
+
+### 6. Empty State (No Browser Running)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│                       Globe icon                             │
+│                  No browser session                          │
+│                                                              │
+│          Enter a URL to launch a headless browser            │
+│                                                              │
+│     [ https://                                ] [Launch]     │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+- `EmptyState` component from SDK, or custom with `Globe` Lucide icon
+- URL `Input` + `Button` to launch
+- On launch: `sdk.exec.run('agent-browser:open', { url })` → transitions to live view
+
+---
+
+## Commands (CLI Layer)
+
+All commands wrap `agent-browser` CLI via `child_process.execFile` and parse text output to structured JSON.
+
+| Command | Args | Wraps | Returns |
+|---------|------|-------|---------|
+| `open` | `url: string` | `agent-browser open <url>` | `{ url, title }` |
+| `close` | — | `agent-browser close` | `{ closed: true }` |
+| `status` | — | `agent-browser get cdp-url` | `{ connected, cdpUrl, url, title, session }` |
+| `click` | `ref: string` | `agent-browser click <ref>` | `{ clicked: true }` |
+| `type` | `ref: string, text: string` | `agent-browser type <ref> <text>` | `{ typed: true }` |
+| `screenshot` | `path?: string` | `agent-browser screenshot` | `{ path, dataUrl }` |
+| `snapshot` | — | `agent-browser snapshot` | `{ tree: string }` |
+| `tabs` | — | `agent-browser tabs` | `{ tabs: Tab[] }` |
+| `navigate` | `url: string` | `agent-browser open <url>` | `{ url, title }` |
+| `eval` | `code: string` | `agent-browser eval <code>` | `{ result }` |
+
+Each command uses `defineCommand()` with Zod schemas:
+
 ```typescript
-export default async function handler(context: ExecutionContext): Promise<CommandResult> {
-  try {
-    const { jira } = createClients(context);
-    const data = await jira.someMethod(context.args['param'] as string);
-    return toOutput(data);
-  } catch (err) {
-    return errorOutput(err);
-  }
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
+
+export default defineCommand({
+  args: { url: z.string() },
+  handler: async (ctx) => {
+    const { stdout } = await execFileAsync('agent-browser', ['open', ctx.args.url]);
+    return { output: stdout.trim(), exitCode: 0 };
+  },
+});
+```
+
+---
+
+## CDP WebSocket Integration
+
+### Connection Flow (in panel)
+
+1. Panel mounts → `useBrowserStatus` polls `sdk.exec.run('agent-browser:status')` every 3s
+2. When `status.connected && status.cdpUrl` → `useCdpConnection` opens WebSocket
+3. `useScreencast` sends `Page.startScreencast` → receives frames → draws on canvas
+4. `useInputForwarding` captures DOM events on canvas → sends CDP input events
+5. `useTabManager` listens to `Target.targetCreated/destroyed/infoChanged`
+
+### CDP Client (`cdp-client.ts`)
+
+```typescript
+class CdpClient {
+  private ws: WebSocket;
+  private nextId = 1;
+  private pending = new Map<number, { resolve, reject }>();
+  private listeners = new Map<string, Set<Function>>();
+
+  send(method: string, params?: object): Promise<unknown>;
+  on(event: string, handler: (params: unknown) => void): () => void;
+  close(): void;
 }
 ```
 
-For each group — write test file first, then all command implementations:
+### Screencast Flow (`useScreencast.ts`)
 
-19. **Issues** (8 commands) — tests in `issues.test.ts`, implementations: `get-issue`, `search`, `get-project-issues`, `create-issue`, `update-issue`, `delete-issue`, `batch-create-issues`, `get-changelogs`
-20. **Fields** (2) — tests in `fields.test.ts`: `search-fields`, `get-field-options`
-21. **Comments** (2) — tests in `comments.test.ts`: `add-comment`, `edit-comment`
-22. **Transitions** (2) — tests in `transitions.test.ts`: `get-transitions`, `transition-issue`
-23. **Projects** (5) — tests in `projects.test.ts`: `get-all-projects`, `get-project-versions`, `get-project-components`, `create-version`, `batch-create-versions`
-24. **Agile** (7) — tests in `agile.test.ts`: `get-agile-boards`, `get-board-issues`, `get-sprints-from-board`, `get-sprint-issues`, `create-sprint`, `update-sprint`, `add-issues-to-sprint`
-25. **Links** (5) — tests in `links.test.ts`: `get-link-types`, `link-to-epic`, `create-issue-link`, `create-remote-issue-link`, `remove-issue-link`
-26. **Worklog** (2) — tests in `worklog.test.ts`: `get-worklog`, `add-worklog`
-27. **Attachments** (2) — tests in `attachments.test.ts`: `download-attachment`, `get-issue-images`
-28. **Users** (1) — tests in `users.test.ts`: `get-user-profile`
-29. **Watchers** (3) — tests in `watchers.test.ts`: `get-issue-watchers`, `add-watcher`, `remove-watcher`
-30. **Service Desk** (3) — tests in `service-desk.test.ts`: `get-service-desks`, `get-service-desk-queues`, `get-queue-issues`
-31. **Forms** (3) — tests in `forms.test.ts`: `get-issue-forms`, `get-form-details`, `update-form-answers`
-32. **Metrics** (2) — tests in `metrics.test.ts`: `get-issue-dates`, `get-issue-sla`
-33. **Development** (3) — tests in `development.test.ts`: `get-dev-info`, `get-dev-summary`, `get-batch-dev-info`
+```typescript
+cdp.send('Page.startScreencast', {
+  format: 'jpeg',
+  quality: 80,
+  maxWidth: 1280,
+  maxHeight: 720,
+});
 
-### Phase 4: Confluence Command Handlers (TDD)
+cdp.on('Page.screencastFrame', (params) => {
+  const img = new Image();
+  img.onload = () => {
+    canvasCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    cdp.send('Page.screencastFrameAck', { sessionId: params.sessionId });
+  };
+  img.src = `data:image/jpeg;base64,${params.data}`;
+});
+```
 
-34. **Pages** (9) — tests in `pages.test.ts`: `search`, `get-page`, `get-page-children`, `get-page-history`, `create-page`, `update-page`, `delete-page`, `move-page`, `get-page-diff`
-35. **Comments** (3) — tests in `comments.test.ts`: `get-comments`, `add-comment`, `reply-to-comment`
-36. **Labels** (2) — tests in `labels.test.ts`: `get-labels`, `add-label`
-37. **Users** (1) — tests in `users.test.ts`: `search-user`
-38. **Analytics** (1) — tests in `analytics.test.ts`: `get-page-views`
-39. **Attachments** (7) — tests in `attachments.test.ts`: `upload-attachment`, `upload-attachments`, `get-attachments`, `download-attachment`, `download-all-attachments`, `delete-attachment`, `get-page-images`
+### Input Forwarding (`useInputForwarding.ts`)
 
-### Phase 5: Manifest, Entry Point & Status Command
+```typescript
+// Mouse events
+canvas.addEventListener('mousedown', (e) => {
+  const { x, y } = scaleToViewport(e, canvas, viewportSize);
+  cdp.send('Input.dispatchMouseEvent', {
+    type: 'mousePressed', x, y,
+    button: 'left', clickCount: 1,
+  });
+});
 
-40. Write `manifest.json` — type `"standard"`, all 72+ commands with handler paths, config schema (domain, email, apiToken with vault), UI panels/widgets, agent skills
-41. Write `src/index.ts` — onInit/onDestroy lifecycle hooks
-42. Write `src/commands/status.test.ts` then `src/commands/status.ts` — connection status command
+// Keyboard events
+canvas.addEventListener('keydown', (e) => {
+  cdp.send('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: e.key,
+    code: e.code,
+    windowsVirtualKeyCode: e.keyCode,
+    modifiers: getModifiers(e),
+  });
+});
 
-### Phase 6: Agent Skills (SKILL.md)
+// Scroll
+canvas.addEventListener('wheel', (e) => {
+  const { x, y } = scaleToViewport(e, canvas, viewportSize);
+  cdp.send('Input.dispatchMouseEvent', {
+    type: 'mouseWheel', x, y,
+    deltaX: e.deltaX, deltaY: e.deltaY,
+  });
+});
+```
 
-43. Write `agent/skills/jira/SKILL.md` — updated namespace `renre-atlassian:`, no MCP references
-44. Write `agent/skills/confluence/SKILL.md` — updated namespace `renre-atlassian:`, no MCP references
+### Coordinate Scaling
 
-### Phase 7: UI Panels & Widgets
+```typescript
+function scaleToViewport(
+  event: MouseEvent,
+  canvas: HTMLCanvasElement,
+  viewport: { width: number; height: number }
+) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = viewport.width / rect.width;
+  const scaleY = viewport.height / rect.height;
+  return {
+    x: Math.round((event.clientX - rect.left) * scaleX),
+    y: Math.round((event.clientY - rect.top) * scaleY),
+  };
+}
+```
 
-45. Copy and adapt UI files from atlassian-mcp — update command namespaces from `atlassian-mcp:` to `renre-atlassian:`
-
-### Phase 8: Validation
-
-46. **Lint**: Run `npx eslint src/` with local `eslint.config.mjs` — fix all errors/warnings
-47. **Typecheck**: Run `npx tsc --noEmit` — fix all type errors
-48. **Tests**: Run `npx vitest run` — all tests pass with 86% coverage thresholds
-49. **Duplication**: Run jscpd check — ensure < 5% threshold
-50. **Build**: Run `node build.js` — verify all entry points compile and `dist/` is produced
-51. Fix any issues found during validation
-
-### Phase 9: Commit & Push
-
-52. Git commit all files with descriptive message
-53. Push to `claude/atlassian-cli-conversion-2lWL5`
+---
 
 ## Config Schema
 
 ```json
 {
-  "domain": {
-    "type": "string",
-    "description": "Atlassian Cloud domain (e.g., mycompany.atlassian.net)",
-    "secret": false
-  },
-  "email": {
-    "type": "string",
-    "description": "Atlassian account email address",
-    "secret": false
-  },
-  "apiToken": {
-    "type": "string",
-    "description": "Atlassian API token",
-    "secret": true,
-    "vaultHint": "renre-atlassian.apiToken"
+  "schema": {
+    "session": {
+      "type": "string",
+      "description": "Default browser session name",
+      "secret": false,
+      "default": "default"
+    },
+    "viewport": {
+      "type": "string",
+      "description": "Default viewport size (WxH)",
+      "secret": false,
+      "default": "1280x720"
+    }
   }
 }
 ```
 
-## Command Naming Convention
+---
 
-MCP tool names used underscores (`jira_get_issue`). CLI commands use kebab-case:
-- `renre-atlassian:jira-get-issue`
-- `renre-atlassian:jira-search`
-- `renre-atlassian:confluence-search`
+## Implementation Steps
 
-## Test Strategy
+### Step 1: Scaffold extension
+- Create `extensions/agent-browser/` directory
+- `manifest.json` — 10 commands, 1 panel, config schema, agent skill
+- `package.json` — `@renre-kit/extension-sdk` dependency
+- `build.js` — `buildExtension` (10 commands + index) + `buildPanel` (1 panel)
+- `tsconfig.json`, `tsconfig.lint.json`, `eslint.config.mjs`
+- `icon.svg` — globe/browser icon
 
-- **Unit tests** co-located with source (`*.test.ts`)
-- **Mock `fetch`** via `vi.stubGlobal('fetch', ...)` for all client tests
-- **Mock `createClients`** via `vi.mock('../shared/client.js')` for command handler tests
-- **Coverage**: 86% minimum (statements, branches, functions, lines)
-- **Test grouping**: One test file per domain group (e.g., `issues.test.ts` covers all 8 issue commands)
+### Step 2: CLI commands (10 commands)
+- `open`, `close`, `status`, `click`, `type`, `screenshot`, `snapshot`, `tabs`, `navigate`, `eval`
+- Each wraps `agent-browser` CLI via `execFile`
+- `status` returns `{ connected, cdpUrl, url, title, session }` — key for panel
 
-## Validation Checklist
+### Step 3: Lifecycle hooks (`index.ts`)
+- `onInit`: check `agent-browser --version`, deploy agent assets
+- `onDestroy`: cleanup agent assets
 
-- [ ] `eslint src/` passes (local eslint.config.mjs) — no `any` types, complexity ≤ 10, cognitive ≤ 15
-- [ ] `tsc --noEmit` passes
-- [ ] `vitest run` passes with 86% coverage (statements, branches, functions, lines)
-- [ ] jscpd duplication < 5% threshold
-- [ ] `node build.js` succeeds — `dist/` produced with all entry points
+### Step 4: CDP client library (`ui/lib/cdp-client.ts`)
+- WebSocket wrapper with request/response ID tracking
+- Methods: `send()`, `on()`, `close()`
+- Auto-reconnect (3 retries, exponential backoff)
+
+### Step 5: Input mapper (`ui/lib/input-mapper.ts`)
+- `scaleToViewport()` — canvas coords → viewport coords
+- `getModifiers()` — extract ctrl/shift/alt/meta from keyboard events
+- `mapMouseEvent()` — DOM MouseEvent → CDP Input.dispatchMouseEvent params
+- `mapKeyEvent()` — DOM KeyboardEvent → CDP Input.dispatchKeyEvent params
+- `mapWheelEvent()` — DOM WheelEvent → CDP mouseWheel params
+
+### Step 6: React hooks
+- `useBrowserStatus` — polls `status` command every 3s
+- `useCdpConnection` — manages WebSocket lifecycle to CDP URL
+- `useScreencast` — starts screencast, renders frames to canvas ref
+- `useInputForwarding` — attaches mouse/keyboard listeners to canvas
+- `useTabManager` — subscribes to CDP Target events, maintains tab list
+- `useDevMode` — toggles CDP Overlay inspect mode, captures selected element
+
+### Step 7: Panel components
+- `EmptyState` — URL input + Launch button (when no browser running)
+- `TabBar` — renders tabs, handles switching
+- `AddressBar` — URL display/input, back/forward/reload
+- `Viewport` — dual-canvas (screencast + overlay), focus management
+- `StatusBar` — connection status, viewport size, dev mode toggle, session badge
+- `DevToolsOverlay` — element info card on selection
+- `BrowserChrome` — composites all above into the browser window
+
+### Step 8: Main panel entry (`panel.tsx`)
+- Conditionally renders `EmptyState` or `BrowserChrome` based on status
+- Manages top-level state (cdpUrl, connected, devMode)
+
+### Step 9: Agent skill (`SKILL.md`)
+- Browser automation skill with all command references
+- Example workflows
+
+### Step 10: Build & validate
+- `node build.js` — verify all entry points compile
+- Manual testing against dashboard
+
+---
+
+## Key Design Decisions
+
+1. **Single panel** — Everything in one browser-like window. No separate panels for screenshots/logs.
+
+2. **Direct CDP over WebSocket** — `Page.startScreencast` gives near-real-time video. Falls back to screenshot polling if CDP WS unreachable.
+
+3. **Canvas rendering** — Can't iframe headless Chrome. Canvas gives full control over rendering + input. Two layers (viewport + dev overlay) for clean separation.
+
+4. **Commands wrap agent-browser CLI** — Reuses daemon lifecycle, session persistence, Chrome management. We don't manage Chrome directly.
+
+5. **CDP from panel JS** — Panel connects directly to Chrome's CDP WebSocket on localhost. No server proxy needed.
+
+6. **Dashboard design system** — Uses `bg-muted`, `border`, `text-muted-foreground`, `rounded-md`, shadcn/ui `Button`, `Input`, `Card`, `Badge` etc. The browser chrome feels native to the dashboard.
