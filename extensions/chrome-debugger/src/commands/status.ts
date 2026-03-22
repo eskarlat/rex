@@ -10,12 +10,6 @@ import {
   isProcessAlive,
 } from '../shared/state.js';
 
-function resolvePort(args: Record<string, unknown>, config: Record<string, unknown>): number {
-  if (typeof args.port === 'number') return args.port;
-  if (typeof config.port === 'number') return config.port;
-  return 9222;
-}
-
 function targetsToTabs(targets: CdpTarget[]): { index: number; title: string; url: string }[] {
   return targets
     .filter((t) => t.type === 'page')
@@ -36,6 +30,11 @@ function cleanupStaleSession(
   return jsonResult({ running: false, staleSessionCleaned: true });
 }
 
+function isSessionAlive(pid: number): boolean {
+  // PID 0 means external browser connected via chrome-debugger:connect — skip OS check
+  return pid === 0 || isProcessAlive(pid);
+}
+
 function buildActiveStatus(
   state: { pid: number; port: number; launchedAt: string },
   tabs: { index: number; title: string; url: string }[],
@@ -44,6 +43,7 @@ function buildActiveStatus(
 ): Record<string, unknown> {
   return {
     running: true,
+    ...(state.pid === 0 ? { external: true } : {}),
     pid: state.pid,
     port: state.port,
     launchedAt: state.launchedAt,
@@ -59,19 +59,13 @@ export default defineCommand({
   handler: async (ctx) => {
     const localState = readState(ctx.projectPath);
     const globalSession = readGlobalSession();
-    const port = resolvePort(ctx.args, ctx.config);
     const state = localState ?? globalSession;
 
     if (!state) {
-      const targets = await probeCdpTargets(port);
-      if (targets) {
-        const tabs = targetsToTabs(targets);
-        return jsonResult({ running: true, external: true, port, tabCount: tabs.length, tabs });
-      }
       return jsonResult({ running: false });
     }
 
-    if (!isProcessAlive(state.pid)) {
+    if (!isSessionAlive(state.pid)) {
       return cleanupStaleSession(ctx.projectPath, localState, globalSession);
     }
 

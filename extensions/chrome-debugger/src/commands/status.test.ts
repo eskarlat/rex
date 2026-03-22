@@ -233,6 +233,85 @@ describe('status', () => {
     expect(output.pid).toBe(11111);
   });
 
+  it('skips PID check for external session (pid=0) and returns external:true', async () => {
+    mockReadState.mockReturnValue({
+      wsEndpoint: 'ws://localhost:9222',
+      pid: 0,
+      port: 9222,
+      launchedAt: '2024-01-01T00:00:00Z',
+      networkLogPath: '/tmp/network.jsonl',
+      consoleLogPath: '/tmp/console.jsonl',
+    });
+    mockReadGlobalSession.mockReturnValue(null);
+
+    mockFetchResponse([
+      { title: 'Example', url: 'https://example.com', type: 'page' },
+    ]);
+
+    const result = await status.handler(makeContext());
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.running).toBe(true);
+    expect(output.external).toBe(true);
+    expect(output.pid).toBe(0);
+    expect(output.tabCount).toBe(1);
+    expect(mockIsProcessAlive).not.toHaveBeenCalled();
+  });
+
+  it('cleans stale external session (pid=0) when CDP is unreachable', async () => {
+    mockReadState.mockReturnValue({
+      wsEndpoint: 'ws://localhost:9222',
+      pid: 0,
+      port: 9222,
+      launchedAt: '2024-01-01T00:00:00Z',
+      networkLogPath: '/tmp/network.jsonl',
+      consoleLogPath: '/tmp/console.jsonl',
+    });
+    mockReadGlobalSession.mockReturnValue(null);
+    mockFetch.mockRejectedValue(new Error('Connection refused'));
+
+    const result = await status.handler(makeContext());
+    expect(result.exitCode).toBe(0);
+    const output = JSON.parse(result.output);
+    expect(output.running).toBe(false);
+    expect(output.staleSessionCleaned).toBe(true);
+    expect(mockDeleteState).toHaveBeenCalledWith('/tmp/test-project');
+  });
+
+  it('does not set external:true for managed sessions with real PID', async () => {
+    mockReadState.mockReturnValue({
+      wsEndpoint: 'ws://localhost:9222',
+      pid: 12345,
+      port: 9222,
+      launchedAt: '2024-01-01T00:00:00Z',
+      networkLogPath: '/tmp/network.jsonl',
+      consoleLogPath: '/tmp/console.jsonl',
+    });
+    mockReadGlobalSession.mockReturnValue(null);
+    mockIsProcessAlive.mockReturnValue(true);
+
+    mockFetchResponse([
+      { title: 'Example', url: 'https://example.com', type: 'page' },
+    ]);
+
+    const result = await status.handler(makeContext());
+    const output = JSON.parse(result.output);
+    expect(output.running).toBe(true);
+    expect(output.external).toBeUndefined();
+    expect(output.pid).toBe(12345);
+  });
+
+  it('returns running:false without probing when no session exists', async () => {
+    mockReadState.mockReturnValue(null);
+    mockReadGlobalSession.mockReturnValue(null);
+
+    const result = await status.handler(makeContext());
+    const output = JSON.parse(result.output);
+    expect(output.running).toBe(false);
+    expect(output.external).toBeUndefined();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('cleans stale session when HTTP response is not ok', async () => {
     mockReadState.mockReturnValue({
       wsEndpoint: 'ws://localhost:9222',

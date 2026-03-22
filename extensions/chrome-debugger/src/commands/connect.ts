@@ -14,13 +14,18 @@ import {
 } from '../shared/state.js';
 import type { BrowserState, GlobalBrowserSession } from '../shared/types.js';
 
+function isSessionAlive(pid: number): boolean {
+  // PID 0 means external browser connected via chrome-debugger:connect — skip OS check
+  return pid === 0 || isProcessAlive(pid);
+}
+
 function checkExistingBrowser(projectPath: string): string | null {
   const local = readState(projectPath);
-  if (local && isProcessAlive(local.pid)) {
+  if (local && isSessionAlive(local.pid)) {
     return `A managed browser is already running (PID: ${String(local.pid)}). Use \`chrome-debugger:close\` first.`;
   }
   const global = readGlobalSession();
-  if (global && isProcessAlive(global.pid)) {
+  if (global && isSessionAlive(global.pid)) {
     return `A managed browser is already running (PID: ${String(global.pid)}, project: ${global.projectPath}). Use \`chrome-debugger:close\` first.`;
   }
   return null;
@@ -40,7 +45,7 @@ function resolvePort(args: Record<string, unknown>, config: Record<string, unkno
 
 export default defineCommand({
   args: {
-    port: z.number().default(9222),
+    port: z.number().optional(),
   },
   handler: async (ctx) => {
     const conflict = checkExistingBrowser(ctx.projectPath);

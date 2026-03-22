@@ -18,7 +18,7 @@ export function useChromeDetection(sdk: PanelSdk | undefined) {
         // Auto-connect if a running browser is detected on the CDP port
         if (check.cdpRunning && !autoConnectAttempted.current) {
           autoConnectAttempted.current = true;
-          void sdk.exec.run('chrome-debugger:connect')
+          void sdk.exec.run('chrome-debugger:connect', check.port ? { port: check.port } : {})
             .then(() => sdk.ui.toast({ title: 'Connected to running browser' }))
             .catch(() => { /* connection may fail if already managed */ });
         }
