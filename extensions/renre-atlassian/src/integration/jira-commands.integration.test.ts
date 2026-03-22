@@ -4,13 +4,13 @@
  * No mocking — each command runs the full stack:
  *   command → jiraCommand helper → createClients → JiraClient → real fetch
  *
- * Without valid credentials the API call will fail, but the command must
- * handle the error gracefully: return { exitCode: 1, output: '...' }
- * and never throw.
+ * Two modes:
+ *   1. Missing config — always runs, verifies graceful error handling
+ *   2. Live API — runs only when ATLASSIAN_* env vars are set, verifies real responses
  */
 import { describe, it, expect } from 'vitest';
 
-import type { ExecutionContext } from '../shared/types.js';
+import { missingConfigContext, liveContext, hasCredentials, testConfig } from './test-config.js';
 import getIssue from '../commands/jira/get-issue.js';
 import search from '../commands/jira/search.js';
 import getProjectIssues from '../commands/jira/get-project-issues.js';
@@ -62,18 +62,10 @@ import getDevInfo from '../commands/jira/get-dev-info.js';
 import getDevSummary from '../commands/jira/get-dev-summary.js';
 import getBatchDevInfo from '../commands/jira/get-batch-dev-info.js';
 
-/** Context with missing config — should trigger config validation error */
-function missingConfigContext(args: Record<string, unknown> = {}): ExecutionContext {
-  return {
-    projectName: 'test',
-    projectPath: '/tmp/test',
-    args,
-    config: {},
-  };
-}
-
-
-describe('Jira Commands Integration — missing config', () => {
+// ---------------------------------------------------------------------------
+// Missing config — every command must return exitCode 1 without throwing
+// ---------------------------------------------------------------------------
+describe('Jira Commands — missing config', () => {
   const ctx = missingConfigContext;
 
   it('get-issue returns error without throwing', async () => {
@@ -334,3 +326,100 @@ describe('Jira Commands Integration — missing config', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Live API — only runs when ATLASSIAN_* env vars are set
+// ---------------------------------------------------------------------------
+describe.skipIf(!hasCredentials)('Jira Commands — live API', { timeout: 30_000 }, () => {
+  const ctx = liveContext;
+
+  it('get-user-profile returns current user', async () => {
+    const result = await getUserProfile(ctx());
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toBeTruthy();
+  });
+
+  it('get-all-projects returns project list', async () => {
+    const result = await getAllProjects(ctx());
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('search-fields returns field list', async () => {
+    const result = await searchFields(ctx());
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-link-types returns link types', async () => {
+    const result = await getLinkTypes(ctx());
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('search returns issues', async () => {
+    const result = await search(ctx({ jql: `project = ${testConfig.projectKey}`, maxResults: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-project-issues returns issues', async () => {
+    const result = await getProjectIssues(ctx({ projectKey: testConfig.projectKey, maxResults: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-issue returns issue details', async () => {
+    const result = await getIssue(ctx({ issueKey: testConfig.issueKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-transitions returns transitions', async () => {
+    const result = await getTransitions(ctx({ issueKey: testConfig.issueKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-changelogs returns changelog', async () => {
+    const result = await getChangelogs(ctx({ issueKey: testConfig.issueKey, maxResults: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-issue-watchers returns watchers', async () => {
+    const result = await getIssueWatchers(ctx({ issueKey: testConfig.issueKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-worklog returns worklog', async () => {
+    const result = await getWorklog(ctx({ issueKey: testConfig.issueKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-issue-images returns images', async () => {
+    const result = await getIssueImages(ctx({ issueKey: testConfig.issueKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-issue-dates returns dates', async () => {
+    const result = await getIssueDates(ctx({ issueKey: testConfig.issueKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-project-versions returns versions', async () => {
+    const result = await getProjectVersions(ctx({ projectKey: testConfig.projectKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-project-components returns components', async () => {
+    const result = await getProjectComponents(ctx({ projectKey: testConfig.projectKey }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-agile-boards returns boards', async () => {
+    const result = await getAgileBoards(ctx({ maxResults: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-board-issues returns issues', async () => {
+    const result = await getBoardIssues(ctx({ boardId: testConfig.boardId, maxResults: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-sprints-from-board returns sprints', async () => {
+    const result = await getSprintsFromBoard(ctx({ boardId: testConfig.boardId, maxResults: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+});

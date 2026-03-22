@@ -4,15 +4,13 @@
  * No mocking — each command runs the full stack:
  *   command → confluenceCommand helper → createClients → ConfluenceClient → real fetch
  *
- * Without valid credentials the API call will fail, but the command must
- * handle the error gracefully: return { exitCode: 1, output: '...' }
- * and never throw.
- *
- * Help commands need no API access and should return exitCode: 0.
+ * Two modes:
+ *   1. Missing config — always runs, verifies graceful error handling
+ *   2. Live API — runs only when ATLASSIAN_* env vars are set, verifies real responses
  */
 import { describe, it, expect } from 'vitest';
 
-import type { ExecutionContext } from '../shared/types.js';
+import { missingConfigContext, liveContext, hasCredentials, testConfig } from './test-config.js';
 import search from '../commands/confluence/search.js';
 import getPage from '../commands/confluence/get-page.js';
 import getPageChildren from '../commands/confluence/get-page-children.js';
@@ -40,17 +38,9 @@ import status from '../commands/status.js';
 import jiraHelp from '../commands/jira-help.js';
 import confluenceHelp from '../commands/confluence-help.js';
 
-/** Context with missing config — should trigger config validation error */
-function missingConfigContext(args: Record<string, unknown> = {}): ExecutionContext {
-  return {
-    projectName: 'test',
-    projectPath: '/tmp/test',
-    args,
-    config: {},
-  };
-}
-
-
+// ---------------------------------------------------------------------------
+// Help commands — no API needed, always pass
+// ---------------------------------------------------------------------------
 describe('Help commands — no API needed', () => {
   it('jira-help returns help text', async () => {
     const result = await jiraHelp(missingConfigContext());
@@ -65,7 +55,10 @@ describe('Help commands — no API needed', () => {
   });
 });
 
-describe('Confluence Commands Integration — missing config', () => {
+// ---------------------------------------------------------------------------
+// Missing config — every command must return exitCode 1 without throwing
+// ---------------------------------------------------------------------------
+describe('Confluence Commands — missing config', () => {
   const ctx = missingConfigContext;
 
   it('status returns error without throwing', async () => {
@@ -200,3 +193,60 @@ describe('Confluence Commands Integration — missing config', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Live API — only runs when ATLASSIAN_* env vars are set
+// ---------------------------------------------------------------------------
+describe.skipIf(!hasCredentials)('Confluence Commands — live API', { timeout: 30_000 }, () => {
+  const ctx = liveContext;
+
+  it('status returns connection info', async () => {
+    const result = await status(ctx());
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toBeTruthy();
+  });
+
+  it('search returns results', async () => {
+    const result = await search(ctx({ cql: 'type=page', limit: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-page returns page content', async () => {
+    const result = await getPage(ctx({ pageId: testConfig.pageId }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-page-children returns children', async () => {
+    const result = await getPageChildren(ctx({ pageId: testConfig.pageId, limit: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-page-history returns history', async () => {
+    const result = await getPageHistory(ctx({ pageId: testConfig.pageId }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-comments returns comments', async () => {
+    const result = await getComments(ctx({ pageId: testConfig.pageId, limit: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-labels returns labels', async () => {
+    const result = await getLabels(ctx({ pageId: testConfig.pageId }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-attachments returns attachments', async () => {
+    const result = await getAttachments(ctx({ pageId: testConfig.pageId, limit: 5 }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('get-page-images returns images', async () => {
+    const result = await getPageImages(ctx({ pageId: testConfig.pageId }));
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('download-all-attachments returns list', async () => {
+    const result = await downloadAllAttachments(ctx({ pageId: testConfig.pageId }));
+    expect(result.exitCode).toBe(0);
+  });
+});
