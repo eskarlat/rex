@@ -1,5 +1,7 @@
 import { defineCommand } from '@renre-kit/extension-sdk/node';
 
+import type { CdpTarget } from '../shared/cdp-probe.js';
+import { probeCdpTargets } from '../shared/cdp-probe.js';
 import {
   readState,
   readGlobalSession,
@@ -8,82 +10,76 @@ import {
   isProcessAlive,
 } from '../shared/state.js';
 
-interface CdpTabInfo {
-  title: string;
-  url: string;
-  type: string;
+function resolvePort(args: Record<string, unknown>, config: Record<string, unknown>): number {
+  if (typeof args.port === 'number') return args.port;
+  if (typeof config.port === 'number') return config.port;
+  return 9222;
 }
 
-/**
- * Fetches open tabs via the Chrome DevTools Protocol HTTP endpoint.
- * This avoids a full WebSocket connection (puppeteer.connect) which
- * causes the browser window to blink/flash on every poll.
- */
-async function fetchTabsViaHttp(port: number): Promise<CdpTabInfo[]> {
-  const response = await fetch(`http://127.0.0.1:${String(port)}/json`);
-  if (!response.ok) {
-    throw new Error(`CDP HTTP request failed: ${String(response.status)}`);
-  }
-  const targets = (await response.json()) as CdpTabInfo[];
-  return targets.filter((t) => t.type === 'page');
+function targetsToTabs(targets: CdpTarget[]): { index: number; title: string; url: string }[] {
+  return targets
+    .filter((t) => t.type === 'page')
+    .map((page, index) => ({ index, title: page.title, url: page.url }));
+}
+
+function jsonResult(data: Record<string, unknown>): { output: string; exitCode: number } {
+  return { output: JSON.stringify(data), exitCode: 0 };
+}
+
+function cleanupStaleSession(
+  projectPath: string,
+  localState: unknown,
+  globalSession: unknown,
+): { output: string; exitCode: number } {
+  if (localState) deleteState(projectPath);
+  if (globalSession) deleteGlobalSession();
+  return jsonResult({ running: false, staleSessionCleaned: true });
+}
+
+function buildActiveStatus(
+  state: { pid: number; port: number; launchedAt: string },
+  tabs: { index: number; title: string; url: string }[],
+  globalSession: Record<string, unknown> | null,
+  localState: unknown,
+): Record<string, unknown> {
+  return {
+    running: true,
+    pid: state.pid,
+    port: state.port,
+    launchedAt: state.launchedAt,
+    tabCount: tabs.length,
+    tabs,
+    ...(globalSession && !localState
+      ? { projectPath: globalSession.projectPath, headless: globalSession.headless }
+      : {}),
+  };
 }
 
 export default defineCommand({
   handler: async (ctx) => {
-    // Try per-project state first
     const localState = readState(ctx.projectPath);
     const globalSession = readGlobalSession();
-
+    const port = resolvePort(ctx.args, ctx.config);
     const state = localState ?? globalSession;
+
     if (!state) {
-      return {
-        output: JSON.stringify({ running: false }),
-        exitCode: 0,
-      };
+      const targets = await probeCdpTargets(port);
+      if (targets) {
+        const tabs = targetsToTabs(targets);
+        return jsonResult({ running: true, external: true, port, tabCount: tabs.length, tabs });
+      }
+      return jsonResult({ running: false });
     }
 
-    // Check if PID is still alive
     if (!isProcessAlive(state.pid)) {
-      if (localState) deleteState(ctx.projectPath);
-      if (globalSession) deleteGlobalSession();
-      return {
-        output: JSON.stringify({ running: false, staleSessionCleaned: true }),
-        exitCode: 0,
-      };
+      return cleanupStaleSession(ctx.projectPath, localState, globalSession);
     }
 
-    // Use the lightweight CDP HTTP endpoint instead of puppeteer.connect()
-    // to avoid browser window blinking on every status poll
-    try {
-      const pages = await fetchTabsViaHttp(state.port);
-      const tabs = pages.map((page, index) => ({
-        index,
-        title: page.title,
-        url: page.url,
-      }));
-
-      const result = {
-        running: true,
-        pid: state.pid,
-        port: state.port,
-        launchedAt: state.launchedAt,
-        tabCount: tabs.length,
-        tabs,
-        ...(globalSession ? { projectPath: globalSession.projectPath, headless: globalSession.headless } : {}),
-      };
-
-      return {
-        output: JSON.stringify(result),
-        exitCode: 0,
-      };
-    } catch {
-      // Process alive but can't connect — stale
-      if (localState) deleteState(ctx.projectPath);
-      if (globalSession) deleteGlobalSession();
-      return {
-        output: JSON.stringify({ running: false, staleSessionCleaned: true }),
-        exitCode: 0,
-      };
+    const targets = await probeCdpTargets(state.port);
+    if (targets) {
+      return jsonResult(buildActiveStatus(state, targetsToTabs(targets), globalSession, localState));
     }
+
+    return cleanupStaleSession(ctx.projectPath, localState, globalSession);
   },
 });

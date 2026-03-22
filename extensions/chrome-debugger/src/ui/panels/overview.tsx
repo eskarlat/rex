@@ -12,33 +12,49 @@ import { useInspect } from '../hooks/use-inspect.js';
 import { useRunAction } from '../hooks/use-run-action.js';
 import type { PanelProps, PanelSdk, TabInfo } from '../shared/types.js';
 
+interface DerivedStatus {
+  isRunning: boolean;
+  isExternal: boolean;
+  tabs: TabInfo[];
+  chromeNotFound: boolean;
+  cdpDetected: boolean;
+}
+
+function deriveStatus(statusData: Record<string, unknown> | null, chromeCheck: Record<string, unknown> | null): DerivedStatus {
+  return {
+    isRunning: statusData?.running === true,
+    isExternal: statusData?.external === true,
+    tabs: (statusData?.tabs as TabInfo[] | undefined) ?? [],
+    chromeNotFound: chromeCheck?.found === false,
+    cdpDetected: chromeCheck?.cdpRunning === true,
+  };
+}
+
 function OverviewContent({ sdk }: Readonly<{ sdk: PanelSdk }>) {
   const { data: statusData, loading: statusLoading, refresh: refreshStatus } = useBrowserStatus(sdk);
-  const isRunning = statusData?.running === true;
-  const tabs: TabInfo[] = statusData?.tabs ?? [];
-
   const { actionLoading, runAction } = useRunAction(sdk, refreshStatus);
   const actions = useBrowserActions(sdk, runAction);
   const { chromeCheck, installDialogOpen, setInstallDialogOpen, installing, handleInstall } = useChromeDetection(sdk);
   const { inspecting, selectedElement, handleInspect } = useInspect(sdk);
 
-  useHeartbeat(sdk, isRunning);
-
-  const chromeNotFound = chromeCheck?.found === false;
+  const status = deriveStatus(statusData, chromeCheck);
+  useHeartbeat(sdk, status.isRunning && !status.isExternal);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {chromeNotFound ? <ChromeAlert chromeCheck={chromeCheck} onInstallClick={() => setInstallDialogOpen(true)} /> : null}
+      {status.chromeNotFound ? <ChromeAlert chromeCheck={chromeCheck} onInstallClick={() => setInstallDialogOpen(true)} /> : null}
 
       <BrowserControlsCard
-        isRunning={isRunning} statusData={statusData} statusLoading={statusLoading}
-        chromeDisabled={chromeNotFound} actionLoading={actionLoading} inspecting={inspecting}
+        isRunning={status.isRunning} isExternal={status.isExternal} statusData={statusData} statusLoading={statusLoading}
+        chromeDisabled={status.chromeNotFound && !status.cdpDetected} actionLoading={actionLoading} inspecting={inspecting}
+        cdpDetected={status.cdpDetected}
         onLaunch={actions.handleLaunch} onClose={actions.handleClose}
         onScreenshot={actions.handleScreenshot} onInspect={handleInspect}
+        onConnect={actions.handleConnect}
       />
 
-      {isRunning ? <NavigateCard onNavigate={actions.handleNavigate} actionLoading={actionLoading} /> : null}
-      {isRunning && tabs.length > 0 ? <TabsCard tabs={tabs} onSwitchTab={actions.handleSwitchTab} /> : null}
+      {status.isRunning ? <NavigateCard onNavigate={actions.handleNavigate} actionLoading={actionLoading} /> : null}
+      {status.isRunning && status.tabs.length > 0 ? <TabsCard tabs={status.tabs} onSwitchTab={actions.handleSwitchTab} /> : null}
       {selectedElement ? <InspectedElement output={selectedElement} /> : null}
 
       <InstallDialog open={installDialogOpen} installing={installing}

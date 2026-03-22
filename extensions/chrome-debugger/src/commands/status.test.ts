@@ -125,7 +125,10 @@ describe('status', () => {
     expect(output.tabs[0].url).toBe('https://example.com');
     expect(output.tabs[1].title).toBe('Test Page');
     expect(output.tabs[1].url).toBe('https://test.com');
-    expect(mockFetch).toHaveBeenCalledWith('http://127.0.0.1:9222/json');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:9222/json',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it('filters out non-page targets from HTTP response', async () => {

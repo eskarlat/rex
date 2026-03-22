@@ -52,7 +52,8 @@ export function ensureBrowserRunning(projectPath: string): BrowserState {
     );
   }
 
-  if (!isProcessAlive(state.pid)) {
+  // PID 0 means an external browser connected via chrome-debugger:connect — skip PID check
+  if (state.pid !== 0 && !isProcessAlive(state.pid)) {
     deleteState(projectPath);
     deleteGlobalSession();
     throw new Error(

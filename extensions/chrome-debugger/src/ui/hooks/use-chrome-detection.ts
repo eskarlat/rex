@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import type { PanelSdk, ChromeCheckResult } from '../shared/types.js';
 
@@ -6,11 +6,23 @@ export function useChromeDetection(sdk: PanelSdk | undefined) {
   const [chromeCheck, setChromeCheck] = useState<ChromeCheckResult | null>(null);
   const [installDialogOpen, setInstallDialogOpen] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const autoConnectAttempted = useRef(false);
 
   useEffect(() => {
     if (!sdk) return;
     sdk.exec.run('chrome-debugger:chrome-check')
-      .then((r) => setChromeCheck(JSON.parse(r.output) as ChromeCheckResult))
+      .then((r) => {
+        const check = JSON.parse(r.output) as ChromeCheckResult;
+        setChromeCheck(check);
+
+        // Auto-connect if a running browser is detected on the CDP port
+        if (check.cdpRunning && !autoConnectAttempted.current) {
+          autoConnectAttempted.current = true;
+          void sdk.exec.run('chrome-debugger:connect')
+            .then(() => sdk.ui.toast({ title: 'Connected to running browser' }))
+            .catch(() => { /* connection may fail if already managed */ });
+        }
+      })
       .catch(() => setChromeCheck({ found: false, canInstall: true }));
   }, [sdk]);
 

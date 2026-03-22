@@ -18,15 +18,20 @@ export default defineCommand({
 
     disconnectCachedBrowser();
 
-    try {
-      const browser = await connectBrowser(ctx.projectPath);
-      await browser.close();
-    } catch {
-      // Browser may already be gone — kill process tree as fallback
-      killProcessTree(state.pid);
-    }
+    // If PID is 0, this is an external browser — just disconnect, don't kill
+    const isExternal = state.pid === 0;
 
-    disconnectCachedBrowser();
+    if (!isExternal) {
+      try {
+        const browser = await connectBrowser(ctx.projectPath);
+        await browser.close();
+      } catch {
+        // Browser may already be gone — kill process tree as fallback
+        killProcessTree(state.pid);
+      }
+
+      disconnectCachedBrowser();
+    }
 
     // Clean up log files
     const logDir = getLogDir(ctx.projectPath);
@@ -42,9 +47,11 @@ export default defineCommand({
 
     return {
       output: [
-        '## Browser Closed',
+        isExternal ? '## Disconnected from Browser' : '## Browser Closed',
         '',
-        `- **PID**: ${String(state.pid)} (terminated)`,
+        ...(isExternal
+          ? ['- **Status**: disconnected (external browser still running)']
+          : [`- **PID**: ${String(state.pid)} (terminated)`]),
         '- **Logs**: cleaned up',
       ].join('\n'),
       exitCode: 0,

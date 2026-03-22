@@ -22,6 +22,10 @@ vi.mock('node:os', () => ({
   homedir: () => '/home/user',
 }));
 
+vi.mock('../shared/cdp-probe.js', () => ({
+  probeCdpVersion: () => Promise.resolve(null),
+}));
+
 import chromeCheck from './chrome-check.js';
 
 function makeContext(): ExecutionContext {
@@ -39,11 +43,11 @@ beforeEach(() => {
 });
 
 describe('chrome-check', () => {
-  it('returns bundled chromium when puppeteer path exists', () => {
+  it('returns bundled chromium when puppeteer path exists', async () => {
     mockExecPath.mockReturnValue('/home/user/.cache/puppeteer/chromium/chrome');
     mockExistsSync.mockReturnValue(true);
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
@@ -51,7 +55,7 @@ describe('chrome-check', () => {
     expect(output.path).toBe('/home/user/.cache/puppeteer/chromium/chrome');
   });
 
-  it('returns system chrome when bundled not found but system exists', () => {
+  it('returns system chrome when bundled not found but system exists', async () => {
     mockExecPath.mockReturnValue('/home/user/.cache/puppeteer/chromium/chrome');
     mockExistsSync.mockImplementation((path: string) => {
       if (path === '/home/user/.cache/puppeteer/chromium/chrome') return false;
@@ -59,38 +63,38 @@ describe('chrome-check', () => {
       return false;
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
   });
 
-  it('returns not found when nothing available', () => {
+  it('returns not found when nothing available', async () => {
     mockExecPath.mockReturnValue('/home/user/.cache/puppeteer/chromium/chrome');
     mockExistsSync.mockReturnValue(false);
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(false);
     expect(output.canInstall).toBe(true);
   });
 
-  it('falls through when executablePath throws', () => {
+  it('falls through when executablePath throws', async () => {
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser installed');
     });
     mockExistsSync.mockReturnValue(false);
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.found).toBe(false);
     expect(output.canInstall).toBe(true);
   });
 
-  it('detects macOS Chrome at standard path', () => {
+  it('detects macOS Chrome at standard path', async () => {
     mockPlatform.mockReturnValue('darwin');
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser');
@@ -99,14 +103,14 @@ describe('chrome-check', () => {
       return path === '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
     expect(output.path).toBe('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
   });
 
-  it('detects macOS Chromium', () => {
+  it('detects macOS Chromium', async () => {
     mockPlatform.mockReturnValue('darwin');
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser');
@@ -115,13 +119,13 @@ describe('chrome-check', () => {
       return path === '/Applications/Chromium.app/Contents/MacOS/Chromium';
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
   });
 
-  it('detects macOS Edge', () => {
+  it('detects macOS Edge', async () => {
     mockPlatform.mockReturnValue('darwin');
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser');
@@ -130,13 +134,13 @@ describe('chrome-check', () => {
       return path === '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
   });
 
-  it('detects Windows Chrome in Program Files', () => {
+  it('detects Windows Chrome in Program Files', async () => {
     mockPlatform.mockReturnValue('win32');
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser');
@@ -145,14 +149,14 @@ describe('chrome-check', () => {
       return path === 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
     expect(output.path).toBe('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe');
   });
 
-  it('detects Windows Edge', () => {
+  it('detects Windows Edge', async () => {
     mockPlatform.mockReturnValue('win32');
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser');
@@ -161,13 +165,13 @@ describe('chrome-check', () => {
       return path === 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
   });
 
-  it('detects Linux snap chromium', () => {
+  it('detects Linux snap chromium', async () => {
     mockPlatform.mockReturnValue('linux');
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser');
@@ -176,14 +180,14 @@ describe('chrome-check', () => {
       return path === '/snap/bin/chromium';
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
     expect(output.path).toBe('/snap/bin/chromium');
   });
 
-  it('detects Linux google-chrome-stable', () => {
+  it('detects Linux google-chrome-stable', async () => {
     mockPlatform.mockReturnValue('linux');
     mockExecPath.mockImplementation(() => {
       throw new Error('No browser');
@@ -192,7 +196,7 @@ describe('chrome-check', () => {
       return path === '/usr/bin/google-chrome-stable';
     });
 
-    const result = chromeCheck.handler(makeContext());
+    const result = await chromeCheck.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.found).toBe(true);
     expect(output.source).toBe('system');
