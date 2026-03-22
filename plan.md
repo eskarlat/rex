@@ -16,15 +16,13 @@ Users can interact with the page directly in the viewport (click, scroll, type),
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │  [favicon] Tab 1  ×  │  [favicon] Tab 2  ×  │  [+]   │  │
 │  ├───────────────────────────────────────────────────────┤  │
-│  │  ◀  ▶  ↻  │ 🔒 https://example.com           │  ⚙   │  │
+│  │  ◀  ▶  ↻  │ 🔒 https://example.com   │ ⚙  [Dev Mode ◉] │  │
 │  ├───────────────────────────────────────────────────────┤  │
 │  │                                                       │  │
 │  │              LIVE VIEWPORT                            │  │
 │  │        (CDP Page.screencastFrame → <canvas>)          │  │
 │  │        + mouse/keyboard events → CDP Input.*          │  │
 │  │                                                       │  │
-│  ├───────────────────────────────────────────────────────┤  │
-│  │ ● Connected │ 1280×720 │ [Dev Mode] │ Session: default│  │
 │  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
          │                                    ▲
@@ -77,7 +75,6 @@ extensions/agent-browser/
 │       │   ├── TabBar.tsx                 # Tab bar with management
 │       │   ├── AddressBar.tsx            # URL bar + nav buttons
 │       │   ├── Viewport.tsx              # Canvas-based live viewport
-│       │   ├── StatusBar.tsx             # Bottom status strip
 │       │   ├── DevToolsOverlay.tsx       # Element inspector overlay
 │       │   └── EmptyState.tsx            # Not-connected state
 │       ├── hooks/
@@ -117,18 +114,21 @@ A single panel that renders a complete browser window chrome using the dashboard
 - Favicon dot (colored circle derived from domain)
 - Tab data from `Target.getTargets()` via CDP
 
-### 2. Address Bar
+### 2. Address Bar (Top Toolbar)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  ◀  ▶  ↻  │  🔒 https://example.com/page          │  ⚙    │
+│  ◀  ▶  ↻  │  🔒 https://example.com/page  │  ⚙  [Dev ◉]  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 - Nav buttons: `Button variant="ghost" size="icon"` with Lucide icons (`ChevronLeft`, `ChevronRight`, `RotateCw`)
 - Lock icon (`Lock`/`Unlock`) for HTTPS/HTTP
 - URL `Input` — editable, Enter navigates
-- Settings gear (`Settings2`): dropdown with viewport preset selector
+- Right side controls (separated by a `Separator`):
+  - Settings gear (`Settings2`): dropdown with viewport preset selector
+  - Dev Mode `Switch` with `Code2` icon label — toggles element inspector overlay
+  - Connection status dot inline: green `bg-emerald-500` / yellow `bg-yellow-500` / red `bg-destructive` (small 8px circle)
 
 ### 3. Viewport — The Core
 
@@ -140,20 +140,7 @@ A single panel that renders a complete browser window chrome using the dashboard
 - Keyboard events → `Input.dispatchKeyEvent`
 - Loading spinner overlay when connecting
 
-### 4. Status Bar
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│ ● Connected │ 1280 × 720 │ [Dev Mode] │ Session: default    │
-└──────────────────────────────────────────────────────────────┘
-```
-
-- Status dot: green `bg-emerald-500` (connected), yellow `bg-yellow-500` (connecting), red `bg-destructive` (disconnected)
-- Viewport dimensions: `text-muted-foreground text-xs`
-- Dev Mode toggle: `Button variant="outline" size="sm"` → `variant="default"` when active
-- Session name: `Badge variant="secondary"`
-
-### 5. Dev Mode Overlay
+### 4. Dev Mode Overlay
 
 When toggled on:
 - Hover highlights elements with blue border overlay (drawn on overlay canvas)
@@ -174,7 +161,7 @@ When toggled on:
 - Exit: click toggle or press Escape
 - Uses `DOM.describeNode` + `CSS.getComputedStyleForNode` for element details
 
-### 6. Empty State (No Browser Running)
+### 5. Empty State (No Browser Running)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -395,9 +382,8 @@ function scaleToViewport(
 ### Step 7: Panel components
 - `EmptyState` — URL input + Launch button (when no browser running)
 - `TabBar` — renders tabs, handles switching
-- `AddressBar` — URL display/input, back/forward/reload
+- `AddressBar` — URL display/input, nav buttons, settings gear, dev mode switch, connection dot
 - `Viewport` — dual-canvas (screencast + overlay), focus management
-- `StatusBar` — connection status, viewport size, dev mode toggle, session badge
 - `DevToolsOverlay` — element info card on selection
 - `BrowserChrome` — composites all above into the browser window
 
