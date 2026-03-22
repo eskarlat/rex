@@ -2,7 +2,13 @@ import { useState, useCallback } from 'react';
 
 import type { PanelSdk } from '../shared/types.js';
 
-export function useRunAction(sdk: PanelSdk, refreshStatus: () => void) {
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+export function useRunAction(sdk: PanelSdk, refreshStatus: () => Promise<void>) {
   const [actionLoading, setActionLoading] = useState(false);
 
   const runAction = useCallback(
@@ -10,7 +16,10 @@ export function useRunAction(sdk: PanelSdk, refreshStatus: () => void) {
       setActionLoading(true);
       try {
         const result = await sdk.exec.run(`chrome-debugger:${command}`, args);
-        refreshStatus();
+        // Small delay before refreshing to let the backend state settle
+        // (e.g., after launch, the browser needs time to initialize)
+        await delay(500);
+        await refreshStatus();
         return result;
       } catch (err) {
         sdk.ui.toast({ title: 'Error', description: err instanceof Error ? err.message : String(err) });
