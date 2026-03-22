@@ -9,7 +9,7 @@ function notifyOnSuccess(
   variant: 'success' | 'info',
 ): void {
   if (!result) return;
-  sdk.notify({ title, message: title, variant });
+  sdk.notify({ title, message: 'chrome-debugger', variant });
 }
 
 export function useBrowserActions(

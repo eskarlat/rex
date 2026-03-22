@@ -40,12 +40,12 @@ describe('browser action notifications', () => {
 
     await runAction('launch').then((r: { output: string } | null) => {
       if (!r) return;
-      sdk.notify({ title: 'Browser Started', message: 'Browser Started', variant: 'success' });
+      sdk.notify({ title: 'Browser Started', message: 'chrome-debugger', variant: 'success' });
     });
 
     expect(sdk.notify).toHaveBeenCalledWith({
       title: 'Browser Started',
-      message: 'Browser Started',
+      message: 'chrome-debugger',
       variant: 'success',
     });
   });
@@ -55,7 +55,7 @@ describe('browser action notifications', () => {
 
     await runAction('launch').then((r: { output: string } | null) => {
       if (!r) return;
-      sdk.notify({ title: 'Browser Started', message: 'Browser Started', variant: 'success' });
+      sdk.notify({ title: 'Browser Started', message: 'chrome-debugger', variant: 'success' });
     });
 
     expect(sdk.notify).not.toHaveBeenCalled();
@@ -67,12 +67,12 @@ describe('browser action notifications', () => {
 
     await runAction('close').then((r: { output: string } | null) => {
       if (!r) return;
-      sdk.notify({ title: 'Browser Stopped', message: 'Browser Stopped', variant: 'info' });
+      sdk.notify({ title: 'Browser Stopped', message: 'chrome-debugger', variant: 'info' });
     });
 
     expect(sdk.notify).toHaveBeenCalledWith({
       title: 'Browser Stopped',
-      message: 'Browser Stopped',
+      message: 'chrome-debugger',
       variant: 'info',
     });
   });
