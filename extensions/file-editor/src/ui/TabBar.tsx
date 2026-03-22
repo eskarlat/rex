@@ -30,6 +30,7 @@ export function TabBar({
           <span>{tab.name}</span>
           {tab.modified && <span className="w-2 h-2 rounded-full bg-primary inline-block" />}
           <button
+            aria-label={`Close ${tab.name}`}
             className="ml-1 opacity-0 group-hover:opacity-100 hover:bg-accent rounded px-0.5 text-xs text-muted-foreground hover:text-foreground"
             onClick={(e) => { e.stopPropagation(); onClose(i); }}
           >

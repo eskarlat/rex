@@ -1,7 +1,9 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, resolve, relative } from 'node:path';
+import { join, resolve, relative, sep } from 'node:path';
 
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
+
+import { isInsideProject } from './path-guard.js';
 
 interface TreeEntry {
   name: string;
@@ -63,7 +65,7 @@ function listDirectory(dirPath: string, projectPath: string, patterns: string[])
     if (entry.isSymbolicLink()) continue;
 
     const fullPath = join(dirPath, entry.name);
-    const relPath = relative(projectPath, fullPath);
+    const relPath = relative(projectPath, fullPath).split(sep).join('/');
 
     if (isIgnored(entry.name, relPath, patterns)) continue;
 
@@ -105,7 +107,7 @@ export default defineCommand({
     const targetDir = resolve(projectPath, requestedPath);
 
     // Security: ensure target is within project
-    if (!targetDir.startsWith(resolve(projectPath))) {
+    if (!isInsideProject(projectPath, targetDir)) {
       return { output: JSON.stringify({ error: 'Path outside project directory' }), exitCode: 1 };
     }
 

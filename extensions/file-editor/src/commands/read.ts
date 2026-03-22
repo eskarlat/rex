@@ -1,6 +1,8 @@
 import { readFileSync, statSync } from 'node:fs';
 import { resolve, extname } from 'node:path';
 
+import { isInsideProject } from './path-guard.js';
+
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -71,7 +73,7 @@ export default defineCommand({
     const projectPath = ctx.projectPath;
     const filePath = resolve(projectPath, ctx.args.path);
 
-    if (!filePath.startsWith(resolve(projectPath))) {
+    if (!isInsideProject(projectPath, filePath)) {
       return { output: JSON.stringify({ error: 'Path outside project directory' }), exitCode: 1 };
     }
 

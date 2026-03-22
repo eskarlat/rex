@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 
 import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
+import { isInsideProject } from './path-guard.js';
+
 export default defineCommand({
   args: {
     path: z.string(),
@@ -11,7 +13,7 @@ export default defineCommand({
     const projectPath = ctx.projectPath;
     const targetPath = resolve(projectPath, ctx.args.path);
 
-    if (!targetPath.startsWith(resolve(projectPath))) {
+    if (!isInsideProject(projectPath, targetPath)) {
       return { output: JSON.stringify({ error: 'Path outside project directory' }), exitCode: 1 };
     }
 

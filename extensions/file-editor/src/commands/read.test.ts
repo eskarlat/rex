@@ -100,6 +100,16 @@ describe('read command', () => {
     expect(output.output).toContain('error');
   });
 
+  it('rejects prefix-bypass paths (e.g. project-evil)', async () => {
+    const result = await readCommand.handler(
+      makeContext(projectDir, { path: `../${projectDir.split('/').pop()}-evil/secret` }),
+    );
+    const output = result as { output: string; exitCode: number };
+
+    expect(output.exitCode).toBe(1);
+    expect(output.output).toContain('error');
+  });
+
   it('returns error for non-existent file', async () => {
     const result = await readCommand.handler(makeContext(projectDir, { path: 'missing.ts' }));
     const output = result as { output: string; exitCode: number };
