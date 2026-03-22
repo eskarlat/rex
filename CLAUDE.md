@@ -110,7 +110,7 @@ Every extension has a `manifest.json` with mandatory `engines` constraints (`ren
 - **context7-mcp**, **figma-mcp**, **miro-mcp**, **github-mcp**, **atlassian-mcp** — MCP stdio extensions wrapping third-party MCP servers.
 - **chrome-debugger** — MCP stdio extension for Chrome DevTools debugging.
 
-Extensions follow the build pattern: `tsc && node build-panel.js` (where `build-panel.js` uses the SDK's `buildPanel` to bundle React panels with esbuild).
+Extensions follow the build pattern: `node build.js` (which uses the SDK's `buildExtension` and `buildPanel` to bundle Node.js commands and React panels with esbuild).
 
 ### Global vs Per-Project State
 

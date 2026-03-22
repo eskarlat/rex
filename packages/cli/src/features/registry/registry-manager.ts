@@ -247,12 +247,19 @@ function extractEntry(
         return;
       }
       const writeStream = fs.createWriteStream(outPath);
-      readStream.pipe(writeStream);
+      readStream.on('error', (err) => {
+        writeStream.destroy();
+        reject(err);
+      });
+      writeStream.on('error', (err) => {
+        readStream.destroy();
+        reject(err);
+      });
       writeStream.on('close', () => {
         zipfile.readEntry();
         resolve();
       });
-      writeStream.on('error', reject);
+      readStream.pipe(writeStream);
     });
   });
 }
@@ -264,6 +271,40 @@ function findExtensionZip(distDir: string, version: string): string | null {
   return null;
 }
 
+function handleZipEntries(
+  zipfile: yauzl.ZipFile,
+  distDir: string,
+  zipPath: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let hadError = false;
+
+    function fail(err: Error): void {
+      if (hadError) return;
+      hadError = true;
+      reject(err);
+    }
+
+    function onEntryError(entryErr: unknown): void {
+      zipfile.close();
+      fail(entryErr instanceof Error ? entryErr : new Error(String(entryErr)));
+    }
+
+    zipfile.readEntry();
+    zipfile.on('entry', (entry: yauzl.Entry) => {
+      extractEntry(zipfile, entry, distDir).catch(onEntryError);
+    });
+
+    zipfile.on('end', () => {
+      if (!hadError) {
+        fs.rmSync(zipPath);
+        resolve();
+      }
+    });
+    zipfile.on('error', fail);
+  });
+}
+
 function extractZip(zipPath: string, distDir: string): Promise<void> {
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line sonarjs/no-unsafe-unzip -- path traversal prevented by resolveZipEntryPath
@@ -272,17 +313,7 @@ function extractZip(zipPath: string, distDir: string): Promise<void> {
         reject(err ?? new Error(`Failed to open ${path.basename(zipPath)}`));
         return;
       }
-
-      zipfile.readEntry();
-      zipfile.on('entry', (entry: yauzl.Entry) => {
-        extractEntry(zipfile, entry, distDir).catch(reject);
-      });
-
-      zipfile.on('end', () => {
-        fs.rmSync(zipPath);
-        resolve();
-      });
-      zipfile.on('error', reject);
+      handleZipEntries(zipfile, distDir, zipPath).then(resolve, reject);
     });
   });
 }

@@ -49,6 +49,7 @@ export async function buildExtension(options: BuildExtensionOptions): Promise<vo
 function collectFiles(dir: string, base: string): string[] {
   const results: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) continue;
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
       results.push(...collectFiles(fullPath, base));
@@ -60,7 +61,7 @@ function collectFiles(dir: string, base: string): string[] {
 }
 
 /**
- * Package the contents of `outdir` into a single `extension.zip` archive,
+ * Package the contents of `outdir` into `extension-{version}.zip`,
  * then remove the raw files. Call this after all build steps (buildExtension,
  * buildPanel) have written to the same outdir.
  *
@@ -71,6 +72,7 @@ function collectFiles(dir: string, base: string): string[] {
  * await buildExtension({ ..., outdir: 'dist' });
  * await buildPanel({ ..., outdir: 'dist' });
  * await archiveDist('dist', '1.0.0');
+ * // produces dist/extension-1.0.0.zip
  */
 export async function archiveDist(outdir: string, version: string): Promise<void> {
   const dir = resolve(outdir);
