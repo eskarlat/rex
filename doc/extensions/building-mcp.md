@@ -296,6 +296,27 @@ export default function status(context: ExecutionContext) {
 
 This is useful for health checks, config display, or other quick commands that don't need the MCP server.
 
+Local commands in MCP extensions support the same `argsSchema` validation as standard extensions. Export a Zod schema alongside the handler:
+
+```typescript
+// commands/status.ts
+import { z } from 'zod';
+
+export const argsSchema = z.object({
+  verbose: z.boolean().default(false),
+  format: z.enum(['json', 'markdown']).default('markdown'),
+});
+
+export default function status(context: ExecutionContext) {
+  const { verbose, format } = context.args as z.infer<typeof argsSchema>;
+  // args are validated and defaults applied before this runs
+  return {
+    output: format === 'json' ? '{"status":"ok"}' : 'MCP server is healthy',
+    exitCode: 0,
+  };
+}
+```
+
 ::: tip When to wrap vs. build
 If there's already an MCP server for the tool you want (check the [MCP server directory](https://modelcontextprotocol.io/)), just wrap it. Building your own server only makes sense when no existing server fits your needs.
 :::

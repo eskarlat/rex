@@ -237,6 +237,23 @@ Every extension command exports a standard interface. The CLI injects an `Execut
 | `args`           | Record<string, any> | Parsed command arguments and flags                     |
 | `config`         | Record<string, any> | Extension-specific configuration from project manifest |
 
+**Argument Validation** — Commands can optionally export a `argsSchema` (Zod schema) alongside their handler. When present, the CLI validates `context.args` against the schema before invoking the handler, providing consistent error messages and applying defaults. This works for both standard and MCP extensions with custom local command handlers.
+
+```typescript
+// commands/greet.ts
+import { z } from 'zod';
+
+export const argsSchema = z.object({
+  name: z.string({ required_error: '--name is required' }),
+  loud: z.boolean().default(false),
+});
+
+export default function greet(context: ExecutionContext): CommandResult {
+  const { name, loud } = context.args as z.infer<typeof argsSchema>;
+  // name is guaranteed string, loud defaults to false
+}
+```
+
 ### 4.6 Git-Based Registry
 
 The extension registry is a **git repository** containing an `extensions.json` file that lists all available extensions. The CLI clones this repository locally and uses **the developer's existing git credentials** (SSH keys, credential helpers, PATs) for authentication.

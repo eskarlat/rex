@@ -142,6 +142,8 @@ Maps command names to their handlers. Each command becomes `{extension-name}:{co
 | `handler` | `string` | Yes | Path to the compiled command handler |
 | `description` | `string` | Yes | Short description shown in help text |
 
+Command handler modules can optionally export `argsSchema` (a Zod schema) for automatic argument validation. See [Building a Standard Extension](building-standard.md#argument-validation-with-zod) for details.
+
 ## MCP Configuration
 
 Only required when `type` is `"mcp"`.

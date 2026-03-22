@@ -138,6 +138,40 @@ renre-kit my-awesome-tool:greet --name "Ada"
 
 The command namespace is the extension name, the subcommand is the key from the `commands` map in the manifest.
 
+### Argument Validation with Zod
+
+Instead of manual `typeof` checks, commands can export a `argsSchema` for automatic validation. The CLI validates args before your handler runs:
+
+```typescript
+// commands/greet.ts
+import { z } from 'zod';
+
+export const argsSchema = z.object({
+  name: z.string({ required_error: '--name is required' }).min(1),
+  loud: z.boolean().default(false),
+});
+
+export default function greet(context: ExecutionContext): CommandResult {
+  const { name, loud } = context.args as z.infer<typeof argsSchema>;
+  // name is guaranteed to be a non-empty string
+  // loud defaults to false if not provided
+
+  const greeting = `Hello, ${name}!`;
+  return {
+    output: loud ? greeting.toUpperCase() : greeting,
+    exitCode: 0,
+  };
+}
+```
+
+When `argsSchema` is exported:
+- The CLI validates `context.args` against the schema before calling your handler
+- Schema defaults are applied (e.g., `z.boolean().default(false)`)
+- Invalid args produce a consistent error: `Invalid arguments: --name: --name is required`
+- Your handler can safely cast `context.args` using `z.infer<typeof argsSchema>`
+
+When `argsSchema` is not exported, args are passed through unchanged — fully backward compatible.
+
 ## Lifecycle Hooks
 
 Extensions export `onInit` and `onDestroy` from their main entry point:

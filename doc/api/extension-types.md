@@ -148,6 +148,8 @@ export interface ExecutionContext {
 }
 ```
 
+When a command exports an `argsSchema`, the CLI validates and transforms `args` before the handler runs. The handler receives validated args with defaults applied. See [Argument Validation](#argument-validation) below.
+
 ### CommandResult
 
 Returned by command handlers:
@@ -158,6 +160,31 @@ export interface CommandResult {
   exitCode: number;
 }
 ```
+
+### Argument Validation
+
+Commands can export a co-located Zod schema for automatic argument validation. The CLI checks for an `argsSchema` named export when loading the command module:
+
+```typescript
+import { z } from 'zod';
+import type { ZodType } from 'zod';
+
+// Exported alongside the handler — CLI validates args before execution
+export const argsSchema: ZodType = z.object({
+  selector: z.string({ required_error: '--selector is required' }).min(1),
+  timeout: z.number().default(5000),
+});
+```
+
+When `argsSchema` is present:
+- Args are validated before the handler runs
+- Defaults from the schema are applied automatically
+- Invalid args throw `ARGS_VALIDATION_FAILED` with formatted error messages
+- The handler can safely cast: `context.args as z.infer<typeof argsSchema>`
+
+When `argsSchema` is absent, args are passed through unchanged (fully backward compatible).
+
+This works for both standard extensions and MCP extensions with custom local command handlers.
 
 ## Lifecycle Types
 
