@@ -51,14 +51,15 @@ beforeEach(() => {
 
 describe('click', () => {
   it('returns error when selector is missing', async () => {
-    const result = await click(makeContext());
+    mock$.mockResolvedValue(null);
+    const result = await click.handler(makeContext());
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('--selector is required');
+    expect(result.output).toContain('No element found for selector: `undefined`');
   });
 
   it('returns error when element is not found', async () => {
     mock$.mockResolvedValue(null);
-    const result = await click(makeContext({ selector: '.nonexistent' }));
+    const result = await click.handler(makeContext({ selector: '.nonexistent' }));
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No element found');
   });
@@ -67,7 +68,7 @@ describe('click', () => {
     mock$.mockResolvedValue({});
     mockClick.mockResolvedValue(undefined);
 
-    const result = await click(makeContext({ selector: 'button.submit' }));
+    const result = await click.handler(makeContext({ selector: 'button.submit' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Clicked');
     expect(result.output).toContain('button.submit');

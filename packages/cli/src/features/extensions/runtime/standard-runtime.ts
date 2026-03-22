@@ -7,7 +7,7 @@ import type { ZodType, ZodError } from 'zod';
 import type { ExecutionContext } from '../../../core/types/context.types.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 
-export type CommandHandler = (context: ExecutionContext) => unknown | Promise<unknown>;
+export type CommandHandler = (context: ExecutionContext) => unknown;
 
 export interface LoadedCommand {
   handler: CommandHandler;

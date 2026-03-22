@@ -38,7 +38,7 @@ describe('cookies', () => {
   it('returns message when no cookies found', async () => {
     mockClient.send.mockResolvedValue({ cookies: [] });
 
-    const result = await cookies(makeContext());
+    const result = await cookies.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('No cookies found.');
   });
@@ -46,7 +46,7 @@ describe('cookies', () => {
   it('returns domain-specific message when no cookies found for domain', async () => {
     mockClient.send.mockResolvedValue({ cookies: [] });
 
-    const result = await cookies(makeContext({ domain: 'example.com' }));
+    const result = await cookies.handler(makeContext({ domain: 'example.com' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('No cookies found for domain: example.com');
   });
@@ -75,7 +75,7 @@ describe('cookies', () => {
       ],
     });
 
-    const result = await cookies(makeContext());
+    const result = await cookies.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Cookies (2)');
     expect(result.output).toContain('session_id');
@@ -110,7 +110,7 @@ describe('cookies', () => {
       ],
     });
 
-    const result = await cookies(makeContext({ domain: 'example' }));
+    const result = await cookies.handler(makeContext({ domain: 'example' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Cookies (1)');
     expect(result.output).toContain('.example.com');
@@ -132,7 +132,7 @@ describe('cookies', () => {
       ],
     });
 
-    const result = await cookies(makeContext({ domain: 'nomatch' }));
+    const result = await cookies.handler(makeContext({ domain: 'nomatch' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('No cookies found for domain: nomatch');
   });

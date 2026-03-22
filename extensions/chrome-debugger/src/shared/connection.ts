@@ -34,14 +34,9 @@ export async function connectBrowser(projectPath: string): Promise<Browser> {
 }
 
 export function disconnectCachedBrowser(): void {
-  if (cachedBrowser) {
-    try {
-      cachedBrowser.disconnect();
-    } catch {
-      // Already disconnected
-    }
-    cachedBrowser = null;
-  }
+  const browser = cachedBrowser;
+  cachedBrowser = null;
+  void browser?.disconnect();
 }
 
 export async function getActivePage(browser: Browser): Promise<Page> {

@@ -81,8 +81,11 @@ export default defineCommand({
     const headless = ctx.config.headless === true || ctx.args.headless === true;
     const port = resolvePort(ctx.args, ctx.config);
 
+    const executablePath = process.env['PUPPETEER_EXECUTABLE_PATH'] ?? undefined;
+
     const browser = await puppeteer.launch({
       headless,
+      ...(executablePath ? { executablePath } : {}),
       ignoreDefaultArgs: ['--enable-automation'],
       args: [
         `--remote-debugging-port=${String(port)}`,

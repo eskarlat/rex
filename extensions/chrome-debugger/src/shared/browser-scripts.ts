@@ -37,7 +37,10 @@ export function serializeSubtree(sel: string, maxDepth: number): string {
   return serializeNode(el, maxDepth);
 }
 
+// serializeNode is duplicated here because serializeFullPage runs in browser
+// context via page.evaluate() and cannot reference serializeSubtree.
 export function serializeFullPage(maxDepth: number): string {
+  // eslint-disable-next-line sonarjs/no-identical-functions
   function serializeNode(node: Element, currentDepth: number, truncateText?: number): string {
     if (currentDepth <= 0) return '...';
     const tag = node.tagName.toLowerCase();

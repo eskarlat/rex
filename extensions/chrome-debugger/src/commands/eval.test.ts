@@ -45,14 +45,14 @@ beforeEach(() => {
 
 describe('eval', () => {
   it('returns error when neither code nor file is provided', async () => {
-    const result = await evalCommand(makeContext());
+    const result = await evalCommand.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('--code');
   });
 
   it('evaluates code and returns string result', async () => {
     mockEvaluate.mockResolvedValue('Hello World');
-    const result = await evalCommand(makeContext({ code: 'document.title' }));
+    const result = await evalCommand.handler(makeContext({ code: 'document.title' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Eval Result');
     expect(result.output).toContain('Hello World');
@@ -60,14 +60,14 @@ describe('eval', () => {
 
   it('evaluates code and returns object as JSON', async () => {
     mockEvaluate.mockResolvedValue({ count: 42, items: ['a', 'b'] });
-    const result = await evalCommand(makeContext({ code: 'JSON.parse(someData)' }));
+    const result = await evalCommand.handler(makeContext({ code: 'JSON.parse(someData)' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('"count": 42');
   });
 
   it('handles undefined result', async () => {
     mockEvaluate.mockResolvedValue(undefined);
-    const result = await evalCommand(makeContext({ code: 'void 0' }));
+    const result = await evalCommand.handler(makeContext({ code: 'void 0' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('undefined');
   });

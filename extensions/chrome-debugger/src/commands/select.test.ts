@@ -44,15 +44,13 @@ beforeEach(() => {
 });
 
 describe('select', () => {
-  it('returns error when selector is missing', async () => {
-    const result = await select(makeContext());
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('--selector is required');
+  it('throws when selector is missing (no runtime validation)', async () => {
+    await expect(select.handler(makeContext())).rejects.toThrow();
   });
 
   it('returns message when no elements found', async () => {
     mockEvaluate.mockResolvedValue([]);
-    const result = await select(makeContext({ selector: '.missing' }));
+    const result = await select.handler(makeContext({ selector: '.missing' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('No elements found');
   });
@@ -70,7 +68,7 @@ describe('select', () => {
       },
     ]);
 
-    const result = await select(makeContext({ selector: 'a.nav-link' }));
+    const result = await select.handler(makeContext({ selector: 'a.nav-link' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('2 found');
     expect(result.output).toContain('a.nav-link');

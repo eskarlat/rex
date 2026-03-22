@@ -79,7 +79,7 @@ beforeEach(() => {
 
 describe('launch', () => {
   it('launches browser and returns success', async () => {
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Browser Launched');
     expect(result.output).toContain('headed (visible)');
@@ -89,7 +89,7 @@ describe('launch', () => {
   });
 
   it('suppresses automation badge via ignoreDefaultArgs and --disable-infobars', async () => {
-    await launch(makeContext());
+    await launch.handler(makeContext());
     expect(mockLaunch).toHaveBeenCalledWith(
       expect.objectContaining({
         ignoreDefaultArgs: ['--enable-automation'],
@@ -109,7 +109,7 @@ describe('launch', () => {
     });
     mockIsProcessAlive.mockReturnValue(true);
 
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Browser Already Running');
     expect(result.output).toContain('1234');
@@ -127,7 +127,7 @@ describe('launch', () => {
     }).mockReturnValue(null);
     mockIsProcessAlive.mockReturnValue(false);
 
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Browser Launched');
   });
@@ -146,7 +146,7 @@ describe('launch', () => {
     });
     mockIsProcessAlive.mockReturnValue(true);
 
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Browser Already Running (another project)');
     expect(result.output).toContain('/other/project');
@@ -167,14 +167,14 @@ describe('launch', () => {
     });
     mockIsProcessAlive.mockReturnValue(false);
 
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(mockDeleteGlobalSession).toHaveBeenCalled();
     expect(result.output).toContain('Browser Launched');
   });
 
   it('launches in headless mode when config.headless is true', async () => {
-    const result = await launch(makeContext({}, { headless: true }));
+    const result = await launch.handler(makeContext({}, { headless: true }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('headless');
     expect(mockLaunch).toHaveBeenCalledWith(
@@ -183,13 +183,13 @@ describe('launch', () => {
   });
 
   it('launches in headless mode when args.headless is true', async () => {
-    const result = await launch(makeContext({ headless: true }));
+    const result = await launch.handler(makeContext({ headless: true }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('headless');
   });
 
   it('uses port from args', async () => {
-    const result = await launch(makeContext({ port: 9333 }));
+    const result = await launch.handler(makeContext({ port: 9333 }));
     expect(result.exitCode).toBe(0);
     expect(mockLaunch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -199,7 +199,7 @@ describe('launch', () => {
   });
 
   it('uses port from config when no args port', async () => {
-    const result = await launch(makeContext({}, { port: 9444 }));
+    const result = await launch.handler(makeContext({}, { port: 9444 }));
     expect(result.exitCode).toBe(0);
     expect(mockLaunch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -209,7 +209,7 @@ describe('launch', () => {
   });
 
   it('defaults to port 9222', async () => {
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(mockLaunch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -219,7 +219,7 @@ describe('launch', () => {
   });
 
   it('writes local state', async () => {
-    await launch(makeContext());
+    await launch.handler(makeContext());
     expect(mockWriteState).toHaveBeenCalledWith(
       '/tmp/test-project',
       expect.objectContaining({
@@ -231,7 +231,7 @@ describe('launch', () => {
   });
 
   it('writes global session', async () => {
-    await launch(makeContext());
+    await launch.handler(makeContext());
     expect(mockWriteGlobalSession).toHaveBeenCalledWith(
       expect.objectContaining({
         wsEndpoint: 'ws://127.0.0.1:9222/devtools/browser/abc',
@@ -246,7 +246,7 @@ describe('launch', () => {
   it('handles browser process with no pid', async () => {
     mockProcess.mockReturnValue(null);
 
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('0');
     expect(mockWriteState).toHaveBeenCalledWith(
@@ -256,14 +256,14 @@ describe('launch', () => {
   });
 
   it('disconnects browser after setup', async () => {
-    await launch(makeContext());
+    await launch.handler(makeContext());
     expect(mockDisconnect).toHaveBeenCalled();
   });
 
   it('handles empty pages array', async () => {
     mockPages.mockResolvedValue([]);
 
-    const result = await launch(makeContext());
+    const result = await launch.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Browser Launched');
   });

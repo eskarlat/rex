@@ -54,7 +54,7 @@ afterEach(() => {
 
 describe('close', () => {
   it('returns error when no browser is running', async () => {
-    const result = await close(makeContext());
+    const result = await close.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No browser is running');
   });
@@ -74,7 +74,7 @@ describe('close', () => {
     writeFileSync(networkLog, 'log data');
     writeFileSync(consoleLog, 'console data');
 
-    const result = await close(makeContext());
+    const result = await close.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Browser Closed');
     expect(result.output).toContain(String(process.pid));

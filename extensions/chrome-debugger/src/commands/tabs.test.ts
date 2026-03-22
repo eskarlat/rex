@@ -52,7 +52,7 @@ beforeEach(() => {
 
 describe('tabs', () => {
   it('lists all open tabs as a markdown table', async () => {
-    const result = await tabs(makeContext());
+    const result = await tabs.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Open Tabs (2)');
     expect(result.output).toContain('Tab 1');
@@ -64,7 +64,7 @@ describe('tabs', () => {
   });
 
   it('keeps connection cached after listing', async () => {
-    await tabs(makeContext());
+    await tabs.handler(makeContext());
     expect(mockDisconnect).not.toHaveBeenCalled();
   });
 });

@@ -138,7 +138,7 @@ describe('inspect', () => {
       consoleLogPath: '/tmp/console.jsonl',
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('## Inspected Element');
     expect(result.output).toContain('**Tag**: `<div>`');
@@ -161,7 +161,7 @@ describe('inspect', () => {
       consoleLogPath: '/tmp/console.jsonl',
     });
 
-    await inspect(makeContext());
+    await inspect.handler(makeContext());
     expect(mockWriteState).toHaveBeenCalledWith(
       '/tmp/test-project',
       expect.objectContaining({
@@ -176,7 +176,7 @@ describe('inspect', () => {
   it('does not write state when readState returns null', async () => {
     mockReadState.mockReturnValue(null);
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(mockWriteState).not.toHaveBeenCalled();
   });
@@ -184,7 +184,7 @@ describe('inspect', () => {
   it('uses custom timeout from args', async () => {
     mockReadState.mockReturnValue(null);
 
-    const result = await inspect(makeContext({ timeout: 5000 }));
+    const result = await inspect.handler(makeContext({ timeout: 5000 }));
     expect(result.exitCode).toBe(0);
     // Verify it still works with custom timeout
     expect(result.output).toContain('Inspected Element');
@@ -193,7 +193,7 @@ describe('inspect', () => {
   it('keeps connection cached after execution', async () => {
     mockReadState.mockReturnValue(null);
 
-    await inspect(makeContext());
+    await inspect.handler(makeContext());
     expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
@@ -203,7 +203,7 @@ describe('inspect', () => {
     // Make createCDPSession fail
     mockCreateCDPSession.mockRejectedValue(new Error('CDP error'));
 
-    await expect(inspect(makeContext())).rejects.toThrow('CDP error');
+    await expect(inspect.handler(makeContext())).rejects.toThrow('CDP error');
     expect(mockDisconnect).not.toHaveBeenCalled();
   });
 
@@ -219,7 +219,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     // Should fall back to node.nodeId
     expect(result.output).toContain('Inspected Element');
@@ -236,7 +236,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Inspected Element');
     // No Key Styles section since it failed
@@ -254,7 +254,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     // Size line should not appear when box model fails
     expect(result.output).not.toContain('**Size**');
@@ -271,7 +271,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).not.toContain('**Accessibility**');
   });
@@ -296,7 +296,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('`<span>`');
     expect(result.output).not.toContain('### Attributes');
@@ -314,7 +314,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('<!-- truncated -->');
   });
@@ -332,7 +332,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('generic');
   });
@@ -348,7 +348,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).not.toContain('**Accessibility**');
   });
@@ -371,7 +371,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('**Text**: Hello World');
   });
@@ -395,7 +395,7 @@ describe('inspect', () => {
       return originalImpl?.(method, ...args);
     });
 
-    const result = await inspect(makeContext());
+    const result = await inspect.handler(makeContext());
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('display');
     expect(result.output).toContain('color');

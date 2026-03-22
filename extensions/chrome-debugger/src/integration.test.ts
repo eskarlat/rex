@@ -124,6 +124,13 @@ function assertSuccess(result: CommandResult): void {
   expect(result.exitCode, `Command failed: ${result.output}`).toBe(0);
 }
 
+async function run(
+  cmd: { handler: (ctx: ExecutionContext) => unknown },
+  args: Record<string, unknown> = {},
+): Promise<CommandResult> {
+  return (await cmd.handler(makeContext(args))) as CommandResult;
+}
+
 // ── Setup / Teardown ──────────────────────────────────────────────
 
 beforeAll(async () => {
@@ -164,7 +171,7 @@ beforeAll(async () => {
 afterAll(async () => {
   // Close browser if still running
   try {
-    await close(makeContext());
+    await run(close);
   } catch {
     // Already closed
   }
@@ -189,7 +196,7 @@ describe('Chrome Debugger — Integration', () => {
 
   describe('browser lifecycle', () => {
     it('chrome-check: detects Chrome/Chromium', async () => {
-      const result = await chromeCheck(makeContext());
+      const result = await run(chromeCheck);
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.found).toBe(true);
@@ -197,27 +204,27 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('status: reports not running before launch', async () => {
-      const result = await status(makeContext());
+      const result = await run(status);
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.running).toBe(false);
     });
 
     it('launch: starts headless browser', async () => {
-      const result = await launch(makeContext());
+      const result = await run(launch);
       assertSuccess(result);
       expect(result.output).toContain('Browser Launched');
       expect(result.output).toContain('headless');
     });
 
     it('launch: returns error when already running', async () => {
-      const result = await launch(makeContext());
+      const result = await run(launch);
       expect(result.exitCode).toBe(1);
       expect(result.output).toContain('Already Running');
     });
 
     it('status: reports running after launch', async () => {
-      const result = await status(makeContext());
+      const result = await run(status);
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.running).toBe(true);
@@ -226,7 +233,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('heartbeat: updates session timestamp', async () => {
-      const result = await heartbeat(makeContext());
+      const result = await run(heartbeat);
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.updated).toBe(true);
@@ -241,28 +248,26 @@ describe('Chrome Debugger — Integration', () => {
   describe('navigation and tabs', () => {
     it('navigate: loads the test page', async () => {
       const url = `http://127.0.0.1:${String(serverPort)}/`;
-      const result = await navigate(makeContext({ url }));
+      const result = await run(navigate, { url });
       assertSuccess(result);
       expect(result.output).toContain('Navigated');
       expect(result.output).toContain('Integration Test Page');
       expect(result.output).toContain('200');
     });
 
-    it('navigate: fails without --url', async () => {
-      const result = await navigate(makeContext());
-      expect(result.exitCode).toBe(1);
-      expect(result.output).toContain('--url is required');
+    it('navigate: throws without --url (validation is done by CLI runtime)', async () => {
+      await expect(run(navigate)).rejects.toThrow();
     });
 
     it('tabs: lists open tabs', async () => {
-      const result = await tabs(makeContext());
+      const result = await run(tabs);
       assertSuccess(result);
       expect(result.output).toContain('Open Tabs');
       expect(result.output).toContain('Integration Test Page');
     });
 
     it('tab: switches to tab 0', async () => {
-      const result = await tab(makeContext({ index: 0 }));
+      const result = await run(tab, { index: 0 });
       assertSuccess(result);
       expect(result.output).toContain('Integration Test Page');
     });
@@ -274,7 +279,7 @@ describe('Chrome Debugger — Integration', () => {
 
   describe('DOM inspection', () => {
     it('dom: returns full page DOM tree', async () => {
-      const result = await dom(makeContext());
+      const result = await run(dom);
       assertSuccess(result);
       expect(result.output).toContain('DOM Tree');
       expect(result.output).toContain('<html');
@@ -283,7 +288,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('dom: returns subtree for selector', async () => {
-      const result = await dom(makeContext({ selector: '#main', depth: 3 }));
+      const result = await run(dom, { selector: '#main', depth: 3 });
       assertSuccess(result);
       expect(result.output).toContain('DOM: `#main`');
       expect(result.output).toContain('card');
@@ -291,27 +296,27 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('dom: subtree does not contain elements outside selector', async () => {
-      const result = await dom(makeContext({ selector: '.card[data-testid="card-1"]' }));
+      const result = await run(dom, { selector: '.card[data-testid="card-1"]' });
       assertSuccess(result);
       expect(result.output).toContain('Card one content');
       expect(result.output).not.toContain('Card two content');
     });
 
     it('dom: respects depth limit', async () => {
-      const shallow = await dom(makeContext({ selector: '#main', depth: 1 }));
+      const shallow = await run(dom, { selector: '#main', depth: 1 });
       assertSuccess(shallow);
       // At depth 1, children should be truncated with "..."
       expect(shallow.output).toContain('...');
     });
 
     it('dom: returns message for non-existent selector', async () => {
-      const result = await dom(makeContext({ selector: '#nonexistent' }));
+      const result = await run(dom, { selector: '#nonexistent' });
       assertSuccess(result);
       expect(result.output).toContain('No element found');
     });
 
     it('select: finds elements by CSS selector', async () => {
-      const result = await select(makeContext({ selector: '.card' }));
+      const result = await run(select, { selector: '.card' });
       assertSuccess(result);
       expect(result.output).toContain('2 found');
       expect(result.output).toContain('div');
@@ -319,26 +324,26 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('select: finds input with attributes', async () => {
-      const result = await select(makeContext({ selector: '#text-input' }));
+      const result = await run(select, { selector: '#text-input' });
       assertSuccess(result);
       expect(result.output).toContain('input');
       expect(result.output).toContain('text');
     });
 
-    it('select: fails without --selector', async () => {
-      const result = await select(makeContext());
-      expect(result.exitCode).toBe(1);
-      expect(result.output).toContain('--selector is required');
+    it('select: returns no results without --selector (validation is done by CLI runtime)', async () => {
+      const result = await run(select);
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toContain('No elements found');
     });
 
     it('select: returns no results for non-existent selector', async () => {
-      const result = await select(makeContext({ selector: '.nonexistent' }));
+      const result = await run(select, { selector: '.nonexistent' });
       assertSuccess(result);
       expect(result.output).toContain('No elements found');
     });
 
     it('styles: returns computed styles for an element', async () => {
-      const result = await styles(makeContext({ selector: '#main' }));
+      const result = await run(styles, { selector: '#main' });
       assertSuccess(result);
       expect(result.output).toContain('Computed Styles');
       expect(result.output).toContain('display');
@@ -346,18 +351,18 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('styles: fails without --selector', async () => {
-      const result = await styles(makeContext());
+      const result = await run(styles);
       expect(result.exitCode).toBe(1);
     });
 
     it('a11y: returns accessibility tree', async () => {
-      const result = await a11y(makeContext());
+      const result = await run(a11y);
       assertSuccess(result);
       expect(result.output).toContain('Accessibility Tree');
     });
 
     it('a11y: returns subtree for selector', async () => {
-      const result = await a11y(makeContext({ selector: '#heading' }));
+      const result = await run(a11y, { selector: '#heading' });
       assertSuccess(result);
       expect(result.output).toContain('Accessibility Tree');
     });
@@ -369,76 +374,69 @@ describe('Chrome Debugger — Integration', () => {
 
   describe('user interactions', () => {
     it('click: clicks a button', async () => {
-      const result = await click(makeContext({ selector: '#click-btn' }));
+      const result = await run(click, { selector: '#click-btn' });
       assertSuccess(result);
       expect(result.output).toContain('Clicked');
     });
 
     it('click: verifies page title changed after click', async () => {
-      const result = await eval_(makeContext({ code: 'document.title' }));
+      const result = await run(eval_, { code: 'document.title' });
       assertSuccess(result);
       expect(result.output).toContain('Clicked!');
     });
 
     it('click: fails for non-existent selector', async () => {
-      const result = await click(makeContext({ selector: '#nonexistent' }));
+      const result = await run(click, { selector: '#nonexistent' });
       expect(result.exitCode).toBe(1);
     });
 
     it('type: types text into input', async () => {
-      const result = await type_(makeContext({ selector: '#text-input', text: 'hello world' }));
+      const result = await run(type_, { selector: '#text-input', text: 'hello world' });
       assertSuccess(result);
       expect(result.output).toContain('Typed');
     });
 
     it('type: verifies typed text via eval', async () => {
-      const result = await eval_(
-        makeContext({ code: 'document.getElementById("text-input").value' }),
-      );
+      const result = await run(eval_, { code: 'document.getElementById("text-input").value' });
       assertSuccess(result);
       expect(result.output).toContain('hello world');
     });
 
     it('type: clears and retypes with --clear', async () => {
-      const result = await type_(
-        makeContext({ selector: '#text-input', text: 'replaced', clear: true }),
-      );
+      const result = await run(type_, { selector: '#text-input', text: 'replaced', clear: true });
       assertSuccess(result);
 
-      const verify = await eval_(
-        makeContext({ code: 'document.getElementById("text-input").value' }),
-      );
+      const verify = await run(eval_, { code: 'document.getElementById("text-input").value' });
       assertSuccess(verify);
       expect(verify.output).toContain('replaced');
     });
 
-    it('type: fails without required args', async () => {
-      const result = await type_(makeContext({ selector: '#text-input' }));
-      expect(result.exitCode).toBe(1);
+    it('type: throws without --text (validation is done by CLI runtime)', async () => {
+      await expect(run(type_, { selector: '#text-input' })).rejects.toThrow();
     });
 
     it('eval: executes JavaScript and returns result', async () => {
-      const result = await eval_(makeContext({ code: '1 + 2' }));
+      const result = await run(eval_, { code: '1 + 2' });
       assertSuccess(result);
       expect(result.output).toContain('3');
     });
 
     it('eval: handles object return values', async () => {
-      const result = await eval_(makeContext({ code: '({ foo: "bar" })' }));
+      const result = await run(eval_, { code: '({ foo: "bar" })' });
       assertSuccess(result);
       expect(result.output).toContain('foo');
       expect(result.output).toContain('bar');
     });
 
     it('eval: reads DOM elements', async () => {
-      const result = await eval_(makeContext({ code: 'document.querySelectorAll(".card").length' }));
+      const result = await run(eval_, { code: 'document.querySelectorAll(".card").length' });
       assertSuccess(result);
       expect(result.output).toContain('2');
     });
 
     it('eval: manipulates DOM and reads back', async () => {
       // Add a new element via JS
-      await eval_(makeContext({
+      await run(eval_, {
         code: `(() => {
           const el = document.createElement('div');
           el.id = 'eval-added';
@@ -446,31 +444,31 @@ describe('Chrome Debugger — Integration', () => {
           document.getElementById('main').appendChild(el);
           return 'created';
         })()`,
-      }));
+      });
 
       // Read it back via dom command
-      const domResult = await dom(makeContext({ selector: '#eval-added' }));
+      const domResult = await run(dom, { selector: '#eval-added' });
       assertSuccess(domResult);
       expect(domResult.output).toContain('Added by eval');
 
       // Verify via select
-      const selectResult = await select(makeContext({ selector: '#eval-added' }));
+      const selectResult = await run(select, { selector: '#eval-added' });
       assertSuccess(selectResult);
       expect(selectResult.output).toContain('eval-added');
     });
 
     it('eval: modifies element text and verifies via dom', async () => {
-      await eval_(makeContext({
+      await run(eval_, {
         code: 'document.getElementById("heading").textContent = "Modified Heading"',
-      }));
+      });
 
-      const domResult = await dom(makeContext({ selector: '#heading' }));
+      const domResult = await run(dom, { selector: '#heading' });
       assertSuccess(domResult);
       expect(domResult.output).toContain('Modified Heading');
     });
 
     it('eval: handles array return values', async () => {
-      const result = await eval_(makeContext({ code: '[1, 2, 3].map(x => x * 2)' }));
+      const result = await run(eval_, { code: '[1, 2, 3].map(x => x * 2)' });
       assertSuccess(result);
       expect(result.output).toContain('2');
       expect(result.output).toContain('4');
@@ -478,7 +476,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('eval: fails without --code or --file', async () => {
-      const result = await eval_(makeContext());
+      const result = await run(eval_);
       expect(result.exitCode).toBe(1);
     });
   });
@@ -489,14 +487,14 @@ describe('Chrome Debugger — Integration', () => {
 
   describe('network, console, and storage', () => {
     it('network: captures requests from page navigation (markdown)', async () => {
-      const result = await network(makeContext({ format: 'markdown' }));
+      const result = await run(network, { format: 'markdown' });
       assertSuccess(result);
       expect(result.output).toContain('Network Requests');
       expect(result.output).toContain('GET');
     });
 
     it('network: shows captured requests (json)', async () => {
-      const result = await network(makeContext({ format: 'json' }));
+      const result = await run(network, { format: 'json' });
       assertSuccess(result);
       const data = JSON.parse(result.output) as { entries: unknown[]; total: number };
       expect(data.entries.length).toBeGreaterThan(0);
@@ -504,7 +502,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('network: filters by method', async () => {
-      const result = await network(makeContext({ method: 'GET', format: 'json' }));
+      const result = await run(network, { method: 'GET', format: 'json' });
       assertSuccess(result);
       const data = JSON.parse(result.output) as { entries: { method: string }[] };
       for (const entry of data.entries) {
@@ -513,14 +511,14 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('console: captures page console.log messages (markdown)', async () => {
-      const result = await console_(makeContext({ format: 'markdown' }));
+      const result = await run(console_, { format: 'markdown' });
       assertSuccess(result);
       expect(result.output).toContain('Console');
       expect(result.output).toContain('page loaded');
     });
 
     it('console: shows captured messages (json)', async () => {
-      const result = await console_(makeContext({ format: 'json' }));
+      const result = await run(console_, { format: 'json' });
       assertSuccess(result);
       const data = JSON.parse(result.output) as { entries: unknown[]; total: number };
       expect(data.entries.length).toBeGreaterThan(0);
@@ -528,20 +526,20 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('performance: returns metrics', async () => {
-      const result = await performance_(makeContext());
+      const result = await run(performance_);
       assertSuccess(result);
       expect(result.output).toContain('Performance');
     });
 
     it('cookies: lists browser cookies', async () => {
-      const result = await cookies(makeContext());
+      const result = await run(cookies);
       assertSuccess(result);
       expect(result.output).toContain('Cookies');
       expect(result.output).toContain('testCookie');
     });
 
     it('storage: shows localStorage', async () => {
-      const result = await storage(makeContext({ type: 'local' }));
+      const result = await run(storage, { type: 'local' });
       assertSuccess(result);
       expect(result.output).toContain('localStorage');
       expect(result.output).toContain('testKey');
@@ -549,7 +547,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('storage: shows sessionStorage', async () => {
-      const result = await storage(makeContext({ type: 'session' }));
+      const result = await run(storage, { type: 'session' });
       assertSuccess(result);
       expect(result.output).toContain('sessionStorage');
       expect(result.output).toContain('sessionKey');
@@ -557,7 +555,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('clear-logs: runs without error', async () => {
-      const result = await clearLogs(makeContext());
+      const result = await run(clearLogs);
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data).toHaveProperty('cleared');
@@ -573,7 +571,7 @@ describe('Chrome Debugger — Integration', () => {
     let savedScreenshotPath: string;
 
     it('screenshot: takes a page screenshot', async () => {
-      const result = await screenshot(makeContext());
+      const result = await run(screenshot);
       assertSuccess(result);
       expect(result.output).toContain('Screenshot Saved');
       // Extract path from output
@@ -584,45 +582,45 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('screenshot: takes element screenshot', async () => {
-      const result = await screenshot(makeContext({ selector: '#heading' }));
+      const result = await run(screenshot, { selector: '#heading' });
       assertSuccess(result);
       expect(result.output).toContain('Screenshot Saved');
       expect(result.output).toContain('#heading');
     });
 
     it('screenshot: returns encoded base64', async () => {
-      const result = await screenshot(makeContext({ encoded: true }));
+      const result = await run(screenshot, { encoded: true });
       assertSuccess(result);
       expect(result.output).toContain('data:image/png;base64,');
     });
 
     it('screenshot: fails for non-existent selector', async () => {
-      const result = await screenshot(makeContext({ selector: '#nope' }));
+      const result = await run(screenshot, { selector: '#nope' });
       expect(result.exitCode).toBe(1);
       expect(result.output).toContain('No element found');
     });
 
     it('screenshot-list: lists saved screenshots', async () => {
-      const result = await screenshotList(makeContext());
+      const result = await run(screenshotList);
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.screenshots.length).toBeGreaterThanOrEqual(1);
     });
 
     it('screenshot-read: reads screenshot as base64', async () => {
-      const result = await screenshotRead(makeContext({ path: savedScreenshotPath }));
+      const result = await run(screenshotRead, { path: savedScreenshotPath });
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.dataUrl).toContain('data:image/png;base64,');
     });
 
     it('screenshot-read: fails for invalid path', async () => {
-      const result = await screenshotRead(makeContext({ path: '/etc/passwd' }));
+      const result = await run(screenshotRead, { path: '/etc/passwd' });
       expect(result.exitCode).toBe(1);
     });
 
     it('screenshot-delete: deletes a screenshot', async () => {
-      const result = await screenshotDelete(makeContext({ path: savedScreenshotPath }));
+      const result = await run(screenshotDelete, { path: savedScreenshotPath });
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.deleted).toBe(true);
@@ -636,18 +634,18 @@ describe('Chrome Debugger — Integration', () => {
 
   describe('highlight and selected', () => {
     it('highlight: highlights an element', async () => {
-      const result = await highlight(makeContext({ selector: '#heading', duration: 100 }));
+      const result = await run(highlight, { selector: '#heading', duration: 100 });
       assertSuccess(result);
       expect(result.output).toContain('Highlighted');
     });
 
     it('highlight: fails without --selector', async () => {
-      const result = await highlight(makeContext());
+      const result = await run(highlight);
       expect(result.exitCode).toBe(1);
     });
 
     it('selected: reports no element selected initially', async () => {
-      const result = await selected(makeContext());
+      const result = await run(selected);
       expect(result.exitCode).toBe(1);
       expect(result.output).toContain('No Element Selected');
     });
@@ -715,7 +713,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('selected: returns full details for the picked element', async () => {
-      const result = await selected(makeContext());
+      const result = await run(selected);
       assertSuccess(result);
       expect(result.output).toContain('Selected Element');
       expect(result.output).toContain('#heading');
@@ -724,21 +722,21 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('selected: includes computed styles', async () => {
-      const result = await selected(makeContext());
+      const result = await run(selected);
       assertSuccess(result);
       expect(result.output).toContain('Computed Styles');
       expect(result.output).toContain('fontSize');
     });
 
     it('selected: includes HTML preview', async () => {
-      const result = await selected(makeContext());
+      const result = await run(selected);
       assertSuccess(result);
       expect(result.output).toContain('HTML');
       expect(result.output).toContain('h1');
     });
 
     it('selected: includes action suggestions', async () => {
-      const result = await selected(makeContext());
+      const result = await run(selected);
       assertSuccess(result);
       expect(result.output).toContain('Actions');
       expect(result.output).toContain('chrome-debugger:click');
@@ -777,7 +775,7 @@ describe('Chrome Debugger — Integration', () => {
     });
 
     it('selected: returns details for the newly picked .card element', async () => {
-      const result = await selected(makeContext());
+      const result = await run(selected);
       assertSuccess(result);
       expect(result.output).toContain('Selected Element');
       expect(result.output).toContain('card-1');
@@ -787,9 +785,9 @@ describe('Chrome Debugger — Integration', () => {
 
     it('selected: reports element not found when page changes', async () => {
       // Remove the element from the page
-      await eval_(makeContext({
+      await run(eval_, {
         code: 'document.querySelector(".card[data-testid=\\"card-1\\"]")?.remove()',
-      }));
+      });
 
       // Write state with selector pointing to removed element
       const state = readState(projectPath);
@@ -803,13 +801,13 @@ describe('Chrome Debugger — Integration', () => {
         },
       } as typeof state);
 
-      const result = await selected(makeContext());
+      const result = await run(selected);
       expect(result.exitCode).toBe(1);
       expect(result.output).toContain('No Longer Found');
     });
 
     it('inspect: times out when no element is picked', async () => {
-      await expect(inspect(makeContext({ timeout: 200 }))).rejects.toThrow('Timed out');
+      await expect(inspect.handler(makeContext({ timeout: 200 }))).rejects.toThrow('Timed out');
     });
   });
 
@@ -819,20 +817,20 @@ describe('Chrome Debugger — Integration', () => {
 
   describe('browser close', () => {
     it('close: shuts down the browser', async () => {
-      const result = await close(makeContext());
+      const result = await run(close);
       assertSuccess(result);
       expect(result.output).toContain('Browser Closed');
       expect(result.output).toContain('terminated');
     });
 
     it('close: returns error when no browser running', async () => {
-      const result = await close(makeContext());
+      const result = await run(close);
       expect(result.exitCode).toBe(1);
       expect(result.output).toContain('No browser is running');
     });
 
     it('status: reports not running after close', async () => {
-      const result = await status(makeContext());
+      const result = await run(status);
       assertSuccess(result);
       const data = JSON.parse(result.output);
       expect(data.running).toBe(false);

@@ -31,13 +31,13 @@ beforeEach(() => {
 
 describe('styles', () => {
   it('returns error when selector is missing', async () => {
-    const result = await styles(makeContext());
+    const result = await styles.handler(makeContext());
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('--selector is required');
   });
 
   it('returns error when selector is empty string', async () => {
-    const result = await styles(makeContext({ selector: '' }));
+    const result = await styles.handler(makeContext({ selector: '' }));
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('--selector is required');
   });
@@ -45,7 +45,7 @@ describe('styles', () => {
   it('returns error when element not found', async () => {
     mockEvaluate.mockResolvedValue(null);
 
-    const result = await styles(makeContext({ selector: '#missing' }));
+    const result = await styles.handler(makeContext({ selector: '#missing' }));
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('No element found');
     expect(result.output).toContain('#missing');
@@ -58,7 +58,7 @@ describe('styles', () => {
       { property: 'font-size', value: '16px' },
     ]);
 
-    const result = await styles(makeContext({ selector: '#main' }));
+    const result = await styles.handler(makeContext({ selector: '#main' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Computed Styles: `#main`');
     expect(result.output).toContain('display');
@@ -74,7 +74,7 @@ describe('styles', () => {
       { property: 'some-custom', value: 'test' },
     ]);
 
-    const result = await styles(makeContext({ selector: '#main', all: true }));
+    const result = await styles.handler(makeContext({ selector: '#main', all: true }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Computed Styles: `#main` (all)');
     expect(result.output).toContain('display');
@@ -84,7 +84,7 @@ describe('styles', () => {
   it('passes correct args to page.evaluate', async () => {
     mockEvaluate.mockResolvedValue([]);
 
-    await styles(makeContext({ selector: '.box' }));
+    await styles.handler(makeContext({ selector: '.box' }));
     expect(mockEvaluate).toHaveBeenCalledWith(
       expect.any(Function),
       '.box',
@@ -96,7 +96,7 @@ describe('styles', () => {
   it('passes all=true to page.evaluate when --all is set', async () => {
     mockEvaluate.mockResolvedValue([]);
 
-    await styles(makeContext({ selector: '.box', all: true }));
+    await styles.handler(makeContext({ selector: '.box', all: true }));
     expect(mockEvaluate).toHaveBeenCalledWith(
       expect.any(Function),
       '.box',
@@ -110,7 +110,7 @@ describe('styles', () => {
       { property: 'display', value: 'block' },
     ]);
 
-    const result = await styles(makeContext({ selector: 'div' }));
+    const result = await styles.handler(makeContext({ selector: 'div' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('| Property | Value |');
     expect(result.output).toContain('| --- | --- |');
@@ -120,7 +120,7 @@ describe('styles', () => {
   it('handles empty computed styles', async () => {
     mockEvaluate.mockResolvedValue([]);
 
-    const result = await styles(makeContext({ selector: 'div' }));
+    const result = await styles.handler(makeContext({ selector: 'div' }));
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Computed Styles: `div`');
   });

@@ -49,14 +49,17 @@ beforeEach(() => {
 });
 
 describe('navigate', () => {
-  it('returns error when url is missing', async () => {
-    const result = await navigate(makeContext());
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('--url is required');
+  it('returns success even when url is missing (no runtime validation)', async () => {
+    const result = await navigate.handler(makeContext());
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Navigated');
+    expect(mockGoto).toHaveBeenCalledWith(undefined, { waitUntil: undefined });
   });
 
   it('navigates to the given URL and returns page info', async () => {
-    const result = await navigate(makeContext({ url: 'https://example.com' }));
+    const result = await navigate.handler(
+      makeContext({ url: 'https://example.com', wait: 'domcontentloaded' })
+    );
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Navigated');
     expect(result.output).toContain('https://example.com');
@@ -68,14 +71,14 @@ describe('navigate', () => {
   });
 
   it('respects wait=load option', async () => {
-    await navigate(makeContext({ url: 'https://example.com', wait: 'load' }));
+    await navigate.handler(makeContext({ url: 'https://example.com', wait: 'load' }));
     expect(mockGoto).toHaveBeenCalledWith('https://example.com', {
       waitUntil: 'load',
     });
   });
 
   it('keeps connection cached after execution', async () => {
-    await navigate(makeContext({ url: 'https://example.com' }));
+    await navigate.handler(makeContext({ url: 'https://example.com' }));
     expect(mockDisconnect).not.toHaveBeenCalled();
   });
 });

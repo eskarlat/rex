@@ -45,7 +45,7 @@ describe('status', () => {
     mockReadState.mockReturnValue(null);
     mockReadGlobalSession.mockReturnValue(null);
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
@@ -63,7 +63,7 @@ describe('status', () => {
     mockReadGlobalSession.mockReturnValue(null);
     mockIsProcessAlive.mockReturnValue(false);
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
@@ -87,7 +87,7 @@ describe('status', () => {
     });
     mockIsProcessAlive.mockReturnValue(false);
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
@@ -113,7 +113,7 @@ describe('status', () => {
       { title: 'Test Page', url: 'https://test.com', type: 'page' },
     ]);
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.running).toBe(true);
@@ -146,7 +146,7 @@ describe('status', () => {
       { title: 'Background', url: 'about:blank', type: 'background_page' },
     ]);
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.tabCount).toBe(1);
     expect(output.tabs).toHaveLength(1);
@@ -170,7 +170,7 @@ describe('status', () => {
 
     mockFetchResponse([]);
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.running).toBe(true);
@@ -191,7 +191,7 @@ describe('status', () => {
     mockIsProcessAlive.mockReturnValue(true);
     mockFetch.mockRejectedValue(new Error('Connection refused'));
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
@@ -225,7 +225,7 @@ describe('status', () => {
 
     mockFetchResponse([]);
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     const output = JSON.parse(result.output);
     expect(output.pid).toBe(11111);
   });
@@ -243,7 +243,7 @@ describe('status', () => {
     mockIsProcessAlive.mockReturnValue(true);
     mockFetch.mockResolvedValue({ ok: false, status: 500 });
 
-    const result = await status(makeContext());
+    const result = await status.handler(makeContext());
     expect(result.exitCode).toBe(0);
     const output = JSON.parse(result.output);
     expect(output.running).toBe(false);
