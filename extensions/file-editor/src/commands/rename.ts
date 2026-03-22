@@ -8,7 +8,7 @@ export default defineCommand({
     oldPath: z.string(),
     newPath: z.string(),
   },
-  handler: async (ctx) => {
+  handler: (ctx) => {
     const projectPath = ctx.projectPath;
     const sourcePath = resolve(projectPath, ctx.args.oldPath);
     const destPath = resolve(projectPath, ctx.args.newPath);

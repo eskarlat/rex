@@ -7,7 +7,7 @@ export default defineCommand({
   args: {
     path: z.string(),
   },
-  handler: async (ctx) => {
+  handler: (ctx) => {
     const projectPath = ctx.projectPath;
     const targetPath = resolve(projectPath, ctx.args.path);
 

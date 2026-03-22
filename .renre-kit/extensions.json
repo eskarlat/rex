@@ -69,6 +69,16 @@
       "icon": "icons/chrome-debugger.svg",
       "author": "yskarlat",
       "tags": ["browser", "devtools", "puppeteer", "mcp"]
+    },
+    {
+      "name": "file-editor",
+      "description": "VS Code-like file editor with tree explorer, tabbed editing, and syntax highlighting",
+      "gitUrl": "./extensions/file-editor",
+      "latestVersion": "1.0.0",
+      "type": "standard",
+      "icon": "icons/editor.svg",
+      "author": "yskarlat",
+      "tags": ["editor", "files", "code"]
     }
   ]
 }

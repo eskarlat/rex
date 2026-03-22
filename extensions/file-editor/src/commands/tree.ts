@@ -23,6 +23,15 @@ function loadGitignorePatterns(projectPath: string): string[] {
   }
 }
 
+function matchesGlobPattern(name: string, pattern: string): boolean {
+  // Convert simple glob pattern to regex
+  const escaped = pattern
+    .replace(/[$()+.[\\\]^{|}]/g, '\\$&')
+    .replace(/\*/g, '.*')
+    .replace(/\?/g, '.');
+  return new RegExp(`^${escaped}$`).test(name);
+}
+
 function isIgnored(name: string, relPath: string, patterns: string[]): boolean {
   const alwaysIgnore = ['node_modules', '.git', 'dist', '.DS_Store', 'coverage'];
   if (alwaysIgnore.includes(name)) return true;
@@ -30,6 +39,10 @@ function isIgnored(name: string, relPath: string, patterns: string[]): boolean {
   for (const pattern of patterns) {
     const clean = pattern.replace(/\/$/, '');
     if (name === clean || relPath === clean || relPath.startsWith(clean + '/')) {
+      return true;
+    }
+    // Glob pattern matching (e.g., *.log, *.js)
+    if ((clean.includes('*') || clean.includes('?')) && matchesGlobPattern(name, clean)) {
       return true;
     }
   }
@@ -86,7 +99,7 @@ export default defineCommand({
   args: {
     path: z.string().optional().default(''),
   },
-  handler: async (ctx) => {
+  handler: (ctx) => {
     const projectPath = ctx.projectPath;
     const requestedPath = ctx.args.path || '';
     const targetDir = resolve(projectPath, requestedPath);

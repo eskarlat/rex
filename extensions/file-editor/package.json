@@ -5,16 +5,23 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@renre-kit/extension-sdk": "workspace:*",
-    "@monaco-editor/react": "^4.7.0"
+    "@monaco-editor/react": "^4.7.0",
+    "monaco-editor": "^0.55.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "esbuild": "^0.21.0",
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "vitest": "^2.1.0"
   }
 }

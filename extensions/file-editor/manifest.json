@@ -1,8 +1,9 @@
 {
   "name": "file-editor",
-  "title": "File Editor",
+  "title": "Editor",
   "version": "1.0.0",
   "description": "VS Code-like file editor with tree explorer, tabbed editing, and syntax highlighting",
+  "icon": "icon.svg",
   "type": "standard",
   "engines": {
     "renre-kit": ">=0.0.1",

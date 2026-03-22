@@ -8,7 +8,7 @@ export default defineCommand({
     path: z.string(),
     type: z.enum(['file', 'directory']),
   },
-  handler: async (ctx) => {
+  handler: (ctx) => {
     const projectPath = ctx.projectPath;
     const targetPath = resolve(projectPath, ctx.args.path);
 
