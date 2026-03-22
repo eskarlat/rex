@@ -18,5 +18,9 @@ export function useBrowserActions(
   const handleNavigate = useCallback((u: string) => { void runAction('navigate', { url: u }); }, [runAction]);
   const handleSwitchTab = useCallback((i: number) => { void runAction('tab', { index: i }); }, [runAction]);
 
-  return { handleLaunch, handleClose, handleScreenshot, handleNavigate, handleSwitchTab };
+  const handleConnect = useCallback(() => {
+    void runAction('connect').then(() => { sdk.notify({ title: 'Connected to Browser', variant: 'success' }); });
+  }, [sdk, runAction]);
+
+  return { handleLaunch, handleClose, handleScreenshot, handleNavigate, handleSwitchTab, handleConnect };
 }

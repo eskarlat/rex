@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import puppeteer from 'puppeteer';
 import { defineCommand } from '@renre-kit/extension-sdk/node';
 
+import { probeCdpVersion } from '../shared/cdp-probe.js';
+
 function getWindowsChromePaths(): string[] {
   const localAppData = process.env.LOCALAPPDATA ?? join(homedir(), 'AppData', 'Local');
   return [
@@ -35,8 +37,32 @@ const SYSTEM_CHROME_PATHS: Record<string, string[]> = {
   win32: getWindowsChromePaths(),
 };
 
+function resolvePort(args: Record<string, unknown>, config: Record<string, unknown>): number {
+  if (typeof args.port === 'number') return args.port;
+  if (typeof config.port === 'number') return config.port;
+  return 9222;
+}
+
 export default defineCommand({
-  handler: () => {
+  handler: async (ctx) => {
+    const port = resolvePort(ctx.args, ctx.config);
+
+    // 0. Check if a browser is already running on the CDP port
+    const versionInfo = await probeCdpVersion(port);
+    if (versionInfo) {
+      return {
+        output: JSON.stringify({
+          found: true,
+          source: 'cdp',
+          cdpRunning: true,
+          port,
+          browser: versionInfo.Browser,
+          wsUrl: versionInfo.webSocketDebuggerUrl,
+        }),
+        exitCode: 0,
+      };
+    }
+
     // 1. Check Puppeteer bundled Chromium
     try {
       const bundledPath = puppeteer.executablePath();

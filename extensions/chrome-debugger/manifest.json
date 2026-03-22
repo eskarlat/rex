@@ -15,6 +15,10 @@
       "handler": "dist/commands/launch.js",
       "description": "Launch a browser instance with DevTools Protocol enabled"
     },
+    "connect": {
+      "handler": "dist/commands/connect.js",
+      "description": "Connect to an already-running Chrome instance on the CDP port"
+    },
     "close": {
       "handler": "dist/commands/close.js",
       "description": "Close the browser and clean up"

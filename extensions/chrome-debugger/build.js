@@ -10,6 +10,7 @@ await buildExtension({
   entryPoints: [
     { in: 'src/index.ts', out: 'index' },
     { in: 'src/commands/launch.ts', out: 'commands/launch' },
+    { in: 'src/commands/connect.ts', out: 'commands/connect' },
     { in: 'src/commands/close.ts', out: 'commands/close' },
     { in: 'src/commands/navigate.ts', out: 'commands/navigate' },
     { in: 'src/commands/tabs.ts', out: 'commands/tabs' },

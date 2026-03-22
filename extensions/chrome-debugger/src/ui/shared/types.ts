@@ -41,6 +41,7 @@ export interface TabInfo {
 
 export interface BrowserStatusData {
   running: boolean;
+  external?: boolean;
   pid?: number;
   port?: number;
   launchedAt?: string;
@@ -56,6 +57,10 @@ export interface ChromeCheckResult {
   path?: string;
   source?: string;
   canInstall?: boolean;
+  cdpRunning?: boolean;
+  port?: number;
+  browser?: string;
+  wsUrl?: string;
 }
 
 export interface ScreenshotMeta {

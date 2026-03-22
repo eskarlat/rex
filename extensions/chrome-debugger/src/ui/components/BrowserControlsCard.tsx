@@ -22,26 +22,63 @@ function BadgeLabel({ statusLoading, isRunning }: Readonly<{ statusLoading: bool
   return isRunning ? 'Running' : 'Stopped';
 }
 
+function StoppedButtons({ actionLoading, chromeDisabled, cdpDetected, onLaunch, onConnect }: Readonly<{
+  actionLoading: boolean; chromeDisabled: boolean; cdpDetected: boolean;
+  onLaunch: () => void; onConnect?: () => void;
+}>) {
+  return (
+    <>
+      <Button onClick={onLaunch} disabled={actionLoading || chromeDisabled}>
+        {actionLoading ? <Spinner /> : null} Launch Browser
+      </Button>
+      {cdpDetected && onConnect ? (
+        <Button variant="outline" onClick={onConnect} disabled={actionLoading}>
+          {actionLoading ? <Spinner /> : null} Connect to Running Browser
+        </Button>
+      ) : null}
+    </>
+  );
+}
+
+function RunningButtons({ actionLoading, inspecting, isExternal, onClose, onScreenshot, onInspect }: Readonly<{
+  actionLoading: boolean; inspecting: boolean; isExternal: boolean;
+  onClose: () => void; onScreenshot: () => void; onInspect: () => void;
+}>) {
+  const inspectLabel = inspecting ? 'Click element...' : 'Inspect';
+  return (
+    <>
+      <Button variant="destructive" onClick={onClose} disabled={actionLoading}>
+        {isExternal ? 'Disconnect' : 'Stop Browser'}
+      </Button>
+      <Button variant="outline" onClick={onScreenshot} disabled={actionLoading}>Screenshot</Button>
+      <Button variant="outline" onClick={onInspect} disabled={actionLoading || inspecting}>
+        {inspecting ? <Spinner /> : null} {inspectLabel}
+      </Button>
+    </>
+  );
+}
+
 interface BrowserControlsCardProps {
   isRunning: boolean;
+  isExternal?: boolean;
   statusData: BrowserStatusData | null;
   statusLoading: boolean;
   chromeDisabled: boolean;
   actionLoading: boolean;
   inspecting: boolean;
+  cdpDetected?: boolean;
   onLaunch: () => void;
   onClose: () => void;
   onScreenshot: () => void;
   onInspect: () => void;
+  onConnect?: () => void;
 }
 
 export function BrowserControlsCard({
-  isRunning, statusData, statusLoading, chromeDisabled,
-  actionLoading, inspecting,
-  onLaunch, onClose, onScreenshot, onInspect,
+  isRunning, isExternal, statusData, statusLoading, chromeDisabled,
+  actionLoading, inspecting, cdpDetected,
+  onLaunch, onClose, onScreenshot, onInspect, onConnect,
 }: Readonly<BrowserControlsCardProps>) {
-  const inspectLabel = inspecting ? 'Click element...' : 'Inspect';
-
   return (
     <Card>
       <CardHeader>
@@ -50,22 +87,17 @@ export function BrowserControlsCard({
           <Badge variant={isRunning ? 'default' : 'secondary'}>
             {BadgeLabel({ statusLoading, isRunning })}
           </Badge>
+          {isRunning && isExternal ? <Badge variant="outline">External</Badge> : null}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {!isRunning ? (
-            <Button onClick={onLaunch} disabled={actionLoading || chromeDisabled}>
-              {actionLoading ? <Spinner /> : null} Launch Browser
-            </Button>
+          {isRunning ? (
+            <RunningButtons actionLoading={actionLoading} inspecting={inspecting}
+              isExternal={isExternal ?? false} onClose={onClose} onScreenshot={onScreenshot} onInspect={onInspect} />
           ) : (
-            <>
-              <Button variant="destructive" onClick={onClose} disabled={actionLoading}>Stop Browser</Button>
-              <Button variant="outline" onClick={onScreenshot} disabled={actionLoading}>Screenshot</Button>
-              <Button variant="outline" onClick={onInspect} disabled={actionLoading || inspecting}>
-                {inspecting ? <Spinner /> : null} {inspectLabel}
-              </Button>
-            </>
+            <StoppedButtons actionLoading={actionLoading} chromeDisabled={chromeDisabled}
+              cdpDetected={cdpDetected ?? false} onLaunch={onLaunch} onConnect={onConnect} />
           )}
         </div>
         {isRunning && statusData ? <BrowserInfo statusData={statusData} /> : null}

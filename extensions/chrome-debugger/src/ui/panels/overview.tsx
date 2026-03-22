@@ -15,6 +15,7 @@ import type { PanelProps, PanelSdk, TabInfo } from '../shared/types.js';
 function OverviewContent({ sdk }: Readonly<{ sdk: PanelSdk }>) {
   const { data: statusData, loading: statusLoading, refresh: refreshStatus } = useBrowserStatus(sdk);
   const isRunning = statusData?.running === true;
+  const isExternal = statusData?.external === true;
   const tabs: TabInfo[] = statusData?.tabs ?? [];
 
   const { actionLoading, runAction } = useRunAction(sdk, refreshStatus);
@@ -22,19 +23,22 @@ function OverviewContent({ sdk }: Readonly<{ sdk: PanelSdk }>) {
   const { chromeCheck, installDialogOpen, setInstallDialogOpen, installing, handleInstall } = useChromeDetection(sdk);
   const { inspecting, selectedElement, handleInspect } = useInspect(sdk);
 
-  useHeartbeat(sdk, isRunning);
+  useHeartbeat(sdk, isRunning && !isExternal);
 
   const chromeNotFound = chromeCheck?.found === false;
+  const cdpDetected = chromeCheck?.cdpRunning === true;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {chromeNotFound ? <ChromeAlert chromeCheck={chromeCheck} onInstallClick={() => setInstallDialogOpen(true)} /> : null}
 
       <BrowserControlsCard
-        isRunning={isRunning} statusData={statusData} statusLoading={statusLoading}
-        chromeDisabled={chromeNotFound} actionLoading={actionLoading} inspecting={inspecting}
+        isRunning={isRunning} isExternal={isExternal} statusData={statusData} statusLoading={statusLoading}
+        chromeDisabled={chromeNotFound && !cdpDetected} actionLoading={actionLoading} inspecting={inspecting}
+        cdpDetected={cdpDetected}
         onLaunch={actions.handleLaunch} onClose={actions.handleClose}
         onScreenshot={actions.handleScreenshot} onInspect={handleInspect}
+        onConnect={actions.handleConnect}
       />
 
       {isRunning ? <NavigateCard onNavigate={actions.handleNavigate} actionLoading={actionLoading} /> : null}
