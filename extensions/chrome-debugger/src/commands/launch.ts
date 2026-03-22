@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 
 import puppeteer from 'puppeteer';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 import {
   readState,
@@ -12,7 +13,7 @@ import {
   isProcessAlive,
   deleteGlobalSession,
 } from '../shared/state.js';
-import type { ExecutionContext, CommandResult, BrowserState } from '../shared/types.js';
+import type { CommandResult, BrowserState } from '../shared/types.js';
 
 function checkExistingLocal(projectPath: string): CommandResult | null {
   const existing = readState(projectPath);
@@ -63,82 +64,83 @@ function checkExistingGlobal(): CommandResult | null {
   };
 }
 
-function resolvePort(context: ExecutionContext): number {
-  if (typeof context.args.port === 'number') return context.args.port;
-  if (typeof context.config.port === 'number') return context.config.port;
+function resolvePort(args: Record<string, unknown>, config: Record<string, unknown>): number {
+  if (typeof args.port === 'number') return args.port;
+  if (typeof config.port === 'number') return config.port;
   return 9222;
 }
 
-export default async function launch(context: ExecutionContext): Promise<CommandResult> {
-  const localCheck = checkExistingLocal(context.projectPath);
-  if (localCheck) return localCheck;
+export default defineCommand({
+  handler: async (ctx) => {
+    const localCheck = checkExistingLocal(ctx.projectPath);
+    if (localCheck) return localCheck;
 
-  const globalCheck = checkExistingGlobal();
-  if (globalCheck) return globalCheck;
+    const globalCheck = checkExistingGlobal();
+    if (globalCheck) return globalCheck;
 
-  const headless = context.config.headless === true || context.args.headless === true;
-  const port = resolvePort(context);
+    const headless = ctx.config.headless === true || ctx.args.headless === true;
+    const port = resolvePort(ctx.args, ctx.config);
 
-  const browser = await puppeteer.launch({
-    headless,
-    ignoreDefaultArgs: ['--enable-automation'],
-    args: [
-      `--remote-debugging-port=${String(port)}`,
-      '--no-first-run',
-      '--no-default-browser-check',
-      '--disable-infobars',
-      '--no-sandbox',
-    ],
-  });
+    const browser = await puppeteer.launch({
+      headless,
+      ignoreDefaultArgs: ['--enable-automation'],
+      args: [
+        `--remote-debugging-port=${String(port)}`,
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--disable-infobars',
+        '--no-sandbox',
+      ],
+    });
 
-  const wsEndpoint = browser.wsEndpoint();
-  const browserProcess = browser.process();
-  const pid = browserProcess?.pid ?? 0;
+    const wsEndpoint = browser.wsEndpoint();
+    const browserProcess = browser.process();
+    const pid = browserProcess?.pid ?? 0;
 
-  const logDir = getLogDir(context.projectPath);
-  const networkLogPath = join(logDir, 'network.jsonl');
-  const consoleLogPath = join(logDir, 'console.jsonl');
-  const now = new Date().toISOString();
+    const logDir = getLogDir(ctx.projectPath);
+    const networkLogPath = join(logDir, 'network.jsonl');
+    const consoleLogPath = join(logDir, 'console.jsonl');
+    const now = new Date().toISOString();
 
-  const browserState: BrowserState = {
-    wsEndpoint,
-    pid,
-    port,
-    launchedAt: now,
-    networkLogPath,
-    consoleLogPath,
-  };
+    const browserState: BrowserState = {
+      wsEndpoint,
+      pid,
+      port,
+      launchedAt: now,
+      networkLogPath,
+      consoleLogPath,
+    };
 
-  writeState(context.projectPath, browserState);
+    writeState(ctx.projectPath, browserState);
 
-  writeGlobalSession({
-    wsEndpoint,
-    pid,
-    port,
-    projectPath: context.projectPath,
-    launchedAt: now,
-    lastSeenAt: now,
-    headless,
-    networkLogPath,
-    consoleLogPath,
-  });
+    writeGlobalSession({
+      wsEndpoint,
+      pid,
+      port,
+      projectPath: ctx.projectPath,
+      launchedAt: now,
+      lastSeenAt: now,
+      headless,
+      networkLogPath,
+      consoleLogPath,
+    });
 
-  // Disconnect (don't close) so the browser stays alive.
-  // Network/console monitoring is attached on reconnect (see connection.ts).
-  void browser.disconnect();
+    // Disconnect (don't close) so the browser stays alive.
+    // Network/console monitoring is attached on reconnect (see connection.ts).
+    void browser.disconnect();
 
-  return {
-    output: [
-      '## Browser Launched',
-      '',
-      `- **Mode**: ${headless ? 'headless' : 'headed (visible)'}`,
-      `- **Port**: ${String(port)}`,
-      `- **PID**: ${String(pid)}`,
-      `- **WebSocket**: \`${wsEndpoint}\``,
-      '',
-      'Ready for commands. Use `chrome-debugger:navigate --url <url>` to get started.',
-    ].join('\n'),
-    exitCode: 0,
-  };
-}
-
+    return {
+      output: [
+        '## Browser Launched',
+        '',
+        `- **Mode**: ${headless ? 'headless' : 'headed (visible)'}`,
+        `- **Port**: ${String(port)}`,
+        `- **PID**: ${String(pid)}`,
+        `- **WebSocket**: \`${wsEndpoint}\``,
+        '',
+        'Ready for commands. Use `chrome-debugger:navigate --url <url>` to get started.',
+      ].join('\n'),
+      exitCode: 0,
+    };
+  },
+});

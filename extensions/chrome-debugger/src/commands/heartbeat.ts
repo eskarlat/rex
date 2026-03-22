@@ -1,20 +1,23 @@
-import { readGlobalSession, writeGlobalSession } from '../shared/state.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
-export default function heartbeat(_context: ExecutionContext): CommandResult {
-  const session = readGlobalSession();
-  if (!session) {
+import { readGlobalSession, writeGlobalSession } from '../shared/state.js';
+
+export default defineCommand({
+  handler: (_ctx) => {
+    const session = readGlobalSession();
+    if (!session) {
+      return {
+        output: JSON.stringify({ updated: false, reason: 'no-session' }),
+        exitCode: 0,
+      };
+    }
+
+    session.lastSeenAt = new Date().toISOString();
+    writeGlobalSession(session);
+
     return {
-      output: JSON.stringify({ updated: false, reason: 'no-session' }),
+      output: JSON.stringify({ updated: true, lastSeenAt: session.lastSeenAt }),
       exitCode: 0,
     };
-  }
-
-  session.lastSeenAt = new Date().toISOString();
-  writeGlobalSession(session);
-
-  return {
-    output: JSON.stringify({ updated: true, lastSeenAt: session.lastSeenAt }),
-    exitCode: 0,
-  };
-}
+  },
+});

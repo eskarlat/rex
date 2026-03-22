@@ -1,3 +1,5 @@
+import { defineCommand } from '@renre-kit/extension-sdk/node';
+
 import {
   readState,
   readGlobalSession,
@@ -5,7 +7,6 @@ import {
   deleteGlobalSession,
   isProcessAlive,
 } from '../shared/state.js';
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
 
 interface CdpTabInfo {
   title: string;
@@ -27,60 +28,62 @@ async function fetchTabsViaHttp(port: number): Promise<CdpTabInfo[]> {
   return targets.filter((t) => t.type === 'page');
 }
 
-export default async function status(context: ExecutionContext): Promise<CommandResult> {
-  // Try per-project state first
-  const localState = readState(context.projectPath);
-  const globalSession = readGlobalSession();
+export default defineCommand({
+  handler: async (ctx) => {
+    // Try per-project state first
+    const localState = readState(ctx.projectPath);
+    const globalSession = readGlobalSession();
 
-  const state = localState ?? globalSession;
-  if (!state) {
-    return {
-      output: JSON.stringify({ running: false }),
-      exitCode: 0,
-    };
-  }
+    const state = localState ?? globalSession;
+    if (!state) {
+      return {
+        output: JSON.stringify({ running: false }),
+        exitCode: 0,
+      };
+    }
 
-  // Check if PID is still alive
-  if (!isProcessAlive(state.pid)) {
-    if (localState) deleteState(context.projectPath);
-    if (globalSession) deleteGlobalSession();
-    return {
-      output: JSON.stringify({ running: false, staleSessionCleaned: true }),
-      exitCode: 0,
-    };
-  }
+    // Check if PID is still alive
+    if (!isProcessAlive(state.pid)) {
+      if (localState) deleteState(ctx.projectPath);
+      if (globalSession) deleteGlobalSession();
+      return {
+        output: JSON.stringify({ running: false, staleSessionCleaned: true }),
+        exitCode: 0,
+      };
+    }
 
-  // Use the lightweight CDP HTTP endpoint instead of puppeteer.connect()
-  // to avoid browser window blinking on every status poll
-  try {
-    const pages = await fetchTabsViaHttp(state.port);
-    const tabs = pages.map((page, index) => ({
-      index,
-      title: page.title,
-      url: page.url,
-    }));
+    // Use the lightweight CDP HTTP endpoint instead of puppeteer.connect()
+    // to avoid browser window blinking on every status poll
+    try {
+      const pages = await fetchTabsViaHttp(state.port);
+      const tabs = pages.map((page, index) => ({
+        index,
+        title: page.title,
+        url: page.url,
+      }));
 
-    const result = {
-      running: true,
-      pid: state.pid,
-      port: state.port,
-      launchedAt: state.launchedAt,
-      tabCount: tabs.length,
-      tabs,
-      ...(globalSession ? { projectPath: globalSession.projectPath, headless: globalSession.headless } : {}),
-    };
+      const result = {
+        running: true,
+        pid: state.pid,
+        port: state.port,
+        launchedAt: state.launchedAt,
+        tabCount: tabs.length,
+        tabs,
+        ...(globalSession ? { projectPath: globalSession.projectPath, headless: globalSession.headless } : {}),
+      };
 
-    return {
-      output: JSON.stringify(result),
-      exitCode: 0,
-    };
-  } catch {
-    // Process alive but can't connect — stale
-    if (localState) deleteState(context.projectPath);
-    if (globalSession) deleteGlobalSession();
-    return {
-      output: JSON.stringify({ running: false, staleSessionCleaned: true }),
-      exitCode: 0,
-    };
-  }
-}
+      return {
+        output: JSON.stringify(result),
+        exitCode: 0,
+      };
+    } catch {
+      // Process alive but can't connect — stale
+      if (localState) deleteState(ctx.projectPath);
+      if (globalSession) deleteGlobalSession();
+      return {
+        output: JSON.stringify({ running: false, staleSessionCleaned: true }),
+        exitCode: 0,
+      };
+    }
+  },
+});

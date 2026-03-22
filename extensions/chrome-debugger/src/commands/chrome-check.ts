@@ -3,8 +3,7 @@ import { homedir, platform } from 'node:os';
 import { join } from 'node:path';
 
 import puppeteer from 'puppeteer';
-
-import type { ExecutionContext, CommandResult } from '../shared/types.js';
+import { defineCommand } from '@renre-kit/extension-sdk/node';
 
 function getWindowsChromePaths(): string[] {
   const localAppData = process.env.LOCALAPPDATA ?? join(homedir(), 'AppData', 'Local');
@@ -36,46 +35,48 @@ const SYSTEM_CHROME_PATHS: Record<string, string[]> = {
   win32: getWindowsChromePaths(),
 };
 
-export default function chromeCheck(_context: ExecutionContext): CommandResult {
-  // 1. Check Puppeteer bundled Chromium
-  try {
-    const bundledPath = puppeteer.executablePath();
-    if (existsSync(bundledPath)) {
-      return {
-        output: JSON.stringify({
-          found: true,
-          path: bundledPath,
-          source: 'puppeteer',
-        }),
-        exitCode: 0,
-      };
+export default defineCommand({
+  handler: (_ctx) => {
+    // 1. Check Puppeteer bundled Chromium
+    try {
+      const bundledPath = puppeteer.executablePath();
+      if (existsSync(bundledPath)) {
+        return {
+          output: JSON.stringify({
+            found: true,
+            path: bundledPath,
+            source: 'puppeteer',
+          }),
+          exitCode: 0,
+        };
+      }
+    } catch {
+      // executablePath() can throw if no browser is installed
     }
-  } catch {
-    // executablePath() can throw if no browser is installed
-  }
 
-  // 2. Check system Chrome
-  const os = platform();
-  const paths = SYSTEM_CHROME_PATHS[os] ?? [];
-  for (const chromePath of paths) {
-    if (existsSync(chromePath)) {
-      return {
-        output: JSON.stringify({
-          found: true,
-          path: chromePath,
-          source: 'system',
-        }),
-        exitCode: 0,
-      };
+    // 2. Check system Chrome
+    const os = platform();
+    const paths = SYSTEM_CHROME_PATHS[os] ?? [];
+    for (const chromePath of paths) {
+      if (existsSync(chromePath)) {
+        return {
+          output: JSON.stringify({
+            found: true,
+            path: chromePath,
+            source: 'system',
+          }),
+          exitCode: 0,
+        };
+      }
     }
-  }
 
-  // 3. Not found
-  return {
-    output: JSON.stringify({
-      found: false,
-      canInstall: true,
-    }),
-    exitCode: 0,
-  };
-}
+    // 3. Not found
+    return {
+      output: JSON.stringify({
+        found: false,
+        canInstall: true,
+      }),
+      exitCode: 0,
+    };
+  },
+});

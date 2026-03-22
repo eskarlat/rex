@@ -7,7 +7,7 @@ import type { ZodType, ZodError } from 'zod';
 import type { ExecutionContext } from '../../../core/types/context.types.js';
 import { ExtensionError, ErrorCode } from '../../../core/errors/extension-error.js';
 
-export type CommandHandler = (context: ExecutionContext) => Promise<unknown>;
+export type CommandHandler = (context: ExecutionContext) => unknown | Promise<unknown>;
 
 export interface LoadedCommand {
   handler: CommandHandler;
@@ -41,19 +41,24 @@ export async function loadCommandHandler(
     );
   }
 
-  const handler = (mod.default ?? mod.execute) as CommandHandler | undefined;
+  const defaultExport = mod.default as Record<string, unknown> | undefined;
 
-  if (typeof handler !== 'function') {
+  if (
+    !defaultExport ||
+    typeof defaultExport !== 'object' ||
+    typeof defaultExport.handler !== 'function'
+  ) {
     throw new ExtensionError(
       '',
       ErrorCode.COMMAND_HANDLER_NOT_FOUND,
-      `Command handler at ${fullPath} does not export a default function or execute function`,
+      `Command handler at ${fullPath} must use defineCommand() from @renre-kit/extension-sdk/node`,
     );
   }
 
-  const argsSchema = mod.argsSchema as ZodType | undefined;
-
-  return { handler, argsSchema };
+  return {
+    handler: defaultExport.handler as CommandHandler,
+    argsSchema: defaultExport.argsSchema as ZodType | undefined,
+  };
 }
 
 export function formatValidationErrors(error: ZodError): string {
@@ -81,11 +86,10 @@ export function validateArgs(
 }
 
 export async function executeCommand(
-  loaded: LoadedCommand | CommandHandler,
+  loaded: LoadedCommand,
   context: ExecutionContext,
 ): Promise<unknown> {
-  const handler = typeof loaded === 'function' ? loaded : loaded.handler;
-  const argsSchema = typeof loaded === 'function' ? undefined : loaded.argsSchema;
+  const { handler, argsSchema } = loaded;
 
   if (argsSchema) {
     context = { ...context, args: validateArgs(argsSchema, context.args) };

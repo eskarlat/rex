@@ -39,43 +39,74 @@ describe('standard-runtime', () => {
     return filePath;
   }
 
+  /** Helper: creates a defineCommand-style .mjs file (default export is { handler, argsSchema? }). */
+  function writeDefineCommandFile(
+    filename: string,
+    opts: { argsCode?: string; handlerCode: string },
+  ): void {
+    const lines: string[] = [];
+    if (opts.argsCode) {
+      lines.push('import { z } from "zod";');
+      lines.push(`const argsSchema = z.object(${opts.argsCode});`);
+    }
+    lines.push(`const handler = async function(ctx) { ${opts.handlerCode} };`);
+    if (opts.argsCode) {
+      lines.push('export default { handler, argsSchema };');
+    } else {
+      lines.push('export default { handler };');
+    }
+    writeCommandFile(filename, lines.join('\n'));
+  }
+
   describe('loadCommandHandler', () => {
-    it('should load a valid command handler that exports default', async () => {
-      writeCommandFile(
-        'hello.mjs',
-        'export default async function(ctx) { return `hello ${ctx.args.name}`; }',
-      );
-      const loaded = await loadCommandHandler(tempDir, 'commands/hello.mjs');
-      expect(typeof loaded.handler).toBe('function');
-      expect(loaded.argsSchema).toBeUndefined();
-    });
-
-    it('should load a command handler that exports execute', async () => {
-      writeCommandFile(
-        'greet.mjs',
-        'export async function execute(ctx) { return `greet ${ctx.args.name}`; }',
-      );
-      const loaded = await loadCommandHandler(tempDir, 'commands/greet.mjs');
-      expect(typeof loaded.handler).toBe('function');
-    });
-
-    it('should load argsSchema when exported', async () => {
-      writeCommandFile(
-        'with-schema.mjs',
-        [
-          'import { z } from "zod";',
-          'export const argsSchema = z.object({ selector: z.string() });',
-          'export default async function(ctx) { return ctx.args.selector; }',
-        ].join('\n'),
-      );
+    it('should load a defineCommand-style handler (with argsSchema)', async () => {
+      writeDefineCommandFile('with-schema.mjs', {
+        argsCode: '{ selector: z.string() }',
+        handlerCode: 'return ctx.args.selector;',
+      });
       const loaded = await loadCommandHandler(tempDir, 'commands/with-schema.mjs');
       expect(typeof loaded.handler).toBe('function');
       expect(loaded.argsSchema).toBeDefined();
-      // Verify the loaded schema actually works as a real zod schema
+      // Verify the loaded schema actually works
       const parseResult = loaded.argsSchema!.safeParse({ selector: '.btn' });
       expect(parseResult.success).toBe(true);
       const failResult = loaded.argsSchema!.safeParse({});
       expect(failResult.success).toBe(false);
+    });
+
+    it('should load a defineCommand-style handler (without argsSchema)', async () => {
+      writeDefineCommandFile('no-schema.mjs', {
+        handlerCode: 'return ctx.args.name;',
+      });
+      const loaded = await loadCommandHandler(tempDir, 'commands/no-schema.mjs');
+      expect(typeof loaded.handler).toBe('function');
+      expect(loaded.argsSchema).toBeUndefined();
+    });
+
+    it('should reject plain function default export (legacy pattern)', async () => {
+      writeCommandFile(
+        'legacy.mjs',
+        'export default async function(ctx) { return ctx.args.name; }',
+      );
+      await expect(loadCommandHandler(tempDir, 'commands/legacy.mjs')).rejects.toThrow(
+        /defineCommand/,
+      );
+      try {
+        await loadCommandHandler(tempDir, 'commands/legacy.mjs');
+      } catch (err: unknown) {
+        const error = err as { code: string };
+        expect(error.code).toBe(ErrorCode.COMMAND_HANDLER_NOT_FOUND);
+      }
+    });
+
+    it('should reject named execute export (legacy pattern)', async () => {
+      writeCommandFile(
+        'legacy-execute.mjs',
+        'export async function execute(ctx) { return ctx.args.name; }',
+      );
+      await expect(loadCommandHandler(tempDir, 'commands/legacy-execute.mjs')).rejects.toThrow(
+        /defineCommand/,
+      );
     });
 
     it('should throw when command file does not exist', async () => {
@@ -88,26 +119,16 @@ describe('standard-runtime', () => {
       }
     });
 
-    it('should throw when module has no default or execute export', async () => {
+    it('should throw when module has no default export', async () => {
       writeCommandFile('bad.mjs', 'export const name = "bad";');
-      await expect(loadCommandHandler(tempDir, 'commands/bad.mjs')).rejects.toThrow();
-      try {
-        await loadCommandHandler(tempDir, 'commands/bad.mjs');
-      } catch (err: unknown) {
-        const error = err as { code: string };
-        expect(error.code).toBe(ErrorCode.COMMAND_HANDLER_NOT_FOUND);
-      }
+      await expect(loadCommandHandler(tempDir, 'commands/bad.mjs')).rejects.toThrow(
+        /defineCommand/,
+      );
     });
   });
 
   describe('executeCommand', () => {
     it('should execute a handler and return its result', async () => {
-      const handler = async (ctx: ExecutionContext) => `hello ${ctx.args.name}`;
-      const result = await executeCommand(handler, mockContext);
-      expect(result).toBe('hello world');
-    });
-
-    it('should accept LoadedCommand object', async () => {
       const handler = async (ctx: ExecutionContext) => `hello ${ctx.args.name}`;
       const result = await executeCommand({ handler }, mockContext);
       expect(result).toBe('hello world');
@@ -162,9 +183,9 @@ describe('standard-runtime', () => {
       const handler = async () => {
         throw new Error('handler failed');
       };
-      await expect(executeCommand(handler, mockContext)).rejects.toThrow();
       try {
-        await executeCommand(handler, mockContext);
+        await executeCommand({ handler }, mockContext);
+        expect.fail('should have thrown');
       } catch (err: unknown) {
         const error = err as { code: string; originalError: Error };
         expect(error.code).toBe(ErrorCode.COMMAND_EXECUTION_FAILED);
@@ -178,7 +199,7 @@ describe('standard-runtime', () => {
         name: ctx.projectName,
         cfg: ctx.config,
       });
-      const result = await executeCommand(handler, mockContext);
+      const result = await executeCommand({ handler }, mockContext);
       expect(result).toEqual({
         project: '/tmp/test-project',
         name: 'test-project',
@@ -188,7 +209,7 @@ describe('standard-runtime', () => {
 
     it('should handle handler returning undefined', async () => {
       const handler = async () => undefined;
-      const result = await executeCommand(handler, mockContext);
+      const result = await executeCommand({ handler }, mockContext);
       expect(result).toBeUndefined();
     });
 
@@ -201,7 +222,6 @@ describe('standard-runtime', () => {
       const context = { ...mockContext, args: { ...originalArgs } };
       const handler = async (ctx: ExecutionContext) => ctx.args;
       await executeCommand({ handler, argsSchema }, context);
-      // Original context.args should not be mutated
       expect(context.args).toEqual({ name: 'hello' });
     });
   });
@@ -274,11 +294,8 @@ describe('standard-runtime', () => {
       const schema = z.object({
         format: z.enum(['json', 'markdown']).default('markdown'),
       });
-      // valid
       expect(validateArgs(schema, { format: 'json' })).toEqual({ format: 'json' });
-      // default
       expect(validateArgs(schema, {})).toEqual({ format: 'markdown' });
-      // invalid
       try {
         validateArgs(schema, { format: 'xml' });
         expect.fail('should have thrown');
@@ -310,7 +327,6 @@ describe('standard-runtime', () => {
         const error = err as ExtensionError;
         expect(error.message).toContain('--url');
         expect(error.message).toContain('--port');
-        // Both errors separated by semicolon
         expect(error.message).toContain('; ');
       }
     });
@@ -356,40 +372,24 @@ describe('standard-runtime', () => {
   });
 
   describe('end-to-end: loadCommandHandler → executeCommand', () => {
-    it('should load file with argsSchema, validate, and execute', async () => {
-      writeCommandFile(
-        'validated.mjs',
-        [
-          'import { z } from "zod";',
-          'export const argsSchema = z.object({',
-          '  selector: z.string(),',
-          '  timeout: z.number().default(3000),',
-          '});',
-          'export default async function(ctx) {',
-          '  return { selector: ctx.args.selector, timeout: ctx.args.timeout };',
-          '}',
-        ].join('\n'),
-      );
+    it('should load defineCommand with argsSchema, validate, and execute', async () => {
+      writeDefineCommandFile('validated.mjs', {
+        argsCode: '{ selector: z.string(), timeout: z.number().default(3000) }',
+        handlerCode: 'return { selector: ctx.args.selector, timeout: ctx.args.timeout };',
+      });
 
       const loaded = await loadCommandHandler(tempDir, 'commands/validated.mjs');
       const context = { ...mockContext, args: { selector: '.my-btn' } };
       const result = await executeCommand(loaded, context);
 
-      // Handler receives validated args with defaults applied
       expect(result).toEqual({ selector: '.my-btn', timeout: 3000 });
     });
 
-    it('should reject invalid args from loaded file schema', async () => {
-      writeCommandFile(
-        'strict.mjs',
-        [
-          'import { z } from "zod";',
-          'export const argsSchema = z.object({',
-          '  url: z.string({ required_error: "--url is required" }).min(1),',
-          '});',
-          'export default async function(ctx) { return ctx.args.url; }',
-        ].join('\n'),
-      );
+    it('should reject invalid args from loaded defineCommand schema', async () => {
+      writeDefineCommandFile('strict.mjs', {
+        argsCode: '{ url: z.string({ required_error: "--url is required" }).min(1) }',
+        handlerCode: 'return ctx.args.url;',
+      });
 
       const loaded = await loadCommandHandler(tempDir, 'commands/strict.mjs');
       const context = { ...mockContext, args: {} };
@@ -405,11 +405,10 @@ describe('standard-runtime', () => {
       }
     });
 
-    it('should pass through args unchanged when no argsSchema exported', async () => {
-      writeCommandFile(
-        'no-schema.mjs',
-        'export default async function(ctx) { return ctx.args; }',
-      );
+    it('should pass through args when defineCommand has no argsSchema', async () => {
+      writeDefineCommandFile('no-schema.mjs', {
+        handlerCode: 'return ctx.args;',
+      });
 
       const loaded = await loadCommandHandler(tempDir, 'commands/no-schema.mjs');
       expect(loaded.argsSchema).toBeUndefined();
@@ -418,7 +417,6 @@ describe('standard-runtime', () => {
       const context = { ...mockContext, args: rawArgs };
       const result = await executeCommand(loaded, context);
 
-      // Args passed through as-is, no stripping
       expect(result).toEqual(rawArgs);
     });
 
@@ -427,24 +425,24 @@ describe('standard-runtime', () => {
         'guarded.mjs',
         [
           'import { z } from "zod";',
-          'export const argsSchema = z.object({ name: z.string() });',
-          // Handler writes to a global to prove it was NOT called
           'globalThis.__handlerCalled = false;',
-          'export default async function(ctx) {',
-          '  globalThis.__handlerCalled = true;',
-          '  return "should not reach here";',
-          '}',
+          'export default {',
+          '  argsSchema: z.object({ name: z.string() }),',
+          '  handler: async function(ctx) {',
+          '    globalThis.__handlerCalled = true;',
+          '    return "should not reach here";',
+          '  },',
+          '};',
         ].join('\n'),
       );
 
       const loaded = await loadCommandHandler(tempDir, 'commands/guarded.mjs');
-      const context = { ...mockContext, args: { name: 123 } }; // wrong type
+      const context = { ...mockContext, args: { name: 123 } };
 
       try {
         await executeCommand(loaded, context);
         expect.fail('should have thrown');
       } catch {
-        // Handler should never have been called
         expect((globalThis as Record<string, unknown>).__handlerCalled).not.toBe(true);
       }
     });

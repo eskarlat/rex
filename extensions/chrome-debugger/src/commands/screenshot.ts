@@ -2,22 +2,11 @@ import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
 import type { Page, ElementHandle } from 'puppeteer';
-import { z } from 'zod';
+import { z, defineCommand } from '@renre-kit/extension-sdk/node';
 
 import { withBrowser } from '../shared/connection.js';
 import { getScreenshotDir } from '../shared/state.js';
-import type { ExecutionContext, CommandResult, ScreenshotMeta } from '../shared/types.js';
-
-export const argsSchema = z.object({
-  selector: z.string().nullable().default(null),
-  'full-page': z.boolean().default(false),
-  fullPage: z.boolean().default(false),
-  output: z.string().nullable().default(null),
-  encoded: z.boolean().default(false),
-  dir: z.string().nullable().default(null),
-});
-
-type Args = z.infer<typeof argsSchema>;
+import type { CommandResult, ScreenshotMeta } from '../shared/types.js';
 
 function ensureDir(filePath: string): void {
   const dir = dirname(filePath);
@@ -58,43 +47,53 @@ function registerMeta(screenshotDir: string, filePath: string, page: Page, selec
   appendFileSync(metaPath, JSON.stringify(meta) + '\n');
 }
 
-export default async function screenshot(context: ExecutionContext): Promise<CommandResult> {
-  const args = context.args as Args;
-  const selector = args.selector;
-  const fullPage = args['full-page'] || args.fullPage;
-  const output = args.output;
-  const encoded = args.encoded;
-  const dir = args.dir;
+export default defineCommand({
+  args: {
+    selector: z.string().nullable().default(null),
+    'full-page': z.boolean().default(false),
+    fullPage: z.boolean().default(false),
+    output: z.string().nullable().default(null),
+    encoded: z.boolean().default(false),
+    dir: z.string().nullable().default(null),
+  },
+  handler: async (ctx) => {
+    const args = ctx.args;
+    const selector = args.selector;
+    const fullPage = args['full-page'] || args.fullPage;
+    const output = args.output;
+    const encoded = args.encoded;
+    const dir = args.dir;
 
-  return withBrowser(context.projectPath, async (_browser, page) => {
-    const element = selector ? await page.$(selector) : null;
-    if (selector && !element) {
-      return { output: `No element found for selector: \`${selector}\``, exitCode: 1 };
-    }
+    return withBrowser(ctx.projectPath, async (_browser, page) => {
+      const element = selector ? await page.$(selector) : null;
+      if (selector && !element) {
+        return { output: `No element found for selector: \`${selector}\``, exitCode: 1 };
+      }
 
-    if (encoded) {
-      return captureEncoded(page, element, selector, fullPage);
-    }
+      if (encoded) {
+        return captureEncoded(page, element, selector, fullPage);
+      }
 
-    const screenshotDir = dir ?? getScreenshotDir(context.projectPath);
-    const filePath = output ?? join(screenshotDir, `screenshot-${String(Date.now())}.png`);
-    ensureDir(filePath);
+      const screenshotDir = dir ?? getScreenshotDir(ctx.projectPath);
+      const filePath = output ?? join(screenshotDir, `screenshot-${String(Date.now())}.png`);
+      ensureDir(filePath);
 
-    await (element
-      ? element.screenshot({ path: filePath })
-      : page.screenshot({ path: filePath, fullPage }));
+      await (element
+        ? element.screenshot({ path: filePath })
+        : page.screenshot({ path: filePath, fullPage }));
 
-    registerMeta(screenshotDir, filePath, page, selector, fullPage);
+      registerMeta(screenshotDir, filePath, page, selector, fullPage);
 
-    return {
-      output: [
-        '## Screenshot Saved',
-        '',
-        `- **Path**: \`${filePath}\``,
-        `- **Selector**: ${selector ?? 'full page'}`,
-        `- **Full page**: ${fullPage ? 'yes' : 'no'}`,
-      ].join('\n'),
-      exitCode: 0,
-    };
-  });
-}
+      return {
+        output: [
+          '## Screenshot Saved',
+          '',
+          `- **Path**: \`${filePath}\``,
+          `- **Selector**: ${selector ?? 'full page'}`,
+          `- **Full page**: ${fullPage ? 'yes' : 'no'}`,
+        ].join('\n'),
+        exitCode: 0,
+      };
+    });
+  },
+});
