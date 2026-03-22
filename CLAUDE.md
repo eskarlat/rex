@@ -53,6 +53,7 @@ Turborepo + pnpm workspaces (`packages/*` and `extensions/*`). Build order: `ext
 | **cli**                    | `packages/cli/`                    | tsup                  | Core CLI: project lifecycle, extensions, registry, commands               |
 | **server**                 | `packages/server/`                 | tsup, tsx watch (dev) | Dashboard REST API (pure proxy to CLI managers, zero business logic)      |
 | **ui**                     | `packages/ui/`                     | Vite                  | Web dashboard SPA (React 19, Tailwind, shadcn/ui, React Query)            |
+| **shared**                 | `packages/shared/`                 | tsup                  | Shared types, execution-context, logger, and platform utilities           |
 | **create-renre-extension** | `packages/create-renre-extension/` | tsup                  | Scaffolding tool for generating new extensions                            |
 
 ## Code Architecture
@@ -72,7 +73,7 @@ src/
 - **Command flow**: User input → Commander.js parser → Command Registry (namespaced lookup) → Handler executes with `ExecutionContext` → Output
 - **Extension types**: Standard (in-process `require()`), MCP stdio (child process JSON-RPC), MCP SSE (HTTP)
 - **Connection Manager**: Manages MCP server lifecycle — lazy start, 30s idle timeout, exponential backoff restart (max 3 retries)
-- **Database**: SQLite via better-sqlite3 (synchronous API). 4 tables: `projects`, `installed_extensions`, `scheduled_tasks`, `task_history`. Migration files in `migrations/001-initial-schema.sql`.
+- **Database**: SQLite via better-sqlite3 (synchronous API). 5 tables: `projects`, `installed_extensions`, `scheduled_tasks`, `task_history`, `notifications`. Migration files in `packages/cli/migrations/` (001-initial-schema.sql, 002-notifications.sql).
 - **Extension lifecycle**: Extensions export `onInit`/`onDestroy` named exports from their `main` entry point. These receive an enriched `HookContext` with `projectDir`, `agentDir`, `extensionDir`, and `sdk` (containing `deployAgentAssets`/`cleanupAgentAssets` injected by the CLI). Hooks use `context.sdk.*` instead of direct SDK imports, so extensions work without `node_modules`.
 - **Manifest validation**: Zod schemas validate manifests — `engines` field is mandatory, widget sizes have min/max/default refinements.
 - **Config resolution chain**: project override (`.renre-kit/manifest.json`) → global (`~/.renre-kit/config.json`) → schema defaults. Vault-mapped fields get decrypted via indirection.
@@ -107,6 +108,7 @@ Every extension has a `manifest.json` with mandatory `engines` constraints (`ren
 
 - **hello-world** — Standard type (in-process). Full example with commands, UI panels/widgets, config schema, and agent assets.
 - **context7-mcp**, **figma-mcp**, **miro-mcp**, **github-mcp**, **atlassian-mcp** — MCP stdio extensions wrapping third-party MCP servers.
+- **chrome-debugger** — MCP stdio extension for Chrome DevTools debugging.
 
 Extensions follow the build pattern: `tsc && node build-panel.js` (where `build-panel.js` uses the SDK's `buildPanel` to bundle React panels with esbuild).
 
@@ -150,7 +152,7 @@ These are hard requirements, not suggestions:
 - `import type` for type-only imports
 - CLI/server packages use `NodeNext` module resolution; UI/SDK packages use `Bundler`
 - `noUncheckedIndexedAccess: true` — always handle potential `undefined` from indexing
-- Each package has `tsconfig.json` (base), `tsconfig.build.json` (build), and `tsconfig.lint.json` (lint) variants
+- Each package has `tsconfig.json` (base) and `tsconfig.lint.json` (lint); only `cli` additionally has `tsconfig.build.json`
 
 ## Formatting
 
@@ -158,7 +160,7 @@ Prettier: 100 char line width, single quotes, trailing commas, semicolons, 2-spa
 
 ## Architecture Documentation
 
-The full architecture spec lives in `renre-kit-architecture/README.md` (14 sections, source of truth). ADRs in `renre-kit-architecture/adr/` (~25 decisions across core, extensions, vault, dashboard, sdk, llm-skills, scheduler, security). Database ER diagram in `renre-kit-architecture/diagrams/database-schema.md`. Data flow diagrams in `renre-kit-architecture/diagrams/dfd-overview.md`.
+The full architecture spec lives in `renre-kit-architecture/README.md` (14 sections, source of truth). ADRs in `renre-kit-architecture/adr/` (~35 decisions across core, extensions, vault, dashboard, sdk, llm-skills, scheduler, security). Database ER diagram in `renre-kit-architecture/diagrams/database-schema.md`. Data flow diagrams in `renre-kit-architecture/diagrams/dfd-overview.md`.
 
 ## MVP Phases
 

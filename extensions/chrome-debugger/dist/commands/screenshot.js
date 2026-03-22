@@ -1,64 +1,24 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  withBrowser
+} from "../chunks/chunk-EEGYRSU4.js";
+import "../chunks/chunk-AT5YMNYW.js";
+import "../chunks/chunk-YGOXEHOS.js";
+import "../chunks/chunk-A7XEC37O.js";
+import "../chunks/chunk-ICGADTKU.js";
+import "../chunks/chunk-WWTA3VPD.js";
+import "../chunks/chunk-FOU2EXQ2.js";
+import "../chunks/chunk-LOYEZFXG.js";
+import "../chunks/chunk-AWU4Q6CL.js";
+import "../chunks/chunk-BF5SUUWU.js";
+import {
+  getScreenshotDir
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/screenshot.ts
-import { appendFileSync, existsSync as existsSync2, mkdirSync as mkdirSync2 } from "node:fs";
-import { basename, dirname, join as join2 } from "node:path";
-
-// src/shared/connection.ts
-import puppeteer from "puppeteer";
-
-// src/shared/state.ts
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function getScreenshotDir(projectPath) {
-  return join(getStorageDir(projectPath), "screenshots");
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function ensureBrowserRunning(projectPath) {
-  const state = readState(projectPath);
-  if (!state) {
-    throw new Error(
-      "No browser is running. Start one with: renre-kit chrome-debugger:launch"
-    );
-  }
-  return state;
-}
-
-// src/shared/connection.ts
-async function connectBrowser(projectPath) {
-  const state = ensureBrowserRunning(projectPath);
-  return puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
-}
-async function getActivePage(browser) {
-  const pages = await browser.pages();
-  const page = pages[pages.length - 1];
-  if (!page) {
-    throw new Error("No open tabs found in browser");
-  }
-  return page;
-}
-async function withBrowser(projectPath, fn) {
-  const browser = await connectBrowser(projectPath);
-  try {
-    const page = await getActivePage(browser);
-    return await fn(browser, page);
-  } finally {
-    void browser.disconnect();
-  }
-}
-
-// src/commands/screenshot.ts
+import { appendFileSync, existsSync, mkdirSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 function parseArgs(context) {
   return {
     selector: typeof context.args.selector === "string" ? context.args.selector : null,
@@ -70,8 +30,8 @@ function parseArgs(context) {
 }
 function ensureDir(filePath) {
   const dir = dirname(filePath);
-  if (!existsSync2(dir)) {
-    mkdirSync2(dir, { recursive: true });
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
 }
 async function captureEncoded(page, element, selector, fullPage) {
@@ -83,7 +43,7 @@ async function captureEncoded(page, element, selector, fullPage) {
   };
 }
 function registerMeta(screenshotDir, filePath, page, selector, fullPage) {
-  const metaPath = join2(screenshotDir, "screenshots.jsonl");
+  const metaPath = join(screenshotDir, "screenshots.jsonl");
   const meta = {
     filename: basename(filePath),
     path: filePath,
@@ -92,8 +52,8 @@ function registerMeta(screenshotDir, filePath, page, selector, fullPage) {
     selector,
     fullPage
   };
-  if (!existsSync2(screenshotDir)) {
-    mkdirSync2(screenshotDir, { recursive: true });
+  if (!existsSync(screenshotDir)) {
+    mkdirSync(screenshotDir, { recursive: true });
   }
   appendFileSync(metaPath, JSON.stringify(meta) + "\n");
 }
@@ -108,7 +68,7 @@ async function screenshot(context) {
       return captureEncoded(page, element, selector, fullPage);
     }
     const screenshotDir = dir ?? getScreenshotDir(context.projectPath);
-    const filePath = output ?? join2(screenshotDir, `screenshot-${String(Date.now())}.png`);
+    const filePath = output ?? join(screenshotDir, `screenshot-${String(Date.now())}.png`);
     ensureDir(filePath);
     await (element ? element.screenshot({ path: filePath }) : page.screenshot({ path: filePath, fullPage }));
     registerMeta(screenshotDir, filePath, page, selector, fullPage);

@@ -1,52 +1,16 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  formatTimestamp,
+  markdownTable,
+  truncate
+} from "../chunks/chunk-RMALWN2J.js";
+import {
+  ensureBrowserRunning
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/console.ts
-import { existsSync as existsSync2, readFileSync as readFileSync2 } from "node:fs";
-
-// src/shared/state.ts
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function ensureBrowserRunning(projectPath) {
-  const state = readState(projectPath);
-  if (!state) {
-    throw new Error(
-      "No browser is running. Start one with: renre-kit chrome-debugger:launch"
-    );
-  }
-  return state;
-}
-
-// src/shared/formatters.ts
-function markdownTable(headers, rows) {
-  const separator = headers.map(() => "---");
-  const lines = [
-    `| ${headers.join(" | ")} |`,
-    `| ${separator.join(" | ")} |`,
-    ...rows.map((row) => `| ${row.join(" | ")} |`)
-  ];
-  return lines.join("\n");
-}
-function truncate(text, maxLength) {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength - 3) + "...";
-}
-function formatTimestamp(iso) {
-  return new Date(iso).toLocaleTimeString();
-}
-
-// src/commands/console.ts
+import { existsSync, readFileSync } from "node:fs";
 function emptyResponse(format) {
   if (format === "json") {
     return { output: JSON.stringify({ entries: [], total: 0 }), exitCode: 0 };
@@ -82,10 +46,10 @@ function formatAsMarkdown(entries) {
 function consoleCommand(context) {
   const state = ensureBrowserRunning(context.projectPath);
   const { levelFilter, limit, offset, format } = parseArgs(context);
-  if (!existsSync2(state.consoleLogPath)) {
+  if (!existsSync(state.consoleLogPath)) {
     return emptyResponse(format);
   }
-  const raw = readFileSync2(state.consoleLogPath, "utf-8").trim();
+  const raw = readFileSync(state.consoleLogPath, "utf-8").trim();
   if (raw.length === 0) {
     return emptyResponse(format);
   }

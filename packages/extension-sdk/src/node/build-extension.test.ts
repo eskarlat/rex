@@ -28,6 +28,8 @@ describe('buildExtension', () => {
         target: 'node20',
         outdir: 'dist',
         external: [],
+        splitting: false,
+        chunkNames: 'chunks/[name]-[hash]',
         banner: {
           js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
         },
@@ -125,6 +127,22 @@ describe('buildExtension', () => {
     expect(build).toHaveBeenCalledWith(
       expect.objectContaining({
         external: [],
+      }),
+    );
+  });
+
+  it('enables code splitting when requested', async () => {
+    const { build } = await import('esbuild');
+    await buildExtension({
+      entryPoints: [{ in: 'src/index.ts', out: 'index' }],
+      outdir: 'dist',
+      splitting: true,
+    });
+
+    expect(build).toHaveBeenCalledWith(
+      expect.objectContaining({
+        splitting: true,
+        chunkNames: 'chunks/[name]-[hash]',
       }),
     );
   });

@@ -1,19 +1,12 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  getScreenshotDir
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/screenshot-delete.ts
 import { existsSync, readFileSync, realpathSync, unlinkSync, writeFileSync } from "node:fs";
-import { join as join2, resolve } from "node:path";
-
-// src/shared/state.ts
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getScreenshotDir(projectPath) {
-  return join(getStorageDir(projectPath), "screenshots");
-}
-
-// src/commands/screenshot-delete.ts
+import { join, resolve } from "node:path";
 function isInsideDir(filePath, dir) {
   const resolved = resolve(filePath);
   const resolvedDir = resolve(dir);
@@ -44,7 +37,7 @@ function screenshotDelete(context) {
     }
     unlinkSync(filePath);
   }
-  const metaPath = join2(screenshotDir, "screenshots.jsonl");
+  const metaPath = join(screenshotDir, "screenshots.jsonl");
   if (existsSync(metaPath)) {
     const raw = readFileSync(metaPath, "utf-8").trim();
     if (raw.length > 0) {

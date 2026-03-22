@@ -1,46 +1,21 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
-
-// src/shared/connection.ts
-import puppeteer from "puppeteer";
-
-// src/shared/state.ts
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function ensureBrowserRunning(projectPath) {
-  const state = readState(projectPath);
-  if (!state) {
-    throw new Error(
-      "No browser is running. Start one with: renre-kit chrome-debugger:launch"
-    );
-  }
-  return state;
-}
-
-// src/shared/connection.ts
-async function connectBrowser(projectPath) {
-  const state = ensureBrowserRunning(projectPath);
-  return puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
-}
-async function getPageByIndex(browser, index) {
-  const pages = await browser.pages();
-  const page = pages[index];
-  if (!page) {
-    throw new Error(`Tab index ${String(index)} out of range (${String(pages.length)} tabs open)`);
-  }
-  return page;
-}
+import {
+  connectBrowser,
+  getPageByIndex
+} from "../chunks/chunk-EEGYRSU4.js";
+import "../chunks/chunk-AT5YMNYW.js";
+import "../chunks/chunk-YGOXEHOS.js";
+import "../chunks/chunk-A7XEC37O.js";
+import "../chunks/chunk-ICGADTKU.js";
+import "../chunks/chunk-WWTA3VPD.js";
+import "../chunks/chunk-FOU2EXQ2.js";
+import "../chunks/chunk-LOYEZFXG.js";
+import "../chunks/chunk-AWU4Q6CL.js";
+import "../chunks/chunk-BF5SUUWU.js";
+import {
+  ensureBrowserRunning
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/tab.ts
 async function tab(context) {

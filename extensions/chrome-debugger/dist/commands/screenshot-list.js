@@ -1,22 +1,15 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  getScreenshotDir
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/screenshot-list.ts
 import { existsSync, readFileSync } from "node:fs";
-import { join as join2 } from "node:path";
-
-// src/shared/state.ts
 import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getScreenshotDir(projectPath) {
-  return join(getStorageDir(projectPath), "screenshots");
-}
-
-// src/commands/screenshot-list.ts
 function screenshotList(context) {
   const screenshotDir = getScreenshotDir(context.projectPath);
-  const metaPath = join2(screenshotDir, "screenshots.jsonl");
+  const metaPath = join(screenshotDir, "screenshots.jsonl");
   if (!existsSync(metaPath)) {
     return {
       output: JSON.stringify({ screenshots: [] }),

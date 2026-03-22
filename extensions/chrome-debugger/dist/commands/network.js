@@ -1,63 +1,18 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  formatBytes,
+  formatDuration,
+  formatTimestamp,
+  markdownTable,
+  truncate
+} from "../chunks/chunk-RMALWN2J.js";
+import {
+  ensureBrowserRunning
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/network.ts
-import { existsSync as existsSync2, readFileSync as readFileSync2 } from "node:fs";
-
-// src/shared/state.ts
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function ensureBrowserRunning(projectPath) {
-  const state = readState(projectPath);
-  if (!state) {
-    throw new Error(
-      "No browser is running. Start one with: renre-kit chrome-debugger:launch"
-    );
-  }
-  return state;
-}
-
-// src/shared/formatters.ts
-function markdownTable(headers, rows) {
-  const separator = headers.map(() => "---");
-  const lines = [
-    `| ${headers.join(" | ")} |`,
-    `| ${separator.join(" | ")} |`,
-    ...rows.map((row) => `| ${row.join(" | ")} |`)
-  ];
-  return lines.join("\n");
-}
-function truncate(text, maxLength) {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength - 3) + "...";
-}
-function formatBytes(bytes) {
-  if (bytes === 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  const unit = units[i] ?? "GB";
-  return `${(bytes / 1024 ** i).toFixed(1)} ${unit}`;
-}
-function formatDuration(ms) {
-  if (ms < 1e3) return `${Math.round(ms)}ms`;
-  return `${(ms / 1e3).toFixed(2)}s`;
-}
-function formatTimestamp(iso) {
-  return new Date(iso).toLocaleTimeString();
-}
-
-// src/commands/network.ts
+import { existsSync, readFileSync } from "node:fs";
 function emptyResponse(format) {
   if (format === "json") {
     return { output: JSON.stringify({ entries: [], total: 0 }), exitCode: 0 };
@@ -112,10 +67,10 @@ function formatAsMarkdown(entries) {
 function network(context) {
   const state = ensureBrowserRunning(context.projectPath);
   const { filter, method, limit, offset, format } = parseArgs(context);
-  if (!existsSync2(state.networkLogPath)) {
+  if (!existsSync(state.networkLogPath)) {
     return emptyResponse(format);
   }
-  const raw = readFileSync2(state.networkLogPath, "utf-8").trim();
+  const raw = readFileSync(state.networkLogPath, "utf-8").trim();
   if (raw.length === 0) {
     return emptyResponse(format);
   }

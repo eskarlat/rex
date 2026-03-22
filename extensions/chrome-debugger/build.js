@@ -34,7 +34,8 @@ await buildExtension({
     { in: 'src/commands/clear-logs.ts', out: 'commands/clear-logs' },
   ],
   outdir: 'dist',
-  external: ['puppeteer'],
+  external: [],
+  splitting: true,
 });
 
 await buildPanel({

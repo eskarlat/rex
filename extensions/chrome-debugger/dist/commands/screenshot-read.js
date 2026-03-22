@@ -1,19 +1,12 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  getScreenshotDir
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/screenshot-read.ts
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
-
-// src/shared/state.ts
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getScreenshotDir(projectPath) {
-  return join(getStorageDir(projectPath), "screenshots");
-}
-
-// src/commands/screenshot-read.ts
 function isInsideDir(filePath, dir) {
   const resolved = resolve(filePath);
   const resolvedDir = resolve(dir);

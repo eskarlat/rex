@@ -1,82 +1,28 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  puppeteer_default
+} from "../chunks/chunk-AT5YMNYW.js";
+import "../chunks/chunk-YGOXEHOS.js";
+import "../chunks/chunk-A7XEC37O.js";
+import "../chunks/chunk-ICGADTKU.js";
+import "../chunks/chunk-WWTA3VPD.js";
+import "../chunks/chunk-FOU2EXQ2.js";
+import "../chunks/chunk-LOYEZFXG.js";
+import "../chunks/chunk-AWU4Q6CL.js";
+import "../chunks/chunk-BF5SUUWU.js";
+import {
+  deleteGlobalSession,
+  getLogDir,
+  isProcessAlive,
+  readGlobalSession,
+  readState,
+  writeGlobalSession,
+  writeState
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/launch.ts
-import { join as join2 } from "node:path";
-import puppeteer from "puppeteer";
-
-// src/shared/state.ts
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { homedir, platform } from "node:os";
 import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function getLogDir(projectPath) {
-  return getStorageDir(projectPath);
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function writeState(projectPath, state) {
-  const dir = getStorageDir(projectPath);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  writeFileSync(getStatePath(projectPath), JSON.stringify(state, null, 2));
-}
-function getGlobalDir() {
-  return process.env.RENRE_KIT_HOME ?? join(homedir(), ".renre-kit");
-}
-function getGlobalSessionPath() {
-  return join(getGlobalDir(), "browser-session.json");
-}
-function readGlobalSession() {
-  const sessionPath = getGlobalSessionPath();
-  if (!existsSync(sessionPath)) return null;
-  const raw = readFileSync(sessionPath, "utf-8");
-  return JSON.parse(raw);
-}
-function writeGlobalSession(session) {
-  const dir = getGlobalDir();
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  writeFileSync(getGlobalSessionPath(), JSON.stringify(session, null, 2));
-}
-function deleteGlobalSession() {
-  const sessionPath = getGlobalSessionPath();
-  if (existsSync(sessionPath)) {
-    unlinkSync(sessionPath);
-  }
-}
-function winSystemRoot() {
-  return process.env.SystemRoot ?? "C:\\Windows";
-}
-function isProcessAlive(pid) {
-  if (platform() === "win32") {
-    const tasklist = join(winSystemRoot(), "System32", "tasklist.exe");
-    const result = spawnSync(tasklist, ["/FI", `PID eq ${String(pid)}`, "/NH"], {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"]
-    });
-    return result.status === 0 && result.stdout.includes(String(pid));
-  }
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// src/commands/launch.ts
 function checkExistingLocal(projectPath) {
   const existing = readState(projectPath);
   if (!existing) return null;
@@ -127,7 +73,7 @@ async function launch(context) {
   if (globalCheck) return globalCheck;
   const headless = context.config.headless === true || context.args.headless === true;
   const port = resolvePort(context);
-  const browser = await puppeteer.launch({
+  const browser = await puppeteer_default.launch({
     headless,
     args: [
       `--remote-debugging-port=${String(port)}`,
@@ -139,8 +85,8 @@ async function launch(context) {
   const browserProcess = browser.process();
   const pid = browserProcess?.pid ?? 0;
   const logDir = getLogDir(context.projectPath);
-  const networkLogPath = join2(logDir, "network.jsonl");
-  const consoleLogPath = join2(logDir, "console.jsonl");
+  const networkLogPath = join(logDir, "network.jsonl");
+  const consoleLogPath = join(logDir, "console.jsonl");
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const browserState = {
     wsEndpoint,
@@ -193,11 +139,11 @@ async function launch(context) {
   };
 }
 async function setupPageMonitoring(page, networkLogPath, consoleLogPath) {
-  const { appendFileSync, existsSync: existsSync2, mkdirSync: mkdirSync2 } = await import("node:fs");
+  const { appendFileSync, existsSync, mkdirSync } = await import("node:fs");
   const nodePath = await import("node:path");
   const dir = nodePath.dirname(networkLogPath);
-  if (!existsSync2(dir)) {
-    mkdirSync2(dir, { recursive: true });
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
   const client = await page.createCDPSession();
   await client.send("Network.enable");

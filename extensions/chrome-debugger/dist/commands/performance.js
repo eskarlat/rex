@@ -1,94 +1,26 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
-
-// src/shared/connection.ts
-import puppeteer from "puppeteer";
-
-// src/shared/state.ts
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function ensureBrowserRunning(projectPath) {
-  const state = readState(projectPath);
-  if (!state) {
-    throw new Error(
-      "No browser is running. Start one with: renre-kit chrome-debugger:launch"
-    );
-  }
-  return state;
-}
-
-// src/shared/connection.ts
-async function connectBrowser(projectPath) {
-  const state = ensureBrowserRunning(projectPath);
-  return puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
-}
-async function getActivePage(browser) {
-  const pages = await browser.pages();
-  const page = pages[pages.length - 1];
-  if (!page) {
-    throw new Error("No open tabs found in browser");
-  }
-  return page;
-}
-async function withBrowser(projectPath, fn) {
-  const browser = await connectBrowser(projectPath);
-  try {
-    const page = await getActivePage(browser);
-    return await fn(browser, page);
-  } finally {
-    void browser.disconnect();
-  }
-}
-
-// src/shared/browser-scripts.ts
-function getNavigationTiming() {
-  const nav = globalThis.performance.getEntriesByType(
-    "navigation"
-  )[0];
-  if (!nav) return null;
-  return {
-    dns: nav.domainLookupEnd - nav.domainLookupStart,
-    tcp: nav.connectEnd - nav.connectStart,
-    ttfb: nav.responseStart - nav.requestStart,
-    download: nav.responseEnd - nav.responseStart,
-    domInteractive: nav.domInteractive - nav.fetchStart,
-    domComplete: nav.domComplete - nav.fetchStart,
-    loadEvent: nav.loadEventEnd - nav.fetchStart
-  };
-}
-function getWebVitals() {
-  const entries = globalThis.performance.getEntriesByType("paint");
-  const fcp = entries.find((e) => e.name === "first-contentful-paint");
-  return {
-    fcp: fcp?.startTime ?? null
-  };
-}
-
-// src/shared/formatters.ts
-function markdownTable(headers, rows) {
-  const separator = headers.map(() => "---");
-  const lines = [
-    `| ${headers.join(" | ")} |`,
-    `| ${separator.join(" | ")} |`,
-    ...rows.map((row) => `| ${row.join(" | ")} |`)
-  ];
-  return lines.join("\n");
-}
-function formatDuration(ms) {
-  if (ms < 1e3) return `${Math.round(ms)}ms`;
-  return `${(ms / 1e3).toFixed(2)}s`;
-}
+import {
+  getNavigationTiming,
+  getWebVitals
+} from "../chunks/chunk-V26XA6TS.js";
+import {
+  formatDuration,
+  markdownTable
+} from "../chunks/chunk-RMALWN2J.js";
+import {
+  withBrowser
+} from "../chunks/chunk-EEGYRSU4.js";
+import "../chunks/chunk-AT5YMNYW.js";
+import "../chunks/chunk-YGOXEHOS.js";
+import "../chunks/chunk-A7XEC37O.js";
+import "../chunks/chunk-ICGADTKU.js";
+import "../chunks/chunk-WWTA3VPD.js";
+import "../chunks/chunk-FOU2EXQ2.js";
+import "../chunks/chunk-LOYEZFXG.js";
+import "../chunks/chunk-AWU4Q6CL.js";
+import "../chunks/chunk-BF5SUUWU.js";
+import "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/performance.ts
 async function performance(context) {

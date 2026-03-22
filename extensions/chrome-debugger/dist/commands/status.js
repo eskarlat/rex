@@ -1,68 +1,23 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
-
-// src/commands/status.ts
-import puppeteer from "puppeteer";
-
-// src/shared/state.ts
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { homedir, platform } from "node:os";
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function deleteState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (existsSync(statePath)) {
-    unlinkSync(statePath);
-  }
-}
-function getGlobalDir() {
-  return process.env.RENRE_KIT_HOME ?? join(homedir(), ".renre-kit");
-}
-function getGlobalSessionPath() {
-  return join(getGlobalDir(), "browser-session.json");
-}
-function readGlobalSession() {
-  const sessionPath = getGlobalSessionPath();
-  if (!existsSync(sessionPath)) return null;
-  const raw = readFileSync(sessionPath, "utf-8");
-  return JSON.parse(raw);
-}
-function deleteGlobalSession() {
-  const sessionPath = getGlobalSessionPath();
-  if (existsSync(sessionPath)) {
-    unlinkSync(sessionPath);
-  }
-}
-function winSystemRoot() {
-  return process.env.SystemRoot ?? "C:\\Windows";
-}
-function isProcessAlive(pid) {
-  if (platform() === "win32") {
-    const tasklist = join(winSystemRoot(), "System32", "tasklist.exe");
-    const result = spawnSync(tasklist, ["/FI", `PID eq ${String(pid)}`, "/NH"], {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"]
-    });
-    return result.status === 0 && result.stdout.includes(String(pid));
-  }
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import {
+  puppeteer_default
+} from "../chunks/chunk-AT5YMNYW.js";
+import "../chunks/chunk-YGOXEHOS.js";
+import "../chunks/chunk-A7XEC37O.js";
+import "../chunks/chunk-ICGADTKU.js";
+import "../chunks/chunk-WWTA3VPD.js";
+import "../chunks/chunk-FOU2EXQ2.js";
+import "../chunks/chunk-LOYEZFXG.js";
+import "../chunks/chunk-AWU4Q6CL.js";
+import "../chunks/chunk-BF5SUUWU.js";
+import {
+  deleteGlobalSession,
+  deleteState,
+  isProcessAlive,
+  readGlobalSession,
+  readState
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/status.ts
 async function status(context) {
@@ -84,7 +39,7 @@ async function status(context) {
     };
   }
   try {
-    const browser = await puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
+    const browser = await puppeteer_default.connect({ browserWSEndpoint: state.wsEndpoint });
     const pages = await browser.pages();
     const tabs = await Promise.all(
       pages.map(async (page, index) => ({

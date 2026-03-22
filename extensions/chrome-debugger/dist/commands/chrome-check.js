@@ -1,10 +1,21 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
+import {
+  puppeteer_default
+} from "../chunks/chunk-AT5YMNYW.js";
+import "../chunks/chunk-YGOXEHOS.js";
+import "../chunks/chunk-A7XEC37O.js";
+import "../chunks/chunk-ICGADTKU.js";
+import "../chunks/chunk-WWTA3VPD.js";
+import "../chunks/chunk-FOU2EXQ2.js";
+import "../chunks/chunk-LOYEZFXG.js";
+import "../chunks/chunk-AWU4Q6CL.js";
+import "../chunks/chunk-BF5SUUWU.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/chrome-check.ts
 import { existsSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
-import puppeteer from "puppeteer";
 function getWindowsChromePaths() {
   const localAppData = process.env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local");
   return [
@@ -35,7 +46,7 @@ var SYSTEM_CHROME_PATHS = {
 };
 function chromeCheck(_context) {
   try {
-    const bundledPath = puppeteer.executablePath();
+    const bundledPath = puppeteer_default.executablePath();
     if (existsSync(bundledPath)) {
       return {
         output: JSON.stringify({

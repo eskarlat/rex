@@ -31,6 +31,8 @@ export async function buildExtension(options: BuildExtensionOptions): Promise<vo
     target: 'node20',
     outdir: options.outdir,
     external: options.external ?? [],
+    splitting: options.splitting ?? false,
+    chunkNames: 'chunks/[name]-[hash]',
     banner: {
       js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
     },

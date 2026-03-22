@@ -42,4 +42,6 @@ export interface BuildExtensionOptions {
   external?: string[];
   /** Enable minification */
   minify?: boolean;
+  /** Enable code splitting to share common dependencies across entry points */
+  splitting?: boolean;
 }

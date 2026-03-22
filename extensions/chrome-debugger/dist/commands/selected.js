@@ -1,101 +1,30 @@
 import { createRequire } from 'module'; const require = createRequire(import.meta.url);
-
-// src/shared/connection.ts
-import puppeteer from "puppeteer";
-
-// src/shared/state.ts
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
-function getStorageDir(projectPath) {
-  return join(projectPath, ".renre-kit", "storage", "chrome-debugger");
-}
-function getStatePath(projectPath) {
-  return join(getStorageDir(projectPath), "state.json");
-}
-function readState(projectPath) {
-  const statePath = getStatePath(projectPath);
-  if (!existsSync(statePath)) return null;
-  const raw = readFileSync(statePath, "utf-8");
-  return JSON.parse(raw);
-}
-function ensureBrowserRunning(projectPath) {
-  const state = readState(projectPath);
-  if (!state) {
-    throw new Error(
-      "No browser is running. Start one with: renre-kit chrome-debugger:launch"
-    );
-  }
-  return state;
-}
-
-// src/shared/connection.ts
-async function connectBrowser(projectPath) {
-  const state = ensureBrowserRunning(projectPath);
-  return puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
-}
-async function getActivePage(browser) {
-  const pages = await browser.pages();
-  const page = pages[pages.length - 1];
-  if (!page) {
-    throw new Error("No open tabs found in browser");
-  }
-  return page;
-}
-
-// src/shared/browser-scripts.ts
-function getSelectedElementInfo(sel) {
-  const el = document.querySelector(sel);
-  if (!el) return null;
-  const rect = el.getBoundingClientRect();
-  const cs = getComputedStyle(el);
-  return {
-    tag: el.tagName.toLowerCase(),
-    id: el.id,
-    classes: Array.from(el.classList).join(" "),
-    text: (el.textContent ?? "").trim().slice(0, 200),
-    html: el.outerHTML.slice(0, 500),
-    attrs: Array.from(el.attributes).map((a) => ({
-      name: a.name,
-      value: a.value
-    })),
-    rect: {
-      x: Math.round(rect.x),
-      y: Math.round(rect.y),
-      width: Math.round(rect.width),
-      height: Math.round(rect.height)
-    },
-    styles: {
-      display: cs.display,
-      position: cs.position,
-      color: cs.color,
-      backgroundColor: cs.backgroundColor,
-      fontSize: cs.fontSize,
-      fontWeight: cs.fontWeight
-    },
-    childCount: el.children.length,
-    visible: rect.width > 0 && rect.height > 0
-  };
-}
-
-// src/shared/formatters.ts
-function markdownTable(headers, rows) {
-  const separator = headers.map(() => "---");
-  const lines = [
-    `| ${headers.join(" | ")} |`,
-    `| ${separator.join(" | ")} |`,
-    ...rows.map((row) => `| ${row.join(" | ")} |`)
-  ];
-  return lines.join("\n");
-}
-function markdownCodeBlock(content, lang = "") {
-  return `\`\`\`${lang}
-${content}
-\`\`\``;
-}
-function truncate(text, maxLength) {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength - 3) + "...";
-}
+import {
+  getSelectedElementInfo
+} from "../chunks/chunk-V26XA6TS.js";
+import {
+  markdownCodeBlock,
+  markdownTable,
+  truncate
+} from "../chunks/chunk-RMALWN2J.js";
+import {
+  connectBrowser,
+  getActivePage
+} from "../chunks/chunk-EEGYRSU4.js";
+import "../chunks/chunk-AT5YMNYW.js";
+import "../chunks/chunk-YGOXEHOS.js";
+import "../chunks/chunk-A7XEC37O.js";
+import "../chunks/chunk-ICGADTKU.js";
+import "../chunks/chunk-WWTA3VPD.js";
+import "../chunks/chunk-FOU2EXQ2.js";
+import "../chunks/chunk-LOYEZFXG.js";
+import "../chunks/chunk-AWU4Q6CL.js";
+import "../chunks/chunk-BF5SUUWU.js";
+import {
+  ensureBrowserRunning,
+  readState
+} from "../chunks/chunk-L2PPAVNR.js";
+import "../chunks/chunk-C3C6F2UY.js";
 
 // src/commands/selected.ts
 async function selected(context) {
