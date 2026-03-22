@@ -72,7 +72,7 @@
     },
     {
       "name": "agent-browser",
-      "description": "Browser automation extension powered by agent-browser — live viewport, element inspection, and debugging tools",
+      "description": "Browser automation — live viewport, element inspection, and debugging tools",
       "gitUrl": "./extensions/agent-browser",
       "latestVersion": "1.0.0",
       "type": "standard",

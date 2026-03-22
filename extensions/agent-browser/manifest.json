@@ -1,6 +1,6 @@
 {
   "name": "agent-browser",
-  "title": "Agent Browser",
+  "title": "Browser",
   "version": "1.0.0",
   "description": "Browser automation extension powered by agent-browser — live viewport, element inspection, and debugging tools",
   "icon": "icon.svg",
