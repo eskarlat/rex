@@ -558,12 +558,36 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       return { error: 'name is required' };
     }
 
+    const wantsSSE = request.headers.accept === 'text/event-stream';
+
+    function sendEvent(step: string, data?: Record<string, unknown>): void {
+      if (!wantsSSE) return;
+      reply.raw.write(`data: ${JSON.stringify({ step, ...data })}\n\n`);
+    }
+
+    if (wantsSSE) {
+      reply.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      });
+    }
+
+    sendEvent('resolving');
+
     const config = loadGlobalConfig();
     const resolved = resolveExtension(body.name, config.registries);
     if (!resolved) {
+      if (wantsSSE) {
+        sendEvent('error', { error: `Extension '${body.name}' not found in registries` });
+        reply.raw.end();
+        return;
+      }
       reply.code(404);
       return { error: `Extension '${body.name}' not found in registries` };
     }
+
+    sendEvent('downloading', { name: resolved.name, version: resolved.latestVersion });
 
     const extDir = await installExtension(
       resolved.name,
@@ -571,13 +595,15 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
       resolved.latestVersion,
       resolved.registryName,
     );
+
+    sendEvent('installing');
+
     const db = getDb();
     install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
 
     const manifest = loadManifest(extDir);
     const compat = checkEngineCompat(manifest, CLI_VERSION, SDK_VERSION);
 
-    reply.code(201);
     const response: Record<string, unknown> = {
       name: resolved.name,
       version: resolved.latestVersion,
@@ -586,6 +612,14 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     if (!compat.compatible) {
       response.compatWarnings = compat.issues;
     }
+
+    if (wantsSSE) {
+      sendEvent('done', response);
+      reply.raw.end();
+      return;
+    }
+
+    reply.code(201);
     return response;
   });
 

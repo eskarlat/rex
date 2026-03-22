@@ -1,11 +1,15 @@
 // @vitest-environment node
+import { mkdirSync, writeFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('esbuild', () => ({
   build: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { buildExtension } = await import('./build-extension.js');
+const { buildExtension, archiveDist } = await import('./build-extension.js');
 
 describe('buildExtension', () => {
   beforeEach(() => {
@@ -145,5 +149,51 @@ describe('buildExtension', () => {
         chunkNames: 'chunks/[name]-[hash]',
       }),
     );
+  });
+});
+
+describe('archiveDist', () => {
+  function makeTmpDir(): string {
+    const dir = join(tmpdir(), `archiveDist-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    mkdirSync(dir, { recursive: true });
+    return dir;
+  }
+
+  it('creates versioned archive and removes raw files', async () => {
+    const dir = makeTmpDir();
+    try {
+      writeFileSync(join(dir, 'index.js'), 'export default 1;');
+      mkdirSync(join(dir, 'commands'));
+      writeFileSync(join(dir, 'commands', 'foo.js'), 'export default 2;');
+
+      await archiveDist(dir, '1.0.0');
+
+      const entries = readdirSync(dir);
+      expect(entries).toEqual(['extension-1.0.0.zip']);
+      expect(existsSync(join(dir, 'extension-1.0.0.zip'))).toBe(true);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws when outdir does not exist', async () => {
+    await expect(archiveDist('/tmp/nonexistent-dir-' + Date.now(), '1.0.0')).rejects.toThrow(
+      'Output directory does not exist',
+    );
+  });
+
+  it('replaces an existing archive', async () => {
+    const dir = makeTmpDir();
+    try {
+      writeFileSync(join(dir, 'extension-2.0.0.zip'), 'stale');
+      writeFileSync(join(dir, 'index.js'), 'export default 1;');
+
+      await archiveDist(dir, '2.0.0');
+
+      const entries = readdirSync(dir);
+      expect(entries).toEqual(['extension-2.0.0.zip']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

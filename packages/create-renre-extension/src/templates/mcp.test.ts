@@ -64,14 +64,36 @@ describe('mcp templates', () => {
   });
 
   describe('getMcpBuildJs', () => {
-    it('imports buildExtension from SDK', () => {
+    it('imports buildExtension and archiveDist from SDK', () => {
       const result = getMcpBuildJs();
-      expect(result).toContain("import { buildExtension } from '@renre-kit/extension-sdk/node'");
+      expect(result).toContain(
+        "import { buildExtension, archiveDist } from '@renre-kit/extension-sdk/node'",
+      );
+    });
+
+    it('cleans dist before building', () => {
+      const result = getMcpBuildJs();
+      expect(result).toContain("rmSync('dist', { recursive: true, force: true })");
+    });
+
+    it('reads manifest for version', () => {
+      const result = getMcpBuildJs();
+      expect(result).toContain("readFileSync('manifest.json', 'utf-8')");
     });
 
     it('includes server entry point', () => {
       const result = getMcpBuildJs();
       expect(result).toContain("{ in: 'src/server.ts', out: 'server' }");
+    });
+
+    it('enables code splitting', () => {
+      const result = getMcpBuildJs();
+      expect(result).toContain('splitting: true');
+    });
+
+    it('archives dist with version', () => {
+      const result = getMcpBuildJs();
+      expect(result).toContain('await archiveDist');
     });
 
     it('outputs to dist directory', () => {

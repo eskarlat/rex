@@ -73,7 +73,13 @@ export default function hello(_context: ExecutionContext): { output: string; exi
 export { getTsconfig as getStandardTsconfig } from './shared.js';
 
 export function getStandardBuildJs(): string {
-  return `import { buildExtension } from '@renre-kit/extension-sdk/node';
+  return `import { readFileSync, rmSync } from 'node:fs';
+
+import { buildExtension, archiveDist } from '@renre-kit/extension-sdk/node';
+
+rmSync('dist', { recursive: true, force: true });
+
+const manifest = JSON.parse(readFileSync('manifest.json', 'utf-8'));
 
 await buildExtension({
   entryPoints: [
@@ -81,7 +87,11 @@ await buildExtension({
     { in: 'src/commands/hello.ts', out: 'commands/hello' },
   ],
   outdir: 'dist',
+  external: [],
+  splitting: true,
 });
+
+await archiveDist('dist', manifest.version);
 `;
 }
 

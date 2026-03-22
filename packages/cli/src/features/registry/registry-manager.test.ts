@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { createWriteStream } from 'node:fs';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { pipeline } from 'node:stream/promises';
+
+import yazl from 'yazl';
 
 vi.mock('simple-git', () => {
   const cloneFn = vi.fn().mockResolvedValue(undefined);
@@ -619,6 +623,29 @@ describe('registry-manager', () => {
       await expect(
         installExtension('missing', './nonexistent', '1.0.0', 'some-reg'),
       ).rejects.toThrow('Local extension path not found');
+    });
+
+    it('extracts dist/extension-1.0.0.zip after copying local extension', async () => {
+      const regDir = path.join(tmpDir, 'registries', 'zip-reg');
+      const extSrc = path.join(regDir, 'extensions', 'zip-ext');
+      const distDir = path.join(extSrc, 'dist');
+      fs.mkdirSync(distDir, { recursive: true });
+      fs.writeFileSync(path.join(extSrc, 'manifest.json'), '{"name":"zip-ext"}');
+
+      // Create a extension-1.0.0.zip with a test file inside
+      const zip = new yazl.ZipFile();
+      zip.addBuffer(Buffer.from('export default 1;'), 'commands/test.js');
+      zip.end();
+      await pipeline(zip.outputStream, createWriteStream(path.join(distDir, 'extension-1.0.0.zip')));
+
+      const result = await installExtension('zip-ext', './extensions/zip-ext', '1.0.0', 'zip-reg');
+
+      // extension-1.0.0.zip should be removed and contents extracted
+      expect(fs.existsSync(path.join(result, 'dist', 'extension-1.0.0.zip'))).toBe(false);
+      expect(fs.existsSync(path.join(result, 'dist', 'commands', 'test.js'))).toBe(true);
+      expect(fs.readFileSync(path.join(result, 'dist', 'commands', 'test.js'), 'utf-8')).toBe(
+        'export default 1;',
+      );
     });
   });
 

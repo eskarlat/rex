@@ -1,4 +1,10 @@
-import { buildExtension, buildPanel } from '@renre-kit/extension-sdk/node';
+import { readFileSync, rmSync } from 'node:fs';
+
+import { buildExtension, buildPanel, archiveDist } from '@renre-kit/extension-sdk/node';
+
+rmSync('dist', { recursive: true, force: true });
+
+const manifest = JSON.parse(readFileSync('manifest.json', 'utf-8'));
 
 await buildExtension({
   entryPoints: [
@@ -46,3 +52,5 @@ await buildPanel({
   ],
   outdir: 'dist',
 });
+
+await archiveDist('dist', manifest.version);
