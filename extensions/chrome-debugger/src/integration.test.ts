@@ -5,7 +5,6 @@
  * and exercises every command handler against live browser state.
  *
  * Excluded commands:
- * - inspect: requires interactive user click in the browser
  * - chrome-install: downloads Chromium binary (slow, side-effect-heavy)
  */
 import { createServer, type Server } from 'node:http';
@@ -65,7 +64,10 @@ import status from './commands/status.js';
 import heartbeat from './commands/heartbeat.js';
 import chromeCheck from './commands/chrome-check.js';
 import clearLogs from './commands/clear-logs.js';
+import inspect from './commands/inspect.js';
 import selected from './commands/selected.js';
+import { connectBrowser, getActivePage } from './shared/connection.js';
+import { readState, writeState } from './shared/state.js';
 
 // ── Test HTML page ────────────────────────────────────────────────
 
@@ -644,10 +646,170 @@ describe('Chrome Debugger — Integration', () => {
       expect(result.exitCode).toBe(1);
     });
 
-    it('selected: reports no element selected (inspect not used)', async () => {
+    it('selected: reports no element selected initially', async () => {
       const result = await selected(makeContext());
       expect(result.exitCode).toBe(1);
       expect(result.output).toContain('No Element Selected');
+    });
+  });
+
+  // ────────────────────────────────────────────
+  // 8. Inspect + Selected (simulated user pick)
+  // ────────────────────────────────────────────
+
+  describe('inspect and selected workflow', () => {
+    it('inspect: simulates element pick via CDP and saves selection', async () => {
+      const browser = await connectBrowser(projectPath);
+      const page = await getActivePage(browser);
+      const client = await page.createCDPSession();
+
+      await client.send('DOM.enable');
+
+      // Get the document root
+      const { root } = (await client.send('DOM.getDocument', { depth: 0 })) as {
+        root: { nodeId: number };
+      };
+
+      // Find #heading element via CDP
+      const { nodeId } = (await client.send('DOM.querySelector', {
+        nodeId: root.nodeId,
+        selector: '#heading',
+      })) as { nodeId: number };
+      expect(nodeId).toBeGreaterThan(0);
+
+      // Describe the node to get backendNodeId
+      const { node } = (await client.send('DOM.describeNode', { nodeId })) as {
+        node: { backendNodeId: number; localName: string };
+      };
+      expect(node.localName).toBe('h1');
+
+      // Resolve to JS object for selector generation
+      const { object } = (await client.send('DOM.resolveNode', {
+        backendNodeId: node.backendNodeId,
+      })) as { object: { objectId: string } };
+
+      // Generate CSS selector
+      const selectorResult = await client.send('Runtime.callFunctionOn', {
+        objectId: object.objectId,
+        functionDeclaration: `function() {
+          if (this.id) return '#' + this.id;
+          return this.tagName.toLowerCase();
+        }`,
+        returnByValue: true,
+      });
+      const cssSelector = (selectorResult as { result: { value: string } }).result.value;
+      expect(cssSelector).toBe('#heading');
+
+      // Save to state (same as inspect does)
+      const state = readState(projectPath);
+      expect(state).toBeTruthy();
+      writeState(projectPath, {
+        ...state!,
+        selectedElement: {
+          backendNodeId: node.backendNodeId,
+          selector: cssSelector,
+          tag: node.localName,
+          timestamp: new Date().toISOString(),
+        },
+      } as typeof state);
+    });
+
+    it('selected: returns full details for the picked element', async () => {
+      const result = await selected(makeContext());
+      assertSuccess(result);
+      expect(result.output).toContain('Selected Element');
+      expect(result.output).toContain('#heading');
+      expect(result.output).toContain('<h1>');
+      expect(result.output).toContain('Modified Heading');
+    });
+
+    it('selected: includes computed styles', async () => {
+      const result = await selected(makeContext());
+      assertSuccess(result);
+      expect(result.output).toContain('Computed Styles');
+      expect(result.output).toContain('fontSize');
+    });
+
+    it('selected: includes HTML preview', async () => {
+      const result = await selected(makeContext());
+      assertSuccess(result);
+      expect(result.output).toContain('HTML');
+      expect(result.output).toContain('h1');
+    });
+
+    it('selected: includes action suggestions', async () => {
+      const result = await selected(makeContext());
+      assertSuccess(result);
+      expect(result.output).toContain('Actions');
+      expect(result.output).toContain('chrome-debugger:click');
+      expect(result.output).toContain('chrome-debugger:styles');
+    });
+
+    it('inspect: simulates picking a different element (.card)', async () => {
+      const browser = await connectBrowser(projectPath);
+      const page = await getActivePage(browser);
+      const client = await page.createCDPSession();
+
+      await client.send('DOM.enable');
+      const { root } = (await client.send('DOM.getDocument', { depth: 0 })) as {
+        root: { nodeId: number };
+      };
+      const { nodeId } = (await client.send('DOM.querySelector', {
+        nodeId: root.nodeId,
+        selector: '.card[data-testid="card-1"]',
+      })) as { nodeId: number };
+      expect(nodeId).toBeGreaterThan(0);
+
+      const { node } = (await client.send('DOM.describeNode', { nodeId })) as {
+        node: { backendNodeId: number; localName: string };
+      };
+
+      const state = readState(projectPath);
+      writeState(projectPath, {
+        ...state!,
+        selectedElement: {
+          backendNodeId: node.backendNodeId,
+          selector: '.card[data-testid="card-1"]',
+          tag: node.localName,
+          timestamp: new Date().toISOString(),
+        },
+      } as typeof state);
+    });
+
+    it('selected: returns details for the newly picked .card element', async () => {
+      const result = await selected(makeContext());
+      assertSuccess(result);
+      expect(result.output).toContain('Selected Element');
+      expect(result.output).toContain('card-1');
+      expect(result.output).toContain('<div>');
+      expect(result.output).toContain('Card one content');
+    });
+
+    it('selected: reports element not found when page changes', async () => {
+      // Remove the element from the page
+      await eval_(makeContext({
+        code: 'document.querySelector(".card[data-testid=\\"card-1\\"]")?.remove()',
+      }));
+
+      // Write state with selector pointing to removed element
+      const state = readState(projectPath);
+      writeState(projectPath, {
+        ...state!,
+        selectedElement: {
+          backendNodeId: 99999,
+          selector: '.card[data-testid="card-1"]',
+          tag: 'div',
+          timestamp: new Date().toISOString(),
+        },
+      } as typeof state);
+
+      const result = await selected(makeContext());
+      expect(result.exitCode).toBe(1);
+      expect(result.output).toContain('No Longer Found');
+    });
+
+    it('inspect: times out when no element is picked', async () => {
+      await expect(inspect(makeContext({ timeout: 200 }))).rejects.toThrow('Timed out');
     });
   });
 
