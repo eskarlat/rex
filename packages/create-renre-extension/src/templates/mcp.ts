@@ -97,14 +97,24 @@ rl.on('line', (line: string) => {
 export { getTsconfig as getMcpTsconfig } from './shared.js';
 
 export function getMcpBuildJs(): string {
-  return `import { buildExtension } from '@renre-kit/extension-sdk/node';
+  return `import { readFileSync, rmSync } from 'node:fs';
+
+import { buildExtension, archiveDist } from '@renre-kit/extension-sdk/node';
+
+rmSync('dist', { recursive: true, force: true });
+
+const manifest = JSON.parse(readFileSync('manifest.json', 'utf-8'));
 
 await buildExtension({
   entryPoints: [
     { in: 'src/server.ts', out: 'server' },
   ],
   outdir: 'dist',
+  external: [],
+  splitting: true,
 });
+
+await archiveDist('dist', manifest.version);
 `;
 }
 

@@ -1,4 +1,10 @@
-import { buildExtension, buildPanel } from '@renre-kit/extension-sdk/node';
+import { readFileSync, rmSync } from 'node:fs';
+
+import { buildExtension, buildPanel, archiveDist } from '@renre-kit/extension-sdk/node';
+
+rmSync('dist', { recursive: true, force: true });
+
+const manifest = JSON.parse(readFileSync('manifest.json', 'utf-8'));
 
 // Bundle Node.js entry points (hooks, commands)
 await buildExtension({
@@ -7,6 +13,8 @@ await buildExtension({
     { in: 'src/commands/status.ts', out: 'commands/status' },
   ],
   outdir: 'dist',
+  external: [],
+  splitting: true,
 });
 
 // Bundle UI panels
@@ -17,3 +25,5 @@ await buildPanel({
   ],
   outdir: 'dist',
 });
+
+await archiveDist('dist', manifest.version);

@@ -1,6 +1,6 @@
 {
   "name": "chrome-debugger",
-  "title": "Browser DevTools",
+  "title": "Chrome Debugger",
   "version": "1.0.0",
   "description": "Native browser automation and debugging via Chrome DevTools Protocol. Launch a browser, inspect DOM, execute JavaScript, capture network traffic, take screenshots, and more — all through CLI commands.",
   "icon": "icon.svg",

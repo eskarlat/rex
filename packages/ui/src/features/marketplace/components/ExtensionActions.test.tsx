@@ -6,34 +6,42 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ExtensionActions, UpdateBadge } from './ExtensionActions';
 import type { Extension } from '@/core/hooks/use-extensions';
 
-const mockInstallMutate = vi.fn();
+const mockStartInstall = vi.fn();
 const mockActivateMutate = vi.fn();
 const mockDeactivateMutate = vi.fn();
 const mockRemoveMutate = vi.fn();
 const mockUpdateMutate = vi.fn();
 
-vi.mock('@/core/hooks/use-extensions', () => ({
-  useInstallExtension: () => ({
-    mutate: mockInstallMutate,
-    isPending: false,
+vi.mock('./InstallProgress', () => ({
+  useInstallProgress: () => ({
+    state: { step: 'idle', extensionName: null },
+    startInstall: mockStartInstall,
   }),
-  useActivateExtension: () => ({
-    mutate: mockActivateMutate,
-    isPending: false,
-  }),
-  useDeactivateExtension: () => ({
-    mutate: mockDeactivateMutate,
-    isPending: false,
-  }),
-  useRemoveExtension: () => ({
-    mutate: mockRemoveMutate,
-    isPending: false,
-  }),
-  useUpdateExtension: () => ({
-    mutate: mockUpdateMutate,
-    isPending: false,
-  }),
+  InstallProgressBar: () => null,
 }));
+
+vi.mock('@/core/hooks/use-extensions', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('@/core/hooks/use-extensions');
+  return {
+    ...actual,
+    useActivateExtension: () => ({
+      mutate: mockActivateMutate,
+      isPending: false,
+    }),
+    useDeactivateExtension: () => ({
+      mutate: mockDeactivateMutate,
+      isPending: false,
+    }),
+    useRemoveExtension: () => ({
+      mutate: mockRemoveMutate,
+      isPending: false,
+    }),
+    useUpdateExtension: () => ({
+      mutate: mockUpdateMutate,
+      isPending: false,
+    }),
+  };
+});
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -65,11 +73,11 @@ describe('ExtensionActions', () => {
     expect(screen.queryByRole('button', { name: 'Activate' })).not.toBeInTheDocument();
   });
 
-  it('clicking Install calls install.mutate', async () => {
+  it('clicking Install calls startInstall', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ExtensionActions extension={baseExtension} />);
     await user.click(screen.getByRole('button', { name: 'Install' }));
-    expect(mockInstallMutate).toHaveBeenCalledWith({ name: 'test-ext' });
+    expect(mockStartInstall).toHaveBeenCalledWith('test-ext');
   });
 
   it('shows Activate and Uninstall buttons for installed extensions', () => {

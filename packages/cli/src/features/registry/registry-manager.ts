@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { simpleGit } from 'simple-git';
+import yauzl from 'yauzl';
 
 import type { RegistryConfig, RegistryEntry } from '../../core/types/index.js';
 import type { PartialEngineConstraints } from '../extensions/types/extension.types.js';
@@ -214,6 +215,115 @@ function isLocalPath(source: string): boolean {
   return source.startsWith('./') || source.startsWith('../') || source.startsWith('/');
 }
 
+function resolveZipEntryPath(distDir: string, fileName: string): string | null {
+  const resolved = path.resolve(distDir, fileName);
+  if (!resolved.startsWith(distDir + path.sep) && resolved !== distDir) return null;
+  return resolved;
+}
+
+function extractEntry(
+  zipfile: yauzl.ZipFile,
+  entry: yauzl.Entry,
+  distDir: string,
+): Promise<void> {
+  const outPath = resolveZipEntryPath(distDir, entry.fileName);
+  if (!outPath) {
+    zipfile.readEntry();
+    return Promise.resolve();
+  }
+
+  if (entry.fileName.endsWith('/')) {
+    fs.mkdirSync(outPath, { recursive: true });
+    zipfile.readEntry();
+    return Promise.resolve();
+  }
+
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+
+  return new Promise((resolve, reject) => {
+    zipfile.openReadStream(entry, (streamErr, readStream) => {
+      if (streamErr || !readStream) {
+        reject(streamErr ?? new Error(`Failed to read ${entry.fileName}`));
+        return;
+      }
+      const writeStream = fs.createWriteStream(outPath);
+      readStream.on('error', (err) => {
+        writeStream.destroy();
+        reject(err);
+      });
+      writeStream.on('error', (err) => {
+        readStream.destroy();
+        reject(err);
+      });
+      writeStream.on('close', () => {
+        zipfile.readEntry();
+        resolve();
+      });
+      readStream.pipe(writeStream);
+    });
+  });
+}
+
+function findExtensionZip(distDir: string, version: string): string | null {
+  if (!fs.existsSync(distDir)) return null;
+  const exact = `extension-${version}.zip`;
+  if (fs.existsSync(path.join(distDir, exact))) return path.join(distDir, exact);
+  return null;
+}
+
+function handleZipEntries(
+  zipfile: yauzl.ZipFile,
+  distDir: string,
+  zipPath: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let hadError = false;
+
+    function fail(err: Error): void {
+      if (hadError) return;
+      hadError = true;
+      reject(err);
+    }
+
+    function onEntryError(entryErr: unknown): void {
+      zipfile.close();
+      fail(entryErr instanceof Error ? entryErr : new Error(String(entryErr)));
+    }
+
+    zipfile.readEntry();
+    zipfile.on('entry', (entry: yauzl.Entry) => {
+      extractEntry(zipfile, entry, distDir).catch(onEntryError);
+    });
+
+    zipfile.on('end', () => {
+      if (!hadError) {
+        fs.rmSync(zipPath);
+        resolve();
+      }
+    });
+    zipfile.on('error', fail);
+  });
+}
+
+function extractZip(zipPath: string, distDir: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // eslint-disable-next-line sonarjs/no-unsafe-unzip -- path traversal prevented by resolveZipEntryPath
+    yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+      if (err || !zipfile) {
+        reject(err ?? new Error(`Failed to open ${path.basename(zipPath)}`));
+        return;
+      }
+      handleZipEntries(zipfile, distDir, zipPath).then(resolve, reject);
+    });
+  });
+}
+
+function extractExtensionArchive(distDir: string, version: string): Promise<void> {
+  const zipPath = findExtensionZip(distDir, version);
+  if (!zipPath) return Promise.resolve();
+  return extractZip(zipPath, distDir);
+}
+
 export async function installExtension(
   name: string,
   gitUrl: string,
@@ -233,6 +343,9 @@ export async function installExtension(
     const git = simpleGit();
     await git.clone(gitUrl, extDir, ['--branch', `v${version}`, '--depth', '1']);
   }
+
+  const distDir = path.join(extDir, 'dist');
+  await extractExtensionArchive(distDir, version);
 
   return extDir;
 }

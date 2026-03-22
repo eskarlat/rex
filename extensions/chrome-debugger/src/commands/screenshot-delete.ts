@@ -1,12 +1,14 @@
 import { existsSync, readFileSync, realpathSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 import { getScreenshotDir } from '../shared/state.js';
 import type { ExecutionContext, CommandResult, ScreenshotMeta } from '../shared/types.js';
 
 function isInsideDir(filePath: string, dir: string): boolean {
-  const resolved = resolve(filePath);
-  const resolvedDir = resolve(dir);
+  const resolvedDir = realpathSync(resolve(dir));
+  const parentDir = dirname(resolve(filePath));
+  const realParent = existsSync(parentDir) ? realpathSync(parentDir) : parentDir;
+  const resolved = join(realParent, basename(filePath));
   return resolved.startsWith(resolvedDir + '/') || resolved.startsWith(resolvedDir + '\\');
 }
 

@@ -551,18 +551,16 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     },
   );
 
-  fastify.post('/api/extensions/install', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as InstallBody;
-    if (!body.name || typeof body.name !== 'string') {
-      reply.code(400);
-      return { error: 'name is required' };
-    }
-
+  async function installExtensionJSON(
+    name: string,
+    reply: FastifyReply,
+  ): Promise<void> {
     const config = loadGlobalConfig();
-    const resolved = resolveExtension(body.name, config.registries);
+    const resolved = resolveExtension(name, config.registries);
     if (!resolved) {
       reply.code(404);
-      return { error: `Extension '${body.name}' not found in registries` };
+      void reply.send({ error: `Extension '${name}' not found in registries` });
+      return;
     }
 
     const extDir = await installExtension(
@@ -577,7 +575,6 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     const manifest = loadManifest(extDir);
     const compat = checkEngineCompat(manifest, CLI_VERSION, SDK_VERSION);
 
-    reply.code(201);
     const response: Record<string, unknown> = {
       name: resolved.name,
       version: resolved.latestVersion,
@@ -586,7 +583,85 @@ const extensionsRoutes: FastifyPluginCallback = (fastify: FastifyInstance, _opts
     if (!compat.compatible) {
       response.compatWarnings = compat.issues;
     }
-    return response;
+    reply.code(201);
+    void reply.send(response);
+  }
+
+  fastify.post('/api/extensions/install', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as InstallBody;
+    if (!body.name || typeof body.name !== 'string') {
+      reply.code(400);
+      void reply.send({ error: 'name is required' });
+      return;
+    }
+
+    const accept = request.headers.accept ?? '';
+    const wantsSSE = accept.includes('text/event-stream');
+
+    if (!wantsSSE) {
+      await installExtensionJSON(body.name, reply);
+      return;
+    }
+
+    reply.hijack();
+    reply.raw.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+
+    let disconnected = false;
+    request.raw.on('close', () => { disconnected = true; });
+
+    function sendEvent(step: string, data?: Record<string, unknown>): void {
+      if (disconnected) return;
+      reply.raw.write(`data: ${JSON.stringify({ step, ...data })}\n\n`);
+    }
+
+    try {
+      sendEvent('resolving');
+
+      const config = loadGlobalConfig();
+      const resolved = resolveExtension(body.name, config.registries);
+      if (!resolved) {
+        sendEvent('error', { error: `Extension '${body.name}' not found in registries` });
+        reply.raw.end();
+        return;
+      }
+
+      sendEvent('downloading', { name: resolved.name, version: resolved.latestVersion });
+
+      const extDir = await installExtension(
+        resolved.name,
+        resolved.gitUrl,
+        resolved.latestVersion,
+        resolved.registryName,
+      );
+
+      sendEvent('installing');
+
+      const db = getDb();
+      install(resolved.name, resolved.latestVersion, resolved.registryName, resolved.type, db);
+
+      const manifest = loadManifest(extDir);
+      const compat = checkEngineCompat(manifest, CLI_VERSION, SDK_VERSION);
+
+      const response: Record<string, unknown> = {
+        name: resolved.name,
+        version: resolved.latestVersion,
+        path: extDir,
+      };
+      if (!compat.compatible) {
+        response.compatWarnings = compat.issues;
+      }
+
+      sendEvent('done', response);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      sendEvent('error', { error: message });
+    } finally {
+      reply.raw.end();
+    }
   });
 
   fastify.post('/api/extensions/activate', async (request: FastifyRequest, reply: FastifyReply) => {
