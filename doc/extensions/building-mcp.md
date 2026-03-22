@@ -250,22 +250,9 @@ The most common use case for MCP extensions is wrapping existing MCP servers. Th
 }
 ```
 
-### Atlassian MCP
+### Atlassian (renre-atlassian)
 
-```json
-{
-  "mcp": {
-    "transport": "stdio",
-    "command": "npx",
-    "args": ["-y", "@anthropic/atlassian-mcp-server"],
-    "env": {
-      "ATLASSIAN_API_TOKEN": "${config.atlassianToken}",
-      "ATLASSIAN_EMAIL": "${config.atlassianEmail}",
-      "ATLASSIAN_SITE_URL": "${config.siteUrl}"
-    }
-  }
-}
-```
+> **Note:** The Atlassian extension has been converted from an MCP wrapper to a standard in-process extension (`renre-atlassian`) with 75 direct CLI commands and Zod validation. See `extensions/renre-atlassian/` for the current implementation.
 
 ## Connection Management
 

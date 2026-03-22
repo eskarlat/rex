@@ -43,10 +43,9 @@
       ],
       "project": ["src/**/*.{ts,tsx}"]
     },
-    "extensions/atlassian-mcp": {
+    "extensions/renre-atlassian": {
       "entry": [
-        "src/server.ts",
-        "src/commands/status.ts",
+        "src/commands/**/*.ts",
         "src/ui/panel.tsx",
         "src/ui/my-tasks-widget.tsx",
         "src/ui/comments-widget.tsx",
