@@ -2,8 +2,13 @@ import type { JiraClient } from '../client/jira-client.js';
 import type { ConfluenceClient } from '../client/confluence-client.js';
 
 import { createClients } from './client.js';
-import { toOutput, errorOutput } from './formatters.js';
+import { toOutput, toJsonOutput, errorOutput } from './formatters.js';
 import type { CommandResult, CommandContext } from './types.js';
+
+/** Pick the right formatter based on the `json` flag in args */
+function formatOutput(data: unknown, args: Record<string, unknown>): CommandResult {
+  return 'json' in args && args.json ? toJsonOutput(data) : toOutput(data);
+}
 
 /** Wrap a Jira command handler with createClients + toOutput + errorOutput */
 export async function jiraCommand<T extends Record<string, unknown>>(
@@ -13,7 +18,7 @@ export async function jiraCommand<T extends Record<string, unknown>>(
   try {
     const { jira } = createClients(context);
     const data = await fn(jira, context.args);
-    return toOutput(data);
+    return formatOutput(data, context.args);
   } catch (err) {
     return errorOutput(err);
   }
@@ -27,7 +32,7 @@ export async function confluenceCommand<T extends Record<string, unknown>>(
   try {
     const { confluence } = createClients(context);
     const data = await fn(confluence, context.args);
-    return toOutput(data);
+    return formatOutput(data, context.args);
   } catch (err) {
     return errorOutput(err);
   }

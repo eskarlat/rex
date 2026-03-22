@@ -34,6 +34,7 @@ export function MyTasksWidget({
       .run(`${extName}:${searchCommand}`, {
         jql: 'assignee = currentUser() ORDER BY updated DESC',
         maxResults: 10,
+        json: true,
       })
       .then((result) => {
         const data = JSON.parse(result.output) as { issues?: JiraIssue[] };

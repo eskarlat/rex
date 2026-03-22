@@ -38,6 +38,7 @@ export function ConfluenceUpdatesWidget({
       .run(`${extName}:${searchCommand}`, {
         cql: 'lastModified >= now("-7d") ORDER BY lastModified DESC',
         limit: 10,
+        json: true,
       })
       .then((result) => {
         const data = JSON.parse(result.output) as { results?: ConfluenceResult[] };

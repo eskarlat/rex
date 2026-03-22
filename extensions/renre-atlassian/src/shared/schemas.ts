@@ -23,6 +23,9 @@ export const sprintIdSchema = z.coerce
   .int()
   .positive('sprintId must be a positive integer');
 
+// --- Output format ---
+export const jsonOutputSchema = { json: z.boolean().default(false) };
+
 // --- Config validation ---
 export const atlassianConfigSchema = z.object({
   domain: z

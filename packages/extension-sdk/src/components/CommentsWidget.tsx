@@ -42,6 +42,7 @@ export function CommentsWidget({
         jql: 'issueFunction in commented("by currentUser()") ORDER BY updated DESC',
         maxResults: 10,
         fields: ['summary', 'comment'],
+        json: true,
       })
       .then((result) => {
         const data = JSON.parse(result.output) as { issues?: CommentIssue[] };
