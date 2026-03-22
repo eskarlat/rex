@@ -1,0 +1,223 @@
+{
+  "name": "agent-browser",
+  "title": "Agent Browser",
+  "version": "1.0.0",
+  "description": "Browser automation extension powered by agent-browser — live viewport, element inspection, and debugging tools",
+  "icon": "icon.svg",
+  "type": "standard",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "open": {
+      "handler": "dist/commands/open.js",
+      "description": "Open a URL in the headless browser"
+    },
+    "close": {
+      "handler": "dist/commands/close.js",
+      "description": "Close the browser session"
+    },
+    "status": {
+      "handler": "dist/commands/status.js",
+      "description": "Get browser status and CDP WebSocket URL"
+    },
+    "back": {
+      "handler": "dist/commands/back.js",
+      "description": "Navigate back in browser history"
+    },
+    "forward": {
+      "handler": "dist/commands/forward.js",
+      "description": "Navigate forward in browser history"
+    },
+    "reload": {
+      "handler": "dist/commands/reload.js",
+      "description": "Reload the current page"
+    },
+    "click": {
+      "handler": "dist/commands/click.js",
+      "description": "Click an element by ref or selector"
+    },
+    "type": {
+      "handler": "dist/commands/type.js",
+      "description": "Type text into an element"
+    },
+    "fill": {
+      "handler": "dist/commands/fill.js",
+      "description": "Clear and fill text into an element"
+    },
+    "select": {
+      "handler": "dist/commands/select.js",
+      "description": "Select a dropdown option by value"
+    },
+    "hover": {
+      "handler": "dist/commands/hover.js",
+      "description": "Hover over an element"
+    },
+    "scroll": {
+      "handler": "dist/commands/scroll.js",
+      "description": "Scroll the page in a direction"
+    },
+    "wait": {
+      "handler": "dist/commands/wait.js",
+      "description": "Wait for a selector or time in milliseconds"
+    },
+    "screenshot": {
+      "handler": "dist/commands/screenshot.js",
+      "description": "Take a screenshot of the current page"
+    },
+    "snapshot": {
+      "handler": "dist/commands/snapshot.js",
+      "description": "Get the accessibility tree with element refs"
+    },
+    "eval": {
+      "handler": "dist/commands/eval.js",
+      "description": "Execute JavaScript in the browser context"
+    },
+    "get-text": {
+      "handler": "dist/commands/get-text.js",
+      "description": "Extract visible text from an element or page"
+    },
+    "get-html": {
+      "handler": "dist/commands/get-html.js",
+      "description": "Extract HTML content from an element or page"
+    },
+    "get-url": {
+      "handler": "dist/commands/get-url.js",
+      "description": "Get the current page URL"
+    },
+    "pdf": {
+      "handler": "dist/commands/pdf.js",
+      "description": "Export the current page as a PDF"
+    },
+    "find-role": {
+      "handler": "dist/commands/find-role.js",
+      "description": "Find an element by ARIA role and perform an action"
+    },
+    "find-text": {
+      "handler": "dist/commands/find-text.js",
+      "description": "Find an element by text content and perform an action"
+    },
+    "find-label": {
+      "handler": "dist/commands/find-label.js",
+      "description": "Find an element by label and perform an action"
+    },
+    "tabs": {
+      "handler": "dist/commands/tabs.js",
+      "description": "List all open browser tabs"
+    },
+    "cookies-get": {
+      "handler": "dist/commands/cookies-get.js",
+      "description": "Get browser cookies"
+    },
+    "cookies-set": {
+      "handler": "dist/commands/cookies-set.js",
+      "description": "Set a browser cookie"
+    },
+    "cookies-clear": {
+      "handler": "dist/commands/cookies-clear.js",
+      "description": "Clear browser cookies"
+    },
+    "storage": {
+      "handler": "dist/commands/storage.js",
+      "description": "Get or set localStorage/sessionStorage values"
+    },
+    "console": {
+      "handler": "dist/commands/console.js",
+      "description": "View browser console logs"
+    },
+    "errors": {
+      "handler": "dist/commands/errors.js",
+      "description": "View page errors"
+    },
+    "network": {
+      "handler": "dist/commands/network.js",
+      "description": "View network requests"
+    },
+    "highlight": {
+      "handler": "dist/commands/highlight.js",
+      "description": "Highlight an element on the page"
+    },
+    "trace-start": {
+      "handler": "dist/commands/trace-start.js",
+      "description": "Start a Chrome DevTools trace"
+    },
+    "trace-stop": {
+      "handler": "dist/commands/trace-stop.js",
+      "description": "Stop the trace and save to file"
+    },
+    "diff-snapshot": {
+      "handler": "dist/commands/diff-snapshot.js",
+      "description": "Compare current accessibility snapshot with the previous one"
+    },
+    "diff-screenshot": {
+      "handler": "dist/commands/diff-screenshot.js",
+      "description": "Compare current screenshot with a baseline image"
+    },
+    "batch": {
+      "handler": "dist/commands/batch.js",
+      "description": "Execute multiple commands in a single process invocation"
+    }
+  },
+  "config": {
+    "schema": {
+      "session": {
+        "type": "string",
+        "description": "Default browser session name",
+        "secret": false,
+        "default": "default"
+      },
+      "viewport": {
+        "type": "string",
+        "description": "Default viewport size (WxH)",
+        "secret": false,
+        "default": "1280x720"
+      },
+      "timeout": {
+        "type": "number",
+        "description": "Default action timeout in milliseconds",
+        "secret": false,
+        "default": 25000
+      },
+      "profile": {
+        "type": "string",
+        "description": "Persistent browser profile path for cookies and IndexedDB",
+        "secret": false,
+        "default": ""
+      },
+      "screenshotFormat": {
+        "type": "string",
+        "description": "Screenshot format: png or jpeg",
+        "secret": false,
+        "default": "jpeg"
+      },
+      "screenshotQuality": {
+        "type": "number",
+        "description": "JPEG screenshot quality (0-100)",
+        "secret": false,
+        "default": 80
+      }
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "browser-panel",
+        "title": "Browser",
+        "entry": "dist/panel.js"
+      }
+    ]
+  },
+  "agent": {
+    "skills": [
+      {
+        "name": "browser-automation",
+        "path": "agent/skills/browser-automation"
+      }
+    ],
+    "context": [
+      "agent/skills/browser-automation/context/command-reference.context.md"
+    ]
+  }
+}
