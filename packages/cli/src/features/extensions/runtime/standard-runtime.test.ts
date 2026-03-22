@@ -10,7 +10,7 @@ import {
   formatValidationErrors,
 } from './standard-runtime.js';
 import type { ExecutionContext } from '../../../core/types/context.types.js';
-import { ErrorCode } from '../../../core/errors/extension-error.js';
+import { ErrorCode, ExtensionError } from '../../../core/errors/extension-error.js';
 
 describe('standard-runtime', () => {
   let tempDir: string;
@@ -71,6 +71,11 @@ describe('standard-runtime', () => {
       const loaded = await loadCommandHandler(tempDir, 'commands/with-schema.mjs');
       expect(typeof loaded.handler).toBe('function');
       expect(loaded.argsSchema).toBeDefined();
+      // Verify the loaded schema actually works as a real zod schema
+      const parseResult = loaded.argsSchema!.safeParse({ selector: '.btn' });
+      expect(parseResult.success).toBe(true);
+      const failResult = loaded.argsSchema!.safeParse({});
+      expect(failResult.success).toBe(false);
     });
 
     it('should throw when command file does not exist', async () => {
@@ -186,6 +191,19 @@ describe('standard-runtime', () => {
       const result = await executeCommand(handler, mockContext);
       expect(result).toBeUndefined();
     });
+
+    it('should not mutate the original context when validating', async () => {
+      const argsSchema = z.object({
+        name: z.string(),
+        extra: z.string().default('injected'),
+      });
+      const originalArgs = { name: 'hello' };
+      const context = { ...mockContext, args: { ...originalArgs } };
+      const handler = async (ctx: ExecutionContext) => ctx.args;
+      await executeCommand({ handler, argsSchema }, context);
+      // Original context.args should not be mutated
+      expect(context.args).toEqual({ name: 'hello' });
+    });
   });
 
   describe('validateArgs', () => {
@@ -220,6 +238,82 @@ describe('standard-runtime', () => {
       const result = validateArgs(schema, { name: 'test', extra: true });
       expect(result).toEqual({ name: 'test' });
     });
+
+    it('should reject wrong types with descriptive error', () => {
+      const schema = z.object({
+        count: z.number({ required_error: '--count is required' }),
+      });
+      try {
+        validateArgs(schema, { count: 'not-a-number' });
+        expect.fail('should have thrown');
+      } catch (err: unknown) {
+        expect(err).toBeInstanceOf(ExtensionError);
+        const error = err as ExtensionError;
+        expect(error.code).toBe(ErrorCode.ARGS_VALIDATION_FAILED);
+        expect(error.message).toContain('--count');
+        expect(error.message).toContain('Invalid arguments');
+      }
+    });
+
+    it('should reject missing required fields', () => {
+      const schema = z.object({
+        url: z.string({ required_error: '--url is required' }),
+      });
+      try {
+        validateArgs(schema, {});
+        expect.fail('should have thrown');
+      } catch (err: unknown) {
+        const error = err as ExtensionError;
+        expect(error.code).toBe(ErrorCode.ARGS_VALIDATION_FAILED);
+        expect(error.message).toContain('--url');
+        expect(error.message).toContain('--url is required');
+      }
+    });
+
+    it('should validate enum values', () => {
+      const schema = z.object({
+        format: z.enum(['json', 'markdown']).default('markdown'),
+      });
+      // valid
+      expect(validateArgs(schema, { format: 'json' })).toEqual({ format: 'json' });
+      // default
+      expect(validateArgs(schema, {})).toEqual({ format: 'markdown' });
+      // invalid
+      try {
+        validateArgs(schema, { format: 'xml' });
+        expect.fail('should have thrown');
+      } catch (err: unknown) {
+        const error = err as ExtensionError;
+        expect(error.code).toBe(ErrorCode.ARGS_VALIDATION_FAILED);
+        expect(error.message).toContain('--format');
+      }
+    });
+
+    it('should handle nullable fields', () => {
+      const schema = z.object({
+        selector: z.string().nullable().default(null),
+        limit: z.number().default(50),
+      });
+      const result = validateArgs(schema, {});
+      expect(result).toEqual({ selector: null, limit: 50 });
+    });
+
+    it('should validate multiple errors at once', () => {
+      const schema = z.object({
+        url: z.string({ required_error: '--url is required' }),
+        port: z.number({ required_error: '--port is required' }),
+      });
+      try {
+        validateArgs(schema, {});
+        expect.fail('should have thrown');
+      } catch (err: unknown) {
+        const error = err as ExtensionError;
+        expect(error.message).toContain('--url');
+        expect(error.message).toContain('--port');
+        // Both errors separated by semicolon
+        expect(error.message).toContain('; ');
+      }
+    });
   });
 
   describe('formatValidationErrors', () => {
@@ -245,6 +339,113 @@ describe('standard-runtime', () => {
         expect(formatted).toContain('--selector');
         expect(formatted).toContain('--timeout');
         expect(formatted).toContain('; ');
+      }
+    });
+
+    it('should use custom error messages', () => {
+      const schema = z.object({
+        name: z.string({ required_error: 'name cannot be empty' }),
+      });
+      const result = schema.safeParse({});
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const formatted = formatValidationErrors(result.error);
+        expect(formatted).toBe('--name: name cannot be empty');
+      }
+    });
+  });
+
+  describe('end-to-end: loadCommandHandler → executeCommand', () => {
+    it('should load file with argsSchema, validate, and execute', async () => {
+      writeCommandFile(
+        'validated.mjs',
+        [
+          'import { z } from "zod";',
+          'export const argsSchema = z.object({',
+          '  selector: z.string(),',
+          '  timeout: z.number().default(3000),',
+          '});',
+          'export default async function(ctx) {',
+          '  return { selector: ctx.args.selector, timeout: ctx.args.timeout };',
+          '}',
+        ].join('\n'),
+      );
+
+      const loaded = await loadCommandHandler(tempDir, 'commands/validated.mjs');
+      const context = { ...mockContext, args: { selector: '.my-btn' } };
+      const result = await executeCommand(loaded, context);
+
+      // Handler receives validated args with defaults applied
+      expect(result).toEqual({ selector: '.my-btn', timeout: 3000 });
+    });
+
+    it('should reject invalid args from loaded file schema', async () => {
+      writeCommandFile(
+        'strict.mjs',
+        [
+          'import { z } from "zod";',
+          'export const argsSchema = z.object({',
+          '  url: z.string({ required_error: "--url is required" }).min(1),',
+          '});',
+          'export default async function(ctx) { return ctx.args.url; }',
+        ].join('\n'),
+      );
+
+      const loaded = await loadCommandHandler(tempDir, 'commands/strict.mjs');
+      const context = { ...mockContext, args: {} };
+
+      try {
+        await executeCommand(loaded, context);
+        expect.fail('should have thrown');
+      } catch (err: unknown) {
+        const error = err as ExtensionError;
+        expect(error.code).toBe(ErrorCode.ARGS_VALIDATION_FAILED);
+        expect(error.message).toContain('--url');
+        expect(error.message).toContain('--url is required');
+      }
+    });
+
+    it('should pass through args unchanged when no argsSchema exported', async () => {
+      writeCommandFile(
+        'no-schema.mjs',
+        'export default async function(ctx) { return ctx.args; }',
+      );
+
+      const loaded = await loadCommandHandler(tempDir, 'commands/no-schema.mjs');
+      expect(loaded.argsSchema).toBeUndefined();
+
+      const rawArgs = { anything: 'works', num: 42, nested: { ok: true } };
+      const context = { ...mockContext, args: rawArgs };
+      const result = await executeCommand(loaded, context);
+
+      // Args passed through as-is, no stripping
+      expect(result).toEqual(rawArgs);
+    });
+
+    it('should not call handler when validation fails', async () => {
+      writeCommandFile(
+        'guarded.mjs',
+        [
+          'import { z } from "zod";',
+          'export const argsSchema = z.object({ name: z.string() });',
+          // Handler writes to a global to prove it was NOT called
+          'globalThis.__handlerCalled = false;',
+          'export default async function(ctx) {',
+          '  globalThis.__handlerCalled = true;',
+          '  return "should not reach here";',
+          '}',
+        ].join('\n'),
+      );
+
+      const loaded = await loadCommandHandler(tempDir, 'commands/guarded.mjs');
+      const context = { ...mockContext, args: { name: 123 } }; // wrong type
+
+      try {
+        await executeCommand(loaded, context);
+        expect.fail('should have thrown');
+      } catch {
+        // Handler should never have been called
+        expect((globalThis as Record<string, unknown>).__handlerCalled).not.toBe(true);
       }
     });
   });
