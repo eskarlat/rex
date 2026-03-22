@@ -22,15 +22,37 @@ function targetsToTabs(targets: CdpTarget[]): { index: number; title: string; ur
     .map((page, index) => ({ index, title: page.title, url: page.url }));
 }
 
-function cleanupStaleState(projectPath: string): void {
-  const localState = readState(projectPath);
-  const globalSession = readGlobalSession();
-  if (localState) deleteState(projectPath);
-  if (globalSession) deleteGlobalSession();
-}
-
 function jsonResult(data: Record<string, unknown>): { output: string; exitCode: number } {
   return { output: JSON.stringify(data), exitCode: 0 };
+}
+
+function cleanupStaleSession(
+  projectPath: string,
+  localState: unknown,
+  globalSession: unknown,
+): { output: string; exitCode: number } {
+  if (localState) deleteState(projectPath);
+  if (globalSession) deleteGlobalSession();
+  return jsonResult({ running: false, staleSessionCleaned: true });
+}
+
+function buildActiveStatus(
+  state: { pid: number; port: number; launchedAt: string },
+  tabs: { index: number; title: string; url: string }[],
+  globalSession: Record<string, unknown> | null,
+  localState: unknown,
+): Record<string, unknown> {
+  return {
+    running: true,
+    pid: state.pid,
+    port: state.port,
+    launchedAt: state.launchedAt,
+    tabCount: tabs.length,
+    tabs,
+    ...(globalSession && !localState
+      ? { projectPath: globalSession.projectPath, headless: globalSession.headless }
+      : {}),
+  };
 }
 
 export default defineCommand({
@@ -40,33 +62,24 @@ export default defineCommand({
     const port = resolvePort(ctx.args, ctx.config);
     const state = localState ?? globalSession;
 
-    if (state && isProcessAlive(state.pid)) {
-      const targets = await probeCdpTargets(state.port);
+    if (!state) {
+      const targets = await probeCdpTargets(port);
       if (targets) {
         const tabs = targetsToTabs(targets);
-        return jsonResult({
-          running: true,
-          pid: state.pid,
-          port: state.port,
-          launchedAt: state.launchedAt,
-          tabCount: tabs.length,
-          tabs,
-          ...(globalSession ? { projectPath: globalSession.projectPath, headless: globalSession.headless } : {}),
-        });
+        return jsonResult({ running: true, external: true, port, tabCount: tabs.length, tabs });
       }
-      // Process alive but CDP unreachable — stale
-      cleanupStaleState(ctx.projectPath);
-    } else if (state) {
-      cleanupStaleState(ctx.projectPath);
+      return jsonResult({ running: false });
     }
 
-    // No managed browser — probe for an externally-running browser on the CDP port
-    const targets = await probeCdpTargets(port);
+    if (!isProcessAlive(state.pid)) {
+      return cleanupStaleSession(ctx.projectPath, localState, globalSession);
+    }
+
+    const targets = await probeCdpTargets(state.port);
     if (targets) {
-      const tabs = targetsToTabs(targets);
-      return jsonResult({ running: true, external: true, port, tabCount: tabs.length, tabs });
+      return jsonResult(buildActiveStatus(state, targetsToTabs(targets), globalSession, localState));
     }
 
-    return jsonResult({ running: false });
+    return cleanupStaleSession(ctx.projectPath, localState, globalSession);
   },
 });
