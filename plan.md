@@ -9,9 +9,10 @@ Convert the existing `atlassian-mcp` (MCP wrapper) into a new `renre-atlassian` 
 - **Type**: `"standard"` (in-process, NOT MCP) — same pattern as `chrome-debugger`
 - **No MCP SDK dependency** — removes `@modelcontextprotocol/sdk`, uses direct REST API calls
 - **Reuse existing clients** — `base-client.ts`, `jira-client.ts`, `confluence-client.ts` are clean REST wrappers, copy them
-- **Reuse `jsonToMarkdown`** — from `@renre-kit/extension-sdk/node` for LLM-friendly output
+- **Markdown output** — all commands return LLM-friendly markdown via `jsonToMarkdown` from `@renre-kit/extension-sdk/node` (same as MCP version's `markdownResult`)
 - **Config reads from `ExecutionContext`** — domain/email/apiToken come from `context.config` (resolved by CLI core, vault-decrypted)
 - **Command naming**: kebab-case for CLI — `renre-kit renre-atlassian:jira-get-issue`, `renre-kit renre-atlassian:confluence-search`, etc.
+- **Help commands** — `renre-atlassian:jira-help` and `renre-atlassian:confluence-help` return full command reference so agents can discover available commands without SKILL.md
 - **TDD methodology**: Write tests first for each module, then implementation
 - **Local ESLint config**: `eslint.config.mjs` inside the extension (same pattern as `chrome-debugger`)
 
@@ -44,6 +45,10 @@ extensions/renre-atlassian/
 │   └── commands/
 │       ├── status.ts              # Connection status command
 │       ├── status.test.ts
+│       ├── jira-help.ts           # Jira command reference (for agent discovery)
+│       ├── jira-help.test.ts
+│       ├── confluence-help.ts     # Confluence command reference (for agent discovery)
+│       ├── confluence-help.test.ts
 │       ├── jira/
 │       │   ├── get-issue.ts       # Each tool = one file
 │       │   ├── search.ts
@@ -144,8 +149,10 @@ extensions/renre-atlassian/
 │   └── skills/
 │       ├── jira/
 │       │   └── SKILL.md
-│       └── confluence/
-│           └── SKILL.md
+│       ├── confluence/
+│       │   └── SKILL.md
+│       └── help/
+│           └── SKILL.md           # Skill teaching agent to use help commands for discovery
 └── src/ui/
     ├── panel.tsx
     ├── my-tasks-widget.tsx

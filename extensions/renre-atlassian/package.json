@@ -1,0 +1,23 @@
+{
+  "name": "renre-atlassian",
+  "version": "1.0.0",
+  "description": "Atlassian CLI extension for RenreKit — Jira and Confluence via direct REST API",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node build.js",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
+  },
+  "dependencies": {
+    "@renre-kit/extension-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "esbuild": "^0.21.0",
+    "react": "^19.0.0",
+    "vitest": "^2.1.0"
+  }
+}

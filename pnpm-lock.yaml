@@ -283,6 +283,28 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(@types/debug@4.1.13)(@types/node@20.19.37)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  extensions/renre-atlassian:
+    dependencies:
+      '@renre-kit/extension-sdk':
+        specifier: workspace:*
+        version: link:../../packages/extension-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      esbuild:
+        specifier: ^0.21.0
+        version: 0.21.5
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.37)(jsdom@25.0.1)(lightningcss@1.32.0)
+
   packages/cli:
     dependencies:
       '@clack/prompts':
