@@ -21,6 +21,7 @@ packages/create-renre-extension/ @eskarlat
 
 # Reference extensions
 extensions/ @eskarlat
+extensions/renre-atlassian/ @eskarlat
 extensions/chrome-debugger/ @eskarlat
 
 # Architecture documentation

@@ -15,7 +15,7 @@ rex/
 ├── extensions/                   # Reference extensions
 │   ├── hello-world/
 │   ├── github-mcp/
-│   ├── atlassian-mcp/
+│   ├── renre-atlassian/
 │   ├── miro-mcp/
 │   ├── context7-mcp/
 │   ├── figma-mcp/

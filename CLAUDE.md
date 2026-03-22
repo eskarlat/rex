@@ -108,7 +108,8 @@ Every extension has a `manifest.json` with mandatory `engines` constraints (`ren
 `extensions/` at repo root contains extensions for testing and reference:
 
 - **hello-world** — Standard type (in-process). Full example with commands, UI panels/widgets, config schema, and agent assets.
-- **context7-mcp**, **figma-mcp**, **miro-mcp**, **github-mcp**, **atlassian-mcp** — MCP stdio extensions wrapping third-party MCP servers.
+- **context7-mcp**, **figma-mcp**, **miro-mcp**, **github-mcp** — MCP stdio extensions wrapping third-party MCP servers.
+- **renre-atlassian** — Standard type (in-process). Jira + Confluence with 75 CLI commands, Zod validation, UI panels/widgets, and agent assets.
 - **chrome-debugger** — MCP stdio extension for Chrome DevTools debugging.
 
 Extensions follow the build pattern: `node build.js` (which uses the SDK's `buildExtension` and `buildPanel` to bundle Node.js commands and React panels with esbuild).
