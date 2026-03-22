@@ -40,6 +40,18 @@ export type { SplitProps } from './Split';
 export { SidebarNav } from './SidebarNav';
 export type { SidebarNavProps, SidebarNavItem } from './SidebarNav';
 
+export { StatusWidget } from './StatusWidget';
+export type { StatusWidgetProps } from './StatusWidget';
+
+export { MyTasksWidget } from './MyTasksWidget';
+export type { MyTasksWidgetProps } from './MyTasksWidget';
+
+export { ConfluenceUpdatesWidget } from './ConfluenceUpdatesWidget';
+export type { ConfluenceUpdatesWidgetProps } from './ConfluenceUpdatesWidget';
+
+export { CommentsWidget } from './CommentsWidget';
+export type { CommentsWidgetProps } from './CommentsWidget';
+
 // shadcn/ui — Layout
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './ui/card';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';

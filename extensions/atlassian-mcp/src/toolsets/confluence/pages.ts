@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { safeExec, confluencePaginationArgs } from '../types.js';
+import { safeExec, confluencePaginationArgs, pageIdSchema, confluencePaginationSchema } from '../types.js';
 
 export function createPagesToolset(client: ConfluenceClient): Toolset {
   return {
@@ -25,7 +25,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             expand: {
               type: 'string',
               description: 'Fields to expand (default: body.storage,version)',
@@ -39,11 +39,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
         description: 'Get child pages of a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Parent page ID' },
-            limit: { type: 'number', description: 'Max results' },
-            start: { type: 'number', description: 'Pagination start' },
-          },
+          properties: { ...pageIdSchema, ...confluencePaginationSchema },
           required: ['pageId'],
         },
       },
@@ -52,9 +48,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
         description: 'Get the version history of a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-          },
+          properties: { ...pageIdSchema },
           required: ['pageId'],
         },
       },
@@ -81,7 +75,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             title: { type: 'string', description: 'New page title' },
             body: { type: 'string', description: 'New page content' },
             version: {
@@ -97,9 +91,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
         description: 'Delete a Confluence page by ID.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-          },
+          properties: { ...pageIdSchema },
           required: ['pageId'],
         },
       },
@@ -109,7 +101,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID to move' },
+            ...pageIdSchema,
             targetAncestorId: { type: 'string', description: 'New parent page ID' },
             currentVersion: { type: 'number', description: 'Current page version number' },
           },
@@ -122,7 +114,7 @@ export function createPagesToolset(client: ConfluenceClient): Toolset {
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             fromVersion: { type: 'number', description: 'From version number' },
             toVersion: { type: 'number', description: 'To version number' },
           },

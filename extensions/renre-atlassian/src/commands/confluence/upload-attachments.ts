@@ -1,23 +1,16 @@
-import { createClients } from '../../shared/client.js';
-import { toOutput, errorOutput } from '../../shared/formatters.js';
+import { confluenceCommand } from '../../shared/command-helper.js';
 import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
 export default async function uploadAttachments(
   context: ExecutionContext,
 ): Promise<CommandResult> {
-  try {
-    const { confluence } = createClients(context);
-    const pageId = context.args['pageId'] as string;
-    const files = context.args['files'] as Array<{ filename: string; content: string }>;
+  return confluenceCommand(context, async (confluence, args) => {
+    const pageId = args['pageId'] as string;
+    const files = args['files'] as Array<{ filename: string; content: string }>;
     const results = [];
-
     for (const f of files) {
-      const result = await confluence.uploadAttachment(pageId, f.filename, f.content);
-      results.push(result);
+      results.push(await confluence.uploadAttachment(pageId, f.filename, f.content));
     }
-
-    return toOutput(results);
-  } catch (err) {
-    return errorOutput(err);
-  }
+    return results;
+  });
 }

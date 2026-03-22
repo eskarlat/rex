@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { markdownResult, errorResult } from '../types.js';
+import { safeExec, pageIdSchema } from '../types.js';
 
 export function createLabelsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -11,9 +11,7 @@ export function createLabelsToolset(client: ConfluenceClient): Toolset {
         description: 'Get labels on a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-          },
+          properties: { ...pageIdSchema },
           required: ['pageId'],
         },
       },
@@ -23,7 +21,7 @@ export function createLabelsToolset(client: ConfluenceClient): Toolset {
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             labels: {
               type: 'array',
               items: { type: 'string' },
@@ -35,23 +33,15 @@ export function createLabelsToolset(client: ConfluenceClient): Toolset {
       },
     ],
     handlers: {
-      confluence_get_labels: async (args) => {
-        try {
-          const data = await client.getLabels(args['pageId'] as string);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
-      confluence_add_label: async (args) => {
-        try {
-          const labels = (args['labels'] as string[]).map((name) => ({ name }));
-          const data = await client.addLabel(args['pageId'] as string, labels);
-          return markdownResult(data);
-        } catch (err) {
-          return errorResult(err instanceof Error ? err.message : String(err));
-        }
-      },
+      confluence_get_labels: (args) =>
+        safeExec(() => client.getLabels(args['pageId'] as string)),
+      confluence_add_label: (args) =>
+        safeExec(() =>
+          client.addLabel(
+            args['pageId'] as string,
+            (args['labels'] as string[]).map((name) => ({ name })),
+          ),
+        ),
     },
   };
 }

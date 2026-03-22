@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { safeExec, confluencePaginationArgs } from '../types.js';
+import { safeExec, confluencePaginationArgs, pageIdSchema, confluencePaginationSchema } from '../types.js';
 
 export function createConfluenceAttachmentsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -12,7 +12,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             filename: { type: 'string', description: 'Filename' },
             content: { type: 'string', description: 'File content (base64 or text)' },
           },
@@ -25,7 +25,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             files: {
               type: 'array',
               items: { type: 'object' },
@@ -40,11 +40,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
         description: 'Get all attachments on a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-            limit: { type: 'number', description: 'Max results' },
-            start: { type: 'number', description: 'Pagination start' },
-          },
+          properties: { ...pageIdSchema, ...confluencePaginationSchema },
           required: ['pageId'],
         },
       },
@@ -54,7 +50,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             filename: { type: 'string', description: 'Attachment filename' },
           },
           required: ['pageId', 'filename'],
@@ -65,9 +61,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
         description: 'Download all attachments from a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-          },
+          properties: { ...pageIdSchema },
           required: ['pageId'],
         },
       },
@@ -87,9 +81,7 @@ export function createConfluenceAttachmentsToolset(client: ConfluenceClient): To
         description: 'Get all image attachments from a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-          },
+          properties: { ...pageIdSchema },
           required: ['pageId'],
         },
       },

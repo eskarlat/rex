@@ -1,6 +1,6 @@
 import type { ConfluenceClient } from '../../client/confluence-client.js';
 import type { Toolset } from '../types.js';
-import { safeExec, confluencePaginationArgs } from '../types.js';
+import { safeExec, confluencePaginationArgs, pageIdSchema, confluencePaginationSchema } from '../types.js';
 
 export function createConfluenceCommentsToolset(client: ConfluenceClient): Toolset {
   return {
@@ -11,11 +11,7 @@ export function createConfluenceCommentsToolset(client: ConfluenceClient): Tools
         description: 'Get comments on a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-            limit: { type: 'number', description: 'Max results' },
-            start: { type: 'number', description: 'Pagination start' },
-          },
+          properties: { ...pageIdSchema, ...confluencePaginationSchema },
           required: ['pageId'],
         },
       },
@@ -24,10 +20,7 @@ export function createConfluenceCommentsToolset(client: ConfluenceClient): Tools
         description: 'Add a comment to a Confluence page.',
         inputSchema: {
           type: 'object',
-          properties: {
-            pageId: { type: 'string', description: 'Page ID' },
-            body: { type: 'string', description: 'Comment body (HTML/storage format)' },
-          },
+          properties: { ...pageIdSchema, body: { type: 'string', description: 'Comment body (HTML/storage format)' } },
           required: ['pageId', 'body'],
         },
       },
@@ -37,7 +30,7 @@ export function createConfluenceCommentsToolset(client: ConfluenceClient): Tools
         inputSchema: {
           type: 'object',
           properties: {
-            pageId: { type: 'string', description: 'Page ID' },
+            ...pageIdSchema,
             parentCommentId: { type: 'string', description: 'Parent comment ID to reply to' },
             body: { type: 'string', description: 'Reply body' },
           },

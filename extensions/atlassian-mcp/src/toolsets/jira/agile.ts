@@ -1,6 +1,6 @@
 import type { JiraClient } from '../../client/jira-client.js';
 import type { Toolset } from '../types.js';
-import { safeExec, paginationArgs } from '../types.js';
+import { safeExec, paginationArgs, boardIdSchema, paginationSchema } from '../types.js';
 
 export function createAgileToolset(client: JiraClient): Toolset {
   return {
@@ -9,24 +9,14 @@ export function createAgileToolset(client: JiraClient): Toolset {
       {
         name: 'jira_get_agile_boards',
         description: 'List all agile boards (Scrum/Kanban).',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            startAt: { type: 'number', description: 'Pagination start' },
-            maxResults: { type: 'number', description: 'Max results' },
-          },
-        },
+        inputSchema: { type: 'object', properties: { ...paginationSchema } },
       },
       {
         name: 'jira_get_board_issues',
         description: 'Get all issues on an agile board.',
         inputSchema: {
           type: 'object',
-          properties: {
-            boardId: { type: 'number', description: 'Board ID' },
-            startAt: { type: 'number', description: 'Pagination start' },
-            maxResults: { type: 'number', description: 'Max results' },
-          },
+          properties: { ...boardIdSchema, ...paginationSchema },
           required: ['boardId'],
         },
       },
@@ -35,11 +25,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
         description: 'Get all sprints for an agile board.',
         inputSchema: {
           type: 'object',
-          properties: {
-            boardId: { type: 'number', description: 'Board ID' },
-            startAt: { type: 'number', description: 'Pagination start' },
-            maxResults: { type: 'number', description: 'Max results' },
-          },
+          properties: { ...boardIdSchema, ...paginationSchema },
           required: ['boardId'],
         },
       },
@@ -48,11 +34,7 @@ export function createAgileToolset(client: JiraClient): Toolset {
         description: 'Get all issues in a sprint.',
         inputSchema: {
           type: 'object',
-          properties: {
-            sprintId: { type: 'number', description: 'Sprint ID' },
-            startAt: { type: 'number', description: 'Pagination start' },
-            maxResults: { type: 'number', description: 'Max results' },
-          },
+          properties: { sprintId: { type: 'number', description: 'Sprint ID' }, ...paginationSchema },
           required: ['sprintId'],
         },
       },

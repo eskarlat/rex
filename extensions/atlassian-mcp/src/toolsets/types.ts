@@ -81,3 +81,25 @@ export function confluencePaginationArgs(
     (args['start'] as number | undefined) ?? defaults.start,
   ];
 }
+
+/** Shared schema properties for pagination (startAt/maxResults) */
+export const paginationSchema = {
+  startAt: { type: 'number', description: 'Pagination start' },
+  maxResults: { type: 'number', description: 'Max results' },
+} as const;
+
+/** Shared schema properties for Confluence pagination (limit/start) */
+export const confluencePaginationSchema = {
+  limit: { type: 'number', description: 'Max results' },
+  start: { type: 'number', description: 'Pagination start' },
+} as const;
+
+/** Shared schema property for boardId */
+export const boardIdSchema = {
+  boardId: { type: 'number', description: 'Board ID' },
+} as const;
+
+/** Shared schema property for pageId */
+export const pageIdSchema = {
+  pageId: { type: 'string', description: 'Page ID' },
+} as const;
