@@ -1,6 +1,10 @@
+import { z } from 'zod';
+
 import { jiraCommand } from '../../shared/command-helper.js';
 import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
+const schema = z.object({});
+
 export default async function getServiceDesks(context: ExecutionContext): Promise<CommandResult> {
-  return jiraCommand(context, (jira) => jira.getServiceDesks());
+  return jiraCommand(context, schema, (jira) => jira.getServiceDesks());
 }

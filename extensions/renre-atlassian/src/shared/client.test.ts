@@ -27,37 +27,37 @@ describe('createClients', () => {
   it('throws error when domain is missing', () => {
     const context = createMockContext({ domain: undefined });
 
-    expect(() => createClients(context)).toThrow('Missing Atlassian configuration');
+    expect(() => createClients(context)).toThrow('Invalid Atlassian config');
   });
 
   it('throws error when domain is empty string', () => {
     const context = createMockContext({ domain: '' });
 
-    expect(() => createClients(context)).toThrow('Missing Atlassian configuration');
+    expect(() => createClients(context)).toThrow('Invalid Atlassian config');
   });
 
   it('throws error when email is missing', () => {
     const context = createMockContext({ email: undefined });
 
-    expect(() => createClients(context)).toThrow('Missing Atlassian configuration');
+    expect(() => createClients(context)).toThrow('Invalid Atlassian config');
   });
 
   it('throws error when email is empty string', () => {
     const context = createMockContext({ email: '' });
 
-    expect(() => createClients(context)).toThrow('Missing Atlassian configuration');
+    expect(() => createClients(context)).toThrow('Invalid Atlassian config');
   });
 
   it('throws error when apiToken is missing', () => {
     const context = createMockContext({ apiToken: undefined });
 
-    expect(() => createClients(context)).toThrow('Missing Atlassian configuration');
+    expect(() => createClients(context)).toThrow('Invalid Atlassian config');
   });
 
   it('throws error when apiToken is empty string', () => {
     const context = createMockContext({ apiToken: '' });
 
-    expect(() => createClients(context)).toThrow('Missing Atlassian configuration');
+    expect(() => createClients(context)).toThrow('Invalid Atlassian config');
   });
 
   it('returns { jira, confluence } when all config present', () => {

@@ -1,3 +1,6 @@
+import type { z, ZodType } from 'zod';
+import { ZodError } from 'zod';
+
 import type { JiraClient } from '../client/jira-client.js';
 import type { ConfluenceClient } from '../client/confluence-client.js';
 
@@ -5,52 +8,44 @@ import { createClients } from './client.js';
 import { toOutput, errorOutput } from './formatters.js';
 import type { ExecutionContext, CommandResult } from './types.js';
 
-/** Wrap a Jira command handler with standard createClients + toOutput + errorOutput */
-export async function jiraCommand(
+function formatZodError(err: ZodError): string {
+  return err.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+}
+
+/** Wrap a Jira command handler with Zod validation + createClients + toOutput + errorOutput */
+export async function jiraCommand<T extends ZodType>(
   context: ExecutionContext,
-  fn: (jira: JiraClient, args: ExecutionContext['args']) => Promise<unknown>,
+  schema: T,
+  fn: (jira: JiraClient, args: z.infer<T>) => Promise<unknown>,
 ): Promise<CommandResult> {
   try {
+    const parsed = schema.parse(context.args);
     const { jira } = createClients(context);
-    const data = await fn(jira, context.args);
+    const data = await fn(jira, parsed);
     return toOutput(data);
   } catch (err) {
+    if (err instanceof ZodError) {
+      return errorOutput(new Error(`Invalid arguments: ${formatZodError(err)}`));
+    }
     return errorOutput(err);
   }
 }
 
-/** Wrap a Confluence command handler with standard createClients + toOutput + errorOutput */
-export async function confluenceCommand(
+/** Wrap a Confluence command handler with Zod validation + createClients + toOutput + errorOutput */
+export async function confluenceCommand<T extends ZodType>(
   context: ExecutionContext,
-  fn: (confluence: ConfluenceClient, args: ExecutionContext['args']) => Promise<unknown>,
+  schema: T,
+  fn: (confluence: ConfluenceClient, args: z.infer<T>) => Promise<unknown>,
 ): Promise<CommandResult> {
   try {
+    const parsed = schema.parse(context.args);
     const { confluence } = createClients(context);
-    const data = await fn(confluence, context.args);
+    const data = await fn(confluence, parsed);
     return toOutput(data);
   } catch (err) {
+    if (err instanceof ZodError) {
+      return errorOutput(new Error(`Invalid arguments: ${formatZodError(err)}`));
+    }
     return errorOutput(err);
   }
-}
-
-/** Extract standard pagination args (startAt/maxResults) with defaults */
-export function paginationArgs(
-  args: ExecutionContext['args'],
-  defaults = { startAt: 0, maxResults: 50 },
-): { startAt: number; maxResults: number } {
-  return {
-    startAt: (args['startAt'] as number | undefined) ?? defaults.startAt,
-    maxResults: (args['maxResults'] as number | undefined) ?? defaults.maxResults,
-  };
-}
-
-/** Extract standard Confluence pagination args (start/limit) with defaults */
-export function confluencePaginationArgs(
-  args: ExecutionContext['args'],
-  defaults = { start: 0, limit: 25 },
-): { start: number; limit: number } {
-  return {
-    start: (args['start'] as number | undefined) ?? defaults.start,
-    limit: (args['limit'] as number | undefined) ?? defaults.limit,
-  };
 }

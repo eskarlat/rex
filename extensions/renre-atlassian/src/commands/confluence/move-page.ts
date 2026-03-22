@@ -1,12 +1,16 @@
+import { z } from 'zod';
 import { confluenceCommand } from '../../shared/command-helper.js';
+import { pageIdSchema } from '../../shared/schemas.js';
 import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
+const schema = z.object({
+  pageId: pageIdSchema,
+  targetAncestorId: z.string().min(1),
+  currentVersion: z.coerce.number().int().positive(),
+});
+
 export default async function movePage(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, (confluence, args) =>
-    confluence.movePage(
-      args['pageId'] as string,
-      args['targetAncestorId'] as string,
-      args['currentVersion'] as number,
-    ),
+  return confluenceCommand(context, schema, (confluence, args) =>
+    confluence.movePage(args.pageId, args.targetAncestorId, args.currentVersion),
   );
 }

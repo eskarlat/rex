@@ -1,9 +1,12 @@
-import { confluenceCommand, confluencePaginationArgs } from '../../shared/command-helper.js';
+import { z } from 'zod';
+import { confluenceCommand } from '../../shared/command-helper.js';
+import { confluencePaginationSchema, pageIdSchema } from '../../shared/schemas.js';
 import type { ExecutionContext, CommandResult } from '../../shared/types.js';
 
+const schema = z.object({ pageId: pageIdSchema }).merge(confluencePaginationSchema);
+
 export default async function getComments(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, (confluence, args) => {
-    const { start, limit } = confluencePaginationArgs(args);
-    return confluence.getComments(args['pageId'] as string, limit, start);
-  });
+  return confluenceCommand(context, schema, (confluence, args) =>
+    confluence.getComments(args.pageId, args.limit, args.start),
+  );
 }

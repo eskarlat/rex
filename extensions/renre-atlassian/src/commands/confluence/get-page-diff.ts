@@ -1,5 +1,13 @@
+import { z } from 'zod';
 import { confluenceCommand } from '../../shared/command-helper.js';
+import { pageIdSchema } from '../../shared/schemas.js';
 import type { ExecutionContext, CommandResult } from '../../shared/types.js';
+
+const schema = z.object({
+  pageId: pageIdSchema,
+  fromVersion: z.coerce.number().int().positive(),
+  toVersion: z.coerce.number().int().positive(),
+});
 
 function extractStorageValue(page: unknown): string {
   const record = page as Record<string, unknown>;
@@ -9,14 +17,17 @@ function extractStorageValue(page: unknown): string {
 }
 
 export default async function getPageDiff(context: ExecutionContext): Promise<CommandResult> {
-  return confluenceCommand(context, async (confluence, args) => {
-    const pageId = args['pageId'] as string;
-    const fromVersion = args['fromVersion'] as number;
-    const toVersion = args['toVersion'] as number;
+  return confluenceCommand(context, schema, async (confluence, args) => {
     const [fromPage, toPage] = await Promise.all([
-      confluence.getPageVersion(pageId, fromVersion),
-      confluence.getPageVersion(pageId, toVersion),
+      confluence.getPageVersion(args.pageId, args.fromVersion),
+      confluence.getPageVersion(args.pageId, args.toVersion),
     ]);
-    return { pageId, fromVersion, toVersion, from: extractStorageValue(fromPage), to: extractStorageValue(toPage) };
+    return {
+      pageId: args.pageId,
+      fromVersion: args.fromVersion,
+      toVersion: args.toVersion,
+      from: extractStorageValue(fromPage),
+      to: extractStorageValue(toPage),
+    };
   });
 }

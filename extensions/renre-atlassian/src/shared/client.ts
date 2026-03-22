@@ -1,6 +1,7 @@
 import { ConfluenceClient } from '../client/confluence-client.js';
 import { JiraClient } from '../client/jira-client.js';
 
+import { atlassianConfigSchema } from './schemas.js';
 import type { ExecutionContext } from './types.js';
 
 export interface AtlassianClients {
@@ -9,20 +10,19 @@ export interface AtlassianClients {
 }
 
 export function createClients(context: ExecutionContext): AtlassianClients {
-  const domain = context.config['domain'] as string | undefined;
-  const email = context.config['email'] as string | undefined;
-  const apiToken = context.config['apiToken'] as string | undefined;
+  const result = atlassianConfigSchema.safeParse(context.config);
 
-  if (!domain || !email || !apiToken) {
+  if (!result.success) {
+    const details = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
     throw new Error(
-      'Missing Atlassian configuration. Set domain, email, and apiToken via: ' +
+      `Invalid Atlassian config (${details}). Configure via: ` +
         'renre-kit ext config renre-atlassian --set domain=<company>.atlassian.net && ' +
         'renre-kit ext config renre-atlassian --set email=<user@company.com> && ' +
         'renre-kit vault set renre-atlassian.apiToken',
     );
   }
 
-  const config = { domain, email, apiToken };
+  const config = result.data;
   return {
     jira: new JiraClient(config),
     confluence: new ConfluenceClient(config),

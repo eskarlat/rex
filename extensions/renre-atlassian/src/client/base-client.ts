@@ -4,6 +4,16 @@ export interface AtlassianClientConfig {
   apiToken: string;
 }
 
+export class AtlassianApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+  ) {
+    super(`Atlassian API error ${status}: ${body}`);
+    this.name = 'AtlassianApiError';
+  }
+}
+
 export class AtlassianBaseClient {
   protected readonly baseUrl: string;
   private readonly authHeader: string;
@@ -35,7 +45,7 @@ export class AtlassianBaseClient {
   private async ensureOk(res: Response): Promise<void> {
     if (!res.ok) {
       const text = await res.text().catch(() => 'Unknown error');
-      throw new Error(`Atlassian API error ${res.status}: ${text}`);
+      throw new AtlassianApiError(res.status, text);
     }
   }
 
