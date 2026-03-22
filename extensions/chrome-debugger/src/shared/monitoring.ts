@@ -9,7 +9,7 @@ import type { Page, Browser } from 'puppeteer';
  */
 const monitoredPages = new WeakSet<Page>();
 
-export async function setupPageMonitoring(
+async function setupPageMonitoring(
   page: Page,
   networkLogPath: string,
   consoleLogPath: string
