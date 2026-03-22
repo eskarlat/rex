@@ -70,13 +70,13 @@ src/
 ### CLI Package (`packages/cli/`) — the heart of the system
 
 - **Two entry points**: `index.ts` (CLI binary — auto-runs Commander program) and `lib.ts` (library — exports managers for server package to import via `@renre-kit/cli/lib`)
-- **Command flow**: User input → Commander.js parser → Command Registry (namespaced lookup) → `argsSchema` validation (if exported) → Handler executes with `ExecutionContext` → Output
+- **Command flow**: User input → Commander.js parser → Command Registry (namespaced lookup) → `argsSchema` validation → Handler executes with `ExecutionContext` → Output. Commands use `defineCommand()` from `@renre-kit/extension-sdk/node` for typed args and validation.
 - **Extension types**: Standard (in-process `require()`), MCP stdio (child process JSON-RPC), MCP SSE (HTTP)
 - **Connection Manager**: Manages MCP server lifecycle — lazy start, 30s idle timeout, exponential backoff restart (max 3 retries)
 - **Database**: SQLite via better-sqlite3 (synchronous API). 5 tables: `projects`, `installed_extensions`, `scheduled_tasks`, `task_history`, `notifications`. Migration files in `packages/cli/migrations/` (001-initial-schema.sql, 002-notifications.sql).
 - **Extension lifecycle**: Extensions export `onInit`/`onDestroy` named exports from their `main` entry point. These receive an enriched `HookContext` with `projectDir`, `agentDir`, `extensionDir`, and `sdk` (containing `deployAgentAssets`/`cleanupAgentAssets` injected by the CLI). Hooks use `context.sdk.*` instead of direct SDK imports, so extensions work without `node_modules`.
 - **Manifest validation**: Zod schemas validate manifests — `engines` field is mandatory, widget sizes have min/max/default refinements.
-- **Command argument validation**: Command modules can export `argsSchema` (Zod schema) alongside their handler. The CLI validates `context.args` before execution, applies defaults, and throws `ARGS_VALIDATION_FAILED` on invalid input. Works for both standard and MCP extension local commands. Backward compatible — commands without `argsSchema` work unchanged.
+- **Command definition**: Commands use `defineCommand()` from `@renre-kit/extension-sdk/node`. It accepts an inline `args` Zod shape for typed validation and a `handler` receiving a `TypedContext` with inferred arg types. The CLI detects `defineCommand` output (extracts `handler` + `argsSchema`), validates args before execution, applies defaults, and throws `ARGS_VALIDATION_FAILED` on invalid input. Commands without args can omit the parameter entirely: `handler: () => { ... }`. Legacy pattern (bare default export + separate `argsSchema` export) still works for backward compatibility.
 - **Config resolution chain**: project override (`.renre-kit/manifest.json`) → global (`~/.renre-kit/config.json`) → schema defaults. Vault-mapped fields get decrypted via indirection.
 
 ### Server Package — zero business logic
@@ -89,7 +89,7 @@ The SDK (`@renre-kit/extension-sdk`) has three export subpaths:
 
 - **`.`** — API client, React hooks for extension UIs
 - **`./components`** — Shared shadcn/ui components
-- **`./node`** — Node-only utilities: `deployAgentAssets`, `cleanupAgentAssets`, `buildPanel` (esbuild bundler for extension UI panels)
+- **`./node`** — Node-only utilities: `defineCommand`, `z` (Zod re-export), `deployAgentAssets`, `cleanupAgentAssets`, `buildPanel` (esbuild bundler for extension UI panels)
 
 ### Extension Manifest Format
 
