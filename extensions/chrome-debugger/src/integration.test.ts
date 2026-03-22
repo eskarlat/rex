@@ -276,6 +276,8 @@ describe('Chrome Debugger — Integration', () => {
       assertSuccess(result);
       expect(result.output).toContain('DOM Tree');
       expect(result.output).toContain('<html');
+      expect(result.output).toContain('<h1');
+      expect(result.output).toContain('Hello Integration');
     });
 
     it('dom: returns subtree for selector', async () => {
@@ -283,6 +285,27 @@ describe('Chrome Debugger — Integration', () => {
       assertSuccess(result);
       expect(result.output).toContain('DOM: `#main`');
       expect(result.output).toContain('card');
+      expect(result.output).toContain('data-testid');
+    });
+
+    it('dom: subtree does not contain elements outside selector', async () => {
+      const result = await dom(makeContext({ selector: '.card[data-testid="card-1"]' }));
+      assertSuccess(result);
+      expect(result.output).toContain('Card one content');
+      expect(result.output).not.toContain('Card two content');
+    });
+
+    it('dom: respects depth limit', async () => {
+      const shallow = await dom(makeContext({ selector: '#main', depth: 1 }));
+      assertSuccess(shallow);
+      // At depth 1, children should be truncated with "..."
+      expect(shallow.output).toContain('...');
+    });
+
+    it('dom: returns message for non-existent selector', async () => {
+      const result = await dom(makeContext({ selector: '#nonexistent' }));
+      assertSuccess(result);
+      expect(result.output).toContain('No element found');
     });
 
     it('select: finds elements by CSS selector', async () => {
@@ -291,6 +314,13 @@ describe('Chrome Debugger — Integration', () => {
       expect(result.output).toContain('2 found');
       expect(result.output).toContain('div');
       expect(result.output).toContain('card');
+    });
+
+    it('select: finds input with attributes', async () => {
+      const result = await select(makeContext({ selector: '#text-input' }));
+      assertSuccess(result);
+      expect(result.output).toContain('input');
+      expect(result.output).toContain('text');
     });
 
     it('select: fails without --selector', async () => {
@@ -310,6 +340,7 @@ describe('Chrome Debugger — Integration', () => {
       assertSuccess(result);
       expect(result.output).toContain('Computed Styles');
       expect(result.output).toContain('display');
+      expect(result.output).toContain('flex');
     });
 
     it('styles: fails without --selector', async () => {
@@ -395,6 +426,53 @@ describe('Chrome Debugger — Integration', () => {
       assertSuccess(result);
       expect(result.output).toContain('foo');
       expect(result.output).toContain('bar');
+    });
+
+    it('eval: reads DOM elements', async () => {
+      const result = await eval_(makeContext({ code: 'document.querySelectorAll(".card").length' }));
+      assertSuccess(result);
+      expect(result.output).toContain('2');
+    });
+
+    it('eval: manipulates DOM and reads back', async () => {
+      // Add a new element via JS
+      await eval_(makeContext({
+        code: `(() => {
+          const el = document.createElement('div');
+          el.id = 'eval-added';
+          el.textContent = 'Added by eval';
+          document.getElementById('main').appendChild(el);
+          return 'created';
+        })()`,
+      }));
+
+      // Read it back via dom command
+      const domResult = await dom(makeContext({ selector: '#eval-added' }));
+      assertSuccess(domResult);
+      expect(domResult.output).toContain('Added by eval');
+
+      // Verify via select
+      const selectResult = await select(makeContext({ selector: '#eval-added' }));
+      assertSuccess(selectResult);
+      expect(selectResult.output).toContain('eval-added');
+    });
+
+    it('eval: modifies element text and verifies via dom', async () => {
+      await eval_(makeContext({
+        code: 'document.getElementById("heading").textContent = "Modified Heading"',
+      }));
+
+      const domResult = await dom(makeContext({ selector: '#heading' }));
+      assertSuccess(domResult);
+      expect(domResult.output).toContain('Modified Heading');
+    });
+
+    it('eval: handles array return values', async () => {
+      const result = await eval_(makeContext({ code: '[1, 2, 3].map(x => x * 2)' }));
+      assertSuccess(result);
+      expect(result.output).toContain('2');
+      expect(result.output).toContain('4');
+      expect(result.output).toContain('6');
     });
 
     it('eval: fails without --code or --file', async () => {
