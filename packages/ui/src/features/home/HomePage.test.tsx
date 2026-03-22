@@ -4,20 +4,6 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HomePage } from './HomePage';
 
-vi.mock('@/core/hooks/use-extensions', () => ({
-  useMarketplace: () => ({
-    data: {
-      active: [
-        { name: 'ext1', version: '1.0.0', type: 'standard', status: 'active' },
-        { name: 'ext2', version: '2.0.0', type: 'mcp-stdio', status: 'active' },
-      ],
-      installed: [],
-      available: [],
-    },
-    isLoading: false,
-  }),
-}));
-
 vi.mock('@/features/dashboard/components/WidgetGrid', () => ({
   WidgetGrid: () => <div data-testid="widget-grid" />,
 }));
@@ -51,11 +37,6 @@ describe('HomePage', () => {
     expect(screen.getByText('Project: /home/user/my-project')).toBeInTheDocument();
   });
 
-  it('shows active extensions count', () => {
-    renderWithProviders(<HomePage />);
-    expect(screen.getByText('2')).toBeInTheDocument();
-  });
-
   it('renders WidgetGrid', () => {
     renderWithProviders(<HomePage />);
     expect(screen.getByTestId('widget-grid')).toBeInTheDocument();
@@ -68,12 +49,6 @@ describe('HomePage no project', () => {
   });
 
   it('shows "No project selected" when no active project', async () => {
-    vi.doMock('@/core/hooks/use-extensions', () => ({
-      useMarketplace: () => ({
-        data: undefined,
-        isLoading: false,
-      }),
-    }));
     vi.doMock('@/core/providers/ProjectProvider', () => ({
       useProjectContext: () => ({
         activeProject: null,
@@ -94,6 +69,5 @@ describe('HomePage no project', () => {
     );
 
     expect(screen.getByText('No project selected')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
   });
 });

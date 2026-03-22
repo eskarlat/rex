@@ -76,7 +76,9 @@ export function ServerConsoleTab() {
                   >
                     {entry.level}
                   </span>
-                  <span className="flex-1 break-all text-foreground">{entry.msg}</span>
+                  <span className="flex-1 whitespace-pre-wrap break-words text-foreground">
+                    {entry.msg}
+                  </span>
                 </div>
               ))
             )}

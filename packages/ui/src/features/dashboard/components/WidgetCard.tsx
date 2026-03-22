@@ -116,7 +116,7 @@ export function WidgetCard({
   };
 
   return (
-    <Card ref={setNodeRef} style={style} className="relative overflow-hidden" {...attributes}>
+    <Card ref={setNodeRef} style={style} className="relative flex flex-col overflow-hidden" {...attributes}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 px-3 py-2">
         <div className="flex items-center gap-1">
           <button
@@ -151,7 +151,7 @@ export function WidgetCard({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-3 pb-3 pt-0">
+      <CardContent className="min-h-0 flex-1 overflow-auto px-3 pb-3 pt-0">
         <DynamicWidget extensionName={extensionName} widgetId={widgetId} />
       </CardContent>
     </Card>
