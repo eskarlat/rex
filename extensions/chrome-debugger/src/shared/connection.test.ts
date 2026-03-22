@@ -77,20 +77,6 @@ describe('connectBrowser', () => {
     expect(result).toBe(browser2);
   });
 
-  it('reconnects when endpoint changes', async () => {
-    const browser1 = makeBrowser();
-    const browser2 = makeBrowser();
-    mockConnect.mockResolvedValueOnce(browser1).mockResolvedValueOnce(browser2);
-
-    await connectBrowser('/tmp/test');
-
-    mockEnsure.mockReturnValue({ wsEndpoint: 'ws://localhost:9333' });
-    const result = await connectBrowser('/tmp/test');
-
-    expect(mockConnect).toHaveBeenCalledTimes(2);
-    expect(result).toBe(browser2);
-  });
-
   it('registers disconnected listener to clear cache', async () => {
     const browser = makeBrowser();
     mockConnect.mockResolvedValue(browser);

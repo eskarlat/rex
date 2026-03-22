@@ -4,36 +4,20 @@ import type { Browser, Page } from 'puppeteer';
 import { ensureBrowserRunning } from './state.js';
 
 let cachedBrowser: Browser | null = null;
-let cachedEndpoint: string | null = null;
-
-function isConnected(browser: Browser): boolean {
-  return browser.connected;
-}
 
 export async function connectBrowser(projectPath: string): Promise<Browser> {
   const state = ensureBrowserRunning(projectPath);
 
-  if (cachedBrowser && cachedEndpoint === state.wsEndpoint && isConnected(cachedBrowser)) {
+  if (cachedBrowser?.connected) {
     return cachedBrowser;
-  }
-
-  // Endpoint changed or connection dropped — reconnect
-  if (cachedBrowser) {
-    try {
-      cachedBrowser.disconnect();
-    } catch {
-      // Already disconnected
-    }
   }
 
   const browser = await puppeteer.connect({ browserWSEndpoint: state.wsEndpoint });
   cachedBrowser = browser;
-  cachedEndpoint = state.wsEndpoint;
 
   browser.on('disconnected', () => {
     if (cachedBrowser === browser) {
       cachedBrowser = null;
-      cachedEndpoint = null;
     }
   });
 
@@ -48,7 +32,6 @@ export function disconnectCachedBrowser(): void {
       // Already disconnected
     }
     cachedBrowser = null;
-    cachedEndpoint = null;
   }
 }
 
