@@ -1,28 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+
+const mockDynamicUiAsset = vi.fn(() => null);
+
+vi.mock('@/core/components/UiAssetErrorBoundary', () => ({
+  DynamicUiAsset: (props: Record<string, unknown>) => {
+    mockDynamicUiAsset(props);
+    return null;
+  },
+}));
+
 import { DynamicPanel } from './DynamicPanel';
-
-vi.mock('@/core/providers/ProjectProvider', () => ({
-  useProjectContext: () => ({
-    activeProject: '/mock/project',
-    setActiveProject: vi.fn(),
-  }),
-}));
-
-vi.mock('@/core/hooks/use-extension-sdk', () => ({
-  useExtensionSDK: () => ({
-    project: { name: null, path: null, config: {} },
-    exec: { run: vi.fn() },
-    storage: { get: vi.fn(), set: vi.fn(), delete: vi.fn(), list: vi.fn() },
-    ui: { toast: vi.fn(), confirm: vi.fn(), navigate: vi.fn() },
-    events: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
-    scheduler: { list: vi.fn(), register: vi.fn(), unregister: vi.fn(), update: vi.fn() },
-    terminal: { open: vi.fn(), close: vi.fn(), send: vi.fn() },
-    logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-    destroy: vi.fn(),
-  }),
-}));
 
 function renderPanel(name: string, panelId?: string) {
   return render(
@@ -33,24 +22,25 @@ function renderPanel(name: string, panelId?: string) {
 }
 
 describe('DynamicPanel', () => {
-  it('renders loading skeleton initially', () => {
-    const { container } = renderPanel('test-ext');
-    expect(container).toBeDefined();
+  it('uses panel-specific URL when panelId is provided', () => {
+    renderPanel('test-ext', 'my-panel');
+    expect(mockDynamicUiAsset).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extensionName: 'test-ext',
+        url: '/api/extensions/test-ext/panels/my-panel.js',
+        label: 'panel',
+      }),
+    );
   });
 
-  it('shows error message when panel fails to load', async () => {
-    renderPanel('nonexistent-ext');
-    const errorMessage = await screen.findByText(/failed to load panel/i, {}, { timeout: 3000 });
-    expect(errorMessage).toBeInTheDocument();
-  });
-
-  it('renders with panelId in URL when provided', () => {
-    const { container } = renderPanel('test-ext', 'my-panel');
-    expect(container).toBeDefined();
-  });
-
-  it('renders without panelId using default panel URL', () => {
-    const { container } = renderPanel('test-ext');
-    expect(container).toBeDefined();
+  it('uses default panel URL when panelId is omitted', () => {
+    renderPanel('test-ext');
+    expect(mockDynamicUiAsset).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extensionName: 'test-ext',
+        url: '/api/extensions/test-ext/panel.js',
+        label: 'panel',
+      }),
+    );
   });
 });

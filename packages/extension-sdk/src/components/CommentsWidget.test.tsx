@@ -12,13 +12,14 @@ describe('CommentsWidget', () => {
     expect(screen.getByText('Recent Comments')).toBeInTheDocument();
   });
 
-  it('shows empty state when no comments', async () => {
+  it('shows empty state after fetching returns no comments', async () => {
     const sdk = createSdk(JSON.stringify({ issues: [] }));
     render(<CommentsWidget sdk={sdk as never} extensionName="ext" />);
 
     await waitFor(() => {
-      expect(screen.getByText('No recent comments.')).toBeInTheDocument();
+      expect(sdk.exec.run).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByText('No recent comments.')).toBeInTheDocument();
   });
 
   it('renders comment items', async () => {
@@ -49,8 +50,9 @@ describe('CommentsWidget', () => {
     render(<CommentsWidget sdk={sdk as never} extensionName="ext" />);
 
     await waitFor(() => {
-      expect(screen.getByText('No recent comments.')).toBeInTheDocument();
+      expect(sdk.exec.run).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByText('No recent comments.')).toBeInTheDocument();
   });
 
   it('shows error on fetch failure', async () => {

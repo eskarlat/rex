@@ -12,13 +12,14 @@ describe('ConfluenceUpdatesWidget', () => {
     expect(screen.getByText('Confluence Updates')).toBeInTheDocument();
   });
 
-  it('shows empty state when no results', async () => {
+  it('shows empty state after fetching returns no results', async () => {
     const sdk = createSdk(JSON.stringify({ results: [] }));
     render(<ConfluenceUpdatesWidget sdk={sdk as never} extensionName="ext" />);
 
     await waitFor(() => {
-      expect(screen.getByText('No recent updates.')).toBeInTheDocument();
+      expect(sdk.exec.run).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByText('No recent updates.')).toBeInTheDocument();
   });
 
   it('renders page items with optional fields', async () => {

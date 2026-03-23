@@ -105,6 +105,16 @@ describe('WidgetPicker', () => {
     expect(screen.getByText('no-title-ext')).toBeInTheDocument();
   });
 
+  it('handles extensions without widgets array', () => {
+    mockMarketplaceData.mockReturnValue({
+      active: [{ name: 'no-widgets', version: '1.0.0', type: 'standard', status: 'active' }],
+      installed: [],
+      available: [],
+    });
+    renderPicker();
+    expect(screen.getByText(/no widgets available/i)).toBeInTheDocument();
+  });
+
   it('handles null marketplace data', () => {
     mockMarketplaceData.mockReturnValue(undefined);
     renderPicker();

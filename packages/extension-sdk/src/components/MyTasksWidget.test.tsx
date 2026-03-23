@@ -12,13 +12,14 @@ describe('MyTasksWidget', () => {
     expect(screen.getByText('My Jira Tasks')).toBeInTheDocument();
   });
 
-  it('shows empty state when no issues returned', async () => {
+  it('shows empty state after fetching returns no issues', async () => {
     const sdk = createSdk(JSON.stringify({ issues: [] }));
     render(<MyTasksWidget sdk={sdk as never} extensionName="ext" />);
 
     await waitFor(() => {
-      expect(screen.getByText('No assigned issues found.')).toBeInTheDocument();
+      expect(sdk.exec.run).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByText('No assigned issues found.')).toBeInTheDocument();
   });
 
   it('renders issues list', async () => {
