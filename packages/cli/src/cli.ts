@@ -572,6 +572,7 @@ export function createProgram(): Command {
   // Start command (dashboard)
   program
     .command('start')
+    .alias('ui')
     .description('Start local web dashboard server and open browser')
     .option('--port <port>', 'Port to listen on', '4200')
     .option('--lan', 'Bind to 0.0.0.0 for LAN access')

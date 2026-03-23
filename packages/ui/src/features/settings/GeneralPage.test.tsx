@@ -148,4 +148,64 @@ describe('GeneralPage', () => {
     renderWithProviders(<GeneralPage />);
     expect(screen.getByRole('button', { name: 'Saving...' })).toBeInTheDocument();
   });
+
+  it('falls back to single logLevel when logLevels is absent', async () => {
+    mockSettings = {
+      data: {
+        registries: [],
+        settings: { logLevels: undefined as unknown as string[], logLevel: 'error' } as {
+          logLevels: string[];
+        },
+        extensionConfigs: {},
+      },
+      isLoading: false,
+    };
+    const user = userEvent.setup();
+    renderWithProviders(<GeneralPage />);
+
+    // Submit and verify only 'error' was selected
+    await user.click(screen.getByRole('button', { name: 'Save Settings' }));
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: expect.objectContaining({ logLevels: ['error'] }),
+      }),
+    );
+  });
+
+  it('uses defaults when neither logLevels nor logLevel are set', async () => {
+    mockSettings = {
+      data: {
+        registries: [],
+        settings: {} as { logLevels: string[] },
+        extensionConfigs: {},
+      },
+      isLoading: false,
+    };
+    const user = userEvent.setup();
+    renderWithProviders(<GeneralPage />);
+
+    // Submit and verify default levels are info, warn, error (not debug)
+    await user.click(screen.getByRole('button', { name: 'Save Settings' }));
+    expect(mockMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: expect.objectContaining({
+          logLevels: expect.arrayContaining(['info', 'warn', 'error']),
+        }),
+      }),
+    );
+    const calledWith = mockMutate.mock.calls[0]?.[0] as { settings: { logLevels: string[] } };
+    expect(calledWith.settings.logLevels).not.toContain('debug');
+  });
+
+  it('does not crash when config is undefined and form is submitted', async () => {
+    mockSettings = { data: undefined, isLoading: false };
+    renderWithProviders(<GeneralPage />);
+    // Even if rendered, submitting with no config should not call mutate
+    const btn = screen.queryByRole('button', { name: 'Save Settings' });
+    if (btn) {
+      const user = userEvent.setup();
+      await user.click(btn);
+      expect(mockMutate).not.toHaveBeenCalled();
+    }
+  });
 });

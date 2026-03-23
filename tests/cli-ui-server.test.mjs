@@ -34,7 +34,7 @@ async function waitForPort(port, timeoutMs = 10_000) {
   return false;
 }
 
-describe('ui command — server lifecycle', () => {
+describe('start command — server lifecycle', () => {
   const TEST_PORT = 14_200 + Math.floor(Math.random() * 1000);
   let serverProc;
 

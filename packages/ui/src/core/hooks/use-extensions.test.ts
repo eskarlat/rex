@@ -4,8 +4,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement, type ReactNode } from 'react';
 
 const mockFetchApi = vi.fn();
+
+const { MockApiError } = vi.hoisted(() => {
+  class MockApiError extends Error {
+    constructor(
+      public readonly status: number,
+      public readonly statusText: string,
+      public readonly body: unknown,
+    ) {
+      super(`API Error ${status}: ${statusText}`);
+    }
+  }
+  return { MockApiError };
+});
+
 vi.mock('@/core/api/client', () => ({
   fetchApi: (...args: unknown[]) => mockFetchApi(...args),
+  ApiError: MockApiError,
 }));
 
 const mockShowToast = vi.fn();
@@ -104,6 +119,41 @@ describe('useExtensionDoc', () => {
     });
 
     expect(mockFetchApi).not.toHaveBeenCalled();
+  });
+
+  it('returns null when API responds with 404', async () => {
+    mockFetchApi.mockRejectedValueOnce(new MockApiError(404, 'Not Found', null));
+
+    const { result } = renderHook(() => useExtensionDoc('my-ext', 'readme'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toBeNull();
+  });
+
+  it('does not retry on 404 errors', async () => {
+    const error404 = new MockApiError(404, 'Not Found', null);
+    mockFetchApi.mockRejectedValue(error404);
+
+    const { result } = renderHook(() => useExtensionDoc('my-ext', 'readme'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    // Should only be called once (no retries for 404)
+    expect(mockFetchApi).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns null when response has no matching field', async () => {
+    mockFetchApi.mockResolvedValueOnce({});
+
+    const { result } = renderHook(() => useExtensionDoc('my-ext', 'readme'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toBeNull();
   });
 });
 
@@ -230,6 +280,23 @@ describe('useActivateExtension', () => {
 
     await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith({ title: 'Activated my-ext' }));
   });
+
+  it('shows error toast on activate failure', async () => {
+    mockFetchApi.mockRejectedValueOnce(new Error('activation failed'));
+    const { result } = renderHook(() => useActivateExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate({ name: 'my-ext', version: '1.0.0' });
+    });
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith({
+        title: 'Failed to activate my-ext',
+        description: 'activation failed',
+        variant: 'destructive',
+      }),
+    );
+  });
 });
 
 describe('useDeactivateExtension', () => {
@@ -262,6 +329,23 @@ describe('useDeactivateExtension', () => {
 
     await waitFor(() =>
       expect(mockShowToast).toHaveBeenCalledWith({ title: 'Deactivated my-ext' }),
+    );
+  });
+
+  it('shows error toast on deactivate failure', async () => {
+    mockFetchApi.mockRejectedValueOnce(new Error('deactivation failed'));
+    const { result } = renderHook(() => useDeactivateExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate('my-ext');
+    });
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith({
+        title: 'Failed to deactivate my-ext',
+        description: 'deactivation failed',
+        variant: 'destructive',
+      }),
     );
   });
 });
@@ -304,6 +388,23 @@ describe('useUpdateExtension', () => {
       }),
     );
   });
+
+  it('shows error toast on update failure', async () => {
+    mockFetchApi.mockRejectedValueOnce(new Error('update failed'));
+    const { result } = renderHook(() => useUpdateExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate({ name: 'my-ext' });
+    });
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith({
+        title: 'Failed to update my-ext',
+        description: 'update failed',
+        variant: 'destructive',
+      }),
+    );
+  });
 });
 
 describe('useRemoveExtension', () => {
@@ -336,6 +437,23 @@ describe('useRemoveExtension', () => {
 
     await waitFor(() =>
       expect(mockShowToast).toHaveBeenCalledWith({ title: 'Uninstalled my-ext' }),
+    );
+  });
+
+  it('shows error toast on uninstall failure', async () => {
+    mockFetchApi.mockRejectedValueOnce(new Error('remove failed'));
+    const { result } = renderHook(() => useRemoveExtension(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate('my-ext');
+    });
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith({
+        title: 'Failed to uninstall my-ext',
+        description: 'remove failed',
+        variant: 'destructive',
+      }),
     );
   });
 });

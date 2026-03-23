@@ -105,7 +105,7 @@ export async function executeCommand(
       throw err;
     }
     throw new ExtensionError(
-      context.projectName,
+      extensionName,
       ErrorCode.COMMAND_EXECUTION_FAILED,
       `Command execution failed: ${(err as Error).message}`,
       err as Error,
