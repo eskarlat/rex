@@ -21,16 +21,16 @@ export function MarketplacePage() {
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  // Auto-select first extension when list changes or selection becomes invalid
+  // Auto-select first extension on desktop; on mobile, wait for user tap
   useEffect(() => {
     const allExts = filter.allFiltered;
     const stillExists = selectedName && allExts.some((e) => e.name === selectedName);
     if (!stillExists && allExts.length > 0) {
-      setSelectedName(allExts[0]!.name);
+      setSelectedName(isMobile ? null : allExts[0]!.name);
     } else if (allExts.length === 0) {
       setSelectedName(null);
     }
-  }, [filter.allFiltered, selectedName]);
+  }, [filter.allFiltered, selectedName, isMobile]);
 
   const selectedExtension = filter.allFiltered.find((e) => e.name === selectedName);
 

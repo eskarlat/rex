@@ -12,8 +12,16 @@ vi.mock('node:net', () => ({
   createConnection: (...args: unknown[]) => mockCreateConnection(...args),
 }));
 
+const mockNetworkInterfaces = vi.fn().mockReturnValue({
+  en0: [
+    { family: 'IPv4', address: '192.168.1.42', internal: false },
+    { family: 'IPv6', address: 'fe80::1', internal: false },
+  ],
+  lo0: [{ family: 'IPv4', address: '127.0.0.1', internal: true }],
+});
+
 vi.mock('node:os', () => ({
-  default: { platform: () => 'linux' },
+  default: { platform: () => 'linux', networkInterfaces: () => mockNetworkInterfaces() },
 }));
 
 const mockIntro = vi.fn();
@@ -69,7 +77,7 @@ vi.mock('../../../shared/process-utils.js', () => ({
   readPidFile: (...args: unknown[]) => mockReadPidFile(...args),
 }));
 
-const { handleUi } = await import('./ui.command.js');
+const { handleUi } = await import('./start.command.js');
 
 function createMockChild(pid = 42): ChildProcess {
   const handlers: Record<string, (...args: unknown[]) => void> = {};
@@ -180,15 +188,16 @@ describe('ui command', () => {
     expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('localhost'));
   });
 
-  it('displays LAN PIN when lan mode is active', async () => {
+  it('displays LAN IP and PIN when lan mode is active', async () => {
     mockReadFileSync.mockReturnValue('7392');
 
     await handleUi({ lan: true, noBrowser: true });
 
+    expect(mockLogInfo).toHaveBeenCalledWith('LAN: http://192.168.1.42:4200');
     expect(mockLogInfo).toHaveBeenCalledWith('LAN PIN: 7392');
   });
 
-  it('does not display LAN PIN when lan mode is off', async () => {
+  it('does not display LAN info when lan mode is off', async () => {
     await handleUi({ noBrowser: true });
 
     expect(mockReadFileSync).not.toHaveBeenCalled();

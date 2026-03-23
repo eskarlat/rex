@@ -207,11 +207,11 @@ renre-kit scheduler:trigger <id>
 
 ## Dashboard Commands
 
-### renre-kit ui
+### renre-kit start
 Start the web dashboard server. Opens a browser to the dashboard UI.
 
 \`\`\`
-renre-kit ui [--port <number>] [--lan] [--no-browser] [--no-sleep]
+renre-kit start [--port <number>] [--lan] [--no-browser] [--no-sleep]
 \`\`\`
 
 ### renre-kit stop

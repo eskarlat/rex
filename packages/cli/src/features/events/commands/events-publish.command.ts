@@ -36,7 +36,7 @@ export async function handleEventsPublish(options: EventsPublishOptions): Promis
     clack.log.success(`Event published: ${options.type}`);
   } catch {
     clack.log.warn(
-      'Could not reach dashboard server at http://localhost:4200. Is it running? (renre-kit ui)',
+      'Could not reach dashboard server at http://localhost:4200. Is it running? (renre-kit start)',
     );
   }
 }

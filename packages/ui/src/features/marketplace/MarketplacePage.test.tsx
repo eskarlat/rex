@@ -76,6 +76,59 @@ describe('MarketplacePage', () => {
   });
 });
 
+describe('MarketplacePage mobile', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('does not auto-select extension on mobile — sheet stays closed', async () => {
+    vi.doMock('@/hooks/use-mobile', () => ({
+      useIsMobile: () => true,
+    }));
+    vi.doMock('@/core/hooks/use-extensions', () => ({
+      useMarketplace: () => ({
+        data: {
+          active: [
+            {
+              name: 'active-ext',
+              version: '1.0.0',
+              type: 'standard',
+              status: 'active',
+              description: 'An active extension',
+            },
+          ],
+          installed: [],
+          available: [],
+        },
+        isLoading: false,
+      }),
+      useInstallExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useActivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useDeactivateExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useRemoveExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useUpdateExtension: () => ({ mutate: vi.fn(), isPending: false }),
+      useExtensionChangelog: () => ({ data: null, isLoading: false }),
+      useExtensionReadme: () => ({ data: null, isLoading: false }),
+    }));
+
+    const { MarketplacePage: MobilePage } = await import('./MarketplacePage');
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <MobilePage />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    // On mobile, detail panel should NOT auto-appear
+    expect(screen.queryByTestId('detail-panel')).not.toBeInTheDocument();
+  });
+});
+
 describe('MarketplacePage loading', () => {
   beforeEach(() => {
     vi.resetModules();

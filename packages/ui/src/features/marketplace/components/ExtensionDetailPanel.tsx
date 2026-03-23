@@ -5,7 +5,6 @@ import { ExtensionActions, UpdateBadge } from './ExtensionActions';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Extension } from '@/core/hooks/use-extensions';
@@ -146,7 +145,7 @@ export function ExtensionDetailPanel({ extension }: Readonly<ExtensionDetailPane
   }
 
   return (
-    <div className="flex flex-1 flex-col" data-testid="detail-panel">
+    <div className="flex-1 overflow-auto" data-testid="detail-panel">
       {/* Header */}
       <div className="space-y-3 p-4 md:p-6">
         <div className="flex items-start gap-3 md:gap-4">
@@ -166,48 +165,46 @@ export function ExtensionDetailPanel({ extension }: Readonly<ExtensionDetailPane
       <Separator />
 
       {/* Body */}
-      <ScrollArea className="flex-1">
-        <div className="space-y-4 p-4 md:space-y-6 md:p-6">
-          {/* Description */}
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">Description</h3>
-            <p className="whitespace-pre-line text-sm text-muted-foreground">
-              {extension.description ?? 'No description available.'}
-            </p>
-          </div>
-
-          {/* Metadata */}
-          <div>
-            <h3 className="mb-2 text-sm font-semibold">Details</h3>
-            <div className="space-y-2">
-              <MetadataRow label="Version" value={extension.version} />
-              <MetadataRow label="Type" value={extension.type} />
-              <MetadataRow label="Author" value={extension.author} />
-              <LinkRow label="Repository" url={extension.gitUrl} />
-              <MetadataRow label="Registry Source" value={extension.registrySource} />
-              <MetadataRow label="Install Path" value={extension.installPath} />
-              <MetadataRow label="Installed Date" value={extension.installedAt} />
-            </div>
-          </div>
-
-          {/* Tags */}
-          {extension.tags && extension.tags.length > 0 && (
-            <div>
-              <h3 className="mb-2 text-sm font-semibold">Tags</h3>
-              <div className="flex flex-wrap gap-1">
-                {extension.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* README & Changelog */}
-          <DocsTabs name={extension.name} />
+      <div className="space-y-4 p-4 md:space-y-6 md:p-6">
+        {/* Description */}
+        <div>
+          <h3 className="mb-2 text-sm font-semibold">Description</h3>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">
+            {extension.description ?? 'No description available.'}
+          </p>
         </div>
-      </ScrollArea>
+
+        {/* Metadata */}
+        <div>
+          <h3 className="mb-2 text-sm font-semibold">Details</h3>
+          <div className="space-y-2">
+            <MetadataRow label="Version" value={extension.version} />
+            <MetadataRow label="Type" value={extension.type} />
+            <MetadataRow label="Author" value={extension.author} />
+            <LinkRow label="Repository" url={extension.gitUrl} />
+            <MetadataRow label="Registry Source" value={extension.registrySource} />
+            <MetadataRow label="Install Path" value={extension.installPath} />
+            <MetadataRow label="Installed Date" value={extension.installedAt} />
+          </div>
+        </div>
+
+        {/* Tags */}
+        {extension.tags && extension.tags.length > 0 && (
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">Tags</h3>
+            <div className="flex flex-wrap gap-1">
+              {extension.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* README & Changelog */}
+        <DocsTabs name={extension.name} />
+      </div>
     </div>
   );
 }

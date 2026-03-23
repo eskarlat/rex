@@ -77,6 +77,7 @@ describe('commands routes', () => {
       expect(mockExecuteCommand).toHaveBeenCalledWith(
         handler,
         expect.objectContaining({ args: { name: 'world' } }),
+        'ext',
       );
     });
 
@@ -200,6 +201,7 @@ describe('commands routes', () => {
       expect(mockExecuteCommand).toHaveBeenCalledWith(
         handler,
         expect.objectContaining({ args: {} }),
+        'ext',
       );
     });
   });

@@ -203,7 +203,25 @@ function resolveOptions(options: Partial<UiCommandOptions>): UiCommandOptions {
   };
 }
 
-function showLanPin(): void {
+function getLanIp(): string | undefined {
+  const interfaces = os.networkInterfaces();
+  for (const entries of Object.values(interfaces)) {
+    if (!entries) continue;
+    for (const entry of entries) {
+      if (entry.family === 'IPv4' && !entry.internal) {
+        return entry.address;
+      }
+    }
+  }
+  return undefined;
+}
+
+function showLanInfo(port: number): void {
+  const ip = getLanIp();
+  if (ip) {
+    clack.log.info(`LAN: http://${ip}:${port}`);
+  }
+
   try {
     const pin = readFileSync(LAN_PIN_PATH, 'utf-8').trim();
     clack.log.info(`LAN PIN: ${pin}`);
@@ -246,7 +264,7 @@ export async function handleUi(options: Partial<UiCommandOptions> = {}): Promise
 
   clack.log.info(`PID: ${result.pid}`);
 
-  if (lan) showLanPin();
+  if (lan) showLanInfo(port);
 
   clack.outro(`Dashboard: ${url}`);
 }

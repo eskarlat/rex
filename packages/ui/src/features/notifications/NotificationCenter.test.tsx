@@ -11,6 +11,11 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
+const mockIsMobile = vi.fn(() => false);
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => mockIsMobile(),
+}));
+
 const mockNotifications = vi.fn();
 const mockUnreadCount = vi.fn();
 const mockMarkRead = { mutate: vi.fn() };
@@ -49,6 +54,7 @@ function renderComponent() {
 describe('NotificationCenter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockIsMobile.mockReturnValue(false);
     mockNotifications.mockReturnValue({ data: [] });
     mockUnreadCount.mockReturnValue({ data: { unread: 0 } });
   });
@@ -274,5 +280,13 @@ describe('NotificationCenter', () => {
     await userEvent.click(screen.getByLabelText('Notifications'));
     await userEvent.click(screen.getByText('Mark all read'));
     expect(mockMarkAllRead.mutate).toHaveBeenCalled();
+  });
+
+  it('navigates to /notifications on mobile instead of opening dropdown', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    mockIsMobile.mockReturnValue(true);
+    renderComponent();
+    await userEvent.click(screen.getByLabelText('Notifications'));
+    expect(mockNavigate).toHaveBeenCalledWith('/notifications');
   });
 });
