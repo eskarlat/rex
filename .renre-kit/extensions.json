@@ -79,6 +79,16 @@
       "icon": "icons/editor.svg",
       "author": "yskarlat",
       "tags": ["editor", "files", "code"]
+    },
+    {
+      "name": "agent-browser",
+      "description": "Browser automation — live viewport, element inspection, and debugging tools",
+      "gitUrl": "./extensions/agent-browser",
+      "latestVersion": "1.0.0",
+      "type": "standard",
+      "icon": "icons/agent-browser.svg",
+      "author": "yskarlat",
+      "tags": ["browser", "automation", "devtools", "viewport"]
     }
   ]
 }

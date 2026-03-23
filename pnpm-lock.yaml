@@ -66,6 +66,31 @@ importers:
         specifier: ^2.0.17
         version: 2.0.17(mermaid@11.13.0)(vitepress@1.6.4(@algolia/client-search@5.49.2)(@types/node@20.19.37)(lightningcss@1.32.0)(postcss@8.5.8)(search-insights@2.17.3)(terser@5.46.1)(typescript@5.9.3))
 
+  extensions/agent-browser:
+    dependencies:
+      '@renre-kit/extension-sdk':
+        specifier: workspace:*
+        version: link:../../packages/extension-sdk
+      agent-browser:
+        specifier: ^0.21.4
+        version: 0.21.4
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      esbuild:
+        specifier: ^0.21.0
+        version: 0.21.5
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@20.19.37)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.46.1)
+
   extensions/chrome-debugger:
     dependencies:
       '@renre-kit/extension-sdk':
@@ -3630,6 +3655,10 @@ packages:
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
+
+  agent-browser@0.21.4:
+    resolution: {integrity: sha512-m5N0rbVtJgRnjFcTkb4t4iiKEE68fUH1Ur9RKyDmjn/gaFpmOUYLtT2AKdxhmyj+utn3NpEU2sIyRnsv8RwqZQ==}
+    hasBin: true
 
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
@@ -10514,6 +10543,8 @@ snapshots:
   acorn@8.16.0: {}
 
   agent-base@7.1.4: {}
+
+  agent-browser@0.21.4: {}
 
   ajv-formats@3.0.1(ajv@8.18.0):
     optionalDependencies:
