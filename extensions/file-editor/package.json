@@ -1,5 +1,5 @@
 {
-  "name": "file-editor",
+  "name": "editor",
   "version": "1.0.0",
   "description": "VS Code-like file editor for the RenreKit dashboard",
   "type": "module",
