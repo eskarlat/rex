@@ -1,0 +1,48 @@
+{
+  "name": "Editor",
+  "title": "Editor",
+  "version": "1.0.0",
+  "description": "VS Code-like file editor with tree explorer, tabbed editing, and syntax highlighting",
+  "icon": "icon.svg",
+  "type": "standard",
+  "engines": {
+    "renre-kit": ">=0.0.1",
+    "extension-sdk": ">=0.0.1"
+  },
+  "main": "dist/index.js",
+  "commands": {
+    "tree": {
+      "handler": "dist/commands/tree.js",
+      "description": "List directory contents as a tree (lazy, respects .gitignore)"
+    },
+    "read": {
+      "handler": "dist/commands/read.js",
+      "description": "Read file content with language detection"
+    },
+    "write": {
+      "handler": "dist/commands/write.js",
+      "description": "Write content to a file"
+    },
+    "create": {
+      "handler": "dist/commands/create.js",
+      "description": "Create a new file or directory"
+    },
+    "delete": {
+      "handler": "dist/commands/delete.js",
+      "description": "Delete a file or directory"
+    },
+    "rename": {
+      "handler": "dist/commands/rename.js",
+      "description": "Rename or move a file or directory"
+    }
+  },
+  "ui": {
+    "panels": [
+      {
+        "id": "editor-panel",
+        "title": "Editor",
+        "entry": "dist/editor-panel.js"
+      }
+    ]
+  }
+}

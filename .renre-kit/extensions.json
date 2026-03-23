@@ -71,6 +71,16 @@
       "tags": ["browser", "devtools", "puppeteer", "mcp"]
     },
     {
+      "name": "Editor",
+      "description": "VS Code-like file editor with tree explorer, tabbed editing, and syntax highlighting",
+      "gitUrl": "./extensions/file-editor",
+      "latestVersion": "1.0.0",
+      "type": "standard",
+      "icon": "icons/editor.svg",
+      "author": "yskarlat",
+      "tags": ["editor", "files", "code"]
+    },
+    {
       "name": "agent-browser",
       "description": "Browser automation — live viewport, element inspection, and debugging tools",
       "gitUrl": "./extensions/agent-browser",
