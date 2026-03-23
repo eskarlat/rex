@@ -163,5 +163,7 @@ describe('useInstallProgress', () => {
     expect(mockShowToast).toHaveBeenCalledWith(
       expect.objectContaining({ description: 'disk full', variant: 'destructive' }),
     );
+    // Must NOT show success toast after SSE error
+    expect(mockShowToast).not.toHaveBeenCalledWith({ title: 'Installed my-ext' });
   });
 });

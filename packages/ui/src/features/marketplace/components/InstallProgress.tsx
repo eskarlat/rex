@@ -36,10 +36,16 @@ function parseSSEEvents(chunk: string): Array<Record<string, unknown>> {
     .map((block) => JSON.parse(block.slice(6).trim()) as Record<string, unknown>);
 }
 
+class SSEError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SSEError';
+  }
+}
+
 async function readSSEStream(
   response: Response,
   onStep: (step: InstallStep) => void,
-  onError: (message: string) => void,
 ): Promise<void> {
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
@@ -57,8 +63,7 @@ async function readSSEStream(
     for (const event of events) {
       const step = event.step as InstallStep;
       if (step === 'error') {
-        onError((event.error as string) ?? 'Unknown error');
-        return;
+        throw new SSEError((event.error as string) ?? 'Unknown error');
       }
       onStep(step);
     }
@@ -99,14 +104,7 @@ export function useInstallProgress() {
           throw new Error(`Install failed: ${response.statusText}`);
         }
 
-        await readSSEStream(
-          response,
-          (step) => setState((prev) => ({ ...prev, step })),
-          (message) => {
-            setState({ step: 'error', extensionName: name });
-            showToast({ title: `Failed to install ${name}`, description: message, variant: 'destructive' });
-          },
-        );
+        await readSSEStream(response, (step) => setState((prev) => ({ ...prev, step })));
 
         void queryClient.invalidateQueries({ queryKey: ['marketplace'] });
         showToast({ title: `Installed ${name}` });

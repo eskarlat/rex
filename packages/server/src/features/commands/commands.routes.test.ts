@@ -9,6 +9,8 @@ const mockLoadManifest = vi.fn();
 const mockLoadCommandHandler = vi.fn();
 const mockExecuteCommand = vi.fn();
 const mockResolveExtensionConfig = vi.fn().mockReturnValue({});
+const mockExecuteToolCall = vi.fn();
+const mockGetConnection = vi.fn();
 
 vi.mock('@renre-kit/cli/lib', () => ({
   getActivated: (...args: unknown[]) => mockGetActivated(...args),
@@ -18,8 +20,8 @@ vi.mock('@renre-kit/cli/lib', () => ({
   executeCommand: (...args: unknown[]) => mockExecuteCommand(...args),
   resolveExtensionConfig: (...args: unknown[]) => mockResolveExtensionConfig(...args),
   ConnectionManager: vi.fn().mockImplementation(() => ({
-    getConnection: vi.fn(),
-    executeToolCall: vi.fn(),
+    getConnection: (...args: unknown[]) => mockGetConnection(...args),
+    executeToolCall: (...args: unknown[]) => mockExecuteToolCall(...args),
     stopAll: vi.fn(),
     setMode: vi.fn(),
   })),
@@ -165,14 +167,7 @@ describe('commands routes', () => {
     it('returns 502 when MCP tool call throws an error', async () => {
       mockGetActivated.mockReturnValue({ 'mcp-ext': '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/mock/extensions/mcp-ext@1.0.0');
-
-      const { ConnectionManager } = await import('@renre-kit/cli/lib');
-      const mockInstance = vi.mocked(ConnectionManager).mock.results[0]?.value as {
-        executeToolCall: ReturnType<typeof vi.fn>;
-        getConnection: ReturnType<typeof vi.fn>;
-      };
-      mockInstance.executeToolCall.mockRejectedValue(new Error('connection refused'));
-
+      mockExecuteToolCall.mockRejectedValue(new Error('connection refused'));
       mockLoadManifest.mockReturnValue({
         name: 'mcp-ext',
         version: '1.0.0',
@@ -196,14 +191,7 @@ describe('commands routes', () => {
     it('returns empty output when MCP tool returns null', async () => {
       mockGetActivated.mockReturnValue({ 'mcp-ext': '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/mock/extensions/mcp-ext@1.0.0');
-
-      const { ConnectionManager } = await import('@renre-kit/cli/lib');
-      const mockInstance = vi.mocked(ConnectionManager).mock.results[0]?.value as {
-        executeToolCall: ReturnType<typeof vi.fn>;
-        getConnection: ReturnType<typeof vi.fn>;
-      };
-      mockInstance.executeToolCall.mockResolvedValue(null);
-
+      mockExecuteToolCall.mockResolvedValue(null);
       mockLoadManifest.mockReturnValue({
         name: 'mcp-ext',
         version: '1.0.0',
@@ -225,14 +213,7 @@ describe('commands routes', () => {
     it('JSON-stringifies non-string MCP tool results', async () => {
       mockGetActivated.mockReturnValue({ 'mcp-ext': '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/mock/extensions/mcp-ext@1.0.0');
-
-      const { ConnectionManager } = await import('@renre-kit/cli/lib');
-      const mockInstance = vi.mocked(ConnectionManager).mock.results[0]?.value as {
-        executeToolCall: ReturnType<typeof vi.fn>;
-        getConnection: ReturnType<typeof vi.fn>;
-      };
-      mockInstance.executeToolCall.mockResolvedValue({ data: [1, 2, 3] });
-
+      mockExecuteToolCall.mockResolvedValue({ data: [1, 2, 3] });
       mockLoadManifest.mockReturnValue({
         name: 'mcp-ext',
         version: '1.0.0',
