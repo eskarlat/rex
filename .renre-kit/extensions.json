@@ -71,7 +71,7 @@
       "tags": ["browser", "devtools", "puppeteer", "mcp"]
     },
     {
-      "name": "editor",
+      "name": "Editor",
       "description": "VS Code-like file editor with tree explorer, tabbed editing, and syntax highlighting",
       "gitUrl": "./extensions/file-editor",
       "latestVersion": "1.0.0",
