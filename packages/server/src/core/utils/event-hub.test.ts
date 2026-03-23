@@ -95,5 +95,16 @@ describe('event-hub', () => {
       expect(matchesPattern('ext:atlassian:*', 'ext:atlassian:ticket-created')).toBe(true);
       expect(matchesPattern('ext:atlassian:*', 'ext:github:push')).toBe(false);
     });
+
+    it('matches suffix wildcard *:done', () => {
+      expect(matchesPattern('*:done', 'ext:a:done')).toBe(true);
+      expect(matchesPattern('*:done', 'ext:a:fail')).toBe(false);
+    });
+
+    it('matches pattern with both prefix and suffix ext:*:done', () => {
+      expect(matchesPattern('ext:*:done', 'ext:a:done')).toBe(true);
+      expect(matchesPattern('ext:*:done', 'ext:a:fail')).toBe(false);
+      expect(matchesPattern('ext:*:done', 'system:a:done')).toBe(false);
+    });
   });
 });

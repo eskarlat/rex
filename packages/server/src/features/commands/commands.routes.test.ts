@@ -162,6 +162,98 @@ describe('commands routes', () => {
       expect(response.statusCode).toBe(200);
     });
 
+    it('returns 502 when MCP tool call throws an error', async () => {
+      mockGetActivated.mockReturnValue({ 'mcp-ext': '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/mock/extensions/mcp-ext@1.0.0');
+
+      const { ConnectionManager } = await import('@renre-kit/cli/lib');
+      const mockInstance = vi.mocked(ConnectionManager).mock.results[0]?.value as {
+        executeToolCall: ReturnType<typeof vi.fn>;
+        getConnection: ReturnType<typeof vi.fn>;
+      };
+      mockInstance.executeToolCall.mockRejectedValue(new Error('connection refused'));
+
+      mockLoadManifest.mockReturnValue({
+        name: 'mcp-ext',
+        version: '1.0.0',
+        type: 'mcp',
+        mcp: { transport: 'stdio', command: 'node', args: ['server.js'] },
+        commands: {},
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/run',
+        headers: { 'x-renrekit-project': '/mock/project' },
+        payload: { command: 'mcp-ext:query', args: {} },
+      });
+      expect(response.statusCode).toBe(502);
+      expect(response.json()).toEqual(
+        expect.objectContaining({ error: expect.stringContaining('connection refused') }),
+      );
+    });
+
+    it('returns empty output when MCP tool returns null', async () => {
+      mockGetActivated.mockReturnValue({ 'mcp-ext': '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/mock/extensions/mcp-ext@1.0.0');
+
+      const { ConnectionManager } = await import('@renre-kit/cli/lib');
+      const mockInstance = vi.mocked(ConnectionManager).mock.results[0]?.value as {
+        executeToolCall: ReturnType<typeof vi.fn>;
+        getConnection: ReturnType<typeof vi.fn>;
+      };
+      mockInstance.executeToolCall.mockResolvedValue(null);
+
+      mockLoadManifest.mockReturnValue({
+        name: 'mcp-ext',
+        version: '1.0.0',
+        type: 'mcp',
+        mcp: { transport: 'stdio', command: 'node', args: ['server.js'] },
+        commands: {},
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/run',
+        headers: { 'x-renrekit-project': '/mock/project' },
+        payload: { command: 'mcp-ext:query', args: {} },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ output: '', exitCode: 0 });
+    });
+
+    it('JSON-stringifies non-string MCP tool results', async () => {
+      mockGetActivated.mockReturnValue({ 'mcp-ext': '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/mock/extensions/mcp-ext@1.0.0');
+
+      const { ConnectionManager } = await import('@renre-kit/cli/lib');
+      const mockInstance = vi.mocked(ConnectionManager).mock.results[0]?.value as {
+        executeToolCall: ReturnType<typeof vi.fn>;
+        getConnection: ReturnType<typeof vi.fn>;
+      };
+      mockInstance.executeToolCall.mockResolvedValue({ data: [1, 2, 3] });
+
+      mockLoadManifest.mockReturnValue({
+        name: 'mcp-ext',
+        version: '1.0.0',
+        type: 'mcp',
+        mcp: { transport: 'stdio', command: 'node', args: ['server.js'] },
+        commands: {},
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/run',
+        headers: { 'x-renrekit-project': '/mock/project' },
+        payload: { command: 'mcp-ext:query', args: {} },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        output: JSON.stringify({ data: [1, 2, 3] }),
+        exitCode: 0,
+      });
+    });
+
     it('returns 500 when manifest load fails', async () => {
       mockGetActivated.mockReturnValue({ ext: '1.0.0' });
       mockGetExtensionDir.mockReturnValue('/mock/extensions/ext@1.0.0');

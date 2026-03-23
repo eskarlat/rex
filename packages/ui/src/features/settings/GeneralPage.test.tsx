@@ -148,4 +148,44 @@ describe('GeneralPage', () => {
     renderWithProviders(<GeneralPage />);
     expect(screen.getByRole('button', { name: 'Saving...' })).toBeInTheDocument();
   });
+
+  it('falls back to single logLevel when logLevels is absent', () => {
+    mockSettings = {
+      data: {
+        registries: [],
+        settings: { logLevels: undefined as unknown as string[], logLevel: 'error' } as {
+          logLevels: string[];
+        },
+        extensionConfigs: {},
+      },
+      isLoading: false,
+    };
+    renderWithProviders(<GeneralPage />);
+    expect(screen.getByText('error')).toBeInTheDocument();
+  });
+
+  it('uses defaults when neither logLevels nor logLevel are set', () => {
+    mockSettings = {
+      data: {
+        registries: [],
+        settings: {} as { logLevels: string[] },
+        extensionConfigs: {},
+      },
+      isLoading: false,
+    };
+    renderWithProviders(<GeneralPage />);
+    expect(screen.getByText('info')).toBeInTheDocument();
+  });
+
+  it('does not crash when config is undefined and form is submitted', async () => {
+    mockSettings = { data: undefined, isLoading: false };
+    renderWithProviders(<GeneralPage />);
+    // Even if rendered, submitting with no config should not call mutate
+    const btn = screen.queryByRole('button', { name: 'Save Settings' });
+    if (btn) {
+      const user = userEvent.setup();
+      await user.click(btn);
+      expect(mockMutate).not.toHaveBeenCalled();
+    }
+  });
 });

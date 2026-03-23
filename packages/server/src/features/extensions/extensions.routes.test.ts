@@ -1050,6 +1050,71 @@ describe('extensions routes', () => {
       });
       expect(response.statusCode).toBe(404);
     });
+
+    it('returns 404 when manifest has no icon field', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+      });
+      mockResolveRegistryIcon.mockReturnValue(null);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/icon',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('returns 404 when icon path is unsafe (traversal)', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        icon: '../../etc/passwd',
+      });
+      vi.mocked(existsSync).mockReturnValue(false);
+      mockResolveRegistryIcon.mockReturnValue(null);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/icon',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('uses application/octet-stream for unknown icon extensions', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+      mockGetExtensionDir.mockReturnValue('/path/to/ext1@1.0.0');
+      mockLoadManifest.mockReturnValue({
+        name: 'ext1',
+        version: '1.0.0',
+        type: 'standard',
+        commands: {},
+        icon: '/path/to/ext1@1.0.0/icon.ico',
+      });
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue(Buffer.from('icon data'));
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/extensions/ext1/icon',
+        headers: { 'x-renrekit-project': '/my/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-type']).toBe('application/octet-stream');
+    });
   });
 
   describe('POST /api/extensions/update', () => {
@@ -1077,6 +1142,35 @@ describe('extensions routes', () => {
       expect(body.oldVersion).toBe('1.0.0');
       expect(body.newVersion).toBe('2.0.0');
       expect(mockRefreshUpdateCache).toHaveBeenCalled();
+    });
+
+    it('re-activates extension if it was active before update', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0', type: 'standard' }]);
+      mockLoadGlobalConfig.mockReturnValue({ registries: [] });
+      mockResolveExtension.mockReturnValue({
+        name: 'ext1',
+        gitUrl: 'https://github.com/test/ext1.git',
+        latestVersion: '2.0.0',
+        type: 'standard',
+        registryName: 'default',
+      });
+      mockInstallExtension.mockResolvedValue('/path/to/ext1@2.0.0');
+      mockGetActivated.mockReturnValue({ ext1: '1.0.0' });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/extensions/update',
+        headers: { 'x-renrekit-project': '/mock/project' },
+        payload: { name: 'ext1' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(mockActivate).toHaveBeenCalledWith(
+        'ext1',
+        '2.0.0',
+        '/mock/project',
+        '/path/to/ext1@2.0.0',
+        expect.anything(),
+      );
     });
 
     it('returns 404 when extension is not installed', async () => {
@@ -1283,6 +1377,19 @@ describe('extensions routes', () => {
         url: '/api/extensions/nonexistent',
       });
       expect(response.statusCode).toBe(404);
+    });
+
+    it('skips rmSync when extension directory does not exist', async () => {
+      mockListInstalled.mockReturnValue([{ name: 'ext1', version: '1.0.0' }]);
+      mockGetExtensionDir.mockReturnValue('/mock/ext1@1.0.0');
+      vi.mocked(existsSync).mockReturnValue(false);
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/extensions/ext1',
+      });
+      expect(response.statusCode).toBe(200);
+      expect(mockRemove).toHaveBeenCalledWith('ext1', '1.0.0', mockDb);
     });
   });
 });

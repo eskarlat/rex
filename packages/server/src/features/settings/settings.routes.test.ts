@@ -78,6 +78,54 @@ describe('settings routes', () => {
       expect(response.statusCode).toBe(200);
       expect(vi.mocked(getLogger)().setLevel).toHaveBeenCalledWith('warn');
     });
+
+    it('does not apply log level when logLevels is empty', async () => {
+      const { getLogger } = await import('@renre-kit/cli/lib');
+      const config = {
+        registries: [],
+        settings: { logLevels: [] },
+        extensionConfigs: {},
+      };
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: config,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(vi.mocked(getLogger)().setLevel).not.toHaveBeenCalled();
+    });
+
+    it('does not apply log level when logLevels is not an array', async () => {
+      const { getLogger } = await import('@renre-kit/cli/lib');
+      const config = {
+        registries: [],
+        settings: { logLevels: 'warn' },
+        extensionConfigs: {},
+      };
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: config,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(vi.mocked(getLogger)().setLevel).not.toHaveBeenCalled();
+    });
+
+    it('does not set level when no matching hierarchy level is found', async () => {
+      const { getLogger } = await import('@renre-kit/cli/lib');
+      const config = {
+        registries: [],
+        settings: { logLevels: ['trace', 'verbose'] },
+        extensionConfigs: {},
+      };
+      const response = await app.inject({
+        method: 'PUT',
+        url: '/api/settings',
+        payload: config,
+      });
+      expect(response.statusCode).toBe(200);
+      expect(vi.mocked(getLogger)().setLevel).not.toHaveBeenCalled();
+    });
   });
 
   describe('GET /api/settings/extensions/:name', () => {
@@ -103,6 +151,45 @@ describe('settings routes', () => {
         headers: { 'x-renrekit-project': '/mock/project' },
       });
       expect(response.statusCode).toBe(404);
+    });
+
+    it('returns empty schema when manifest loading fails', async () => {
+      mockGetActivated.mockReturnValue({ 'my-ext': '1.0.0' });
+      mockLoadManifest.mockImplementation(() => {
+        throw new Error('no manifest');
+      });
+      mockResolveExtensionConfig.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/settings/extensions/my-ext',
+        headers: { 'x-renrekit-project': '/mock/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ schema: {}, values: {} });
+    });
+
+    it('returns 404 when no project is selected and extension not found', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/settings/extensions/my-ext',
+      });
+      expect(response.statusCode).toBe(404);
+      expect(mockGetActivated).not.toHaveBeenCalled();
+    });
+
+    it('returns empty schema when manifest has no config field', async () => {
+      mockGetActivated.mockReturnValue({ 'my-ext': '1.0.0' });
+      mockLoadManifest.mockReturnValue({ name: 'my-ext', version: '1.0.0', commands: {} });
+      mockResolveExtensionConfig.mockReturnValue({});
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/settings/extensions/my-ext',
+        headers: { 'x-renrekit-project': '/mock/project' },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ schema: {}, values: {} });
     });
   });
 

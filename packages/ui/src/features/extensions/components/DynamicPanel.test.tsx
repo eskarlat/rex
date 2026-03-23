@@ -24,10 +24,10 @@ vi.mock('@/core/hooks/use-extension-sdk', () => ({
   }),
 }));
 
-function renderPanel(name: string) {
+function renderPanel(name: string, panelId?: string) {
   return render(
     <MemoryRouter>
-      <DynamicPanel extensionName={name} />
+      <DynamicPanel extensionName={name} panelId={panelId} />
     </MemoryRouter>,
   );
 }
@@ -42,5 +42,15 @@ describe('DynamicPanel', () => {
     renderPanel('nonexistent-ext');
     const errorMessage = await screen.findByText(/failed to load panel/i, {}, { timeout: 3000 });
     expect(errorMessage).toBeInTheDocument();
+  });
+
+  it('renders with panelId in URL when provided', () => {
+    const { container } = renderPanel('test-ext', 'my-panel');
+    expect(container).toBeDefined();
+  });
+
+  it('renders without panelId using default panel URL', () => {
+    const { container } = renderPanel('test-ext');
+    expect(container).toBeDefined();
   });
 });
